@@ -1,0 +1,11 @@
+.main
+{
+  background-color: aliceblue;
+  display: flex;
+  height: calc(100vh);
+}
+
+.main > section
+{
+  padding: 32px;
+}
