@@ -18,7 +18,7 @@ export default function CatalogSearch()
   mirror_shapes.forEach( (shape) => {
     allShapeNames.add( shape.name )
     shape.sizes.forEach( (size) => {
-      allChips.add( size )
+      allChips.add( size.chip )
     })
   })
 
@@ -47,14 +47,37 @@ export default function CatalogSearch()
     setOptions( options )
   }
 
+  const toggleSize = (chip, add) => {
+    add ? options.matchChips.add( chip ) : options.matchChips.delete( chip )
+    setOptions( options )
+  }
+
   let shapeChoices = Array.from( allShapeNames ).sort().map( (name, idx) => {
     return (
       <FormControlLabel
         key={`${id}-shape-${idx}`}
         label={name}
         control={ options.matchShapeNames.has( name )
-          ? <Checkbox defaultChecked onChange={(e) => toggleShape( name, false )} />
-          : <Checkbox onChange={(e) => toggleShape( name, true )} />
+          ? <Checkbox size='small' defaultChecked onChange={(e) => toggleShape( name, false )} />
+          : <Checkbox size='small' onChange={(e) => toggleShape( name, true )} />
+        }
+      />
+    )
+  })
+
+  let sizeChoices = Array.from( allChips ).sort( (a, b) => {
+    let rx = /([0-9]+)"/
+    let i = parseFloat( rx.exec( a )[1] )
+    let j = parseFloat( rx.exec( b )[1] )
+    return i - j
+  }).map( (chip, idx) => {
+    return (
+      <FormControlLabel
+        key={`${id}-size-${idx}`}
+        label={chip}
+        control={ options.matchChips.has( chip )
+          ? <Checkbox size='small' defaultChecked onChange={(e) => toggleSize( chip, false )} />
+          : <Checkbox size='small' onChange={(e) => toggleSize( chip, true )} />
         }
       />
     )
@@ -88,6 +111,9 @@ export default function CatalogSearch()
           <Box sx={{ p: 2, width: 500 }}>
             Shapes<br/>
             {shapeChoices}
+            <hr/>
+            Sizes<br/>
+            {sizeChoices}
           </Box>
         </Popover>
       }
