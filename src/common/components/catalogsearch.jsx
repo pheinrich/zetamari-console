@@ -42,38 +42,28 @@ export default function CatalogSearch()
     setAnchorEl( null )
   }
 
-  const matchAllOrNoneShapes = (allOrNone) => {
-    setMatchShapes( new Set( allOrNone ? allShapeNames : [] ) )
+  const matchAllOrNone = (saveFunc, source, shouldMatch) => {
+    (saveFunc)( prev => new Set( shouldMatch ? source : [] ) )
   }
 
-  const toggleMatchShape = (shape, shouldMatch) => {
+  const toggleMatch = (saveFunc, item, shouldMatch) => {
     if( shouldMatch )
-      setMatchShapes( prev => new Set( [...prev, shape] ) )
+      (saveFunc)( prev => new Set( [...prev, item] ) )
     else
-      setMatchShapes( prev => new Set( [...prev].filter( match => match !== shape ) ) )
-  }
-
-  const matchAllOrNoneSizes = (allOrNone) => {
-    setMatchSizes( new Set( allOrNone ? allSizeChips : [] ) )
-  }
-
-  const toggleMatchSize = (size, shouldMatch) => {
-    if( shouldMatch )
-      setMatchSizes( prev => new Set( [...prev, size] ) )
-    else
-      setMatchSizes( prev => new Set( [...prev].filter( match => match !== size ) ) )
+      (saveFunc)( prev => new Set( [...prev].filter( match => match !== item ) ) )
   }
 
   const shapeChoices = Array.from( allShapeNames ).sort().map( (name, idx) => {
+    const checked = matchShapes.has( name )
     return (
       <FormControlLabel
         key={`${id}-shape-${idx}`}
         label={name}
         control={
           <Checkbox
-            checked={matchShapes.has( name )}
-            onChange={(e) => toggleMatchShape( name, !matchShapes.has( name ) )}
-            size='small'
+            checked={checked}
+            onChange={(e) => toggleMatch( setMatchShapes, name, !checked )}
+           size='small'
           />
         }
       />
@@ -86,14 +76,15 @@ export default function CatalogSearch()
     let j = parseFloat( rx.exec( b )[1] )
     return i - j
   }).map( (chip, idx) => {
+    const checked = matchSizes.has( chip )
     return (
       <FormControlLabel
         key={`${id}-size-${idx}`}
         label={chip}
         control={
           <Checkbox
-            checked={matchSizes.has( chip )}
-            onChange={(e) => toggleMatchSize( chip, !matchSizes.has( chip ) )}
+            checked={checked}
+            onChange={(e) => toggleMatch( setMatchSizes, chip, !checked )}
             size='small'
           />
         }
@@ -132,11 +123,11 @@ export default function CatalogSearch()
               <ButtonGroup color='secondary' size='small' variant='contained'>
                 <Button
                   disabled={matchShapes.size === allShapeNames.size}
-                  onClick={(e) => matchAllOrNoneShapes( true )}
+                  onClick={(e) => matchAllOrNone( setMatchShapes, allShapeNames, true )}
                 >All</Button>
                 <Button
                   disabled={0 === matchShapes.size}
-                  onClick={(e) => matchAllOrNoneShapes( false )}
+                  onClick={(e) => matchAllOrNone( setMatchShapes, allShapeNames, false )}
                 >None</Button>
               </ButtonGroup>
             </Stack>
@@ -147,11 +138,11 @@ export default function CatalogSearch()
               <ButtonGroup color='secondary' size='small' variant='contained'>
                 <Button
                   disabled={matchSizes.size === allSizeChips.size}
-                  onClick={(e) => matchAllOrNoneSizes( true )}
+                  onClick={(e) => matchAllOrNone( setMatchSizes, allSizeChips, true )}
                 >All</Button>
                 <Button
                   disabled={0 === matchSizes.size}
-                  onClick={(e) => matchAllOrNoneSizes( false )}
+                  onClick={(e) => matchAllOrNone( setMatchSizes, allSizeChips, false )}
                 >None</Button>
               </ButtonGroup>
             </Stack>
