@@ -1,6 +1,6 @@
-export const mirror_shapes = [
+const presets = [
 {
-  name: 'Chapel Arch',
+  shape: 'Chapel Arch',
   prefix: 'Ca',
   sizes: [
   {
@@ -17,7 +17,7 @@ export const mirror_shapes = [
   }]
 },
 {
-  name: 'Cloud',
+  shape: 'Cloud',
   prefix: 'Cd',
   sizes: [
   {
@@ -43,7 +43,7 @@ export const mirror_shapes = [
   }]
 },
 {
-  name: 'Circle',
+  shape: 'Circle',
   prefix: 'Ci',
   sizes: [
   {
@@ -88,7 +88,7 @@ export const mirror_shapes = [
   }]
 },
 {
-  name: 'Cora',
+  shape: 'Cora',
   prefix: 'Cr',
   sizes: [
   {
@@ -113,7 +113,7 @@ export const mirror_shapes = [
   }]
 },
 {
-  name: 'Gothic Arch',
+  shape: 'Gothic Arch',
   prefix: 'Ga',
   sizes: [
   {
@@ -136,7 +136,7 @@ export const mirror_shapes = [
   }]
 },
 {
-  name: 'Leaf',
+  shape: 'Leaf',
   prefix: 'Lr',
   sizes: [
   {
@@ -162,7 +162,7 @@ export const mirror_shapes = [
   }]
 },
 {
-  name: 'Oval',
+  shape: 'Oval',
   prefix: 'Ov',
   sizes: [
   {
@@ -201,7 +201,7 @@ export const mirror_shapes = [
   }]
 },
 {
-  name: 'Planet Mandala',
+  shape: 'Planet Mandala',
   prefix: 'MdPl',
   sizes: [
   {
@@ -215,7 +215,7 @@ export const mirror_shapes = [
   }]
 },
 {
-  name: 'Sonora Mandala',
+  shape: 'Sonora Mandala',
   prefix: 'MdSn',
   sizes: [
   {
@@ -255,7 +255,7 @@ export const mirror_shapes = [
   }]
 },
 {
-  name: 'Starlight Mandala',
+  shape: 'Starlight Mandala',
   prefix: 'MdSl',
   sizes: [
   {
@@ -314,7 +314,7 @@ export const mirror_shapes = [
   }]
 },
 {
-  name: 'Mina',
+  shape: 'Mina',
   prefix: 'Mn',
   sizes: [
   {
@@ -328,7 +328,7 @@ export const mirror_shapes = [
   }]
 },
 {
-  name: 'Neslo',
+  shape: 'Neslo',
   prefix: 'Ne',
   sizes: [
   {
@@ -349,7 +349,7 @@ export const mirror_shapes = [
   }]
 },
 {
-  name: 'Rectangle',
+  shape: 'Rectangle',
   prefix: 'Re',
   sizes: [
   {
@@ -391,7 +391,7 @@ export const mirror_shapes = [
   }]
 },
 {
-  name: 'Square',
+  shape: 'Square',
   prefix: 'Sq',
   sizes: [
   {
@@ -421,7 +421,7 @@ export const mirror_shapes = [
   }]
 },
 {
-  name: 'Willow Leaf',
+  shape: 'Willow Leaf',
   prefix: 'Wf',
   sizes: [
   {
@@ -434,8 +434,8 @@ export const mirror_shapes = [
   }]
 }]
 
-mirror_shapes.forEach( shape => {
-  shape.sizes.forEach( size => {
+presets.forEach( preset => {
+  preset.sizes.forEach( size => {
     if( !size.hasOwnProperty( 'actual_width' ) )
       size.actual_width = size.nominal_width;
     if( !size.hasOwnProperty( 'actual_height' ) )
@@ -444,7 +444,7 @@ mirror_shapes.forEach( shape => {
       size.border = 1;
 
     size.chip = `${size.nominal_width}"`
-    size.sku = `${shape.prefix}${size.nominal_width}`
+    size.sku = `${preset.prefix}${size.nominal_width}`
 
     if( size.nominal_width !== size.nominal_height )
     {
@@ -452,8 +452,13 @@ mirror_shapes.forEach( shape => {
       size.sku += size.nominal_height;
     }
 
-    size.name = `${size.chip} ${shape.name}`
+    size.name = `${size.chip} ${preset.shape}`
     if( size.hasOwnProperty( 'nickname' ) )
       size.name += ` (${size.nickname})`;
   })
 })
+
+export const mirror_shapes = presets.reduce( (arr, preset) => {
+  preset.sizes.forEach( (size) => arr.push( {shape: preset.shape, prefix: preset.prefix, ...size} ) )
+  return arr;
+}, [])
