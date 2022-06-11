@@ -14,24 +14,25 @@ import Popover from '@mui/material/Popover'
 import Stack from '@mui/material/Stack'
 import TextField from '@mui/material/TextField'
 import {useId, useState} from 'react'
+import {useDispatch, useSelector} from 'react-redux'
 import {mirror_shapes} from '../mirror_shapes'
+import {
+  matchAllShapes, unmatchAllShapes,
+  matchShape, unmatchShape,
+  matchAllSizes, unmatchAllSizes,
+  matchSize, unmatchSize,
+  selectMatchShapes, selectMatchSizes
+} from '../../features/search/searchSlice'
 
 export default function CatalogSearch()
 {
-  const allShapeNames = new Set();
-  const allSizeChips = new Set();
-
-  mirror_shapes.forEach( (item) => {
-    allShapeNames.add( item.shape )
-    allSizeChips.add( item.chip )
-  })
-
   const id = useId()
   const [expanded, setExpanded] = useState( false )
   const [anchorEl, setAnchorEl] = useState( null )
-  const [matchShapes, setMatchShapes] = useState( new Set( allShapeNames ) )
-  const [matchSizes, setMatchSizes] = useState( new Set( allSizeChips ) )
   const [matchText, setMatchText] = useState( null )
+  const matchShapes = useSelector( selectMatchShapes )
+  const matchSizes = useSelector( selectMatchSizes )
+  const dispatch = useDispatch()
 
   const expandOptions = () =>
   {
@@ -50,19 +51,8 @@ export default function CatalogSearch()
     setMatchText( e.target.value )
   }
 
-  const matchAllOrNone = (saveFunc, source, shouldMatch) => {
-    (saveFunc)( prev => new Set( shouldMatch ? source : [] ) )
-  }
-
-  const toggleMatch = (saveFunc, item, shouldMatch) => {
-    if( shouldMatch )
-      (saveFunc)( prev => new Set( [...prev, item] ) )
-    else
-      (saveFunc)( prev => new Set( [...prev].filter( match => match !== item ) ) )
-  }
-
-  const shapeChoices = Array.from( allShapeNames ).sort().map( (name, idx) => {
-    const checked = matchShapes.has( name )
+  const shapeChoices = Array.from( mirror_shapes.allShapeNames ).sort().map( (name, idx) => {
+    const checked = matchShapes.includes( name )
     return (
       <FormControlLabel
         key={`${id}-shape-${idx}`}
@@ -70,29 +60,7 @@ export default function CatalogSearch()
         control={
           <Checkbox
             checked={checked}
-            onChange={(e) => toggleMatch( setMatchShapes, name, !checked )}
-           size='small'
-          />
-        }
-      />
-    )
-  })
-
-  const sizeChoices = Array.from( allSizeChips ).sort( (a, b) => {
-    let rx = /([0-9]+)"/
-    let i = parseFloat( rx.exec( a )[1] )
-    let j = parseFloat( rx.exec( b )[1] )
-    return i - j
-  }).map( (chip, idx) => {
-    const checked = matchSizes.has( chip )
-    return (
-      <FormControlLabel
-        key={`${id}-size-${idx}`}
-        label={chip}
-        control={
-          <Checkbox
-            checked={checked}
-            onChange={(e) => toggleMatch( setMatchSizes, chip, !checked )}
+            onChange={(e) => dispatch( checked ? unmatchShape( name ) : matchShape( name ) )}
             size='small'
           />
         }
@@ -100,8 +68,30 @@ export default function CatalogSearch()
     )
   })
 
-  const matchedShapes = mirror_shapes.filter( (item) => {
-    let matched = matchShapes.has( item.shape ) && matchSizes.has( item.chip )
+  const sizeChoices = Array.from( mirror_shapes.allSizeChips ).sort( (a, b) => {
+    let rx = /([0-9]+)"/
+    let i = parseFloat( rx.exec( a )[1] )
+    let j = parseFloat( rx.exec( b )[1] )
+    return i - j
+  }).map( (chip, idx) => {
+    const checked = matchSizes.includes( chip )
+    return (
+      <FormControlLabel
+        key={`${id}-size-${idx}`}
+        label={chip}
+        control={
+          <Checkbox
+            checked={checked}
+            onChange={(e) => dispatch( checked ? unmatchSize( chip ) : matchSize( chip ) )}
+            size='small'
+          />
+        }
+      />
+    )
+  })
+
+  const matchedShapes = mirror_shapes.presets.filter( (item) => {
+    let matched = matchShapes.includes( item.shape ) && matchSizes.includes( item.chip )
 
     if( matched && matchText )
     {
@@ -157,27 +147,29 @@ export default function CatalogSearch()
               Shapes
               <ButtonGroup color='secondary' size='small' variant='contained'>
                 <Button
-                  disabled={matchShapes.size === allShapeNames.size}
-                  onClick={(e) => matchAllOrNone( setMatchShapes, allShapeNames, true )}
+                  disabled={matchShapes.length === mirror_shapes.allShapeNames.length}
+                  onClick={(e) => dispatch( matchAllShapes() )}
                 >All</Button>
                 <Button
-                  disabled={0 === matchShapes.size}
-                  onClick={(e) => matchAllOrNone( setMatchShapes, allShapeNames, false )}
+                  disabled={0 === matchShapes.length}
+                  onClick={(e) => dispatch( unmatchAllShapes() )}
                 >None</Button>
               </ButtonGroup>
             </Stack>
             {shapeChoices}
+
             <hr/>
+
             <Stack direction='row' justifyContent='space-between'>
               Sizes
               <ButtonGroup color='secondary' size='small' variant='contained'>
                 <Button
-                  disabled={matchSizes.size === allSizeChips.size}
-                  onClick={(e) => matchAllOrNone( setMatchSizes, allSizeChips, true )}
+                  disabled={matchSizes.length === mirror_shapes.allSizeChips.length}
+                  onClick={(e) => dispatch( matchAllSizes() )}
                 >All</Button>
                 <Button
-                  disabled={0 === matchSizes.size}
-                  onClick={(e) => matchAllOrNone( setMatchSizes, allSizeChips, false )}
+                  disabled={0 === matchSizes.length}
+                  onClick={(e) => dispatch( unmatchAllSizes() )}
                 >None</Button>
               </ButtonGroup>
             </Stack>
@@ -185,7 +177,10 @@ export default function CatalogSearch()
           </Box>
         </Popover>
       }
-      <List sx={{ width: '500px', maxHeight: '500px', overflow: 'auto' }}>
+      <List
+        dense
+        sx={{ mt: 1, p: 0.25, border: '1px solid lightgray', width: '20em', maxHeight: '35em', minHeight: '35em', overflow: 'auto' }}
+      >
         {matchedShapes}
       </List>
     </>

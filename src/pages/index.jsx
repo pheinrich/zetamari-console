@@ -5,7 +5,7 @@ export default function HomePage()
 {
   return (
     <section>
-      <h2>Catalog</h2>
+      <h2>Substrates</h2>
       <CatalogSearch />
     </section>
   )
