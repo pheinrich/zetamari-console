@@ -18,6 +18,7 @@ const FallbackSpinner = ({ sx }) => {
         ...sx
       }}
     >
+    {/* Materio logo
       <svg
         width={82}
         height={68}
@@ -77,6 +78,7 @@ const FallbackSpinner = ({ sx }) => {
           </g>
         </g>
       </svg>
+      */}
       <CircularProgress disableShrink sx={{ mt: 6 }} />
     </Box>
   )

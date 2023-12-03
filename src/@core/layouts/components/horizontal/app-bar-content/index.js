@@ -29,6 +29,7 @@ const AppBarContent = props => {
         userAppBarBranding(props)
       ) : (
         <LinkStyled href='/'>
+        {/* Materio logo
           <svg
             width={30}
             height={25}
@@ -88,6 +89,7 @@ const AppBarContent = props => {
               </g>
             </g>
           </svg>
+          */}
           <Typography
             variant='h6'
             sx={{

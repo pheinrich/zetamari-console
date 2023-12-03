@@ -100,11 +100,6 @@ const schema = yup.object().shape({
   password: yup.string().min(5).required()
 })
 
-const defaultValues = {
-  password: 'admin',
-  email: 'admin@materio.com'
-}
-
 const LoginPage = () => {
   const [rememberMe, setRememberMe] = useState(true)
   const [showPassword, setShowPassword] = useState(false)
@@ -125,7 +120,6 @@ const LoginPage = () => {
     handleSubmit,
     formState: { errors }
   } = useForm({
-    defaultValues,
     mode: 'onBlur',
     resolver: yupResolver(schema)
   })
@@ -176,6 +170,7 @@ const LoginPage = () => {
                 justifyContent: 'center'
               }}
             >
+              {/* Materio logo
               <svg
                 width={35}
                 height={29}
@@ -235,6 +230,7 @@ const LoginPage = () => {
                   </g>
                 </g>
               </svg>
+              */}
               <Typography
                 variant='h6'
                 sx={{
@@ -249,17 +245,9 @@ const LoginPage = () => {
               </Typography>
             </Box>
             <Box sx={{ mb: 6 }}>
-              <TypographyStyled variant='h5'>Welcome to {themeConfig.templateName}! 👋🏻</TypographyStyled>
+              <TypographyStyled variant='h5'>Welcome to the {themeConfig.templateName}! 👋</TypographyStyled>
               <Typography variant='body2'>Please sign-in to your account and start the adventure</Typography>
             </Box>
-            <Alert icon={false} sx={{ py: 3, mb: 6, ...bgColors.primaryLight, '& .MuiAlert-message': { p: 0 } }}>
-              <Typography variant='caption' sx={{ mb: 2, display: 'block', color: 'primary.main' }}>
-                Admin: <strong>admin@materio.com</strong> / Pass: <strong>admin</strong>
-              </Typography>
-              <Typography variant='caption' sx={{ display: 'block', color: 'primary.main' }}>
-                Client: <strong>client@materio.com</strong> / Pass: <strong>client</strong>
-              </Typography>
-            </Alert>
             <form noValidate autoComplete='off' onSubmit={handleSubmit(onSubmit)}>
               <FormControl fullWidth sx={{ mb: 4 }}>
                 <Controller
@@ -274,7 +262,6 @@ const LoginPage = () => {
                       onBlur={onBlur}
                       onChange={onChange}
                       error={Boolean(errors.email)}
-                      placeholder='admin@materio.com'
                     />
                   )}
                 />

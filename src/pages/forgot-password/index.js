@@ -118,6 +118,7 @@ const ForgotPassword = () => {
                 justifyContent: 'center'
               }}
             >
+            {/* Materio logo}
               <svg
                 width={35}
                 height={29}
@@ -177,6 +178,7 @@ const ForgotPassword = () => {
                   </g>
                 </g>
               </svg>
+              */}
               <Typography
                 variant='h6'
                 sx={{

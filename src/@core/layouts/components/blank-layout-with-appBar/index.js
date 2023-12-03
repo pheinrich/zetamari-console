@@ -44,6 +44,7 @@ const BlankLayoutAppBar = () => {
         }}
       >
         <LinkStyled href='/'>
+        {/* Materio log
           <svg
             width={30}
             height={25}
@@ -103,6 +104,7 @@ const BlankLayoutAppBar = () => {
               </g>
             </g>
           </svg>
+          */}
           <Typography
             variant='h6'
             sx={{

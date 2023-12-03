@@ -11,18 +11,18 @@ const users = [
   {
     id: 1,
     role: 'admin',
-    password: 'admin',
-    fullName: 'John Doe',
-    username: 'johndoe',
-    email: 'admin@materio.com'
+    password: process.env.NEXT_PUBLIC_PETER_PASSWORD,
+    fullName: 'Peter Heinrich',
+    username: 'peter',
+    email: 'peter@zetamari.com'
   },
   {
     id: 2,
     role: 'client',
-    password: 'client',
-    fullName: 'Jane Doe',
-    username: 'janedoe',
-    email: 'client@materio.com'
+    password: process.env.NEXT_PUBLIC_ANGIE_PASSWORD,
+    fullName: 'Angie Heinrich',
+    username: 'angie',
+    email: 'angie@zetamari.com'
   }
 ]
 

@@ -135,6 +135,7 @@ const Register = () => {
                 justifyContent: 'center'
               }}
             >
+            {/* Materio logo
               <svg
                 width={35}
                 height={29}
@@ -194,6 +195,7 @@ const Register = () => {
                   </g>
                 </g>
               </svg>
+              */}
               <Typography
                 variant='h6'
                 sx={{

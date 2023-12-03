@@ -77,6 +77,7 @@ const VerticalNavHeader = props => {
         userNavMenuBranding(props)
       ) : (
         <LinkStyled href='/'>
+        {/* Materio logo
           <svg
             width={30}
             height={25}
@@ -136,6 +137,7 @@ const VerticalNavHeader = props => {
               </g>
             </g>
           </svg>
+          */}
           <HeaderTitle variant='h6' sx={{ ...menuCollapsedStyles, ...(navCollapsed && !navHover ? {} : { ml: 3 }) }}>
             {themeConfig.templateName}
           </HeaderTitle>
