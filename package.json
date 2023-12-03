@@ -1,24 +1,32 @@
 {
+  "name": "zetamari-console",
+  "version": "0.1.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "model:generate": "env-cmd sequelize-cli model:generate",
+    "seed": "env-cmd sequelize-cli db:seed:all",
+    "migrate": "env-cmd sequelize-cli db:migrate",
+    "migrate:rollback": "env-cmd sequelize-cli db:migrate:undo",
+    "migrate:rollback:all": "env-cmd sequelize-cli db:migrate:undo:all"
   },
   "dependencies": {
-    "@emotion/react": "^11.9.0",
-    "@emotion/styled": "^11.8.1",
-    "@mui/icons-material": "^5.8.0",
-    "@mui/material": "^5.8.1",
-    "@reduxjs/toolkit": "^1.8.2",
-    "next": "12.1.4",
+    "axios": "^0.27.2",
+    "mysql2": "^2.3.3",
+    "next": "12.1.5",
     "react": "18.0.0",
     "react-dom": "18.0.0",
-    "react-redux": "^8.0.2"
+    "sequelize": "^6.19.0",
+    "winston": "^3.7.2",
+    "winston-daily-rotate-file": "^4.6.1"
   },
   "devDependencies": {
-    "eslint": "8.12.0",
-    "eslint-config-next": "12.1.4"
+    "env-cmd": "^10.1.0",
+    "eslint": "8.14.0",
+    "eslint-config-next": "12.1.5",
+    "sqlite3": "^5.0.6"
   }
 }
