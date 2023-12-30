@@ -6,15 +6,12 @@ import Layout from 'src/@core/layouts/Layout'
 
 // ** Navigation Imports
 import VerticalNavItems from 'src/navigation/vertical'
-import HorizontalNavItems from 'src/navigation/horizontal'
 
 // ** Component Import
 // Uncomment the below line (according to the layout type) when using server-side menu
 // import ServerSideVerticalNavItems from './components/vertical/ServerSideNavItems'
-// import ServerSideHorizontalNavItems from './components/horizontal/ServerSideNavItems'
 
 import VerticalAppBarContent from './components/vertical/AppBarContent'
-import HorizontalAppBarContent from './components/horizontal/AppBarContent'
 
 // ** Hook Import
 import { useSettings } from 'src/@core/hooks/useSettings'
@@ -25,7 +22,6 @@ const UserLayout = ({ children, contentHeightFixed }) => {
 
   // ** Vars for server side navigation
   // const { menuItems: verticalMenuItems } = ServerSideVerticalNavItems()
-  // const { menuItems: horizontalMenuItems } = ServerSideHorizontalNavItems()
   /**
    *  The below variable will hide the current layout menu at given screen size.
    *  The menu will be accessible from the Hamburger icon only (Vertical Overlay Menu).
@@ -35,9 +31,6 @@ const UserLayout = ({ children, contentHeightFixed }) => {
    *  ! Do not change this value unless you know what you are doing. It can break the template.
    */
   const hidden = useMediaQuery(theme => theme.breakpoints.down('lg'))
-  if (hidden && settings.layout === 'horizontal') {
-    settings.layout = 'vertical'
-  }
 
   return (
     <Layout
@@ -63,19 +56,6 @@ const UserLayout = ({ children, contentHeightFixed }) => {
           )
         }
       }}
-      {...(settings.layout === 'horizontal' && {
-        horizontalLayoutProps: {
-          navMenu: {
-            navItems: HorizontalNavItems()
-
-            // Uncomment the below line when using server-side menu in horizontal layout and comment the above line
-            // navItems: horizontalMenuItems
-          },
-          appBar: {
-            content: () => <HorizontalAppBarContent settings={settings} saveSettings={saveSettings} />
-          }
-        }
-      })}
     >
       {children}
       

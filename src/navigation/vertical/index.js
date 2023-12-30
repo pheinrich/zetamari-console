@@ -6,17 +6,23 @@ const navigation = () => {
       icon: 'mdi:home-outline',
     },
     {
-      title: 'Second Page',
-      path: '/second-page',
-      icon: 'mdi:email-outline',
+      sectionTitle: 'Utilities'
     },
     {
-      path: '/acl',
-      action: 'read',
-      subject: 'acl-page',
-      title: 'Access Control',
-      icon: 'mdi:shield-outline',
-    }
+      title: 'Calculator',
+      path: '/calculator',
+      icon: 'mdi:calculator',
+    },
+    {
+      title: 'Designer',
+      path: '/designer',
+      icon: 'mdi:palette-outline',
+    },
+    {
+      title: 'Kit Builder',
+      path: '/kit-builder',
+      icon: 'mdi:wrench-outline'
+    },
   ]
 }
 

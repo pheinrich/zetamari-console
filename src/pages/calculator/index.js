@@ -5,12 +5,12 @@ import Typography from '@mui/material/Typography'
 import CardHeader from '@mui/material/CardHeader'
 import CardContent from '@mui/material/CardContent'
 
-const SecondPage = () => {
+const Calculator = () => {
   return (
     <Grid container spacing={6}>
       <Grid item xs={12}>
         <Card>
-          <CardHeader title='Create Awesome 🙌'></CardHeader>
+          <CardHeader title='Calculator'></CardHeader>
           <CardContent>
             <Typography sx={{ mb: 2 }}>This is your second page.</Typography>
             <Typography>
@@ -25,4 +25,4 @@ const SecondPage = () => {
   )
 }
 
-export default SecondPage
+export default Calculator
