@@ -18,7 +18,7 @@ const users = [
   },
   {
     id: 2,
-    role: 'client',
+    role: 'admin',
     password: process.env.NEXT_PUBLIC_ANGIE_PASSWORD,
     fullName: 'Angie Heinrich',
     username: 'angie',
