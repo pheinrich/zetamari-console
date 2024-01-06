@@ -1,5 +1,6 @@
 // ** Next Imports
 import Head from 'next/head'
+import Script from 'next/Script'
 import { Router } from 'next/router'
 
 // ** Loader Import
@@ -103,6 +104,8 @@ const App = props => {
           <meta name='keywords' content='Zetamari Project Management' />
           <meta name='viewport' content='initial-scale=1, width=device-width' />
         </Head>
+
+        <Script src="https://cdnjs.cloudflare.com/ajax/libs/jsts/2.9.0/jsts.min.js" integrity="sha512-XrQsFgFkIrrXvkt2Kh3ePU/f5rfAA2ftGwL16/qs702F1wgF4mlRiJhXimkTSVVw/u89iQpUMoslwMczq8Hjmg==" crossorigin="anonymous" referrerpolicy="no-referrer"/>
 
         <AuthProvider>
           <SettingsProvider {...(setConfig ? { pageSettings: setConfig() } : {})}>
