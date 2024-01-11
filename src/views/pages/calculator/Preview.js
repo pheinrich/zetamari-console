@@ -20,7 +20,7 @@ import { ShapeFactory } from 'src/modules/shape_factory.mjs'
 import { ShapePresets } from 'src/modules/shape_presets.mjs'
 
 // Temporary preset
-const preset = ShapePresets.all[ 20 ]
+const preset = ShapePresets.all[ 2 ]
 const shape = ShapeFactory.createFromPreset( preset )
 
 // Styled Box component
@@ -34,7 +34,7 @@ const Preview = () => {
   const [showGlass, setShowGlass] = useState( true )
   const [showBack, setShowBack] = useState( false )
   const [showScale, setShowScale] = useState( false )
-  const [zoom, setZoom] = useState( 35 )
+  const [zoom, setZoom] = useState( 65 )
 
   return (
     <Card>
@@ -93,11 +93,11 @@ const Preview = () => {
             </Grid>
             <Grid container spacing={4}>
               <Grid item xs={12} sm={7}>
-                Distance
+                Zoom
                 <Slider
-                  min={15}
+                  min={0}
                   max={100}
-                  value={typeof zoom === 'number' ? zoom : 35}
+                  value={typeof zoom === 'number' ? zoom : 65}
                   valueLabelDisplay='auto'
                   onChange={(e,val) => setZoom( val )}
                 />

@@ -1,10 +1,10 @@
 import React from "react"
 import { Shape } from "src/modules/shape.mjs"
 
-function MirrorView ( {shape, zoom = 40, showGlass = true, showBack = false, showScale = false} ) {
+function MirrorView ( {shape, zoom = 65, showGlass = true, showBack = false, showScale = false} ) {
 
 	const origin = shape.getOrigin();
-	const viewBox = `${origin.x - zoom/2} ${origin.y - zoom/2} ${zoom} ${zoom}`
+	const viewBox = `${origin.x - (110 - zoom)/2} ${origin.y - (110 - zoom)/2} ${110 - zoom} ${110 - zoom}`
 	const substrateSVG = `${shape.outside.getSVGData()} ${shape.inside.getSVGData()}`
 	const rabbetSVG = shape.rabbet.getSVGData()
   const mirrorSVG = shape.mirror.getSVGData()
