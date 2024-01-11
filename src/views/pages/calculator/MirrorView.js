@@ -1,6 +1,14 @@
-import React from "react";
+import React from "react"
+import { Shape } from "src/modules/shape.mjs"
 
-function MirrorView ( {outsidePath, insidePath, rabbetPath} ) {
+function MirrorView ( {shape, zoom = 40, showGlass = true, showBack = false, showScale = false} ) {
+
+	const origin = shape.getOrigin();
+	const viewBox = `${origin.x - zoom/2} ${origin.y - zoom/2} ${zoom} ${zoom}`
+	const substrateSVG = `${shape.outside.getSVGData()} ${shape.inside.getSVGData()}`
+	const rabbetSVG = shape.rabbet.getSVGData()
+  const mirrorSVG = shape.mirror.getSVGData()
+
 	return (
 		<svg
 		  version="1.1"
@@ -9,10 +17,16 @@ function MirrorView ( {outsidePath, insidePath, rabbetPath} ) {
       id="svg"
       width="500"
       height="500"
-      viewBox="-37.50000000 -37.500000000 75.00000000 75.00000000"
+      viewBox={viewBox}
+      transform={showBack && "scale(-1 1)"}
     >
       <defs>
-        <linearGradient id="mirrorGrad" x1="0%" y1="10%" x2="100%" y2="90%">
+        <linearGradient id="mirrorBackGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#bbb" stopOpacity="1" />
+          <stop offset="100%" stopColor="#aaa" stopOpacity="1" />
+        </linearGradient>
+
+        <linearGradient id="mirrorFrontGrad" x1="0%" y1="10%" x2="100%" y2="90%">
           <stop offset="0%" stopColor="#aaa" stopOpacity="1" />
           <stop offset="55%" stopColor="#eee" stopOpacity="1" />
           <stop offset="60%" stopColor="#eee" stopOpacity="1" />
@@ -20,39 +34,49 @@ function MirrorView ( {outsidePath, insidePath, rabbetPath} ) {
         </linearGradient>
       </defs>
 
-      <path
-      	id="outside"
-      	fill="#eda"
-      	strokeWidth="0.1"
-      	strokeLinecap="round"
-      	strokeLinejoin="round"
-      	strokeOpacity="1"
-      	stroke="#000"
-      	d={outsidePath}
-      />
+      { showBack && <path
+        id="outside"
+        fill="#eda"
+        strokeWidth="0.1"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeOpacity="1"
+        stroke="#000"
+        d={substrateSVG}
+      />}
 
-      <path
-      	id="inside"
-      	fill="url(#mirrorGrad)"
-      	strokeWidth="0.05"
-      	strokeLinecap="round"
-      	strokeLinejoin="round"
-      	strokeOpacity="1"
-      	stroke="#000"
-      	d={insidePath}
-      />
+      { showGlass && <path
+        id="mirror"
+        fill={showBack ? "url(#mirrorBackGrad)" : "url(#mirrorFrontGrad)"}
+        strokeWidth="0.05"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeOpacity="1"
+        stroke="#888"
+        d={mirrorSVG}
+      />}
 
-      <path
-      	id="rabbet"
-      	fill="none"
-      	strokeWidth="0.05"
-      	strokeLinecap="round"
-      	strokeLinejoin="round"
-      	strokeOpacity="1"
-      	stroke="#999"
-      	d={rabbetPath}
-      />
+      { showBack && <path
+        id="rabbet"
+        fill="none"
+        strokeWidth="0.05"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeOpacity="1"
+        stroke="#444"
+        d={rabbetSVG}
+      />}
 
+      { !showBack && <path
+        id="outside"
+        fill="#eda"
+        strokeWidth="0.1"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeOpacity="1"
+        stroke="#000"
+        d={substrateSVG}
+      />}
     </svg>
 	)
 }

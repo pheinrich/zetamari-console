@@ -1,15 +1,27 @@
+import { useState } from 'react'
+
 // ** MUI Imports
-import Card from '@mui/material/Card'
-import Grid from '@mui/material/Grid'
+import Box from '@mui/material/Box'
 import Button from '@mui/material/Button'
+import Card from '@mui/material/Card'
+import CardContent from '@mui/material/CardContent'
+import Grid from '@mui/material/Grid'
 import Divider from '@mui/material/Divider'
 import { styled } from '@mui/material/styles'
+import Slider from '@mui/material/Slider'
+import Switch from '@mui/material/Switch'
 import Typography from '@mui/material/Typography'
-import Box from '@mui/material/Box'
-import CardContent from '@mui/material/CardContent'
 
 // ** Icon Imports
 import Icon from 'src/@core/components/icon'
+
+import MirrorView from 'src/views/pages/calculator/MirrorView'
+import { ShapeFactory } from 'src/modules/shape_factory.mjs'
+import { ShapePresets } from 'src/modules/shape_presets.mjs'
+
+// Temporary preset
+const preset = ShapePresets.all[ 20 ]
+const shape = ShapeFactory.createFromPreset( preset )
 
 // Styled Box component
 const StyledBox = styled(Box)(({ theme }) => ({
@@ -19,6 +31,11 @@ const StyledBox = styled(Box)(({ theme }) => ({
 }))
 
 const Preview = () => {
+  const [showGlass, setShowGlass] = useState( true )
+  const [showBack, setShowBack] = useState( false )
+  const [showScale, setShowScale] = useState( false )
+  const [zoom, setZoom] = useState( 35 )
+
   return (
     <Card>
       <Grid container spacing={6}>
@@ -37,7 +54,7 @@ const Preview = () => {
             }} >
             <div>
               <Box sx={{ mb: 3.5, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
-
+                <MirrorView shape={shape} zoom={zoom} showGlass={showGlass} showBack={showBack}/>
               </Box>
             </div>
           </CardContent>
@@ -58,10 +75,32 @@ const Preview = () => {
             />
             <Grid container spacing={4}>
               <Grid item xs={12} sm={5}>
-                BLAH
+                <Switch
+                  checked={showGlass}
+                  onChange={() => setShowGlass( !showGlass )}
+                />
+                Show Glass
               </Grid>
+            </Grid>
+            <Grid container spacing={4}>
               <Grid item xs={12} sm={7}>
-                blah
+                <Switch
+                  checked={showBack}
+                  onChange={() => setShowBack( !showBack )}
+                />
+                Show Back
+              </Grid>
+            </Grid>
+            <Grid container spacing={4}>
+              <Grid item xs={12} sm={7}>
+                Distance
+                <Slider
+                  min={15}
+                  max={100}
+                  value={typeof zoom === 'number' ? zoom : 35}
+                  valueLabelDisplay='auto'
+                  onChange={(e,val) => setZoom( val )}
+                />
               </Grid>
             </Grid>
           </CardContent>
