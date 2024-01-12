@@ -20,7 +20,7 @@ import { ShapeFactory } from 'src/modules/shape_factory.mjs'
 import { ShapePresets } from 'src/modules/shape_presets.mjs'
 
 // Temporary preset
-const preset = ShapePresets.all[ 2 ]
+const preset = ShapePresets.all[ 51 ]
 const shape = ShapeFactory.createFromPreset( preset )
 
 // Styled Box component
@@ -54,7 +54,7 @@ const Preview = () => {
             }} >
             <div>
               <Box sx={{ mb: 3.5, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
-                <MirrorView shape={shape} zoom={zoom} showGlass={showGlass} showBack={showBack}/>
+                <MirrorView shape={shape} zoom={zoom} showGlass={showGlass} showBack={showBack} showScale={showScale}/>
               </Box>
             </div>
           </CardContent>
@@ -89,6 +89,15 @@ const Preview = () => {
                   onChange={() => setShowBack( !showBack )}
                 />
                 Show Back
+              </Grid>
+            </Grid>
+            <Grid container spacing={4}>
+              <Grid item xs={12} sm={7}>
+                <Switch
+                  checked={showScale}
+                  onChange={() => setShowScale( !showScale )}
+                />
+                Show Scale
               </Grid>
             </Grid>
             <Grid container spacing={4}>
