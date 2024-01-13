@@ -1,7 +1,6 @@
 import { PrimitiveShapeType } from 'src/modules/shape.mjs'
 import AffineTransformation from 'jsts/org/locationtech/jts/geom/util/AffineTransformation'
 import BufferOp from 'jsts/org/locationtech/jts/operation/buffer/BufferOp'
-import Centroid from 'jsts/org/locationtech/jts/algorithm/Centroid'
 import Coordinate from 'jsts/org/locationtech/jts/geom/Coordinate'
 import GeometricShapeFactory from 'jsts/org/locationtech/jts/util/GeometricShapeFactory'
 import Geometry from 'jsts/org/locationtech/jts/geom/Geometry'
@@ -137,8 +136,11 @@ class Polygon
 
 	getOrigin()
 	{
-		let origin = Centroid.getCentroid( this.geometry );
-		return { x: origin.getX(), y: origin.getY() };
+		let env = this.geometry.getEnvelopeInternal()
+		return {
+			x: env.getMinX() + env.getWidth() / 2,
+			y: env.getMinY() + env.getHeight() / 2
+		}
 	}
 
 	getWidth()
