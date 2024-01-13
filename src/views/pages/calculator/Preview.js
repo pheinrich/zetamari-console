@@ -20,7 +20,7 @@ import { ShapeFactory } from 'src/modules/shape_factory.mjs'
 import { ShapePresets } from 'src/modules/shape_presets.mjs'
 
 // Temporary preset
-const preset = ShapePresets.all[ 51 ]
+const preset = ShapePresets.all[ 55 ]
 const shape = ShapeFactory.createFromPreset( preset )
 
 // Styled Box component

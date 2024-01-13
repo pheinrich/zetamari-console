@@ -105,39 +105,55 @@ function MirrorView ( {shape, zoom = 65, showGlass = true, showBack = false, sho
           </marker>
         </defs>
 
-        <g id="dims" fill="none">
-          <line
+        <g fill="none">
+          { pix.y > 81 && <line
             markerEnd="url(#arrow)"
             strokeWidth="2.5"
             fill="none"
             stroke="red"
             x1={250 - pix.x/2 - 35} y1="265"
             x2={250 - pix.x/2 - 35} y2={250 + pix.y/2 - 20}
-          />
-          <line
+          />}
+          <text
+            x={250 - pix.x/2 - 35} y="250"
+            dominantBaseline="middle"
+            textAnchor="middle"
+            fill="black"
+          >
+            {size.dy.toFixed( 1 )}
+          </text>
+          { pix.y > 81 && <line
             markerEnd="url(#arrow)"
             strokeWidth="2.5"
             fill="none"
             stroke="red"
             x1={250 - pix.x/2 - 35} y1="235"
             x2={250 - pix.x/2 - 35} y2={250 - pix.y/2 + 20}
-          />
-          <line
+          />}
+          { pix.x > 100 && <line
             markerEnd="url(#arrow)"
             strokeWidth="2.5"
             fill="none"
             stroke="red"
             y1={250 + pix.y/2 + 35} x1="275"
             y2={250 + pix.y/2 + 35} x2={250 + pix.x/2 - 20}
-          />
-          <line
+          />}
+          <text
+            y={250 + pix.y/2 + 35} x="250"
+            dominantBaseline="middle"
+            textAnchor="middle"
+            fill="black"
+          >
+            {size.dx.toFixed( 1 )}
+          </text>
+          { pix.x > 100 && <line
             markerEnd="url(#arrow)"
             strokeWidth="2.5"
             fill="none"
             stroke="red"
             y1={250 + pix.y/2 + 35} x1="225"
             y2={250 + pix.y/2 + 35} x2={250 - pix.x/2 + 20}
-          />
+          />}
         </g>
       </svg>}
     </div>
