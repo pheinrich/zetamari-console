@@ -93,7 +93,7 @@ function MirrorView ( {shape, zoom = 65, showGlass = true, showBack = false, sho
       />}
 
       { (showDims & 2) === 2 && <Dimensions
-        polygon={shape.inside}
+        polygon={showBack && showGlass ? shape.mirror : shape.inside}
         delta={{ x: 1, y: -1 }}
         zoom={zoom}
         isFlipped={showBack}
