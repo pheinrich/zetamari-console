@@ -115,6 +115,7 @@ class Polygon
 	{
 		this.geometry = geometry;
 		this.minBoundRect = null;
+		this.extremes = null;
 	}
 
 	scale( sx, sy )
@@ -127,6 +128,7 @@ class Polygon
 
 		this.geometry = af.transform( this.geometry );
 		this.minBoundRect = null;
+		this.extremes = null;
 	}
 
 	getArea()
@@ -175,6 +177,39 @@ class Polygon
 	{
 		let mbr = this.getMinBoundRect();
 		return mbr.dx * mbr.dy;
+	}
+
+	getExtremes()
+	{
+		if( null === this.extremes )
+		{
+			const coords = this.geometry.getCoordinates()
+			const first = coords[0]
+			let left = { x: first.x, y: first.y }
+			let right = { x: first.x, y: first.y }
+			let top = { x: first.x, y: first.y }
+			let bottom = { x: first.x, y: first.y }
+
+			coords.forEach( pt => {
+				if( pt.x < left.x )
+					left = { x: pt.x, y: pt.y }
+				if( pt.x > right.x )
+					right = { x: pt.x, y: pt.y }
+				if( pt.y < top.y )
+					top = { x: pt.x, y: pt.y }
+				if( pt.y > bottom.y )
+					bottom = { x: pt.x, y: pt.y }
+			})
+
+			this.extremes = {
+				left: left,
+				right: right,
+				top: top,
+				bottom: bottom
+			}
+		}
+
+		return this.extremes
 	}
 
 	getPerimeter()
