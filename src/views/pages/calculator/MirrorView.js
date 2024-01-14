@@ -9,9 +9,9 @@ function SVG( { fill, color, stroke, data } )
       fill={fill}
       stroke={color}
       strokeWidth={stroke}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      strokeOpacity="1"
+      strokeLinecap='round'
+      strokeLinejoin='round'
+      strokeOpacity='1'
       d={data}
     />
   ) 
@@ -31,26 +31,25 @@ function MirrorView( {shape, zoom = 65, showGlass = true, showBack = false, show
     >
   		<svg
         style={{position: 'absolute', top: 0, bottom: 0, left: 0, right: 0}}
-  		  version="1.1"
-        xmlns="http://www.w3.org/2000/svg"
-  		  xmlnsXlink="http://www.w3.org/1999/xlink"
-        id="svg"
-        width="500"
-        height="500"
+  		  version='1.1'
+        xmlns='http://www.w3.org/2000/svg'
+  		  xmlnsXlink='http://www.w3.org/1999/xlink'
+        width='500'
+        height='500'
         viewBox={viewBox}
-        transform={showBack && "scale(-1 1)"}
+        transform={showBack && 'scale(-1 1)'}
       >
         <defs>
-          <linearGradient id="mirrorBackGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#bbb" stopOpacity="1" />
-            <stop offset="100%" stopColor="#aaa" stopOpacity="1" />
+          <linearGradient id='mirrorBackGrad' x1='0%' y1='0%' x2='100%' y2='100%'>
+            <stop offset='0%' stopColor='#bbb' stopOpacity='1' />
+            <stop offset='100%' stopColor='#aaa' stopOpacity='1' />
           </linearGradient>
 
-          <linearGradient id="mirrorFrontGrad" x1="0%" y1="10%" x2="100%" y2="90%">
-            <stop offset="0%" stopColor="#aaa" stopOpacity="1" />
-            <stop offset="55%" stopColor="#eee" stopOpacity="1" />
-            <stop offset="60%" stopColor="#eee" stopOpacity="1" />
-            <stop offset="100%" stopColor="#bbb" stopOpacity="1" />
+          <linearGradient id='mirrorFrontGrad' x1='0%' y1='10%' x2='100%' y2='90%'>
+            <stop offset='0%' stopColor='#aaa' stopOpacity='1' />
+            <stop offset='55%' stopColor='#eee' stopOpacity='1' />
+            <stop offset='60%' stopColor='#eee' stopOpacity='1' />
+            <stop offset='100%' stopColor='#bbb' stopOpacity='1' />
           </linearGradient>
         </defs>
 
@@ -72,14 +71,14 @@ function MirrorView( {shape, zoom = 65, showGlass = true, showBack = false, show
         polygon={shape.outside}
         zoom={zoom}
         isFlipped={showBack}
-        color="red"
+        color='red'
       />}
 
       { (showDims & 2) === 2 && <Dimensions
         polygon={showBack && showGlass ? shape.mirror : shape.inside}
         zoom={zoom}
         isFlipped={showBack}
-        color="blue"
+        color='blue'
       />}
 
     </div>
