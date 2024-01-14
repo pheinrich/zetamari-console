@@ -34,7 +34,7 @@ const StyledBox = styled(Box)(({ theme }) => ({
   }
 }))
 
-const Preview = () => {
+function Preview() {
   const [showGlass, setShowGlass] = useState( true )
   const [showBack, setShowBack] = useState( false )
   const [showDims, setShowDims] = useState( 0 )

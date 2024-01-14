@@ -115,7 +115,7 @@ class Polygon
 	{
 		this.geometry = geometry;
 		this.minBoundRect = null;
-		this.extremes = null;
+		this.dims = null;
 	}
 
 	scale( sx, sy )
@@ -128,7 +128,7 @@ class Polygon
 
 		this.geometry = af.transform( this.geometry );
 		this.minBoundRect = null;
-		this.extremes = null;
+		this.dims = null;
 	}
 
 	getArea()
@@ -138,21 +138,17 @@ class Polygon
 
 	getOrigin()
 	{
-		let env = this.geometry.getEnvelopeInternal()
-		return {
-			x: env.getMinX() + env.getWidth() / 2,
-			y: env.getMinY() + env.getHeight() / 2
-		}
+		return this.getDims().center
 	}
 
 	getWidth()
 	{
-		return this.geometry.getEnvelopeInternal().getWidth();
+		return this.getDims().width
 	}
 
 	getHeight()
 	{
-		return this.geometry.getEnvelopeInternal().getHeight();
+		return this.getDims().height
 	}
 
 	getMinBoundRect()
@@ -179,16 +175,16 @@ class Polygon
 		return mbr.dx * mbr.dy;
 	}
 
-	getExtremes()
+	getDims()
 	{
-		if( null === this.extremes )
+		if( null === this.dims )
 		{
 			const coords = this.geometry.getCoordinates()
-			const first = coords[0]
-			let left = { x: first.x, y: first.y }
-			let right = { x: first.x, y: first.y }
-			let top = { x: first.x, y: first.y }
-			let bottom = { x: first.x, y: first.y }
+
+			let top = { x: coords[0].x, y: coords[0].y }
+			let right = { ...top }
+			let bottom = { ...top }
+			let left = { ...top }
 
 			coords.forEach( pt => {
 				if( pt.x < left.x )
@@ -201,15 +197,14 @@ class Polygon
 					bottom = { x: pt.x, y: pt.y }
 			})
 
-			this.extremes = {
-				left: left,
-				right: right,
-				top: top,
-				bottom: bottom
+			this.dims = {
+				top: top, right: right, bottom: bottom, left: left,
+				width: right.x - left.x, height: bottom.y - top.y,
+				center: { x: (left.x + right.x) / 2, y: (top.y + bottom.y) / 2 }
 			}
 		}
 
-		return this.extremes
+		return this.dims
 	}
 
 	getPerimeter()
