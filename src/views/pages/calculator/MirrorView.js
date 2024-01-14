@@ -1,7 +1,7 @@
 import React from "react"
 import { Shape } from "src/modules/shape.mjs"
 
-function MirrorView ( {shape, zoom = 65, showGlass = true, showBack = false, showScale = false} ) {
+function MirrorView ( {shape, zoom = 65, showGlass = true, showBack = false, showDims = 0} ) {
 
 	const origin = shape.getOrigin();
 	const viewBox = `${origin.x - (110 - zoom)/2} ${origin.y - (110 - zoom)/2} ${110 - zoom} ${110 - zoom}`
@@ -9,11 +9,21 @@ function MirrorView ( {shape, zoom = 65, showGlass = true, showBack = false, sho
 	const rabbetSVG = shape.rabbet.getSVGData()
   const mirrorSVG = shape.mirror.getSVGData()
   const size = {dx: shape.width, dy: shape.height}
-
   const sz = {x: 110 - zoom, y: 110 - zoom }
   const pix = {x: size.dx * 500 / sz.x, y: size.dy * 500 / sz.y}
-  console.log( `${viewBox}: ${sz.x} ${sz.y}` )
-  console.log( `${pix.x} ${pix.y}` )
+
+  const extremes = shape.outside.getExtremes();
+  const limits = {
+    left: 250 - pix.y/2 + (pix.y * (extremes.left.y - extremes.top.y) / size.dy) - 10,
+    right: 250 - pix.y/2 + (pix.y * (extremes.right.y - extremes.top.y) / size.dy) - 10,
+    top: 250 - pix.x/2 + (pix.x * (extremes.top.x - extremes.left.x) / size.dx) + 10,
+    bottom: 250 - pix.x/2 + (pix.x * (extremes.bottom.x - extremes.left.x) / size.dx) + 10
+  }
+
+  if( showBack ) {
+    limits.top = 250 + pix.x/2 - (pix.x * (extremes.top.x - extremes.left.x) / size.dx) + 10
+    limits.bottom = 250 + pix.x/2 - (pix.x * (extremes.bottom.x - extremes.left.x) / size.dx) + 10
+  }
 
 	return (
     <div
@@ -89,7 +99,7 @@ function MirrorView ( {shape, zoom = 65, showGlass = true, showBack = false, sho
         />}
       </svg>
 
-      { showScale && <svg
+      { showDims > 0 && <svg
         style={{position: 'absolute', top: 0, bottom: 0, left: 0, right: 0}}
         version="1.1"
         xmlns="http://www.w3.org/2000/svg"
@@ -105,7 +115,19 @@ function MirrorView ( {shape, zoom = 65, showGlass = true, showBack = false, sho
           </marker>
         </defs>
 
-        <g fill="none">
+        { (showDims & 1) === 1 && <g fill="none">
+          <line
+            strokeWidth="0.5"
+            stroke="red"
+            x1={250 - pix.x/2 - 45} y1={250 - pix.y/2 - 2}
+            x2={limits.top} y2={250 - pix.y/2 - 2}
+          />
+          <line
+            strokeWidth="0.5"
+            stroke="red"
+            x1={250 - pix.x/2 - 45} y1={250 + pix.y/2 + 2}
+            x2={limits.bottom} y2={250 + pix.y/2 + 2}
+          />
           { pix.y > 81 && <line
             markerEnd="url(#arrow)"
             strokeWidth="2.5"
@@ -120,7 +142,7 @@ function MirrorView ( {shape, zoom = 65, showGlass = true, showBack = false, sho
             textAnchor="middle"
             fill="black"
           >
-            {size.dy.toFixed( 1 )}
+            {size.dy.toFixed( 1 )}"
           </text>
           { pix.y > 81 && <line
             markerEnd="url(#arrow)"
@@ -130,6 +152,18 @@ function MirrorView ( {shape, zoom = 65, showGlass = true, showBack = false, sho
             x1={250 - pix.x/2 - 35} y1="235"
             x2={250 - pix.x/2 - 35} y2={250 - pix.y/2 + 20}
           />}
+          <line
+            strokeWidth='0.5'
+            stroke="red"
+            x1={250 - pix.x/2 - 2} y1={250 + pix.y/2 + 45}
+            x2={250 - pix.x/2 - 2} y2={limits.left}
+          />
+          <line
+            strokeWidth="0.5"
+            stroke="red"
+            x1={250 + pix.x/2 + 2} y1={250 + pix.y/2 + 45}
+            x2={250 + pix.x/2 + 2} y2={limits.right}
+          />
           { pix.x > 100 && <line
             markerEnd="url(#arrow)"
             strokeWidth="2.5"
@@ -144,7 +178,7 @@ function MirrorView ( {shape, zoom = 65, showGlass = true, showBack = false, sho
             textAnchor="middle"
             fill="black"
           >
-            {size.dx.toFixed( 1 )}
+            {size.dx.toFixed( 1 )}"
           </text>
           { pix.x > 100 && <line
             markerEnd="url(#arrow)"
@@ -154,7 +188,7 @@ function MirrorView ( {shape, zoom = 65, showGlass = true, showBack = false, sho
             y1={250 + pix.y/2 + 35} x1="225"
             y2={250 + pix.y/2 + 35} x2={250 - pix.x/2 + 20}
           />}
-        </g>
+        </g>}
       </svg>}
     </div>
 	)
