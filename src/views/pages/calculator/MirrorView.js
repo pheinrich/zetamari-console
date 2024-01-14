@@ -13,6 +13,7 @@ function MirrorView ( {shape, zoom = 65, showGlass = true, showBack = false, sho
   const pix = {x: size.dx * 500 / sz.x, y: size.dy * 500 / sz.y}
 
   const extremes = shape.outside.getExtremes();
+  
   const limits = {
     left: 250 - pix.y/2 + (pix.y * (extremes.left.y - extremes.top.y) / size.dy) - 10,
     right: 250 - pix.y/2 + (pix.y * (extremes.right.y - extremes.top.y) / size.dy) - 10,

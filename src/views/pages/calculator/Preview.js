@@ -14,7 +14,7 @@ import Icon from 'src/@core/components/icon'
 import { styled } from '@mui/material/styles'
 import Slider from '@mui/material/Slider'
 import Switch from '@mui/material/Switch'
-import ToolTip from '@mui/material/ToolTip'
+import Tooltip from '@mui/material/Tooltip'
 import Typography from '@mui/material/Typography'
 
 import OptionsMenu from 'src/@core/components/option-menu'
@@ -66,34 +66,34 @@ const Preview = () => {
             <MirrorView shape={shape} zoom={zoom} showGlass={showGlass} showBack={showBack} showDims={showDims} />
             <Grid container justifyContent='space-between' alignItems='flex-end'>
               <Grid item xs={6}>
-                <ToolTip title={showBack ? 'Show Front' : 'Show Back'}>
+                <Tooltip title={showBack ? 'Show Front' : 'Show Back'}>
                   <Checkbox
                     checked={showBack}
                     icon={<Icon icon='bi:back' fontSize={20} />}
                     checkedIcon={<Icon icon='bi:front' fontSize={20} />}
                     onChange={() => setShowBack( !showBack )} />
-                </ToolTip>
-                <ToolTip title={showGlass ? 'Hide Glass' : 'Show Glass'}>
+                </Tooltip>
+                <Tooltip title={showGlass ? 'Hide Glass' : 'Show Glass'}>
                   <Checkbox
                     checked={showGlass}
                     icon={<Icon icon='mdi:mirror' fontSize={24} />}
                     checkedIcon={<Icon icon='mdi:mirror' fontSize={24} />}
                     onChange={() => setShowGlass( !showGlass )} />
-                </ToolTip>
-                <ToolTip title={(showDims & 1) === 1 ? 'Hide Outside Dimensions' : 'Show Outside Dimensions'}>
+                </Tooltip>
+                <Tooltip title={(showDims & 1) === 1 ? 'Hide Outside Dimensions' : 'Show Outside Dimensions'}>
                   <Checkbox
                     checked={(showDims & 1) === 1}
                     icon={<Icon icon='mdi:border-outside' fontSize={24} />}
                     checkedIcon={<Icon icon='mdi:border-outside' fontSize={24} />}
                     onChange={() => setShowDims( showDims ^ 1 )} />
-                </ToolTip>
-                <ToolTip title={(showDims & 2) === 2 ? 'Hide Inside Dimensions' : 'Show Inside Dimensions'}>
+                </Tooltip>
+                <Tooltip title={(showDims & 2) === 2 ? 'Hide Inside Dimensions' : 'Show Inside Dimensions'}>
                   <Checkbox
                     checked={(showDims & 2) === 2}
                     icon={<Icon icon='mdi:border-inside' fontSize={24} />}
                     checkedIcon={<Icon icon='mdi:border-inside' fontSize={24} />}
                     onChange={() => setShowDims( showDims ^ 2 )} />
-                </ToolTip>
+                </Tooltip>
               </Grid>
               <Grid item xs={6}>
                 <Slider
