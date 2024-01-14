@@ -2,8 +2,23 @@ import React from 'react'
 import { Shape } from 'src/modules/shape.mjs'
 import Dimensions from 'src/views/pages/calculator/Dimensions.js'
 
-function MirrorView ( {shape, zoom = 65, showGlass = true, showBack = false, showDims = 0} ) {
+function SVG( { fill, color, stroke, data } )
+{
+  return (
+    <path
+      fill={fill}
+      stroke={color}
+      strokeWidth={stroke}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeOpacity="1"
+      d={data}
+    />
+  ) 
+}
 
+function MirrorView( {shape, zoom = 65, showGlass = true, showBack = false, showDims = 0} )
+{
 	const origin = shape.getOrigin();
 	const viewBox = `${origin.x - (110 - zoom)/2} ${origin.y - (110 - zoom)/2} ${110 - zoom} ${110 - zoom}`
 	const substrateSVG = `${shape.outside.getSVGData()} ${shape.inside.getSVGData()}`
@@ -39,54 +54,22 @@ function MirrorView ( {shape, zoom = 65, showGlass = true, showBack = false, sho
           </linearGradient>
         </defs>
 
-        { showBack && <path
-          id="outside"
-          fill="#eda"
-          strokeWidth="0.1"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeOpacity="1"
-          stroke="#000"
-          d={substrateSVG}
+        { showBack && <SVG fill='#eda' stroke='0.1' color='#000' data={substrateSVG} />}
+        { showGlass && <SVG
+          fill={showBack ? 'url(#mirrorBackGrad)' : 'url(#mirrorFrontGrad)'}
+          stroke='0.05'
+          color='#888'
+          data={mirrorSVG}
         />}
-
-        { showGlass && <path
-          id="mirror"
-          fill={showBack ? "url(#mirrorBackGrad)" : "url(#mirrorFrontGrad)"}
-          strokeWidth="0.05"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeOpacity="1"
-          stroke="#888"
-          d={mirrorSVG}
-        />}
-
-        { showBack && <path
-          id="rabbet"
-          fill="none"
-          strokeWidth="0.05"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeOpacity="1"
-          stroke="#444"
-          d={rabbetSVG}
-        />}
-
-        { !showBack && <path
-          id="outside"
-          fill="#eda"
-          strokeWidth="0.1"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeOpacity="1"
-          stroke="#000"
-          d={substrateSVG}
-        />}
+        { showBack ?
+          <SVG fill='none' stroke='0.05' color='#444' data={rabbetSVG} />
+          :
+          <SVG fill='#eda' stroke='0.1' color='#000' data={substrateSVG} />
+        }
       </svg>
 
       { (showDims & 1) === 1 && <Dimensions
         polygon={shape.outside}
-        delta={{ x: -1, y: 1 }}
         zoom={zoom}
         isFlipped={showBack}
         color="red"
@@ -94,7 +77,6 @@ function MirrorView ( {shape, zoom = 65, showGlass = true, showBack = false, sho
 
       { (showDims & 2) === 2 && <Dimensions
         polygon={showBack && showGlass ? shape.mirror : shape.inside}
-        delta={{ x: 1, y: -1 }}
         zoom={zoom}
         isFlipped={showBack}
         color="blue"
