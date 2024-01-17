@@ -1,77 +1,53 @@
 import React from 'react'
 import { Shape } from 'src/modules/polygon.mjs'
 
-/* Display distance from polygon */
 const OFFSET = 35   // Display distance from polygon
 const PADDING = 10  // Extra spacing
 
-function HorzLimitLine( { width, height, x, dx, dy, color } )
+function HorzLimitLine( {start, end, y, color} )
 {
-	const baseline = (height + dy) / 2 + (dy < 0 ? -2 : 2)
-
 	return (
-		<line
-			strokeWidth='0.5'
-			stroke={color}
-			x1={(width - dx) / 2 - OFFSET - PADDING} y1={baseline}
-			x2={x} y2={baseline}
-		/>
+    <line
+    	x1={start - OFFSET - PADDING}
+    	y1={y}
+    	x2={end + PADDING }
+    	y2={y}
+    	stroke={color}
+    	strokeWidth='0.5'
+    />
+  )
+}
+
+function VertLimitLine( {start, end, x, color} )
+{
+	return (
+    <line
+    	x1={x}
+    	y1={start + OFFSET + PADDING}
+    	x2={x}
+    	y2={end - PADDING}
+    	stroke={color}
+    	strokeWidth='0.5'
+    />
    )
 }
 
-function VertLimitLine( { width, height, y, dx, dy, color } )
+function ArrowHead( {start, end, color, marker} )
 {
-	const baseline = (width + dx) / 2 + (dx < 0 ? -2 : 2)
-
 	return (
 		<line
-			strokeWidth='0.5'
+			x1={start.x} y1={start.y} x2={end.x} y2={end.y}
 			stroke={color}
-			x1={baseline} y1={(height + dy)/2 + OFFSET + PADDING}
-			x2={baseline} y2={y}
-		/>
-   )
-}
-
-function HorzArrow( { width, height, dx, dy, markerEnd, color } )
-{
-	const y = (height + dy) / 2 + (dy < 0 ? -OFFSET : OFFSET)
-	const start = (width / 2) + (dx < 0 ? -OFFSET + PADDING : OFFSET - PADDING)
-	const end = (width + dx) / 2 + 2*(dx < 0 ? PADDING : -PADDING)
-
-	return (
-		<line
-			markerEnd={markerEnd}
 			strokeWidth='2.5'
+			markerEnd={marker}
 			fill='none'
-			stroke={color}
-			x1={start} y1={y}
-			x2={end} y2={y}
 		/>
 	)
 }
 
-function VertArrow( { width, height, dx, dy, markerEnd, color } )
+function Label( {x, y, value} )
 {
-	const x = (width + dx) / 2 + (dx < 0 ? -OFFSET : OFFSET)
-	const start = (height / 2) + (dy < 0 ? -OFFSET + 2*PADDING : OFFSET - 2*PADDING)
-	const end = (height + dy) / 2 + 2*(dy < 0 ? PADDING : -PADDING)
-
 	return (
-		<line
-			markerEnd={markerEnd}
-			strokeWidth='2.5'
-			fill='none'
-			stroke={color}
-			x1={x} y1={start}
-			x2={x} y2={end}
-		/>
-	)
-}
-
-function Label( { x, y, value } )
-{
-	return(
     <text
     	x={x} y={y}
       dominantBaseline='middle'
@@ -83,26 +59,33 @@ function Label( { x, y, value } )
   )
 }
 
-function Dimensions ( {polygon, zoom = 65, isFlipped = false, color = "red", width = 500, height = 500} )
+function shapeToView( shape, origin, vw, vh, scale )
+{
+	{/* Map from object coordinates to viewport coordinates. */}
+	
+	return {
+		x: ((shape.x - origin.x) * scale.x) + vw/2,
+		y: ((shape.y - origin.y) * scale.y) + vh/2
+	}
+}
+
+function Dimensions( {polygon, origin, zoom = 65, isFlipped = false, color = "red", width = 500, height = 500} )
 {
 	const dims = polygon.getDims()
-	const dx = dims.width * width / (110 - zoom)
-	const dy = dims.height * height / (110 - zoom)
-
-  const limits = {
-    left: (height - dy)/2 + (dy * (dims.left.y - dims.top.y) / dims.height) - 10,
-    right: (height - dy)/2 + (dy * (dims.right.y - dims.top.y) / dims.height) - 10,
-    top: (width - dx)/2 + (dx * (dims.top.x - dims.left.x) / dims.width) + 10,
-    bottom: (width - dx)/2 + (dx * (dims.bottom.x - dims.left.x) / dims.width) + 10
-  }
-
-  if( isFlipped ) {
-    limits.top = (width + dx)/2 - (dx * (dims.top.x - dims.left.x) / dims.width) + 10
-    limits.bottom = (width + dx)/2 - (dx * (dims.bottom.x - dims.left.x) / dims.width) + 10
-  }
-
 	const arrow = `${color}-arrow`
 	const markerEnd = `url(#${arrow})`
+
+	const scale = { x: width / (110 - zoom), y: height / (110 - zoom) }
+	const top = shapeToView( dims.top, origin, width, height, scale )
+	const right = shapeToView( dims.right, origin, width, height, scale )
+	const bottom = shapeToView( dims.bottom, origin, width, height, scale )
+	const left = shapeToView( dims.left, origin, width, height, scale )
+
+  if( isFlipped )
+  {
+		top.x = width - top.x
+		bottom.x = width - bottom.x
+  }
 
 	return (
 		<svg
@@ -120,26 +103,38 @@ function Dimensions ( {polygon, zoom = 65, isFlipped = false, color = "red", wid
         </marker>
       </defs>
 
-    	{ /* limit lines, always drawn */ }
-      <HorzLimitLine width={width} height={height} x={limits.top} dx={dx} dy={-dy} color={color} />
-      <VertLimitLine width={width} height={height} y={limits.right} dx={dx} dy={dy} color={color} />
-      <HorzLimitLine width={width} height={height} x={limits.bottom} dx={dx} dy={dy} color={color} />
-      <VertLimitLine width={width} height={height} y={limits.left} dx={-dx} dy={dy} color={color} />
+			<HorzLimitLine start={left.x} end={top.x} y={top.y - 2} color={color}/>
+			<HorzLimitLine start={left.x} end={bottom.x} y={bottom.y + 2} color={color}/>
+			<VertLimitLine start={bottom.y} end={left.y} x={left.x - 2} color={color} />
+			<VertLimitLine start={bottom.y} end={right.y} x={right.x + 2} color={color} />
 
-      { /* x-axis arrows, drawn if space available */ }
-      { dy > 100 && <>
-      	<HorzArrow width={width} height={height} dx={-dx} dy={dy} markerEnd={markerEnd} color={color} />
-      	<HorzArrow width={width} height={height} dx={dx} dy={dy} markerEnd={markerEnd} color={color} />
-      </>}
-      { /* y-axis arrows, drawn if space available */ }
-      { dy > 81 && <>
-      	<VertArrow width={width} height={height} dx={-dx} dy={-dy} markerEnd={markerEnd} color={color} />
-      	<VertArrow width={width} height={height} dx={-dx} dy={dy} markerEnd={markerEnd} color={color} />
-      </>}
+      { 92 < (bottom.y - top.y) && <>
+				<ArrowHead
+					start={{x: left.x - OFFSET, y: (top.y + bottom.y)/2 - 2*PADDING}}
+					end={{x: left.x - OFFSET, y: top.y + 2*PADDING}}
+					color={color} marker={markerEnd}
+				/>
+				<ArrowHead
+					start={{x: left.x - OFFSET, y: (top.y + bottom.y)/2 + 2*PADDING}}
+					end={{x: left.x - OFFSET, y: bottom.y - 2*PADDING}}
+					color={color} marker={markerEnd}
+				/>
+			</>}
+      { 110 < (right.x - left.x) && <>
+				<ArrowHead
+					start={{x: (left.x + right.x)/2 - 3*PADDING, y: bottom.y + OFFSET}}
+					end={{x: left.x + 2*PADDING, y: bottom.y + OFFSET}}
+					color={color} marker={markerEnd}
+				/>
+				<ArrowHead
+					start={{x: (left.x + right.x)/2 + 3*PADDING, y: bottom.y + OFFSET}}
+					end={{x: right.x - 2*PADDING, y: bottom.y + OFFSET}}
+					color={color} marker={markerEnd}
+				/>
+			</>}
 
-      { /* width and height dimensions */ }
-     	<Label x={width / 2} y={(height + dy) / 2 + OFFSET} value={dims.width} />
-      <Label x={(width - dx) / 2 - OFFSET} y={height/2} value={dims.height} />
+     	<Label x={(left.x + right.x)/2} y={bottom.y + OFFSET} value={dims.width} />
+      <Label x={left.x - OFFSET} y={(top.y + bottom.y)/2} value={dims.height} />
     </svg>
   )
 }

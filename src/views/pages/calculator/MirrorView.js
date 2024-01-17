@@ -69,6 +69,7 @@ function MirrorView( {shape, zoom = 65, showGlass = true, showBack = false, show
 
       { (showDims & 1) === 1 && <Dimensions
         polygon={shape.outside}
+        origin={origin}
         zoom={zoom}
         isFlipped={showBack}
         color='red'
@@ -76,6 +77,7 @@ function MirrorView( {shape, zoom = 65, showGlass = true, showBack = false, show
 
       { (showDims & 2) === 2 && <Dimensions
         polygon={showBack && showGlass ? shape.mirror : shape.inside}
+        origin={origin}
         zoom={zoom}
         isFlipped={showBack}
         color='blue'
