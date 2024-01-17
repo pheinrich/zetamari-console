@@ -187,13 +187,13 @@ class Polygon
 			let left = { ...top }
 
 			coords.forEach( pt => {
-				if( pt.x < left.x )
+				if( pt.x < left.x || (pt.x === left.x && pt.y > left.y) )
 					left = { x: pt.x, y: pt.y }
-				if( pt.x > right.x )
+				if( pt.x > right.x || (pt.x === right.x && pt.y > right.y) )
 					right = { x: pt.x, y: pt.y }
-				if( pt.y < top.y )
+				if( pt.y < top.y || (pt.y === top.y && pt.x < top.x) )
 					top = { x: pt.x, y: pt.y }
-				if( pt.y > bottom.y )
+				if( pt.y > bottom.y || (pt.y === bottom.y && pt.x < bottom.x) )
 					bottom = { x: pt.x, y: pt.y }
 			})
 
