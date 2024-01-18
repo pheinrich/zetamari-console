@@ -2,7 +2,7 @@ import React from 'react'
 import { Shape } from 'src/modules/shape.mjs'
 import Dimensions from 'src/views/pages/calculator/Dimensions.js'
 
-function SVG( { fill, color, stroke, data } )
+function SVG( { fill, color, stroke, data, transform } )
 {
   return (
     <path
@@ -12,6 +12,7 @@ function SVG( { fill, color, stroke, data } )
       strokeLinecap='round'
       strokeLinejoin='round'
       strokeOpacity='1'
+      transform={transform}
       d={data}
     />
   ) 
@@ -24,6 +25,7 @@ function MirrorView( {shape, zoom = 65, showGlass = true, showBack = false, show
 	const substrateSVG = `${shape.outside.getSVGData()} ${shape.inside.getSVGData()}`
 	const rabbetSVG = shape.rabbet.getSVGData()
   const mirrorSVG = shape.mirror.getSVGData()
+  const obbSVG = shape.outside.getOBBSVGData()
 
 	return (
     <div
@@ -37,7 +39,7 @@ function MirrorView( {shape, zoom = 65, showGlass = true, showBack = false, show
         width='500'
         height='500'
         viewBox={viewBox}
-        transform={showBack && 'scale(-1 1)'}
+        transform={showBack ? 'scale(-1 1)' : ''}
       >
         <defs>
           <linearGradient id='mirrorBackGrad' x1='0%' y1='0%' x2='100%' y2='100%'>
@@ -65,6 +67,7 @@ function MirrorView( {shape, zoom = 65, showGlass = true, showBack = false, show
           :
           <SVG fill='#eda' stroke='0.1' color='#000' data={substrateSVG} />
         }
+        <SVG fill='none' stroke='0.025' color='green' data={obbSVG} />
       </svg>
 
       { (showDims & 1) === 1 && <Dimensions

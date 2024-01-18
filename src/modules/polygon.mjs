@@ -5,6 +5,7 @@ import Coordinate from 'jsts/org/locationtech/jts/geom/Coordinate'
 import GeometricShapeFactory from 'jsts/org/locationtech/jts/util/GeometricShapeFactory'
 import Geometry from 'jsts/org/locationtech/jts/geom/Geometry'
 import GeometryFactory from 'jsts/org/locationtech/jts/geom/GeometryFactory'
+import MinimumDiameter from 'jsts/org/locationtech/jts/algorithm/MinimumDiameter'
 
 const GA_ADJ = 1.0 - Math.sqrt( 3 )/2;
 
@@ -155,8 +156,10 @@ class Polygon
 	{
 		if( null === this.minBoundRect )
 		{
-			// TODO: replace this cheat with true minimum bounding rectangle computation.
-			let env = this.geometry.getEnvelopeInternal();
+			// // TODO: replace this cheat with true minimum bounding rectangle computation.
+			// let env = this.geometry.getEnvelopeInternal();
+
+			let env = MinimumDiameter.getMinimumRectangle( this.geometry )
 			this.minBoundRect = {
 				x: env.getMinX(),
 				y: env.getMinY(),
@@ -167,6 +170,26 @@ class Polygon
 		}
 
 		return this.minBoundRect;
+	}
+
+	getOBBSVGData()
+	{
+    let obb = MinimumDiameter.getMinimumRectangle( this.geometry );
+    let coords = obb.getCoordinates()
+		let rad = Math.atan( (coords[1].y - coords[0].y) / (coords[1].x - coords[0].x) )
+		let origin = this.getOrigin()
+		let af = AffineTransformation.translationInstance( -origin.x, -origin.y )
+
+		af.rotate( -rad )
+		af.translate( origin.x, origin.y )
+		obb = af.transform( obb )
+		coords = obb.getCoordinates()
+
+    let data = `M ${coords[0].x},${coords[0].y}`;
+    for( let i = 1; i < coords.length; i++ )
+      data += ` L ${coords[i].x},${coords[i].y}`;
+
+    return data;
 	}
 
 	getMinBoundRectArea()

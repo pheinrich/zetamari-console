@@ -118,7 +118,7 @@ function Preview( {id} ) {
                 />
               </Stack>
             </Stack>
-            <Stack bgcolor="green" sx={{ width: '100%', height: '100px', ml: '20px'}}>
+            <Stack sx={{ width: '100%', height: '100px', ml: '20px'}}>
               <Box sx={{ height: '100%'}} bgcolor="red">
               </Box>
             </Stack>
