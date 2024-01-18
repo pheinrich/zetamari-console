@@ -156,40 +156,25 @@ class Polygon
 	{
 		if( null === this.minBoundRect )
 		{
-			// // TODO: replace this cheat with true minimum bounding rectangle computation.
-			// let env = this.geometry.getEnvelopeInternal();
+			let obb = MinimumDiameter.getMinimumRectangle( this.geometry )
+			let coords = obb.getCoordinates()
+			let theta = 180*Math.atan( (coords[1].x - coords[0].x) / (coords[1].y- coords[0].y) ) / Math.PI
 
-			let env = MinimumDiameter.getMinimumRectangle( this.geometry )
-			this.minBoundRect = {
-				x: env.getMinX(),
-				y: env.getMinY(),
-				dx: env.getWidth(),
-				dy: env.getHeight(),
-				theta: 0
+			while( -90 > theta )
+				theta += 90
+			while( 90 < theta )
+				theta -= 90
+
+			console.log( `theta: ${theta}` )
+
+			this.minBoundRect =
+			{
+				coords: [...coords],
+				theta: theta
 			}
 		}
 
 		return this.minBoundRect;
-	}
-
-	getOBBSVGData()
-	{
-    let obb = MinimumDiameter.getMinimumRectangle( this.geometry );
-    let coords = obb.getCoordinates()
-		let rad = Math.atan( (coords[1].y - coords[0].y) / (coords[1].x - coords[0].x) )
-		let origin = this.getOrigin()
-		let af = AffineTransformation.translationInstance( -origin.x, -origin.y )
-
-		af.rotate( -rad )
-		af.translate( origin.x, origin.y )
-		obb = af.transform( obb )
-		coords = obb.getCoordinates()
-
-    let data = `M ${coords[0].x},${coords[0].y}`;
-    for( let i = 1; i < coords.length; i++ )
-      data += ` L ${coords[i].x},${coords[i].y}`;
-
-    return data;
 	}
 
 	getMinBoundRectArea()
@@ -235,9 +220,9 @@ class Polygon
 		return this.geometry.getLength();
 	}
 
-	getSVGData()
+	getSVGData( isOBB = false )
 	{
-    let coords = this.geometry.getCoordinates();
+    let coords = isOBB ? this.getMinBoundRect().coords : this.geometry.getCoordinates();
     let data = `M ${coords[0].x},${coords[0].y}`;
 
     for( let i = 1; i < coords.length; i++ )
