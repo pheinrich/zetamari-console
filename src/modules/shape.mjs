@@ -1,17 +1,17 @@
-import { Polygon } from 'src/modules/polygon.mjs';
+import { Polygon } from 'src/modules/polygon.mjs'
 
-const BUFFER_RABBET = 0.3125;
-const BUFFER_MIRROR = 0.125;
+const BUFFER_RABBET = 0.3125
+const BUFFER_MIRROR = 0.125
 
-const TIMEADJ_PICK = 7.5;
-const TIMEADJ_GLUE = 5.5;
-const TIMEADJ_GROUT = 5.75;
+const TIMEADJ_PICK = 7.5
+const TIMEADJ_GLUE = 5.5
+const TIMEADJ_GROUT = 5.75
 
-const AVG_BITFEED = 150;
-const AVG_FULLSHEET_LAYOUT = 30;
-const AVG_FULLSHEET_CUT = 45;
-const AVG_FULLSHEET_SAND = 45;
-const AVG_FULLSHEET_ALL = AVG_FULLSHEET_LAYOUT + AVG_FULLSHEET_CUT + AVG_FULLSHEET_SAND;
+const AVG_BITFEED = 150
+const AVG_FULLSHEET_LAYOUT = 30
+const AVG_FULLSHEET_CUT = 45
+const AVG_FULLSHEET_SAND = 45
+const AVG_FULLSHEET_ALL = AVG_FULLSHEET_LAYOUT + AVG_FULLSHEET_CUT + AVG_FULLSHEET_SAND
 
 const PrimitiveShapeType = Object.freeze({
 	ChapelArch: 'Ca',
@@ -126,6 +126,9 @@ class Shape
 		}
 
 		this.mirror = Polygon.buffer( this.rabbet, -BUFFER_MIRROR );
+
+		let pockets = this.rabbet.getSharpCorners( BUFFER_RABBET )
+		this.rabbet.addPockets( pockets )	
 
 		// Force recalculation on next access.
 		this.areas = null;

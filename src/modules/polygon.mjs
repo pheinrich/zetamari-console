@@ -1,13 +1,20 @@
 import { PrimitiveShapeType } from 'src/modules/shape.mjs'
 import AffineTransformation from 'jsts/org/locationtech/jts/geom/util/AffineTransformation'
+import ArrayList from 'jsts/java/util/ArrayList'
 import BufferOp from 'jsts/org/locationtech/jts/operation/buffer/BufferOp'
+import BufferParameters from 'jsts/org/locationtech/jts/operation/buffer/BufferParameters'
 import Coordinate from 'jsts/org/locationtech/jts/geom/Coordinate'
 import GeometricShapeFactory from 'jsts/org/locationtech/jts/util/GeometricShapeFactory'
 import Geometry from 'jsts/org/locationtech/jts/geom/Geometry'
 import GeometryFactory from 'jsts/org/locationtech/jts/geom/GeometryFactory'
 import MinimumDiameter from 'jsts/org/locationtech/jts/algorithm/MinimumDiameter'
+import UnaryUnionOp from 'jsts/org/locationtech/jts/operation/union/UnaryUnionOp'
+import Vector2D from 'jsts/org/locationtech/jts/math/Vector2D'
 
-const GA_ADJ = 1.0 - Math.sqrt( 3 )/2;
+const GA_ADJ = 1.0 - Math.sqrt( 3 )/2
+const SHARP_ANGLE = Math.PI / 6
+const ANGLE_COS = Math.cos( SHARP_ANGLE )
+const POCKET_DIAMETER = 0.6
 
 class Polygon
 {
@@ -109,7 +116,10 @@ class Polygon
 
 	static buffer( polygon, delta )
 	{
-		return new Polygon( BufferOp.bufferOp( polygon.geometry, delta ) );
+		let parms = new BufferParameters()
+		parms.setJoinStyle( BufferParameters.JOIN_MITRE )
+
+		return new Polygon( BufferOp.bufferOp( polygon.geometry, delta, parms ) );
 	}
 
 	constructor( geometry )
@@ -130,6 +140,24 @@ class Polygon
 		this.geometry = af.transform( this.geometry );
 		this.minBoundRect = null;
 		this.dims = null;
+	}
+
+	addPockets( pockets )
+	{
+		let coll = new ArrayList()
+		let gsf = new GeometricShapeFactory()
+
+		gsf.setWidth( POCKET_DIAMETER )
+		gsf.setHeight( POCKET_DIAMETER )
+		gsf.setNumPoints( 24 )
+
+		pockets.forEach( pocket => {
+			gsf.setCentre( new Coordinate( pocket.x, pocket.y ) )
+			coll.add( gsf.createCircle() )
+		})
+
+		coll.add( this.geometry )
+		this.geometry = UnaryUnionOp.union( coll )
 	}
 
 	getArea()
@@ -158,14 +186,12 @@ class Polygon
 		{
 			let obb = MinimumDiameter.getMinimumRectangle( this.geometry )
 			let coords = obb.getCoordinates()
-			let theta = 180*Math.atan( (coords[1].x - coords[0].x) / (coords[1].y- coords[0].y) ) / Math.PI
+			let theta = 180*Math.atan( (coords[1].x - coords[0].x) / (coords[1].y - coords[0].y) ) / Math.PI
 
 			while( -90 > theta )
 				theta += 90
 			while( 90 < theta )
 				theta -= 90
-
-			console.log( `theta: ${theta}` )
 
 			this.minBoundRect =
 			{
@@ -213,6 +239,40 @@ class Polygon
 		}
 
 		return this.dims
+	}
+
+	isSharpAngle( u, v )
+	{
+		let cosine = u.dot( v ) / (u.length() * v.length())
+		let term = 2 + 2*cosine
+
+		return [Math.abs( cosine ) <= ANGLE_COS, Math.sqrt( term )/term ]
+	}
+
+	getSharpCorners( rabbet )
+	{
+		let coords = this.geometry.getCoordinates()
+		let size = coords.length - 1
+		let result = []
+
+		for( let i = 0; i < size; i++ )
+		{
+			let curr = coords[i]
+			let prev = coords[(i + size - 1) % size]
+			let next = coords[(i + 1) % size]
+
+			let u = new Vector2D( prev, curr )
+			let v = new Vector2D( curr, next )
+			let [isSharp, mag] = this.isSharpAngle( u, v )
+
+			if( isSharp )
+			{
+				let delta = new Vector2D( u.toCoordinate(), v.toCoordinate() ).normalize().multiply( rabbet*mag )
+				result.push( { x: curr.x + delta.getX(), y: curr.y + delta.getY() } )
+			}
+		}
+
+		return result
 	}
 
 	getPerimeter()
