@@ -4,26 +4,42 @@ const ROOT3 = Math.sqrt( 3 );
 
 class PrimitiveShape extends Shape
 {
-	constructor( type, width, height, border )
+	constructor( type, variants, width, height, border )
 	{
-		super( type );
-		this.initOutlines( width, height, border );
+		super( type, variants );
+		this.initOutlines( 0, width, height, border );
 	}
 }
 
 class ChapelArch extends PrimitiveShape
 {
+	static variants = [
+		{
+			width: 11,
+			height: 23,
+			border: 2.5
+		}
+	]
+
 	constructor( width, height, border )
 	{
-		super( PrimitiveShapeType.ChapelArch, width, height, border );
+		super( PrimitiveShapeType.ChapelArch, ChapelArch.variants, width, height, border );
 	}
 }
 
 class Circle extends PrimitiveShape
 {
+	static variants = [
+		{
+			width: 17,
+			height: 17,
+			border: 2.75
+		}
+	]
+
 	constructor( diameter, border )
 	{
-		super( PrimitiveShapeType.Circle, diameter, diameter, border );
+		super( PrimitiveShapeType.Circle, Circle.variants, diameter, diameter, border );
 	}
 
 	setDiameter( diameter )
@@ -46,33 +62,65 @@ class Circle extends PrimitiveShape
 
 class GothicArch extends PrimitiveShape
 {
+	static variants = [
+		{
+			width: 10,
+			height: 16,
+			border: 2.25
+		}
+	]
+
 	constructor( width, height, border )
 	{
-		super( PrimitiveShapeType.GothicArch, width, height, border );
+		super( PrimitiveShapeType.GothicArch, GothicArch.variants, width, height, border );
 	}
 }
 
 class Oval extends PrimitiveShape
 {
+	static variants = [
+		{
+			width: 14,
+			height: 20,
+			border: 2.75
+		}
+	]
+
 	constructor( width, height, border )
 	{
-		super( PrimitiveShapeType.Oval, width, height, border );
+		super( PrimitiveShapeType.Oval, Oval.variants, width, height, border );
 	}
 }
 
 class Rectangle extends PrimitiveShape
 {
+	static variants = [
+		{
+			width: 11.5,
+			height: 18.5,
+			border: 2.5
+		}
+	]
+
 	constructor( width, height, border )
 	{
-		super( PrimitiveShapeType.Rectangle, width, height, border );
+		super( PrimitiveShapeType.Rectangle, Rectangle.variants, width, height, border );
 	}
 }
 
 class Square extends PrimitiveShape
 {
+	static variants = [
+		{
+			width: 12,
+			height: 12,
+			border: 2.75
+		}
+	]
+
 	constructor( side, border )
 	{
-		super( PrimitiveShapeType.Square, side, side, border );
+		super( PrimitiveShapeType.Square, Square.variants, side, side, border );
 	}
 
 	setSide( side )
@@ -95,9 +143,17 @@ class Square extends PrimitiveShape
 
 class VesicaPiscis extends PrimitiveShape
 {
+	static variants = [
+		{
+			width: 15,
+			height: 15 * ROOT3,
+			border: 2.5
+		}
+	]
+
 	constructor( width, border )
 	{
-		super( PrimitiveShapeType.VesicaPiscis, width, width * ROOT3, border );
+		super( PrimitiveShapeType.VesicaPiscis, VesicaPiscis.variants, width, width * ROOT3, border );
 	}
 
 	setWidth( width )

@@ -2,8 +2,6 @@ import { useState } from 'react'
 
 // ** MUI Imports
 import Box from '@mui/material/Box'
-import Button from '@mui/material/Button'
-import ButtonGroup from '@mui/material/ButtonGroup'
 import Card from '@mui/material/Card'
 import CardContent from '@mui/material/CardContent'
 import CardHeader from '@mui/material/CardHeader'
@@ -16,21 +14,26 @@ import { styled } from '@mui/material/styles'
 import Slider from '@mui/material/Slider'
 import Stack from '@mui/material/Stack'
 import Switch from '@mui/material/Switch'
+import Tab from '@mui/material/Tab'
+import Tabs from '@mui/material/Tabs'
 import Tooltip from '@mui/material/Tooltip'
 import Typography from '@mui/material/Typography'
 
 import OptionsMenu from 'src/@core/components/option-menu'
 
 import MirrorView from 'src/views/pages/calculator/MirrorView'
+import MirrorOptionsForm from 'src/views/pages/calculator/MirrorOptionsForm'
+import { PrimitiveShapeType } from 'src/modules/shape.mjs'
 import { ShapeFactory } from 'src/modules/shape_factory.mjs'
 import { ShapePresets } from 'src/modules/shape_presets.mjs'
 
-// Styled Box component
-const StyledBox = styled(Box)(({ theme }) => ({
-  [theme.breakpoints.up('sm')]: {
-    borderRight: `1px solid ${theme.palette.divider}`
-  }
-}))
+function a11yProps( index )
+{
+  return {
+    id: `simple-tab-${index}`,
+    'aria-controls': `simple-tabpanel-${index}`,
+  };
+}
 
 function PreviewOptionsMenu()
 {
@@ -57,19 +60,44 @@ function PreviewOptionsMenu()
   )
 }
 
-function Preview( {id} ) {
-  const preset = ShapePresets.all[ typeof id === 'undefined' ? 2 : parseInt( id )]
-  const shape = ShapeFactory.createFromPreset( preset )
+function PreviewTabPanel( props )
+{
+  const { children, value, index, ...other } = props;
 
+  return (
+    <div
+      role="tabpanel"
+      hidden={value !== index}
+      id={`simple-tabpanel-${index}`}
+      aria-labelledby={`simple-tab-${index}`}
+      {...other}
+    >
+      {value === index && (
+        <Box sx={{ p: 3 }}>
+          {children}
+        </Box>
+      )}
+    </div>
+  );
+}
+
+function Preview( {id} ) {
+  const [shape, setShape] = useState( ShapeFactory.create( PrimitiveShapeType.Oval ) )
   const [showGlass, setShowGlass] = useState( true )
   const [showBack, setShowBack] = useState( false )
   const [showDims, setShowDims] = useState( 0 )
+  const [tab, setTab] = useState( 0 )
   const [zoom, setZoom] = useState( 65 )
+
+  function updateMirrorOptions( type, lod, width, height, border )
+  {
+    setShape( ShapeFactory.create( type, lod, width, height, border ) )
+  }
 
   return (
     <Card>
       <CardHeader
-        title={preset.name}
+        title={shape.getName()}
         action={<PreviewOptionsMenu />}
       />
       <CardContent>
@@ -118,8 +146,24 @@ function Preview( {id} ) {
                 />
               </Stack>
             </Stack>
-            <Stack sx={{ width: '100%', height: '100px', ml: '20px'}}>
-              <Box sx={{ height: '100%'}} bgcolor="red">
+            <Stack sx={{ width: '100%', height: '2', ml: '20px'}}>
+              <Box sx={{ height: '100%'}}>
+                <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
+                  <Tabs value={tab} onChange={(evt, val) => setTab( val )}>
+                    <Tab label="Options" {...a11yProps( 0 )} />
+                    <Tab label="Pricing" {...a11yProps( 1 )} />
+                    <Tab label="Presets" {...a11yProps( 2 )} />
+                  </Tabs>
+                </Box>
+                <PreviewTabPanel value={tab} index={0}>
+                  <MirrorOptionsForm shape={shape} update={updateMirrorOptions}/>
+                </PreviewTabPanel>
+                <PreviewTabPanel value={tab} index={1}>
+                  Pricing
+                </PreviewTabPanel>
+                <PreviewTabPanel value={tab} index={2}>
+                  Presets
+                </PreviewTabPanel>
               </Box>
             </Stack>
           </Stack>

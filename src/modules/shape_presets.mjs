@@ -446,7 +446,7 @@ class ShapePresets
         preset.sku += preset.nominalHeight;
       }
 
-      preset.name = `${preset.chip} ${Shape.getName( preset.type )}`;
+      preset.name = `${preset.chip} ${Shape.getTypeName( preset.type )}`;
       if( preset.hasOwnProperty( 'nickname' ) )
         preset.name += ` (${preset.nickname})`;
     });

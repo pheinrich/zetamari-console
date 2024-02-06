@@ -1,4 +1,6 @@
 import { Polygon } from 'src/modules/polygon.mjs'
+import Geometry from 'jsts/org/locationtech/jts/geom/Geometry'
+
 
 const BUFFER_RABBET = 0.3125
 const BUFFER_MIRROR = 0.125
@@ -47,25 +49,29 @@ class Shape
 			this.shapeNames.set( SVGShapeType[type], type.replace( /[A-Z]/g, letter => ` ${letter}` ).trim() );
 	}
 
-	static getName( type )
+	static getTypeName( type )
 	{
 		return this.shapeNames.get( type );
 	}
 
-	constructor( type )
+	constructor( type, variants )
 	{
-		this.type = type;
+		this.type = type
+		this.variants = variants
+		this.lod = 0
 	}
 
 	setWidth( width )
 	{
-		this.width = width;
-		this.updateOutlines();
+		this.width = width
+		this.nominalWidth = Math.round( width )
+		this.updateOutlines()
 	}
 
 	setHeight( height )
 	{
-		this.height = height;
+		this.height = height
+		this.nominalHeight = Math.round( height )
 		this.updateOutlines();
 	}
 
@@ -75,16 +81,31 @@ class Shape
 		this.updateOutlines();
 	}
 
-	initOutlines( width, height, border, outsidePath, insidePath, rabbetPath )
+	initOutlines( lod, width, height, border )
 	{
-		this.width = width;
-		this.height = height;
-		this.border = border;
-		this.outsidePath = outsidePath;
-		this.insidePath = insidePath;
-		this.rabbetPath = rabbetPath;
+		let variant = this.variants[lod]
 
-		this.updateOutlines();
+		if( 'undefined' !== typeof variant )
+		{
+			this.lod = lod
+			this.nickname = variant.nickname
+			this.width = variant.width
+			this.height = variant.height
+			this.border = variant.border
+			this.outsidePath = variant.outsidePath
+			this.insidePath = variant.insidePath
+			this.rabbetPath = variant.rabbetPath
+		}
+		else
+		{
+			this.width = width
+			this.height = height
+			this.border = border
+		}
+
+		this.nominalWidth = Math.round( this.width )
+		this.nominalHeight = Math.round( this.height )
+		this.updateOutlines()
 	}
 
 	updateOutlines()
@@ -128,26 +149,47 @@ class Shape
 		this.mirror = Polygon.buffer( this.rabbet, -BUFFER_MIRROR );
 
 		let pockets = this.rabbet.getSharpCorners( BUFFER_RABBET )
-		this.rabbet.addPockets( pockets )	
+		this.rabbet.addPockets( pockets )
 
 		// Force recalculation on next access.
-		this.areas = null;
-		this.lengths = null;
-		this.times = null;
+		let fields = ['areas', 'lengths', 'times', 'chip', 'sku', 'name']
+		fields.forEach( f => this[f] = null )
 	}
 
 	getName()
 	{
-		return Shape.getName( this.type );
+		if( !this.name )
+		{
+			this.name = `${this.getChip()} ${Shape.getTypeName( this.type )}`
+			if( this.nickname )
+				this.name += ` (${this.nickname})`
+		}
+
+		return this.name
 	}
 
 	getSKU()
 	{
-		let sku = `${this.type}${this.nominalWidth}`;
-		if( this.nominalWidth !== this.nominalHeight )
-			sku += this.nominalHeight;
+		if( !this.sku )
+		{
+			this.sku = `${this.type}${this.nominalWidth}`
+			if( this.nominalWidth !== this.nominalHeight )
+				this.sku += this.nominalHeight;
+		}
 
 		return sku;
+	}
+
+	getChip()
+	{
+		if( !this.chip )
+		{
+			this.chip = `${this.nominalWidth}"`
+			if( this.nominalWidth !== this.nominalHeight )
+				this.chip += `x${this.nominalHeight}"`
+		}
+
+		return this.chip
 	}
 
 	getOrigin()

@@ -27,7 +27,7 @@ class ShapeFactory
 {
 	static createFromPreset( preset )
 	{
-		return this.create(
+		let shape = this.create(
 			preset.type,
 			preset.actualWidth,
 			preset.actualHeight,
@@ -36,9 +36,14 @@ class ShapeFactory
 			preset.insidePath,
 			preset.rabbetPath
 		)
+
+		if( preset.nickname )
+			shape.setNickname( preset.nickname )
+
+		return shape
 	}
 
-	static create( type, width, height, border, outsidePath, insidePath, rabbetPath )
+	static create( type, lod, width, height, border )
 	{
 		let shape;
 
@@ -47,74 +52,74 @@ class ShapeFactory
 			// PrimitiveShape variants
 			//
 			case PrimitiveShapeType.ChapelArch:
-				shape = new ChapelArch( width, height, border );
-				break;
+				shape = new ChapelArch( width, height, border )
+				break
 
 			case PrimitiveShapeType.Circle:
-				shape = new Circle( width, border );
-				break;
+				shape = new Circle( width, border )
+				break
 
 			case PrimitiveShapeType.GothicArch:
-				shape = new GothicArch( width, height, border );
-				break;
+				shape = new GothicArch( width, height, border )
+				break
 
 			case PrimitiveShapeType.Oval:
-				shape = new Oval( width, height, border );
-				break;
+				shape = new Oval( width, height, border )
+				break
 
 			case PrimitiveShapeType.Rectangle:
-				shape = new Rectangle( width, height, border );
-				break;
+				shape = new Rectangle( width, height, border )
+				break
 
 			case PrimitiveShapeType.Square:
-				shape = new Square( width, border );
-				break;
+				shape = new Square( width, border )
+				break
 
 			case PrimitiveShapeType.VesicaPiscis:
-				shape = new VesicaPiscis( width, border );
-				break;
+				shape = new VesicaPiscis( width, border )
+				break
 
 			// SVGShape variants
 			//
 			case SVGShapeType.Cloud:
-				shape = new Cloud( width, height, border, outsidePath, insidePath, rabbetPath );
-				break;
+				shape = new Cloud( lod, width, height, border )
+				break
 
 			case SVGShapeType.Cora:
-				shape = new Cora( width, height, border, outsidePath, insidePath, rabbetPath );
-				break;
+				shape = new Cora( lod, width, height, border )
+				break
 
 			case SVGShapeType.Leaf:
-				shape = new Leaf( width, height, border, outsidePath );
-				break;
+				shape = new Leaf( lod, width, height, border )
+				break
 
 			case SVGShapeType.Mina:
-				shape = new Mina( width, height, border, outsidePath, insidePath, rabbetPath );
-				break;
+				shape = new Mina( lod, width, height, border )
+				break
 
 			case SVGShapeType.Neslo:
-				shape = new Neslo( width, height, border, outsidePath );
-				break;
+				shape = new Neslo( lod, width, height, border )
+				break
 
 			case SVGShapeType.PlanetMandala:
-				shape = new PlanetMandala( width, border, outsidePath, insidePath, rabbetPath );
-				break;
+				shape = new PlanetMandala( lod, width, border )
+				break
 
 			case SVGShapeType.SonoraMandala:
-				shape = new SonoraMandala( width, border, outsidePath, insidePath, rabbetPath );
-				break;
+				shape = new SonoraMandala( lod, width, border )
+				break
 
 			case SVGShapeType.StarlightMandala:
-				shape = new StarlightMandala( width, border, outsidePath, insidePath, rabbetPath );
-				break;
+				shape = new StarlightMandala( lod, width, border )
+				break
 
 			case SVGShapeType.WillowLeaf:
-				shape = new WillowLeaf( width, height, border, outsidePath );
-				break;
+				shape = new WillowLeaf( lod, width, height, border )
+				break
 		}
 
-		return shape;
+		return shape
 	}
 }
 
-export { ShapeFactory };
+export { ShapeFactory }
