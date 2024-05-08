@@ -19,6 +19,10 @@ import HorizontalAppBarContent from './components/horizontal/AppBarContent'
 // ** Hook Import
 import { useSettings } from 'src/@core/hooks/useSettings'
 
+import MenuIcon from '@mui/icons-material/Menu';
+import Typography from '@mui/material/Typography'
+import themeConfig from 'src/configs/themeConfig'
+
 const UserLayout = ({ children, contentHeightFixed }) => {
   // ** Hooks
   const { settings, saveSettings } = useSettings()
@@ -47,10 +51,22 @@ const UserLayout = ({ children, contentHeightFixed }) => {
       contentHeightFixed={contentHeightFixed}
       verticalLayoutProps={{
         navMenu: {
-          navItems: VerticalNavItems()
+          navItems: VerticalNavItems(),
 
           // Uncomment the below line when using server-side menu in vertical layout and comment the above line
           // navItems: verticalMenuItems
+
+          branding: (props) => settings.navCollapsed && !props.navHover ?
+            <MenuIcon sx={{ ml: 5 }}/>
+          :
+            <Typography sx={{
+              fontWeight: 600,
+              lineHeight: 'normal',
+              textTransform: 'uppercase',
+              transition: 'opacity .25s ease-in-out, margin .25s ease-in-out'
+            }}>
+              {themeConfig.templateName}
+            </Typography>
         },
         appBar: {
           content: props => (
