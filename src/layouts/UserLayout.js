@@ -59,7 +59,7 @@ const UserLayout = ({ children, contentHeightFixed }) => {
           branding: (props) => settings.navCollapsed && !props.navHover ?
             <MenuIcon sx={{ ml: 5 }}/>
           :
-            <Typography sx={{
+            <Typography noWrap sx={{
               fontWeight: 600,
               lineHeight: 'normal',
               textTransform: 'uppercase',
