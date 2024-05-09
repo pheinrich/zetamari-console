@@ -96,7 +96,7 @@ function ParamsPanel( {params} )
 	return (
 		<Stack>
 		  <Box>
-				<FormControl sx={{ m: 1, minWidth: 200 }} size='small'>
+				<FormControl sx={{ mt: 1, minWidth: 200 }} size='small'>
 					<InputLabel id='outside-contour-select-label'>Outside Contour</InputLabel>
 					<Select
 						labelId='outside-contour-select-label'
@@ -137,7 +137,7 @@ function ParamsPanel( {params} )
 					</Select>
 				</FormControl>
 
-				<FormControl sx={{ m: 1, minWidth: 200 }} size='small'>
+				<FormControl sx={{ mt: 1, minWidth: 200 }} size='small'>
 					<InputLabel id='rabbet-contour-select-label'>Rabbet Contour</InputLabel>
 					<Select
 						labelId='rabbet-contour-select-label'
@@ -156,7 +156,7 @@ function ParamsPanel( {params} )
 				</FormControl>
 			</Box>
 
-			<Stack mt={15} direction='row'>
+			<Stack mt={10} direction='row'>
 				<TextField
 					id='width'
 					helperText='Width'
@@ -169,7 +169,7 @@ function ParamsPanel( {params} )
 					}}
 				>
 				</TextField>
-				<Typography m={2} variant='h5'>X</Typography>
+				<Typography m={3} variant='h5'>X</Typography>
 				<TextField
 					id='height'
 					helperText='Height'
@@ -181,7 +181,7 @@ function ParamsPanel( {params} )
 						endAdornment: <InputAdornment position='end'>in</InputAdornment>
 					}}
 				/>
-				<Typography m={2} variant='h5'>/</Typography>
+				<Typography m={3} variant='h5'>/</Typography>
 				<TextField
 					id='border'
 					helperText='Border'
@@ -196,9 +196,6 @@ function ParamsPanel( {params} )
 					}}
 				/>
 			</Stack>
-			<Box mt={15} sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-			  Testing
-			</Box>
 		</Stack>
 	)
 }

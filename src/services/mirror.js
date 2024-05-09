@@ -57,6 +57,7 @@ function build( width, height, border, outsideId, insideId, rabbetId )
 		outside: {
 			id: outsideId,
 			dims: outsideDims,
+			obb: Contour.getMinBoundRect( outside ),
 			data: Contour.getSVGData( outside )
 		},
 		inside: {
@@ -71,6 +72,7 @@ function build( width, height, border, outsideId, insideId, rabbetId )
 		},
 		glass: {
 			dims: Contour.getDims( glass ),
+			obb: Contour.getMinBoundRect( glass ),
 			data: Contour.getSVGData( glass )
 		}
 	}

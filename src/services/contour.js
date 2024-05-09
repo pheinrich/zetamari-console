@@ -144,7 +144,9 @@ function getDims( geometry )
 		left: left,
 		width: right.x - left.x,
 		height: bottom.y - top.y,
-		center: { x: (left.x + right.x) / 2, y: (top.y + bottom.y) / 2 }
+		center: { x: (left.x + right.x) / 2, y: (top.y + bottom.y) / 2 },
+		area: geometry.getArea(),
+		perimeter: geometry.getLength()
 	}
 }
 

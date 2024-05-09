@@ -11,6 +11,8 @@ import Tabs from '@mui/material/Tabs'
 
 import MirrorPanel from 'src/views/pages/calculator/MirrorPanel'
 import ParamsPanel from 'src/views/pages/calculator/ParamsPanel'
+import StatsView from 'src/views/pages/calculator/StatsView'
+
 
 function a11yProps( index )
 {
@@ -80,7 +82,8 @@ export default function Preview()
                   </Tabs>
                 </Box>
                 <PreviewTabPanel value={tab} index={0}>
-                  <ParamsPanel params={params}/>
+                  <ParamsPanel params={params} />
+                  <StatsView mirror={mirror} />
                 </PreviewTabPanel>
                 <PreviewTabPanel value={tab} index={1}>
                   Materials
