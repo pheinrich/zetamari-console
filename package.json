@@ -55,6 +55,7 @@
     "jsts": "^2.11.2",
     "keen-slider": "6.8.5",
     "mui-image": "^1.0.7",
+    "mysql2": "^3.9.7",
     "next": "13.3.2",
     "nprogress": "0.2.0",
     "payment": "2.4.6",
@@ -74,6 +75,7 @@
     "react-popper": "2.3.0",
     "react-redux": "8.0.5",
     "recharts": "2.5.0",
+    "sequelize": "^6.37.3",
     "stylis": "4.1.4",
     "stylis-plugin-rtl": "2.1.1",
     "yup": "1.1.1"

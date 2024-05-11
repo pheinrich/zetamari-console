@@ -7,8 +7,9 @@ const path = require('path')
 
 module.exports = {
   trailingSlash: true,
-  reactStrictMode: false,
+  reactStrictMode: true,
   webpack: config => {
+    config.devtool = 'eval-source-map',
     config.resolve.alias = {
       ...config.resolve.alias,
       apexcharts: path.resolve(__dirname, './node_modules/apexcharts-clevision')
