@@ -1,5 +1,5 @@
-import { Contour, ContourType } from 'src/services/contour'
-import { SVGData } from 'src/services/svgData'
+import { Contour, ContourType } from 'src/lib/contour'
+import { SVGData } from 'src/lib/svgData'
 
 const MIRROR_BUFFER = 0.0625
 const RABBET_BUFFER = 0.3125

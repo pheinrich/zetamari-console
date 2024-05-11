@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { SVGData } from 'src/services/svgData'
+import { SVGData } from 'src/lib/svgData'
 
 import Box from '@mui/material/Box'
 import Divider from '@mui/material/Divider'

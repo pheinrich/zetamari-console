@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import Mirror from 'src/services/mirror'
+import Mirror from 'src/lib/mirror'
 
 function useMirror( width, height, border, outsideId, insideId, rabbetId )
 {
