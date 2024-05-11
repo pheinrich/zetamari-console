@@ -152,19 +152,27 @@ function getDims( geometry )
 
 function getMinBoundRect( geometry )
 {
-	let obb = MinimumDiameter.getMinimumRectangle( geometry )
-	let coords = obb.getCoordinates()
-	let theta = 180*Math.atan( (coords[1].x - coords[0].x) / (coords[1].y - coords[0].y) ) / Math.PI
+	let area = 0, coords = [], theta = 0
 
-	while( -90 > theta )
-		theta += 90
-	while( 90 < theta )
-		theta -= 90
+	try
+	{
+		let obb = MinimumDiameter.getMinimumRectangle( geometry )
+
+		area = obb.getArea()
+		coords = obb.getCoordinates()
+		theta = 180*Math.atan( (coords[1].x - coords[0].x) / (coords[1].y - coords[0].y) ) / Math.PI
+
+		while( -90 > theta )
+			theta += 90
+		while( 90 < theta )
+			theta -= 90
+	}
+	catch {}
 
 	return {
+		area: area,
 		coords: [...coords],
-		theta: theta,
-		area: obb.getArea()
+		theta: theta
 	}
 }
 

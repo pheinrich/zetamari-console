@@ -59,15 +59,15 @@ export default function StatsView( {mirror, costs} )
 	if( 'undefined' === typeof mirror )
     return <></>
 
-  const totalArea = mirror?.outside?.dims.area - mirror?.inside?.dims.area
-  const visibleGlassArea = mirror?.inside?.dims.area
-  const glassArea = mirror?.glass?.dims.area
+  const totalArea = mirror?.outside?.dims?.area - mirror?.inside?.dims?.area
+  const visibleGlassArea = mirror?.inside?.dims?.area
+  const glassArea = mirror?.glass?.dims?.area
   const substrateWeight = totalArea*SUBSTRATE_WEIGHT_LBIN2 + glassArea*GLASS_WEIGHT_LBIN2
-  const finishedWeight = substrateWeight + totalArea*TESSERAE_WEIGHT_LBIN2
+  const kitWeight = substrateWeight + totalArea*TESSERAE_WEIGHT_LBIN2
   const substrateOBBArea = mirror?.outside?.obb.area
   const glassOBBArea = mirror?.glass?.obb.area
   const substrateCost = substrateOBBArea*SUBSTRATE_COST_DIN2 + glassOBBArea*GLASS_COST_DIN2
-  const finishedCost = substrateCost + totalArea*TESSERAE_COST_DIN2
+  const kitCost = substrateCost + totalArea*TESSERAE_COST_DIN2
 
 	return (
 		<Card sx={{ mt: 10 }}>
@@ -76,10 +76,10 @@ export default function StatsView( {mirror, costs} )
 					<TableBody>
 						<AreaStat label='Total Area' value={totalArea} />
 						<AreaStat label='Visible Glass Area' value={visibleGlassArea} />
-						<WeightStat label='Substrate Weight' value={substrateWeight} />
-						<WeightStat label='Finished Weight' value={finishedWeight} />
+						<WeightStat label='Substrate Weight (Wood + Glass)' value={substrateWeight} />
 						<CostStat label='Substrate Cost' value={substrateCost} />
-						<CostStat label='Finished Cost' value={finishedCost} />
+						<WeightStat label='Kit Weight (Substrate + Tesserae)' value={kitWeight} />
+						<CostStat label='Kit Cost' value={kitCost} />
 					</TableBody>
 				</Table>
 			</CardContent>
