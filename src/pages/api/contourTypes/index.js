@@ -1,4 +1,4 @@
-import db from 'src/models'
+import models from 'db/models'
 
 export default async function handler( req, res )
 {
@@ -7,14 +7,14 @@ export default async function handler( req, res )
     switch( req.method )
     {
       case 'GET':
-        const contours = await db.Contour.findAll()
-        res.status( 200 ).json( contours )
+        const contourTypes = await models.ContourTypes.findAll()
+        res.status( 200 ).json( contourTypes )
         break;
 
       case 'POST':
-        const {name, svgData} = req.body
-        const newContour = await db.Contour.create( {name, svgData} )
-        res.status( 201 ).json( newContour )
+        const {name, prefix} = req.body
+        const newContourType = await models.ContourTypes.create( {name, prefix} )
+        res.status( 201 ).json( newContourType )
         break
 
       default:
@@ -24,7 +24,7 @@ export default async function handler( req, res )
   }
   catch( error )
   {
-    console.error( 'Failed contour:', error )
+    console.error( 'Failed ContourType:', error )
     res.status( 500 ).json( { error: 'Internal Server Error' } )
   }
 }
