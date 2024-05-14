@@ -15,7 +15,7 @@ const models =
 
 
 // Set `force: true` to drop and re-create tables
-db.sync( {force: false} )
+db.sync( {alter: true} )
   .then( () => console.log( 'Models synchronized' ) )
   .catch( err => console.error( 'Error syncing models', err ) )
 
