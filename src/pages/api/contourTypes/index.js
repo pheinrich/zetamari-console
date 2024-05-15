@@ -7,13 +7,13 @@ export default async function handler( req, res )
     switch( req.method )
     {
       case 'GET':
-        const contourTypes = await models.ContourTypes.findAll()
+        const contourTypes = await models.ContourType.findAll()
         res.status( 200 ).json( contourTypes )
         break;
 
       case 'POST':
         const {name, prefix} = req.body
-        const newContourType = await models.ContourTypes.create( {name, prefix} )
+        const newContourType = await models.ContourType.create( {name, prefix} )
         res.status( 201 ).json( newContourType )
         break
 

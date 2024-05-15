@@ -1,21 +1,22 @@
 import db from 'db'
+import {DataTypes} from 'sequelize'
+
 import ContourType from 'db/models/contourType'
 
 const models =
 {
-  ContourType
+  ContourType: ContourType( db, DataTypes )
 }
 
-// Object.keys( db ).forEach( modelName =>
-//   {
-//     console.log( 'modelName: ', modelName )
-//     if( db[modelName].associate )
-//       db[modelName].associate( db )
-//   })
+Object.keys( models ).forEach( modelName =>
+  {
+    if( models[modelName].associate )
+      models[modelName].associate( db )
+  })
 
 
 // Set `force: true` to drop and re-create tables
-db.sync( {alter: true} )
+db.sync( {force: false} )
   .then( () => console.log( 'Models synchronized' ) )
   .catch( err => console.error( 'Error syncing models', err ) )
 

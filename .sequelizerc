@@ -1,6 +1,7 @@
-import path from 'path'
+require( 'dotenv' ).config()
+const path = require( 'path' )
 
-export default
+module.exports =
 {
 	config: path.resolve( 'db', 'config.js' ),
 	'models-path': path.resolve( 'db', 'models' ),
