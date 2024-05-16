@@ -1,17 +1,19 @@
 import db from 'db'
 import {DataTypes} from 'sequelize'
 
-import ContourType from 'db/models/contourType'
+import Contour from 'db/models/contour'
+import Substrate from 'db/models/substrate'
 
 const models =
 {
-  ContourType: ContourType( db, DataTypes )
+  Contour: Contour( db, DataTypes ),
+  Substrate: Substrate( db, DataTypes )
 }
 
-Object.keys( models ).forEach( modelName =>
+Object.keys( models ).forEach( name =>
   {
-    if( models[modelName].associate )
-      models[modelName].associate( db )
+    if( models[name].associate )
+      models[name].associate( models )
   })
 
 

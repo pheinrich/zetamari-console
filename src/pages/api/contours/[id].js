@@ -9,21 +9,21 @@ export default async function handler( req, res )
     switch( req.method )
     {
       case 'GET':
-        const contourTypes = await models.ContourType.findByPk( id )
-        res.status( 200 ).json( contourTypes )
+        const contours = await models.Contour.findByPk( id )
+        res.status( 200 ).json( contours )
         break;
 
       case 'PUT':
-        const {name, prefix} = req.body
-        const updatedContourType = await models.ContourType.update(
-          {name, prefix},
+        const {name, prefix, svgData } = req.body
+        const updatedContour = await models.Contour.update(
+          {name, prefix, svgData},
           {where: {id}}
         )
-        res.status( 200 ).json( updatedContourType )
+        res.status( 200 ).json( updatedContour )
         break
 
       case 'DELETE':
-        await models.ContourType.destroy( {where: {id}} )
+        await models.Contour.destroy( {where: {id}} )
         res.status( 204 ).end()
         break
 
@@ -34,7 +34,7 @@ export default async function handler( req, res )
   }
   catch( error )
   {
-    console.error( 'Failed ContourType:', error )
+    console.error( 'Failed Contour:', error )
     res.status( 500 ).json( { error: 'Internal Server Error' } )
   }
 }

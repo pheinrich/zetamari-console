@@ -13,17 +13,6 @@ import Vector2D from 'jsts/org/locationtech/jts/math/Vector2D'
 const GA_ADJ = 1.0 - Math.sqrt( 3 )/2
 const DEF_MAX_ANGLE = Math.PI / 6
 
-const ContourType = Object.freeze({
-	ChapelArch: 1,
-	Circle: 2,
-	GothicArch: 3,
-	Oval: 4,
-	Rectangle: 5,
-	Square: 6,
-	VesicaPiscis: 7,
-	Custom: 8
-})
-
 function buildFromPoints( points )
 {
 	let coords = [];
@@ -60,7 +49,8 @@ function buildFromType( type, width, height )
 
 	switch( type )
 	{
-		case ContourType.ChapelArch:
+		case 'Ca':
+			// Chapel Arch
       gsf.setSize( width )
       coords = gsf.createArc( Math.PI, Math.PI ).getCoordinates()
 
@@ -70,11 +60,13 @@ function buildFromType( type, width, height )
       geometry = gf.createPolygon( coords )
       break
 
-    case ContourType.Circle:
+    case 'Ci':
+    	// Circle
     	geometry = gsf.createCircle()
     	break
 
-    case ContourType.GothicArch:
+    case 'Ga':
+    	// Gothic Arch
     	gsf.setSize( 2*width )
     	gsf.setBase( new Coordinate( 0, -width * GA_ADJ ) )
     	coords = gsf.createArc( Math.PI, Math.PI/3 ).getCoordinates()
@@ -88,16 +80,19 @@ function buildFromType( type, width, height )
     	geometry = gf.createPolygon( coords )
     	break
 
- 		case ContourType.Oval:
+ 		case 'Ov':
+ 			// Oval
  			geometry = gsf.createEllipse()
  			break
 
- 		case ContourType.Rectangle:
- 		case ContourType.Square:
+ 		case 'Re':
+ 		case 'Sq':
+ 			// Rectangle & Square
  			geometry = gsf.createRectangle()
  			break
 
- 		case ContourType.VesicaPiscis:
+ 		case 'Vp':
+ 			// Vesica Piscis
  			gsf.setSize( 2*width )
  			gsf.setBase( new Coordinate( 0, -width * GA_ADJ ) )
  			coords = gsf.createArc( 2*Math.PI/3, 2*Math.PI/3 ).getCoordinates()
