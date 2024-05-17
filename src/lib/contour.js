@@ -279,4 +279,4 @@ const Contour =
 	scale
 }
 
-export { Contour, ContourType }
+export { Contour }

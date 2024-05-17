@@ -10,10 +10,13 @@ module.exports =
         insideId: { foreignKey: true, type: Sequelize.INTEGER },
         rabbetId: { foreignKey: true, type: Sequelize.INTEGER },
 
+        name: { type: Sequelize.STRING },
         sku: { type: Sequelize.STRING },
         width: { type: Sequelize.FLOAT },
         height: { type: Sequelize.FLOAT },
         border: { type: Sequelize.FLOAT },
+        isStock: { type: Sequelize.BOOLEAN },
+        isPreset: { type: Sequelize.BOOLEAN },
 
         createdAt: { allowNull: false, type: Sequelize.DATE },
         updatedAt: { allowNull: false, type: Sequelize.DATE }
@@ -22,6 +25,6 @@ module.exports =
   
   async down( queryInterface, Sequelize )
   {
-    await queryInterface.dropTable( 'substrates' );
+    await queryInterface.dropTable( 'substrates' )
   }
 }

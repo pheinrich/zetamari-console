@@ -1,5 +1,4 @@
-import { useState } from 'react'
-import { SVGData } from 'src/lib/svgData'
+import { useEffect, useState } from 'react'
 
 import Box from '@mui/material/Box'
 import Divider from '@mui/material/Divider'
@@ -16,6 +15,7 @@ const ROOT3 = Math.sqrt( 3 )
 
 function ParamsPanel( {params} )
 {
+	const [presets, setPresets] = useState( [] )
 	const [outsideId, setOutsideId] = useState( params.outsideId )
 	const [insideId, setInsideId] = useState( params.insideId )
 	const [rabbetId, setRabbetId] = useState( params.rabbetId )
@@ -23,6 +23,13 @@ function ParamsPanel( {params} )
 	const [width, setWidth] = useState( params.width )
 	const [height, setHeight] = useState( params.height )
 	const [border, setBorder] = useState( isPercent ? 100 * params.border : params.border )
+
+	useEffect( () => {
+		fetch( '/api/substrates' )
+			.then( (res) => res.json() )
+			.then( (presets) => filter( p => p.isPreset() ) )
+			.then( setPresets )
+	}, [])
 
 	function constrainToWidth( id, w )
 	{
@@ -105,51 +112,15 @@ function ParamsPanel( {params} )
 						value={params.outsideId}
 						onChange={(evt) => {updateContours( evt.target.value, insideId, rabbetId )}}
 					>
-						{SVGData.outside.filter( item => 7 >= item.id ).map( item => (
+						{presets.filter( item => 31 >= item.id ).map( item => (
 							<MenuItem key={item.id} value={item.id}>
-          			{item.label}
+          			{item.name}
         			</MenuItem>
         		))}
         		<Divider />
-						{SVGData.outside.filter( item => 7 < item.id ).map( item => (
+						{presets.filter( item => 31 < item.id ).map( item => (
 							<MenuItem key={item.id} value={item.id}>
-          			{item.label}
-        			</MenuItem>
-        		))}
-					</Select>
-				</FormControl>
-
-				<FormControl sx={{ m: 1, minWidth: 200 }} size='small'>
-					<InputLabel id='inside-contour-select-label'>Inside Contour</InputLabel>
-					<Select
-						labelId='inside-contour-select-label'
-						id='inside-select'
-						label='Inside Contour'
-						value={undefined === params.insideId ? 0 : params.insideId}
-						onChange={(evt) => {updateContours( outsideId, evt.target.value, rabbetId )}}
-					>
-						<MenuItem value={0}><em>Computed</em></MenuItem>
-						{SVGData.inside.map( item => (
-							<MenuItem key={item.id} value={item.id}>
-          			{item.label}
-        			</MenuItem>
-        		))}
-					</Select>
-				</FormControl>
-
-				<FormControl sx={{ mt: 1, minWidth: 200 }} size='small'>
-					<InputLabel id='rabbet-contour-select-label'>Rabbet Contour</InputLabel>
-					<Select
-						labelId='rabbet-contour-select-label'
-						id='rabbet-select'
-						label='Rabbet Contour'
-						value={undefined === params.rabbetId ? 0 : params.rabbetId}
-						onChange={(evt) => {updateContours( outsideId, insideId, evt.target.value )}}
-					>
-						<MenuItem value={0}><em>Computed</em></MenuItem>
-						{SVGData.rabbet.map( item => (
-							<MenuItem key={item.id} value={item.id}>
-          			{item.label}
+          			{item.name}
         			</MenuItem>
         		))}
 					</Select>

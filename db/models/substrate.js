@@ -3,10 +3,13 @@ module.exports = (sequelize, DataTypes) =>
   const Substrate = sequelize.define(
     'Substrate',
     {
+      name: DataTypes.STRING,
       sku: DataTypes.STRING,
       width: DataTypes.FLOAT,
       height: DataTypes.FLOAT,
-      border: DataTypes.FLOAT
+      border: DataTypes.FLOAT,
+      isStock: DataTypes.BOOLEAN,
+      isPreset: DataTypes.BOOLEAN
     },
     {
       timestamps: true,
