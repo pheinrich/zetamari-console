@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useMirror } from 'src/hooks/useMirror'
 
 import Box from '@mui/material/Box'
@@ -45,22 +45,49 @@ function PreviewTabPanel( props )
 
 export default function Preview()
 {
-	const [width, setWidth] = useState( 14.75 )
-	const [height, setHeight] = useState( 23.25 )
-	const [border, setBorder] = useState( 2.75 )
-	const [outsideId, setOutsideId] = useState( 1 )
-	const [insideId, setInsideId] = useState( undefined )
-	const [rabbetId, setRabbetId] = useState( undefined )
+  const [presets, setPresets] = useState([
+    {
+      name: 'Chapel Arch',
+      sku: 'Ca1424',
+      width: 14.25,
+      height: 23.5,
+      border: 2.75,
+      isStock: false,
+      isPreset: false,
+      outside:
+      {
+        id: 1,
+        name: 'Chapel Arch',
+        prefix: 'Ca',
+        svgData: null
+      },
+      inside: null,
+      rabbet: null
+    }
+  ])
 
-  const mirror = useMirror( width, height, border, outsideId, insideId, rabbetId )
+  useEffect( () => {
+    fetch( '/api/substrates' )
+      .then( (res) => res.json() )
+      .then( setPresets )
+  }, [] )
+
+	const [width, setWidth] = useState( presets[0].width )
+	const [height, setHeight] = useState( presets[0].height )
+	const [border, setBorder] = useState( presets[0].border )
+	const [outside, setOutside] = useState( presets[0].outside )
+	const [inside, setInside] = useState( presets[0].inside )
+	const [rabbet, setRabbet] = useState( presets[0].rabbet )
+
+  const mirror = useMirror( width, height, border, outside, inside, rabbet )
   const [tab, setTab] = useState( 0 )
   const params = {
   	width, setWidth,
   	height, setHeight,
   	border, setBorder,
-  	outsideId, setOutsideId,
-  	insideId, setInsideId,
-  	rabbetId, setRabbetId
+  	outside, setOutside,
+  	inside, setInside,
+  	rabbet, setRabbet
   }
 
   return (

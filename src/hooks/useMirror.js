@@ -1,25 +1,18 @@
 import { useEffect, useState } from 'react'
 import Mirror from 'src/lib/mirror'
 
-function useMirror( width, height, border, outsideId, insideId, rabbetId )
+function useMirror( width, height, border, outside, inside, rabbet )
 {
-	const [outside, setOutside] = useState( undefined )
-	const [inside, setInside] = useState( undefined )
-	const [rabbet, setRabbet] = useState( undefined )
-	const [glass, setGlass] = useState( undefined )
+	const [mirror, setMirror] = useState( undefined )
 
 	useEffect( () =>
 	{
-		const mirror = Mirror.build( width, height, border, outsideId, insideId, rabbetId )
+		const mirror = Mirror.build( width, height, border, outside, inside, rabbet )
+		setMirror( mirror )
 
-		setOutside( mirror.outside )
-		setInside( mirror.inside )
-		setRabbet( mirror.rabbet )
-		setGlass( mirror.glass )
+	}, [width, height, border, outside, inside, rabbet] )
 
-	}, [width, height, border, outsideId, insideId, rabbetId] )
-
-	return {outside, inside, rabbet, glass}
+	return mirror
 }
 
 export { useMirror }

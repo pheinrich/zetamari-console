@@ -27,7 +27,6 @@ function ParamsPanel( {params} )
 	useEffect( () => {
 		fetch( '/api/substrates' )
 			.then( (res) => res.json() )
-			.then( (presets) => filter( p => p.isPreset() ) )
 			.then( setPresets )
 	}, [])
 

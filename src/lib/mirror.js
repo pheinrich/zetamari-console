@@ -5,74 +5,71 @@ const RABBET_BUFFER = 0.3125
 const POCKET_DIAMETER = 0.6
 const SHARP_ANGLE = Math.PI / 6
 
-function build( width, height, border, outsideId, insideId, rabbetId )
+function build( width, height, border, outside, inside, rabbet )
 {
-	let outside, inside, rabbet, glass
+	let op, ip, rp, gp
 	let outsideDims, insideDims
 
-	let outsideSVG = SVGData.outside.find( item => item.id === outsideId ) || SVGData.outside[0]
-	if( 'undefined' === typeof outsideSVG.data )
-		outside = Contour.buildFromType( outsideSVG.id, width, height )
+	let outsideSVG = outside.svgData
+	if( !outsideSVG )
+		op = Contour.buildFromType( outside.prefix, width, height )
 	else
-		outside = Contour.buildFromSVGData( outsideSVG.data )
-	outsideDims = Contour.getDims( outside )
+		op = Contour.buildFromSVGData( outsideSVG )
+	outsideDims = Contour.getDims( op )
 
 	let sx = (0 === width || width === outsideDims.width) ? 1 : width / outsideDims.width
 	let sy = (0 === height || height === outsideDims.height) ? 1 : height / outsideDims.height
 
 	if( 1 !== sx || 1 !== sy )
 	{
-		outside = Contour.scale( outside, sx, sy )
-		outsideDims = Contour.getDims( outside )
+		op = Contour.scale( op, sx, sy )
+		outsideDims = Contour.getDims( op )
 	}
 
-	let insideSVG = SVGData.inside.find( item => item.id === insideId )
-	if( 'undefined' === typeof insideSVG )
-		inside = Contour.buffer( outside, -border )
+	let insideSVG = inside ? inside.svgData : undefined
+	if( !insideSVG )
+		ip = Contour.buffer( op, -border )
 	else
 	{
-		inside = Contour.scale( Contour.buildFromSVGData( insideSVG.data ), sx, sy )
-		insideDims = Contour.getDims( inside )
+		ip = Contour.scale( Contour.buildFromSVGData( insideSVG ), sx, sy )
+		insideDims = Contour.getDims( ip )
 
 		const dx = (1 - border)*(outsideDims.width / insideDims.width) + border
 		const dy = (1 - border)*(outsideDims.height / insideDims.height) + border
 
-		inside = Contour.scale( inside, dx, dy )
+		ip = Contour.scale( ip, dx, dy )
 		sx *= dx
 		sy *= dy
 	}
-	insideDims = Contour.getDims( inside )
+	insideDims = Contour.getDims( ip )
 
-	let rabbetSVG = SVGData.rabbet.find( item => item.id === rabbetId )
-	if( 'undefined' === typeof rabbetSVG )
-		rabbet = Contour.buffer( inside, RABBET_BUFFER );
+	let rabbetSVG = rabbet ? rabbet.svgData : undefined
+	if( !rabbetSVG )
+		rp = Contour.buffer( ip, RABBET_BUFFER );
 	else
-		rabbet = Contour.scale( Contour.buildFromSVGData( rabbetSVG.data ), sx, sy )
+		rp = Contour.scale( Contour.buildFromSVGData( rabbetSVG ), sx, sy )
 
-	glass = Contour.buffer( rabbet, -MIRROR_BUFFER )
-	rabbet = Contour.addPockets( rabbet, POCKET_DIAMETER, RABBET_BUFFER, SHARP_ANGLE )
+	gp = Contour.buffer( rp, -MIRROR_BUFFER )
+	rp = Contour.addPockets( rp, POCKET_DIAMETER, RABBET_BUFFER, SHARP_ANGLE )
 
 	return {
 		outside: {
-			id: outsideId,
 			dims: outsideDims,
-			obb: Contour.getMinBoundRect( outside ),
-			data: Contour.getSVGData( outside )
+			obb: Contour.getMinBoundRect( op ),
+			data: Contour.getSVGData( op )
 		},
 		inside: {
-			id: insideId,
 			dims: insideDims,
-			data: Contour.getSVGData( inside )
+			data: Contour.getSVGData( ip )
 		},
 		rabbet: {
-			id: rabbetId,
-			dims: Contour.getDims( rabbet ),
-			data: Contour.getSVGData( rabbet )
+			dims: Contour.getDims( rp ),
+			data: Contour.getSVGData( rp )
 		},
 		glass: {
-			dims: Contour.getDims( glass ),
-			obb: Contour.getMinBoundRect( glass ),
-			data: Contour.getSVGData( glass )
+			dims: Contour.getDims( gp ),
+			obb: Contour.getMinBoundRect( gp ),
+			data: Contour.getSVGData( gp )
 		}
 	}
 }

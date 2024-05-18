@@ -18,7 +18,7 @@ function Path( {fill, color, stroke, data, transform} )
 
 export default function MirrorView( {mirror, settings} )
 {
-  if( 'undefined' === typeof mirror.outside )
+  if( 'undefined' === typeof mirror?.outside )
     return <></>
 
   const center = mirror.outside.dims.center
