@@ -103,9 +103,9 @@ export default function Preview()
               <Box sx={{ height: '100%'}}>
                 <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
                   <Tabs value={tab} onChange={(evt, val) => setTab( val )}>
-                    <Tab label="Shape" {...a11yProps( 0 )} />
+                    <Tab label="Dimensions" {...a11yProps( 0 )} />
                     <Tab label="Materials" {...a11yProps( 1 )} />
-                    <Tab label="Pricing" {...a11yProps( 2 )} />
+                    <Tab label="Rates" {...a11yProps( 2 )} />
                   </Tabs>
                 </Box>
                 <PreviewTabPanel value={tab} index={0}>
@@ -116,7 +116,7 @@ export default function Preview()
                   Materials
                 </PreviewTabPanel>
                 <PreviewTabPanel value={tab} index={2}>
-                  Pricing
+                  Rates
                 </PreviewTabPanel>
               </Box>
             </Stack>

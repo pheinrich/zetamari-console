@@ -18,6 +18,7 @@ const ROOT3 = Math.sqrt( 3 )
 function ParamsPanel( {params} )
 {
 	const [shapes, setShapes] = useState( [] )
+	const [presets, setPresets] = useState( [] )
 
 	const [outside, setOutside] = useState( params.outside )
 	const [inside, setInside] = useState( params.inside )
@@ -31,6 +32,11 @@ function ParamsPanel( {params} )
 		fetch( '/api/shapes' )
 		  .then( (res) => res.json() )
 		  .then( setShapes )
+
+		 fetch( '/api/substrates' )
+		 	.then( (res) => res.json() )
+		 	.then( (all) => all.filter( item => item.isPreset ) )
+		 	.then( setPresets )
 	}, [])
 
 	function constrainToWidth( id, w )
@@ -113,7 +119,15 @@ function ParamsPanel( {params} )
 		  	{label: '––––––––––––––––––––––––', disabled: true },
 			...shapes.filter( item => !item.isPrimitive )
 		  	.sort( (a, b) => a.name.localeCompare( b.name ) )
-		  	.map( item => {return {label: item.name}} ),
+		  	.map( item => {
+		  		let subs = presets.filter( pre => pre.outside.shapeId === item.id )
+		  		let items = subs.map( pre => {return {label: pre.name}} )
+
+		  		return {
+		  			label: item.name,
+		  			items: 1 < items.length ? items : []
+		  		}
+		  	}),
 		]
 	}
 	
@@ -125,33 +139,6 @@ function ParamsPanel( {params} )
 				ButtonProps={{variant: 'outlined'}}
 				onClick={() => console.log( 'Clicked' )}
 			/>
-		  <Box>
-				<FormControl sx={{ mt: 1, minWidth: 200 }} size='small'>
-					<InputLabel id='outside-contour-select-label'>Outside Contour</InputLabel>
-					<Select
-						labelId='outside-contour-select-label'
-						id='outside-select'
-						label='Outside Contour'
-						value={params.outside}
-						onChange={(evt) => {updateContours( evt.target.value, inside, rabbet )}}
-					>
-						{shapes.filter( item => item.isPrimitive )
-							.sort( (a, b) => a.name.localeCompare( b.name ) )
-							.map( item => (
-							<MenuItem key={item.id} value={item.id}>
-          			{item.name}
-        			</MenuItem>
-        		))}
-        		<Divider />
-						{shapes.filter( item => !item.isPrimitiv ).map( item => (
-							<MenuItem key={item.id} value={item.id}>
-          			{item.name}
-        			</MenuItem>
-        		))}
-					</Select>
-				</FormControl>
-			</Box>
-
 			<Stack mt={10} direction='row'>
 				<TextField
 					id='width'
