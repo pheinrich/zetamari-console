@@ -9,21 +9,21 @@ export default async function handler( req, res )
     switch( req.method )
     {
       case 'GET':
-        const contours = await models.Contour.findByPk( id, {include: ['shape']} )
-        res.status( 200 ).json( contours )
+        const shapes = await models.Shape.findByPk( id )
+        res.status( 200 ).json( shapes )
         break;
 
       case 'PUT':
-        const {name, svgData } = req.body
-        const updatedContour = await models.Contour.update(
-          {name, svgData},
+        const {name, prefix, isPrimitive} = req.body
+        const updatedShape = await models.Shape.update(
+          {name, prefix, isPrimitive},
           {where: {id}}
         )
-        res.status( 200 ).json( updatedContour )
+        res.status( 200 ).json( updatedShape )
         break
 
       case 'DELETE':
-        await models.Contour.destroy( {where: {id}} )
+        await models.Shape.destroy( {where: {id}} )
         res.status( 204 ).end()
         break
 
@@ -34,7 +34,7 @@ export default async function handler( req, res )
   }
   catch( error )
   {
-    console.error( 'Failed Contour:', error )
+    console.error( 'Failed Shape:', error )
     res.status( 500 ).json( { error: 'Internal Server Error' } )
   }
 }

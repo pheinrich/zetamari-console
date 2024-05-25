@@ -11,23 +11,26 @@ import Stack from '@mui/material/Stack'
 import TextField from '@mui/material/TextField'
 import Typography from '@mui/material/Typography'
 
+import { NestedDropdown } from 'mui-nested-menu'
+
 const ROOT3 = Math.sqrt( 3 )
 
 function ParamsPanel( {params} )
 {
-	const [presets, setPresets] = useState( [] )
-	const [outsideId, setOutsideId] = useState( params.outsideId )
-	const [insideId, setInsideId] = useState( params.insideId )
-	const [rabbetId, setRabbetId] = useState( params.rabbetId )
-	const [isPercent, setIsPercent] = useState( Boolean( params.insideId ) )
+	const [shapes, setShapes] = useState( [] )
+
+	const [outside, setOutside] = useState( params.outside )
+	const [inside, setInside] = useState( params.inside )
+	const [rabbet, setRabbet] = useState( params.rabbet )
+	const [isPercent, setIsPercent] = useState( Boolean( params.inside ) )
 	const [width, setWidth] = useState( params.width )
 	const [height, setHeight] = useState( params.height )
 	const [border, setBorder] = useState( isPercent ? 100 * params.border : params.border )
 
 	useEffect( () => {
-		fetch( '/api/substrates' )
-			.then( (res) => res.json() )
-			.then( setPresets )
+		fetch( '/api/shapes' )
+		  .then( (res) => res.json() )
+		  .then( setShapes )
 	}, [])
 
 	function constrainToWidth( id, w )
@@ -86,21 +89,42 @@ function ParamsPanel( {params} )
 
 	function updateContours( o, i, r )
 	{
-		if( Boolean( i ) ^ Boolean( insideId ) )
+		if( Boolean( i ) ^ Boolean( inside ) )
 			toggleIsPercent()
 
-		setOutsideId( o )
-		params.setOutsideId( o )
-		setInsideId( i )
-		params.setInsideId( i )
-		setRabbetId( r )
-		params.setRabbetId( r )
+		setOutside( o )
+		params.setOutside( o )
+		setInside( i )
+		params.setInside( i )
+		setRabbet( r )
+		params.setRabbet( r )
 
 		constrainToWidth( o, width )
 	}
 
+	const menuItemsData = 
+	{
+		label: 'Contour',
+		items:
+		[
+			...shapes.filter( item => item.isPrimitive )
+		  	.sort( (a, b) => a.name.localeCompare( b.name ) )
+		  	.map( item => {return {label: item.name}} ),
+		  	{label: '––––––––––––––––––––––––', disabled: true },
+			...shapes.filter( item => !item.isPrimitive )
+		  	.sort( (a, b) => a.name.localeCompare( b.name ) )
+		  	.map( item => {return {label: item.name}} ),
+		]
+	}
+	
 	return (
 		<Stack>
+			<NestedDropdown
+				menuItemsData={menuItemsData}
+				MenuProps={{elevation: 3}}
+				ButtonProps={{variant: 'outlined'}}
+				onClick={() => console.log( 'Clicked' )}
+			/>
 		  <Box>
 				<FormControl sx={{ mt: 1, minWidth: 200 }} size='small'>
 					<InputLabel id='outside-contour-select-label'>Outside Contour</InputLabel>
@@ -108,16 +132,18 @@ function ParamsPanel( {params} )
 						labelId='outside-contour-select-label'
 						id='outside-select'
 						label='Outside Contour'
-						value={params.outsideId}
-						onChange={(evt) => {updateContours( evt.target.value, insideId, rabbetId )}}
+						value={params.outside}
+						onChange={(evt) => {updateContours( evt.target.value, inside, rabbet )}}
 					>
-						{presets.filter( item => 31 >= item.id ).map( item => (
+						{shapes.filter( item => item.isPrimitive )
+							.sort( (a, b) => a.name.localeCompare( b.name ) )
+							.map( item => (
 							<MenuItem key={item.id} value={item.id}>
           			{item.name}
         			</MenuItem>
         		))}
         		<Divider />
-						{presets.filter( item => 31 < item.id ).map( item => (
+						{shapes.filter( item => !item.isPrimitiv ).map( item => (
 							<MenuItem key={item.id} value={item.id}>
           			{item.name}
         			</MenuItem>
@@ -133,7 +159,7 @@ function ParamsPanel( {params} )
 					style={{width: 150}}
 					value={width}
 					onChange={(evt) => {setWidth( evt.target.value )}}
-					onBlur={(evt) => {constrainToWidth( outsideId, Number( evt.target.value ) )}}
+					onBlur={(evt) => {constrainToWidth( outside, Number( evt.target.value ) )}}
 					InputProps={{
 						endAdornment: <InputAdornment position='end'>in</InputAdornment>
 					}}
@@ -146,7 +172,7 @@ function ParamsPanel( {params} )
 					style={{width: 150}}
 					value={height}
 					onChange={(evt) => {setHeight( evt.target.value )}}
-					onBlur={(evt) => {constrainToHeight( outsideId, Number( evt.target.value ) )}}
+					onBlur={(evt) => {constrainToHeight( outside, Number( evt.target.value ) )}}
 					InputProps={{
 						endAdornment: <InputAdornment position='end'>in</InputAdornment>
 					}}

@@ -17,9 +17,6 @@ module.exports =
         border: { type: Sequelize.FLOAT },
         isStock: { type: Sequelize.BOOLEAN },
         isPreset: { type: Sequelize.BOOLEAN },
-
-        createdAt: { allowNull: false, type: Sequelize.DATE },
-        updatedAt: { allowNull: false, type: Sequelize.DATE }
       })
   },
   

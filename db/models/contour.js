@@ -4,17 +4,17 @@ module.exports = (sequelize, DataTypes) =>
     'Contour',
     {
       name: DataTypes.STRING,
-      prefix: DataTypes.STRING,
       svgData: DataTypes.TEXT
     },
     {
-      timestamps: true,
+      timestamps: false,
       tableName: 'contours'
     }
   )
 
-  Contour.associate = function( db )
+  Contour.associate = function( models )
   {
+    Contour.belongsTo( models.Shape, {as: 'shape', allowNull: false} )
   }
 
   return Contour

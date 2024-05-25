@@ -7,14 +7,14 @@ export default async function handler( req, res )
     switch( req.method )
     {
       case 'GET':
-        const contours = await models.Contour.findAll( {include: ['shape']} )
-        res.status( 200 ).json( contours )
+        const shapes = await models.Shape.findAll()
+        res.status( 200 ).json( shapes )
         break;
 
       case 'POST':
-        const {name, svgData} = req.body
-        const newContour = await models.Contour.create( {name, svgData} )
-        res.status( 201 ).json( newContour )
+        const {name, prefix, isPrimitive} = req.body
+        const newShape = await models.Shape.create( {name, prefix, isPrimitive} )
+        res.status( 201 ).json( newShape )
         break
 
       default:
@@ -24,7 +24,7 @@ export default async function handler( req, res )
   }
   catch( error )
   {
-    console.error( 'Failed Contour:', error )
+    console.error( 'Failed Shape:', error )
     res.status( 500 ).json( { error: 'Internal Server Error' } )
   }
 }

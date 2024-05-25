@@ -12,7 +12,7 @@ module.exports = (sequelize, DataTypes) =>
       isPreset: DataTypes.BOOLEAN
     },
     {
-      timestamps: true,
+      timestamps: false,
       tableName: 'substrates'
     }
   )
