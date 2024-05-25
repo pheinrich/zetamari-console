@@ -3746,6 +3746,11 @@ mui-image@^1.0.7:
   resolved "https://registry.yarnpkg.com/mui-image/-/mui-image-1.0.7.tgz#f665432d2cbf6140a34903b9a5143560ebd4df27"
   integrity sha512-U79TWMKMfMC1ZiGnv/M+SaVJeUpubEjXOdy7w53RsvidUAMZ+4nW+QmDG9yg5fgWeYy6YJgLHyI9BHSDw76iIg==
 
+mui-nested-menu@^3.4.0:
+  version "3.4.0"
+  resolved "https://registry.yarnpkg.com/mui-nested-menu/-/mui-nested-menu-3.4.0.tgz#e104b1b492e0a9ef95820e97827851310c3a56ba"
+  integrity sha512-QUZqsCKW4tX1GwcbemBvf++ZvKsRXvHdZ+CT6GvnHvusucmEB18WKuJjAZVD8L5trXS98+9psie11Ev3FTez2A==
+
 multipipe@^1.0.2:
   version "1.0.2"
   resolved "https://registry.yarnpkg.com/multipipe/-/multipipe-1.0.2.tgz#cc13efd833c9cda99f224f868461b8e1a3fd939d"
