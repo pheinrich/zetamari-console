@@ -16,15 +16,14 @@ function Path( {fill, color, stroke, data, transform} )
   )
 }
 
-export default function MirrorView( {mirror, settings} )
+export default function MirrorView( {substrate, settings} )
 {
-  if( 'undefined' === typeof mirror?.outside )
-    return <></>
+  return <></>
 
   const center = mirror.outside.dims.center
   const zoom = 110 - settings.zoom
   const viewBox = `${center.x - zoom/2} ${center.y - zoom/2} ${zoom} ${zoom}`
-  const substrate = `${mirror.outside.data} ${mirror.inside.data}`
+  const subSVG = `${mirror.outside.data} ${mirror.inside.data}`
 
   return (
     <div
@@ -70,7 +69,7 @@ export default function MirrorView( {mirror, settings} )
           fill='#eda'
           stroke='0.125'
           color='#666'
-          data={substrate}
+          data={subSVG}
         />}
         { settings.showGlass && <Path
           fill={settings.showBack ? 'url(#mirrorBackGrad)' : 'url(#mirrorFrontGrad)'}
@@ -81,7 +80,7 @@ export default function MirrorView( {mirror, settings} )
         { settings.showBack ?
           <Path fill='none' stroke='0.075' color='#ba7' data={mirror.rabbet.data} />
           :
-          <Path fill='#eda' stroke='0.125' color='#666' data={substrate} />
+          <Path fill='#eda' stroke='0.125' color='#666' data={subSVG} />
         }
       </svg>
 

@@ -45,50 +45,14 @@ function PreviewTabPanel( props )
 
 export default function Preview()
 {
-  const [presets, setPresets] = useState([
-    {
-      name: 'Chapel Arch',
-      sku: 'Ca1424',
-      width: 14.25,
-      height: 23.5,
-      border: 2.75,
-      isStock: false,
-      isPreset: false,
-      outside:
-      {
-        id: 1,
-        name: 'Chapel Arch',
-        prefix: 'Ca',
-        svgData: null
-      },
-      inside: null,
-      rabbet: null
-    }
-  ])
+  const [tab, setTab] = useState( 0 )
+  const [preset, setPreset] = useState( 17 )
+  const [substrate, setSubstrate] = useState( null )
 
   useEffect( () => {
-    fetch( '/api/substrates' )
-      .then( (res) => res.json() )
-      .then( setPresets )
-  }, [] )
-
-	const [width, setWidth] = useState( presets[0].width )
-	const [height, setHeight] = useState( presets[0].height )
-	const [border, setBorder] = useState( presets[0].border )
-	const [outside, setOutside] = useState( presets[0].outside )
-	const [inside, setInside] = useState( presets[0].inside )
-	const [rabbet, setRabbet] = useState( presets[0].rabbet )
-
-  const mirror = useMirror( width, height, border, outside, inside, rabbet )
-  const [tab, setTab] = useState( 0 )
-  const params = {
-  	width, setWidth,
-  	height, setHeight,
-  	border, setBorder,
-  	outside, setOutside,
-  	inside, setInside,
-  	rabbet, setRabbet
-  }
+    fetch( `/api/substrates/${preset}` )
+      .then( res => setSubstrate( res.json() ) )
+  }, [preset] )
 
   return (
     <Card>
@@ -98,7 +62,7 @@ export default function Preview()
       <CardContent>
         <Box>
           <Stack direction='row' justifyContent='space-between'>
-            <MirrorPanel mirror={mirror}/>
+            <MirrorPanel substrate={substrate}/>
             <Stack sx={{ width: '100%', height: '2', ml: '20px'}}>
               <Box sx={{ height: '100%'}}>
                 <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
@@ -109,8 +73,7 @@ export default function Preview()
                   </Tabs>
                 </Box>
                 <PreviewTabPanel value={tab} index={0}>
-                  <ParamsPanel params={params} />
-                  <StatsView mirror={mirror} />
+                  <ParamsPanel preset={preset} setPreset={setPreset} substrate={substrate} setSubstrate={setSubstrate} />
                 </PreviewTabPanel>
                 <PreviewTabPanel value={tab} index={1}>
                   Materials

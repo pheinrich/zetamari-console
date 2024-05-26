@@ -15,129 +15,137 @@ import { NestedDropdown } from 'mui-nested-menu'
 
 const ROOT3 = Math.sqrt( 3 )
 
-function ParamsPanel( {params} )
+function ParamsPanel( props )
 {
+	if( !props.substrate )
+		return <></>
+
 	const [shapes, setShapes] = useState( [] )
 	const [presets, setPresets] = useState( [] )
+	const [menuItemsData, setMenuItemsData] = useState( {} )
 
-	const [outside, setOutside] = useState( params.outside )
-	const [inside, setInside] = useState( params.inside )
-	const [rabbet, setRabbet] = useState( params.rabbet )
-	const [isPercent, setIsPercent] = useState( Boolean( params.inside ) )
-	const [width, setWidth] = useState( params.width )
-	const [height, setHeight] = useState( params.height )
-	const [border, setBorder] = useState( isPercent ? 100 * params.border : params.border )
+	const [preset, setPreset] = useState( props.preset )
+	const [isPercent, setIsPercent] = useState( Boolean( props.substrate.inside ) )
+
+	const [width, setWidth] = useState( props.substrate.width )
+	const [height, setHeight] = useState( props.substrate.height )
+	const [border, setBorder] = useState( isPercent ? 100 * props.substrate.border : props.substrate.border )
 
 	useEffect( () => {
-		fetch( '/api/shapes' )
-		  .then( (res) => res.json() )
-		  .then( setShapes )
+		const urls = ['/api/shapes', '/api/substrates']
 
-		 fetch( '/api/substrates' )
-		 	.then( (res) => res.json() )
-		 	.then( (all) => all.filter( item => item.isPreset ) )
-		 	.then( setPresets )
-	}, [])
+		Promise.all( urls.map( url => fetch( url ).then( res => res.json() ) ) )
+			.then( ([shps, subs]) => {
+				setShapes( shps )
+				setPresets( subs.filter( s => s.isPreset ) )
+				setMenuItemsData( {
+					label: 'Contour',
+					items:
+					[
+						...buildMenu( shapes.filter( s => s.isPrimitive ) ),
+				  	{label: '––––––––––––––––––––––––', disabled: true },
+						...buildMenu( shapes.filter( s => !s.isPrimitive ) )
+					]
+				} )
+			})
+	}, [shapes, presets] )
 
-	function constrainToWidth( id, w )
+	function buildMenu( shps, pres )
+	{
+		return shps.sort( (a, b) => a.name.localeCompare( b.name ) )
+			.map( s => {
+				const subs = presets.filter( p => p.outside.shapeId === s.id )
+					.map( p => { return {
+						id: p.id,
+						label: p.name,
+						callback: (evt, item) => {updatePreset( item.id )}
+					}})
+
+					if( 0 === subs.length )
+						return {label: s.name, disabled: true}
+					else if( 1 === subs.length )
+						return subs[0]
+					else
+						return {label: s.name, items: subs}
+			})
+	}
+
+	function constrainToWidth( w )
 	{
 		let h = height
 
-		if( 2 === id || 6 === id )
+		switch( preset.outsideId )
 		{
-			// Circles and squares have only one dimensional measure.
-			h = w
-		}
-		else if( 7 === id )
-		{
-			// Vesica picscis has a very specific aspect ratio.
-			h = ROOT3 * w
+			case 2:
+			case 6:
+				// Circles and squares have only one dimensional measure.
+				h = w
+				break
+
+			case 7:
+				// Vesica picscis has a very specific aspect ratio.
+				h = ROOT3 * w
+				break
 		}
 
 		setWidth( w )
-		params.setWidth( w )
 		setHeight( h )
-		params.setHeight( h )
+		props.setSubstrate( {...props.substrate, width: w, height: h} )
 	}
 
-	function constrainToHeight( id, h )
+	function constrainToHeight( h )
 	{
 		let w = width
 
-		if( 2 === id || 6 === id )
+		switch( preset.outsideId )
 		{
-			// Circles and squares have only one dimensional measure.
-			w = h
-		}
-		else if( 7 === id )
-		{
-			// Vesica picscis has a very specific aspect ratio.
-			w = h / ROOT3
+			case 2:
+			case 6:
+				// Circles and squares have only one dimensional measure.
+				w = h
+				break
+
+			case 7:
+				// Vesica picscis has a very specific aspect ratio.
+				w = h / ROOT3
+				break
 		}
 
 		setWidth( w )
-		params.setWidth( w )
 		setHeight( h )
-		params.setHeight( h )
+		props.setSubstrate( {...props.substrate, width: w, height: h} )
 	}
 
 	function constrainToBorder( b )
 	{
 		setBorder( b )
-		params.setBorder( isPercent ? b / 100 : b )
+		props.setSubstrate( {...props.substrate, border: isPercent ? b / 100 : b} )
 	}
 
 	function toggleIsPercent()
 	{
 		setIsPercent( isPercent ^ true )
-		setBorder( isPercent ? params.border : 100 * params.border )
+		setBorder( isPercent ? props.substrate.border : 100 * props.substrate.border )
 	}
 
-	function updateContours( o, i, r )
+	function updatePreset( p )
 	{
-		if( Boolean( i ) ^ Boolean( inside ) )
+		const newPreset = presets.filter( item => item.id === p )
+
+		if( Boolean( preset?.inside ) ^ Boolean( newPreset.inside ) )
 			toggleIsPercent()
 
-		setOutside( o )
-		params.setOutside( o )
-		setInside( i )
-		params.setInside( i )
-		setRabbet( r )
-		params.setRabbet( r )
-
-		constrainToWidth( o, width )
+		setPreset( newPreset )
+		props.setSubstrate( {...newPreset, width: width, border: preset.border} )
+		constrainToWidth( width )
 	}
 
-	const menuItemsData = 
-	{
-		label: 'Contour',
-		items:
-		[
-			...shapes.filter( item => item.isPrimitive )
-		  	.sort( (a, b) => a.name.localeCompare( b.name ) )
-		  	.map( item => {return {label: item.name}} ),
-		  	{label: '––––––––––––––––––––––––', disabled: true },
-			...shapes.filter( item => !item.isPrimitive )
-		  	.sort( (a, b) => a.name.localeCompare( b.name ) )
-		  	.map( item => {
-		  		let subs = presets.filter( pre => pre.outside.shapeId === item.id )
-		  		let items = subs.map( pre => {return {label: pre.name}} )
-
-		  		return {
-		  			label: item.name,
-		  			items: 1 < items.length ? items : []
-		  		}
-		  	}),
-		]
-	}
-	
 	return (
 		<Stack>
 			<NestedDropdown
 				menuItemsData={menuItemsData}
 				MenuProps={{elevation: 3}}
 				ButtonProps={{variant: 'outlined'}}
-				onClick={() => console.log( 'Clicked' )}
 			/>
 			<Stack mt={10} direction='row'>
 				<TextField
@@ -146,7 +154,7 @@ function ParamsPanel( {params} )
 					style={{width: 150}}
 					value={width}
 					onChange={(evt) => {setWidth( evt.target.value )}}
-					onBlur={(evt) => {constrainToWidth( outside, Number( evt.target.value ) )}}
+					onBlur={(evt) => {constrainToWidth( Number( evt.target.value ) )}}
 					InputProps={{
 						endAdornment: <InputAdornment position='end'>in</InputAdornment>
 					}}
@@ -159,7 +167,7 @@ function ParamsPanel( {params} )
 					style={{width: 150}}
 					value={height}
 					onChange={(evt) => {setHeight( evt.target.value )}}
-					onBlur={(evt) => {constrainToHeight( outside, Number( evt.target.value ) )}}
+					onBlur={(evt) => {constrainToHeight( Number( evt.target.value ) )}}
 					InputProps={{
 						endAdornment: <InputAdornment position='end'>in</InputAdornment>
 					}}
