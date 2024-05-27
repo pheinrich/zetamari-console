@@ -55,18 +55,18 @@ module.exports =
 
         { outsideId: 23, insideId: 24, rabbetId: 25, name: 'Mandala, Avens', sku: 'MdAv21', width: 21.3188, height: 21.3188, border: 1, isStock: true, isPreset: true },
 
-        { outsideId: 26, insideId: 27, rabbetId: 28, name: 'Mandala, Planet', sku: 'MdPl23', width: 22.8, height: 22.8, border: 1, isStock: true, isPreset: true },
+        { outsideId: 26, insideId: 27, rabbetId: 28, name: 'Mandala, Planet', sku: 'MdPl23', width: 22.69, height: 22.49, border: 1, isStock: true, isPreset: true },
 
-        { outsideId: 29, insideId: 30, name: 'Mandala, Sonora', sku: 'MdSn23', width: 23.25, height: 23.25, border: 1, isStock: true, isPreset: true },
+        { outsideId: 29, insideId: 30, name: 'Mandala, Sonora', sku: 'MdSn23', width: 23.16, height: 23.02, border: 1, isStock: true, isPreset: true },
         { outsideId: 29, insideId: 30, name: 'Mandala, Sonora (Large)', sku: 'MdSn27', width: 27.29, height: 27.29, border: 1, isStock: true, isPreset: false },
 
         { outsideId: 31, insideId: 32, rabbetId: 33, name: 'Mandala, Starlight (Mini)', sku: 'MdSl7', width: 6.62, height: 6.62, border: 1, isStock: true, isPreset: true },
-        { outsideId: 34, insideId: 35, rabbetId: 36, name: 'Mandala, Starlight (Small)', sku: 'MdSl10', width: 9.76, height: 9.76, border: 1, isStock: true, isPreset: true },
-        { outsideId: 37, insideId: 38, rabbetId: 39, name: 'Mandala, Starlight (Medium)', sku: 'MdSl14', width: 13.31, height: 13.31, border: 1, isStock: true, isPreset: true },
-        { outsideId: 40, insideId: 41, name: 'Mandala, Starlight', sku: 'MdSl21', width: 20.24, height: 20.24, border: 1, isStock: true, isPreset: true },
+        { outsideId: 34, insideId: 35, rabbetId: 36, name: 'Mandala, Starlight (Small)', sku: 'MdSl10', width: 9.75, height: 9.75, border: 1, isStock: true, isPreset: true },
+        { outsideId: 37, insideId: 38, rabbetId: 39, name: 'Mandala, Starlight (Medium)', sku: 'MdSl14', width: 13.28, height: 13.28, border: 1, isStock: true, isPreset: true },
+        { outsideId: 40, insideId: 41, name: 'Mandala, Starlight', sku: 'MdSl21', width: 20.4, height: 20.24, border: 1, isStock: true, isPreset: true },
         { outsideId: 40, insideId: 41, name: 'Mandala, Starlight (Large)', sku: 'MdSl26', width: 25.56, height: 25.56, border: 1, isStock: true, isPreset: false },
 
-        { outsideId: 42, insideId: 43, rabbetId: 44, name: 'Mina', sku: 'Mn24', width: 23.66, height: 23.66, border: 1, isStock: true, isPreset: true },
+        { outsideId: 42, insideId: 43, rabbetId: 44, name: 'Mina', sku: 'Mn24', width: 23.67, height: 23.67, border: 1, isStock: true, isPreset: true },
 
         { outsideId: 45, name: 'Neslo', sku: 'Ne1636', width: 16, height: 36, border: 2.5, isStock: true, isPreset: true },
         { outsideId: 45, name: 'Neslo (Large)', sku: 'Ne1850', width: 18, height: 50, border: 3, isStock: true, isPreset: false },
