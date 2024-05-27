@@ -86,12 +86,14 @@ export default function MirrorView( {mirror, settings} )
       </svg>
 
       { (settings.showDims & 1) === 1 && <Dimensions
+        labelAnchor={{x: mirror.outside.dims.left.x, y: mirror.outside.dims.bottom.y}}
         dims={mirror.outside.dims}
         origin={center}
         zoom={settings.zoom}
         isFlipped={settings.showBack}
       />}
       { (settings.showDims & 2) === 2 && <Dimensions
+        labelAnchor={{x: mirror.outside.dims.right.x, y: mirror.outside.dims.top.y}}
         dims={settings.showBack && settings.showGlass ? mirror.glass.dims : mirror.inside.dims}
         origin={center}
         zoom={settings.zoom}

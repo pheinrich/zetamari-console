@@ -5,9 +5,9 @@ function HorzLimitLine( {start, end, y, color} )
 {
 	return (
     <line
-    	x1={start - OFFSET - PADDING}
+    	x1={start}
     	y1={y}
-    	x2={end + PADDING }
+    	x2={end}
     	y2={y}
     	stroke={color}
     	strokeWidth='0.5'
@@ -20,9 +20,9 @@ function VertLimitLine( {start, end, x, color} )
 	return (
     <line
     	x1={x}
-    	y1={start + OFFSET + PADDING}
+    	y1={start}
     	x2={x}
-    	y2={end - PADDING}
+    	y2={end}
     	stroke={color}
     	strokeWidth='0.5'
     />
@@ -66,7 +66,7 @@ function shapeToView( shape, origin, vw, vh, scale )
 	}
 }
 
-export default function Dimensions( {dims, origin, zoom, isFlipped, color = "red", width = 500, height = 500} )
+export default function Dimensions( {labelAnchor, dims, origin, zoom, isFlipped, color = "red", width = 500, height = 500} )
 {
 	const arrow = `${color}-arrow`
 	const markerEnd = `url(#${arrow})`
@@ -76,7 +76,11 @@ export default function Dimensions( {dims, origin, zoom, isFlipped, color = "red
 	const right = shapeToView( dims.right, origin, width, height, scale )
 	const bottom = shapeToView( dims.bottom, origin, width, height, scale )
 	const left = shapeToView( dims.left, origin, width, height, scale )
+	const label = shapeToView( labelAnchor, origin, width, height, scale )
 
+	const offset = {x: label.x < right.x ? -OFFSET : OFFSET, y: label.y < bottom.y ? -OFFSET : OFFSET }
+	const padding = {x: label.x < right.x ? -PADDING : PADDING, y: label.y < bottom.y ? -PADDING : PADDING }
+	
   if( isFlipped )
   {
 		top.x = width - top.x
@@ -99,38 +103,38 @@ export default function Dimensions( {dims, origin, zoom, isFlipped, color = "red
         </marker>
       </defs>
 
-			<HorzLimitLine start={left.x} end={top.x} y={top.y - 2} color={color}/>
-			<HorzLimitLine start={left.x} end={bottom.x} y={bottom.y + 2} color={color}/>
-			<VertLimitLine start={bottom.y} end={left.y} x={left.x - 2} color={color} />
-			<VertLimitLine start={bottom.y} end={right.y} x={right.x + 2} color={color} />
+			<HorzLimitLine start={label.x + offset.x + padding.x} end={top.x - padding.x} y={top.y - 2} color={color}/>
+			<HorzLimitLine start={label.x + offset.x + padding.x} end={bottom.x - padding.x} y={bottom.y + 2} color={color}/>
+			<VertLimitLine start={label.y + offset.y + padding.y} end={left.y - padding.y} x={left.x - 2} color={color} />
+			<VertLimitLine start={label.y + offset.y + padding.y} end={right.y - padding.y} x={right.x + 2} color={color} />
 
       { 92 < (bottom.y - top.y) && <>
 				<ArrowHead
-					start={{x: left.x - OFFSET, y: (top.y + bottom.y)/2 - 2*PADDING}}
-					end={{x: left.x - OFFSET, y: top.y + 2*PADDING}}
+					start={{x: label.x + offset.x, y: (top.y + bottom.y)/2 - 2*PADDING}}
+					end={{x: label.x + offset.x, y: top.y + 2*PADDING}}
 					color={color} marker={markerEnd}
 				/>
 				<ArrowHead
-					start={{x: left.x - OFFSET, y: (top.y + bottom.y)/2 + 2*PADDING}}
-					end={{x: left.x - OFFSET, y: bottom.y - 2*PADDING}}
+					start={{x: label.x + offset.x, y: (top.y + bottom.y)/2 + 2*PADDING}}
+					end={{x: label.x + offset.x, y: bottom.y - 2*PADDING}}
 					color={color} marker={markerEnd}
 				/>
 			</>}
       { 110 < (right.x - left.x) && <>
 				<ArrowHead
-					start={{x: (left.x + right.x)/2 - 3*PADDING, y: bottom.y + OFFSET}}
-					end={{x: left.x + 2*PADDING, y: bottom.y + OFFSET}}
+					start={{x: (left.x + right.x)/2 - 3*PADDING, y: label.y + offset.y}}
+					end={{x: left.x + 2*PADDING, y: label.y + offset.y}}
 					color={color} marker={markerEnd}
 				/>
 				<ArrowHead
-					start={{x: (left.x + right.x)/2 + 3*PADDING, y: bottom.y + OFFSET}}
-					end={{x: right.x - 2*PADDING, y: bottom.y + OFFSET}}
+					start={{x: (left.x + right.x)/2 + 3*PADDING, y: label.y + offset.y}}
+					end={{x: right.x - 2*PADDING, y: label.y + offset.y}}
 					color={color} marker={markerEnd}
 				/>
 			</>}
 
-     	<Label x={(left.x + right.x)/2} y={bottom.y + OFFSET} value={dims.width} />
-      <Label x={left.x - OFFSET} y={(top.y + bottom.y)/2} value={dims.height} />
+     	<Label x={(left.x + right.x)/2} y={label.y + offset.y} value={dims.width} />
+      <Label x={label.x + offset.x} y={(top.y + bottom.y)/2} value={dims.height} />
     </svg>
   )
 }
