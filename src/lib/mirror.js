@@ -5,14 +5,13 @@ const RABBET_BUFFER = 0.3125
 const POCKET_DIAMETER = 0.6
 const SHARP_ANGLE = Math.PI / 6
 
-function build( width, height, border, outside, inside, rabbet )
+function build( width, height, border, shapeId, outsideSVG, insideSVG, rabbetSVG )
 {
 	let op, ip, rp, gp
 	let outsideDims, insideDims
 
-	let outsideSVG = outside.svgData
 	if( !outsideSVG )
-		op = Contour.buildFromType( outside.prefix, width, height )
+		op = Contour.buildFromType( shapeId, width, height )
 	else
 		op = Contour.buildFromSVGData( outsideSVG )
 	outsideDims = Contour.getDims( op )
@@ -26,7 +25,6 @@ function build( width, height, border, outside, inside, rabbet )
 		outsideDims = Contour.getDims( op )
 	}
 
-	let insideSVG = inside ? inside.svgData : undefined
 	if( !insideSVG )
 		ip = Contour.buffer( op, -border )
 	else
@@ -43,7 +41,6 @@ function build( width, height, border, outside, inside, rabbet )
 	}
 	insideDims = Contour.getDims( ip )
 
-	let rabbetSVG = rabbet ? rabbet.svgData : undefined
 	if( !rabbetSVG )
 		rp = Contour.buffer( ip, RABBET_BUFFER );
 	else

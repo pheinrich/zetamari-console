@@ -19,7 +19,7 @@ const MirrorIcon = createSvgIcon(
 	'Mirror'
 )
 
-export default function MirrorPanel( {substrate} )
+export default function MirrorPanel( {mirror} )
 {
 	const [settings, setSettings] = useState({
 		showBack: false,
@@ -30,7 +30,7 @@ export default function MirrorPanel( {substrate} )
 
 	return (
 		<Stack>
-			<MirrorView substrate={substrate} settings={settings} />
+			<MirrorView mirror={mirror} settings={settings} />
 	    <Stack direction='row' justifyContent='space-between' alignItems='center'>
 	      <Box>
 	        <Tooltip title={settings.showBack ? 'Show Front' : 'Show Back'}>

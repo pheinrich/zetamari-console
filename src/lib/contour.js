@@ -49,7 +49,7 @@ function buildFromType( type, width, height )
 
 	switch( type )
 	{
-		case 'Ca':
+		case 1:
 			// Chapel Arch
       gsf.setSize( width )
       coords = gsf.createArc( Math.PI, Math.PI ).getCoordinates()
@@ -60,12 +60,12 @@ function buildFromType( type, width, height )
       geometry = gf.createPolygon( coords )
       break
 
-    case 'Ci':
+    case 2:
     	// Circle
     	geometry = gsf.createCircle()
     	break
 
-    case 'Ga':
+    case 3:
     	// Gothic Arch
     	gsf.setSize( 2*width )
     	gsf.setBase( new Coordinate( 0, -width * GA_ADJ ) )
@@ -80,18 +80,18 @@ function buildFromType( type, width, height )
     	geometry = gf.createPolygon( coords )
     	break
 
- 		case 'Ov':
+ 		case 4:
  			// Oval
  			geometry = gsf.createEllipse()
  			break
 
- 		case 'Re':
- 		case 'Sq':
+ 		case 5:
+ 		case 6:
  			// Rectangle & Square
  			geometry = gsf.createRectangle()
  			break
 
- 		case 'Vp':
+ 		case 7:
  			// Vesica Piscis
  			gsf.setSize( 2*width )
  			gsf.setBase( new Coordinate( 0, -width * GA_ADJ ) )

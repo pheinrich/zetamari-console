@@ -23,7 +23,6 @@ function ParamsPanel( props )
 
 	const [shapes, setShapes] = useState( [] )
 	const [presets, setPresets] = useState( [] )
-	const [menuItemsData, setMenuItemsData] = useState( {} )
 
 	const [substrate, setSubstrate] = useState( props.substrate )
 	const [isPercent, setIsPercent] = useState( Boolean( props.substrate.inside ) )
@@ -37,38 +36,11 @@ function ParamsPanel( props )
 
 		Promise.all( urls.map( url => fetch( url ).then( res => res.json() ) ) )
 			.then( ([shps, subs]) => {
+				subs = subs.filter( s => s.isPreset )
 				setShapes( shps )
-				setPresets( subs.filter( s => s.isPreset ) )
-				setMenuItemsData( {
-					label: substrate.name,
-					items:
-					[
-						...buildMenu( shapes.filter( s => s.isPrimitive ) ),
-				  	{label: '––––––––––––––––––––––––', disabled: true },
-						...buildMenu( shapes.filter( s => !s.isPrimitive ) )
-					]
-				} )
+				setPresets( subs )
 			})
-	}, [shapes, presets] )
-
-	function buildMenu( shps, pres )
-	{
-		return shps.sort( (a, b) => a.name.localeCompare( b.name ) )
-			.map( s => {
-				const subs = presets.filter( p => p.outside.shapeId === s.id )
-					.map( p => { return {
-						label: p.name,
-						callback: (evt, item) => {loadPreset( p.id )}
-					}})
-
-					if( 0 === subs.length )
-						return {label: s.name, disabled: true}
-					else if( 1 === subs.length )
-						return subs[0]
-					else
-						return {label: s.name, items: subs}
-			})
-	}
+	}, [setShapes, setPresets] )
 
 	function constrainToWidth( w, shapeId )
 	{
@@ -128,16 +100,14 @@ function ParamsPanel( props )
 		setBorder( isPercent ? props.substrate.border : 100 * props.substrate.border )
 	}
 
-	function loadPreset( id )
+	function loadPreset( preset )
 	{
-		const newSubstrate = presets.find( p => p.id === id )
-
-		if( Boolean( substrate.inside ) ^ Boolean( newSubstrate.inside ) )
+		if( Boolean( substrate.inside ) ^ Boolean( preset.inside ) )
 			toggleIsPercent()
 
-		setSubstrate( newSubstrate )
-		props.setSubstrate( {...newSubstrate, width: width, border: substrate.border} )
-		constrainToWidth( width, newSubstrate.outside.shapeId )
+		setSubstrate( preset )
+		props.setSubstrate( {...preset, width: width, border: substrate.border} )
+		constrainToWidth( width, preset.outside.shapeId )
 	}
 
 	function isSetToDefaults()
@@ -157,6 +127,36 @@ function ParamsPanel( props )
 		setBorder( isPercent ? 100 * preset.border : preset.border )
 
 		props.setSubstrate( {...props.substrate, width: preset.width, height: preset.height, border: preset.border} )
+	}
+
+	function buildMenu( set )
+	{
+		return set.sort( (a, b) => a.name.localeCompare( b.name ) )
+			.map( s => {
+				const pres = presets.filter( p => p.outside.shapeId === s.id )
+					.map( p => { return {
+						label: p.name,
+						callback: (evt, item) => {loadPreset( p )}
+					}})
+
+					if( 0 === pres.length )
+						return {label: s.name, disabled: true}
+					else if( 1 === pres.length )
+						return pres[0]
+					else
+						return {label: s.name, items: pres}
+			})
+	}
+
+	const menuItemsData =
+	{
+		label: substrate.name,
+		items:
+		[
+			...buildMenu( shapes.filter( s => s.isPrimitive ) ),
+	  	{label: '––––––––––––––––––––––––', disabled: true },
+			...buildMenu( shapes.filter( s => !s.isPrimitive ) )
+		]
 	}
 
 	return (

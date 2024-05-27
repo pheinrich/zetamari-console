@@ -16,9 +16,10 @@ function Path( {fill, color, stroke, data, transform} )
   )
 }
 
-export default function MirrorView( {substrate, settings} )
+export default function MirrorView( {mirror, settings} )
 {
-  return <></>
+  if( !(mirror && mirror.outside) )
+    return <div>Loading...</div>
 
   const center = mirror.outside.dims.center
   const zoom = 110 - settings.zoom

@@ -52,7 +52,9 @@ export default function Preview()
     fetch( `/api/substrates/${substrate.id}` )
       .then( res => res.json() )
       .then( setSubstrate )
-  }, [substrate] )
+  }, [] )
+
+  // const mirror = useMirror( 13.5, 24.25, 2.5, 1, null, null, null )
 
   if( !Boolean( substrate.outside ) )
     return <div>Loading...</div>
@@ -65,7 +67,7 @@ export default function Preview()
       <CardContent>
         <Box>
           <Stack direction='row' justifyContent='space-between'>
-            <MirrorPanel substrate={substrate}/>
+            {/*<MirrorPanel mirror={mirror}/>*/}
             <Stack sx={{ width: '100%', height: '2', ml: '20px'}}>
               <Box sx={{ height: '100%'}}>
                 <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>

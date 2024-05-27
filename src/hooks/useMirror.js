@@ -1,16 +1,18 @@
 import { useEffect, useState } from 'react'
 import Mirror from 'src/lib/mirror'
 
-function useMirror( width, height, border, outside, inside, rabbet )
+function useMirror( width, height, border, shapeId, outsideSVG, insideSVG, rabbetSVG )
 {
 	const [mirror, setMirror] = useState( undefined )
 
 	useEffect( () =>
 	{
-		const mirror = Mirror.build( width, height, border, outside, inside, rabbet )
-		setMirror( mirror )
-
-	}, [width, height, border, outside, inside, rabbet] )
+		if( shapeId )
+		{
+			const mirror = Mirror.build( width, height, border, shapeId, outsideSVG, insideSVG, rabbetSVG )
+			setMirror( mirror )
+		}
+	}, [width, height, border, shapeId])
 
 	return mirror
 }
