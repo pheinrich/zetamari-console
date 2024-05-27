@@ -95,6 +95,7 @@ export default function Preview()
                 </Box>
                 <PreviewTabPanel value={tab} index={0}>
                   <ParamsPanel substrate={substrate} setSubstrate={setSubstrate} />
+                  <StatsView mirror={mirror} />
                 </PreviewTabPanel>
                 <PreviewTabPanel value={tab} index={1}>
                   Materials

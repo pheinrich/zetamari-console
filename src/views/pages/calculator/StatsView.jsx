@@ -54,15 +54,18 @@ function CostStat( {label, value} )
 	)
 }
 
-export default function StatsView( {substrate, costs} )
+export default function StatsView( {mirror, costs} )
 {
-  const totalArea = substrate?.outside?.dims?.area - substrate?.inside?.dims?.area
-  const visibleGlassArea = substrate?.inside?.dims?.area
-  const glassArea = substrate?.glass?.dims?.area
+	if( !mirror )
+		return <div>Loading...</div>
+
+  const totalArea = mirror.outside?.dims?.area - mirror.inside?.dims?.area
+  const visibleGlassArea = mirror.inside?.dims?.area
+  const glassArea = mirror.glass?.dims?.area
   const substrateWeight = totalArea*SUBSTRATE_WEIGHT_LBIN2 + glassArea*GLASS_WEIGHT_LBIN2
   const kitWeight = substrateWeight + totalArea*TESSERAE_WEIGHT_LBIN2
-  const substrateOBBArea = substrate?.outside?.obb.area
-  const glassOBBArea = substrate?.glass?.obb.area
+  const substrateOBBArea = mirror.outside?.obb.area
+  const glassOBBArea = mirror.glass?.obb.area
   const substrateCost = substrateOBBArea*SUBSTRATE_COST_DIN2 + glassOBBArea*GLASS_COST_DIN2
   const kitCost = substrateCost + totalArea*TESSERAE_COST_DIN2
 
