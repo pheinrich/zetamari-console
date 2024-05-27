@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useMirror } from 'src/hooks/useMirror'
+import Mirror from 'src/lib/mirror'
 
 import Box from '@mui/material/Box'
 import Card from '@mui/material/Card'
@@ -47,6 +47,7 @@ export default function Preview()
 {
   const [tab, setTab] = useState( 0 )
   const [substrate, setSubstrate] = useState( {id: 17} )
+  const [mirror, setMirror] = useState( undefined )
 
   useEffect( () => {
     fetch( `/api/substrates/${substrate.id}` )
@@ -54,7 +55,22 @@ export default function Preview()
       .then( setSubstrate )
   }, [] )
 
-  // const mirror = useMirror( 13.5, 24.25, 2.5, 1, null, null, null )
+  useEffect( () => {
+    if( substrate.outside?.shapeId )
+    {
+      const newMirror = Mirror.build(
+        substrate.width,
+        substrate.height,
+        substrate.border,
+        substrate.outside.shapeId,
+        substrate.outside?.svgData,
+        substrate.inside?.svgData,
+        substrate.rabbet?.svgData
+      )
+
+      setMirror( newMirror )
+    }
+  }, [substrate] )
 
   if( !Boolean( substrate.outside ) )
     return <div>Loading...</div>
@@ -67,7 +83,7 @@ export default function Preview()
       <CardContent>
         <Box>
           <Stack direction='row' justifyContent='space-between'>
-            {/*<MirrorPanel mirror={mirror}/>*/}
+            <MirrorPanel mirror={mirror}/>
             <Stack sx={{ width: '100%', height: '2', ml: '20px'}}>
               <Box sx={{ height: '100%'}}>
                 <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>

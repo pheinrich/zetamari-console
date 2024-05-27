@@ -36,9 +36,8 @@ function ParamsPanel( props )
 
 		Promise.all( urls.map( url => fetch( url ).then( res => res.json() ) ) )
 			.then( ([shps, subs]) => {
-				subs = subs.filter( s => s.isPreset )
 				setShapes( shps )
-				setPresets( subs )
+				setPresets( subs.filter( s => s.isPreset ) )
 			})
 	}, [setShapes, setPresets] )
 
@@ -65,7 +64,7 @@ function ParamsPanel( props )
 		props.setSubstrate( {...props.substrate, width: w, height: h} )
 	}
 
-	function constrainToHeight( h, shapeId = substrate.outside.shapeId )
+	function constrainToHeight( h, shapeId )
 	{
 		let w = width
 
@@ -185,7 +184,7 @@ function ParamsPanel( props )
 					style={{width: 150}}
 					value={width}
 					onChange={(evt) => {setWidth( evt.target.value )}}
-					onBlur={(evt) => {constrainToWidth( Number( evt.target.value ) )}}
+					onBlur={(evt) => {constrainToWidth( Number( evt.target.value ), substrate.outside.shapeId )}}
 					InputProps={{
 						endAdornment: <InputAdornment position='end'>in</InputAdornment>
 					}}
@@ -198,7 +197,7 @@ function ParamsPanel( props )
 					style={{width: 150}}
 					value={height}
 					onChange={(evt) => {setHeight( evt.target.value )}}
-					onBlur={(evt) => {constrainToHeight( Number( evt.target.value ) )}}
+					onBlur={(evt) => {constrainToHeight( Number( evt.target.value ), substrate.outside.shapeId )}}
 					InputProps={{
 						endAdornment: <InputAdornment position='end'>in</InputAdornment>
 					}}
