@@ -62,6 +62,8 @@ function ParamsPanel( props )
 		setWidth( w )
 		setHeight( h )
 		props.setSubstrate( {...props.substrate, width: w, height: h} )
+
+		return h
 	}
 
 	function constrainToHeight( h, shapeId )
@@ -85,6 +87,8 @@ function ParamsPanel( props )
 		setWidth( w )
 		setHeight( h )
 		props.setSubstrate( {...props.substrate, width: w, height: h} )
+
+		return w
 	}
 
 	function constrainToBorder( b )
@@ -105,8 +109,8 @@ function ParamsPanel( props )
 			toggleIsPercent()
 
 		setSubstrate( preset )
-		props.setSubstrate( {...preset, width: width, border: substrate.border} )
-		constrainToWidth( width, preset.outside.shapeId )
+		const h = constrainToWidth( width, preset.outside.shapeId )
+		props.setSubstrate( {...preset, width: width, height: h, border: substrate.border} )
 	}
 
 	function isSetToDefaults()
