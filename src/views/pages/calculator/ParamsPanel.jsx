@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 
 import Box from '@mui/material/Box'
+import Button from '@mui/material/Button'
 import Divider from '@mui/material/Divider'
 import FormControl from '@mui/material/FormControl'
 import InputAdornment from '@mui/material/InputAdornment'
@@ -24,7 +25,7 @@ function ParamsPanel( props )
 	const [presets, setPresets] = useState( [] )
 	const [menuItemsData, setMenuItemsData] = useState( {} )
 
-	const [preset, setPreset] = useState( props.preset )
+	const [substrate, setSubstrate] = useState( props.substrate )
 	const [isPercent, setIsPercent] = useState( Boolean( props.substrate.inside ) )
 
 	const [width, setWidth] = useState( props.substrate.width )
@@ -39,7 +40,7 @@ function ParamsPanel( props )
 				setShapes( shps )
 				setPresets( subs.filter( s => s.isPreset ) )
 				setMenuItemsData( {
-					label: 'Contour',
+					label: substrate.name,
 					items:
 					[
 						...buildMenu( shapes.filter( s => s.isPrimitive ) ),
@@ -56,9 +57,8 @@ function ParamsPanel( props )
 			.map( s => {
 				const subs = presets.filter( p => p.outside.shapeId === s.id )
 					.map( p => { return {
-						id: p.id,
 						label: p.name,
-						callback: (evt, item) => {updatePreset( item.id )}
+						callback: (evt, item) => {loadPreset( p.id )}
 					}})
 
 					if( 0 === subs.length )
@@ -70,11 +70,11 @@ function ParamsPanel( props )
 			})
 	}
 
-	function constrainToWidth( w )
+	function constrainToWidth( w, shapeId )
 	{
 		let h = height
 
-		switch( preset.outsideId )
+		switch( shapeId )
 		{
 			case 2:
 			case 6:
@@ -93,11 +93,11 @@ function ParamsPanel( props )
 		props.setSubstrate( {...props.substrate, width: w, height: h} )
 	}
 
-	function constrainToHeight( h )
+	function constrainToHeight( h, shapeId = substrate.outside.shapeId )
 	{
 		let w = width
 
-		switch( preset.outsideId )
+		switch( shapeId )
 		{
 			case 2:
 			case 6:
@@ -128,25 +128,56 @@ function ParamsPanel( props )
 		setBorder( isPercent ? props.substrate.border : 100 * props.substrate.border )
 	}
 
-	function updatePreset( p )
+	function loadPreset( id )
 	{
-		const newPreset = presets.filter( item => item.id === p )
+		const newSubstrate = presets.find( p => p.id === id )
 
-		if( Boolean( preset?.inside ) ^ Boolean( newPreset.inside ) )
+		if( Boolean( substrate.inside ) ^ Boolean( newSubstrate.inside ) )
 			toggleIsPercent()
 
-		setPreset( newPreset )
-		props.setSubstrate( {...newPreset, width: width, border: preset.border} )
-		constrainToWidth( width )
+		setSubstrate( newSubstrate )
+		props.setSubstrate( {...newSubstrate, width: width, border: substrate.border} )
+		constrainToWidth( width, newSubstrate.outside.shapeId )
+	}
+
+	function isSetToDefaults()
+	{
+		const preset = presets.find( p => p.id === substrate.id )
+
+		return !preset ||
+					 (width  === preset.width && height === preset.height && border === preset.border)
+	}
+
+	function resetToDefaults()
+	{
+		const preset = presets.find( p => p.id === substrate.id )
+
+		setWidth( preset.width )
+		setHeight( preset.height )
+		setBorder( isPercent ? 100 * preset.border : preset.border )
+
+		props.setSubstrate( {...props.substrate, width: preset.width, height: preset.height, border: preset.border} )
 	}
 
 	return (
 		<Stack>
-			<NestedDropdown
-				menuItemsData={menuItemsData}
-				MenuProps={{elevation: 3}}
-				ButtonProps={{variant: 'outlined'}}
-			/>
+			<Stack direction='row>'>
+				<NestedDropdown
+					menuItemsData={menuItemsData}
+					MenuProps={{elevation: 3}}
+					ButtonProps={{variant: 'outlined'}}
+				/>
+				
+				<Button
+					variant='text'
+					size='small'
+					style={{marginLeft: 10}}
+					disabled={isSetToDefaults()}
+					onClick={(evt) => {resetToDefaults()}}
+				>
+					Reset to Defaults
+				</Button>
+			</Stack>			
 			<Stack mt={10} direction='row'>
 				<TextField
 					id='width'

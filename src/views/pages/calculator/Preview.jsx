@@ -46,13 +46,16 @@ function PreviewTabPanel( props )
 export default function Preview()
 {
   const [tab, setTab] = useState( 0 )
-  const [preset, setPreset] = useState( 17 )
-  const [substrate, setSubstrate] = useState( null )
+  const [substrate, setSubstrate] = useState( {id: 17} )
 
   useEffect( () => {
-    fetch( `/api/substrates/${preset}` )
-      .then( res => setSubstrate( res.json() ) )
-  }, [preset] )
+    fetch( `/api/substrates/${substrate.id}` )
+      .then( res => res.json() )
+      .then( setSubstrate )
+  }, [substrate] )
+
+  if( !Boolean( substrate.outside ) )
+    return <div>Loading...</div>
 
   return (
     <Card>
@@ -73,7 +76,7 @@ export default function Preview()
                   </Tabs>
                 </Box>
                 <PreviewTabPanel value={tab} index={0}>
-                  <ParamsPanel preset={preset} setPreset={setPreset} substrate={substrate} setSubstrate={setSubstrate} />
+                  <ParamsPanel substrate={substrate} setSubstrate={setSubstrate} />
                 </PreviewTabPanel>
                 <PreviewTabPanel value={tab} index={1}>
                   Materials
