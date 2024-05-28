@@ -64,9 +64,7 @@ export default function MirrorPanel( {mirror} )
 	            checkedIcon={<BorderInnerIcon />}
 	            onChange={() => setSettings( {...settings, showDims: settings.showDims ^ 2} )} />
 	        </Tooltip>
-	        <Tooltip title={'Take a Snapshot'}>
-	        	<SnapshotDialog imageRef={imageRef} />
-		    	</Tooltip>
+        	<SnapshotDialog imageRef={imageRef} />
 	      </Box>
 	      <Slider
 	        sx={{ width: '50%', mr: '5px'}}

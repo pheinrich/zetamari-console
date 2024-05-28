@@ -9,6 +9,7 @@ import DialogContent from '@mui/material/DialogContent'
 import DialogContentText from '@mui/material/DialogContentText'
 import DialogTitle from '@mui/material/DialogTitle'
 import TextField from '@mui/material/TextField'
+import Tooltip from '@mui/material/Tooltip'
 
 import CameraIcon from '@mui/icons-material/CameraAlt'
 
@@ -46,9 +47,11 @@ export default function SnapshotDialog( {imageRef} )
 
   return (
     <>
-      <IconButton onClick={() => setOpen( true )}>
-        <CameraIcon />
-      </IconButton>
+      <Tooltip title={'Take a Snapshot'}>
+        <IconButton onClick={() => setOpen( true )}>
+          <CameraIcon />
+        </IconButton>
+      </Tooltip>
 
       <Dialog
         open={open}
