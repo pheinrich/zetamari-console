@@ -16,7 +16,7 @@ function Path( {fill, color, stroke, data, transform} )
   )
 }
 
-export default function MirrorView( {mirror, settings} )
+export default function MirrorView( {mirror, settings, imageRef} )
 {
   if( !(mirror && mirror.outside) )
     return <div>Loading...</div>
@@ -37,6 +37,7 @@ export default function MirrorView( {mirror, settings} )
         height: 500}}
     >
       <svg
+        ref={imageRef}
         style={{
           position: 'absolute',
           top: 0,

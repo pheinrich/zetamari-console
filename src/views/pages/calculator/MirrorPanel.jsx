@@ -1,14 +1,16 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { createSvgIcon } from '@mui/material/utils'
 
 import Box from '@mui/material/Box'
 import Checkbox from '@mui/material/Checkbox'
+import IconButton from '@mui/material/IconButton'
 import Slider from '@mui/material/Slider'
 import Stack from '@mui/material/Stack'
 import Tooltip from '@mui/material/Tooltip'
 
 import BorderInnerIcon from '@mui/icons-material/BorderInner'
 import BorderOuterIcon from '@mui/icons-material/BorderOuter'
+import CameraIcon from '@mui/icons-material/CameraAlt'
 import FlipToBackIcon from '@mui/icons-material/FlipToBack'
 import FlipToFrontIcon from '@mui/icons-material/FlipToFront'
 
@@ -21,6 +23,7 @@ const MirrorIcon = createSvgIcon(
 
 export default function MirrorPanel( {mirror} )
 {
+	const imageRef = useRef( null )
 	const [settings, setSettings] = useState({
 		showBack: false,
 		showDims: 0,
@@ -28,24 +31,52 @@ export default function MirrorPanel( {mirror} )
 		zoom: 65
 	})
 
+	function downloadImage()
+	{
+	  let img = new Image();
+	  let svgXML = new XMLSerializer().serializeToString( imageRef.current );
+
+	  img.onload = () => {
+	  	let targetWidth = parseFloat( 750 );
+	    let ratio = img.width / img.height;
+	    let canvas = document.createElement( 'canvas' );
+
+	    canvas.width = targetWidth;
+	    canvas.height = targetWidth / ratio;
+	    canvas.getContext( '2d' ).drawImage( img, 0, 0, canvas.width, canvas.height );
+
+	    let dlLink = document.createElement( 'a' );
+
+	    dlLink.download = 'image';
+	    dlLink.href = canvas.toDataURL( 'image/png' );
+	    dlLink.dataset.downloadurl = `image/png:image:${dlLink.href}`;
+
+	    document.body.appendChild(dlLink);
+	    dlLink.click();
+	    document.body.removeChild(dlLink);
+	  }
+
+	  img.src = `data:image/svg+xml;base64,${window.btoa( svgXML )}`;
+	}
+
 	return (
 		<Stack>
-			<MirrorView mirror={mirror} settings={settings} />
+			<MirrorView mirror={mirror} settings={settings} imageRef={imageRef} />
 	    <Stack direction='row' justifyContent='space-between' alignItems='center'>
 	      <Box>
-	        <Tooltip title={settings.showBack ? 'Show Front' : 'Show Back'}>
-	          <Checkbox
-	            checked={settings.showBack}
-	            icon={<FlipToFrontIcon />}
-	            checkedIcon={<FlipToBackIcon />}
-	            onChange={() => setSettings( {...settings, showBack: !settings.showBack} )} />
-	        </Tooltip>
 	        <Tooltip title={settings.showGlass ? 'Hide Glass' : 'Show Glass'}>
 	          <Checkbox
 	            checked={settings.showGlass}
 	            icon={<MirrorIcon />}
 	            checkedIcon={<MirrorIcon />}
 	            onChange={() => setSettings( {...settings, showGlass: !settings.showGlass} )} />
+	        </Tooltip>
+	        <Tooltip title={settings.showBack ? 'Show Front' : 'Show Back'}>
+	          <Checkbox
+	            checked={settings.showBack}
+	            icon={<FlipToFrontIcon />}
+	            checkedIcon={<FlipToBackIcon />}
+	            onChange={() => setSettings( {...settings, showBack: !settings.showBack} )} />
 	        </Tooltip>
 	        <Tooltip title={(settings.showDims & 1) === 1 ? 'Hide Outside Dimensions' : 'Show Outside Dimensions'}>
 	          <Checkbox
@@ -61,6 +92,11 @@ export default function MirrorPanel( {mirror} )
 	            checkedIcon={<BorderInnerIcon />}
 	            onChange={() => setSettings( {...settings, showDims: settings.showDims ^ 2} )} />
 	        </Tooltip>
+	        <Tooltip title={'Take a Snapshot'}>
+		    		<IconButton onClick={() => downloadImage()}>
+		    			<CameraIcon />
+		    		</IconButton>
+		    	</Tooltip>
 	      </Box>
 	      <Slider
 	        sx={{ width: '50%', mr: '5px'}}
