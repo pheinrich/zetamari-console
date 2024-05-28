@@ -74,19 +74,22 @@ export default function SnapshotDialog( {imageRef} )
             specify a target width in pixels for the resulting PNG output file.
           </DialogContentText>
 
-          <TextField
-            autoFocus
-            defaultValue='750'
-            required
-            margin='normal'
-            id='width'
-            name='width'
-            helperText='Target Width'
-            variant='outlined'
-          InputProps={{
-            endAdornment: <InputAdornment position='end'>px</InputAdornment>
-          }}
-          />
+          <div style={{display: 'flex', justifyContent: 'center'}}>
+            <TextField
+              style={{width: 150}}
+              autoFocus
+              defaultValue='750'
+              required
+              margin='normal'
+              id='width'
+              name='width'
+              helperText='Target Width'
+              variant='outlined'
+              InputProps={{
+                endAdornment: <InputAdornment position='end'>px</InputAdornment>
+              }}
+            />
+          </div>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setOpen( false )}>Cancel</Button>
