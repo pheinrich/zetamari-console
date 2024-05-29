@@ -9,10 +9,11 @@ import Stack from '@mui/material/Stack'
 import Tab from '@mui/material/Tab'
 import Tabs from '@mui/material/Tabs'
 
+import CollapseArea from 'src/views/pages/calculator/CollapseArea'
+import CollapseCost from 'src/views/pages/calculator/CollapseCost'
+import CollapseWeight from 'src/views/pages/calculator/CollapseWeight'
 import MirrorPanel from 'src/views/pages/calculator/MirrorPanel'
 import ParamsPanel from 'src/views/pages/calculator/ParamsPanel'
-import StatsView from 'src/views/pages/calculator/StatsView'
-
 
 function a11yProps( index )
 {
@@ -72,7 +73,7 @@ export default function Preview()
     }
   }, [substrate] )
 
-  if( !Boolean( substrate.outside ) )
+  if( !Boolean( substrate.outside ) || !Boolean( mirror ) )
     return <div>Loading...</div>
 
   return (
@@ -95,7 +96,13 @@ export default function Preview()
                 </Box>
                 <PreviewTabPanel value={tab} index={0}>
                   <ParamsPanel substrate={substrate} setSubstrate={setSubstrate} />
-                  <StatsView mirror={mirror} />
+                  <Card sx={{ mt: 10 }}>
+                    <CardContent>
+                      <CollapseArea mirror={mirror} />
+                      <CollapseWeight mirror={mirror} />
+                      <CollapseCost mirror={mirror} />
+                    </CardContent>
+                  </Card>
                 </PreviewTabPanel>
                 <PreviewTabPanel value={tab} index={1}>
                   Materials
