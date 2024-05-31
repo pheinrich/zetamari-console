@@ -10,7 +10,7 @@ module.exports =
         name: { allowNull: false, type: Sequelize.STRING },
         prefix: { allowNull: false, type: Sequelize.STRING },
         isPrimitive: { type: Sequelize.BOOLEAN, defaultValue: false },
-    })
+      })
   },
 
   async down( queryInterface, Sequelize )
