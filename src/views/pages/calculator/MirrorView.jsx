@@ -28,8 +28,10 @@ export default function MirrorView( {mirror, settings, imageRef} )
 
   return (
     <div
+      ref={imageRef}
       style={{
         position: 'relative',
+        boxSizing: 'content-box',
         top: 0,
         left: 0,
         border: '1px solid black',
@@ -37,7 +39,6 @@ export default function MirrorView( {mirror, settings, imageRef} )
         height: 500}}
     >
       <svg
-        ref={imageRef}
         style={{
           position: 'absolute',
           top: 0,
@@ -51,39 +52,43 @@ export default function MirrorView( {mirror, settings, imageRef} )
         width='500'
         height='500'
         viewBox={viewBox}
-        transform={settings.showBack ? 'scale(-1 1)' : ''}
       >
-        <defs>
-          <linearGradient id='mirrorBackGrad' x1='0%' y1='0%' x2='100%' y2='100%'>
-            <stop offset='0%' stopColor='#bbb' stopOpacity='1' />
-            <stop offset='100%' stopColor='#aaa' stopOpacity='1' />
-          </linearGradient>
+        {/* This <g> element is necessary because the transform property is
+            not officially supported on the root <svg> element.
+        */}
+        <g transform={settings.showBack ? `scale(-1 1) translate(${-2*center.x} 0)` : ''}>
+          <defs>
+            <linearGradient id='mirrorBackGrad' x1='0%' y1='0%' x2='100%' y2='100%'>
+              <stop offset='0%' stopColor='#bbb' stopOpacity='1' />
+              <stop offset='100%' stopColor='#aaa' stopOpacity='1' />
+            </linearGradient>
 
-          <linearGradient id='mirrorFrontGrad' x1='0%' y1='10%' x2='100%' y2='90%'>
-            <stop offset='0%' stopColor='#aaa' stopOpacity='1' />
-            <stop offset='55%' stopColor='#eee' stopOpacity='1' />
-            <stop offset='60%' stopColor='#eee' stopOpacity='1' />
-            <stop offset='100%' stopColor='#bbb' stopOpacity='1' />
-          </linearGradient>
-        </defs>
+            <linearGradient id='mirrorFrontGrad' x1='0%' y1='10%' x2='100%' y2='90%'>
+              <stop offset='0%' stopColor='#aaa' stopOpacity='1' />
+              <stop offset='55%' stopColor='#eee' stopOpacity='1' />
+              <stop offset='60%' stopColor='#eee' stopOpacity='1' />
+              <stop offset='100%' stopColor='#bbb' stopOpacity='1' />
+            </linearGradient>
+          </defs>
 
-        { settings.showBack && <Path
-          fill='#eda'
-          stroke='0.125'
-          color='#666'
-          data={subSVG}
-        />}
-        { settings.showGlass && <Path
-          fill={settings.showBack ? 'url(#mirrorBackGrad)' : 'url(#mirrorFrontGrad)'}
-          stroke='0.05'
-          color='#888'
-          data={mirror.glass.data}
-        />}
-        { settings.showBack ?
-          <Path fill='none' stroke='0.075' color='#ba7' data={mirror.rabbet.data} />
-          :
-          <Path fill='#eda' stroke='0.125' color='#666' data={subSVG} />
-        }
+          { settings.showBack && <Path
+            fill='#eda'
+            stroke='0.125'
+            color='#666'
+            data={subSVG}
+          />}
+          { settings.showGlass && <Path
+            fill={settings.showBack ? 'url(#mirrorBackGrad)' : 'url(#mirrorFrontGrad)'}
+            stroke='0.05'
+            color='#888'
+            data={mirror.glass.data}
+          />}
+          { settings.showBack ?
+            <Path fill='none' stroke='0.075' color='#ba7' data={mirror.rabbet.data} />
+            :
+            <Path fill='#eda' stroke='0.125' color='#666' data={subSVG} />
+          }
+        </g>
       </svg>
 
       { (settings.showDims & 1) === 1 && <Dimensions

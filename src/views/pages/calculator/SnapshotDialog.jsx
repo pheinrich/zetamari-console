@@ -19,30 +19,27 @@ export default function SnapshotDialog( {imageRef} )
 
   function downloadImage( width )
   {
-    let img = new Image();
-    let svgXML = new XMLSerializer().serializeToString( imageRef.current );
+    const img = document.createElement('img')
+    const html = new XMLSerializer().serializeToString( imageRef.current )
 
-    img.onload = () => {
-      let targetWidth = parseFloat( width );
-      let ratio = img.width / img.height;
-      let canvas = document.createElement( 'canvas' );
+    img.onload = (e) =>
+    {
+      const canvas = document.createElement( 'canvas' )
 
-      canvas.width = targetWidth;
-      canvas.height = targetWidth / ratio;
-      canvas.getContext( '2d' ).drawImage( img, 0, 0, canvas.width, canvas.height );
+      canvas.width = parseFloat( width )
+      canvas.height = canvas.width * (e.target.height / e.target.width)
+      canvas.getContext( '2d' ).drawImage( e.target, 0, 0, canvas.width, canvas.height )
 
-      let dlLink = document.createElement( 'a' );
+      let anchor = document.createElement( 'a' )
+      anchor.download = 'image2.png'
 
-      dlLink.download = 'image';
-      dlLink.href = canvas.toDataURL( 'image/png' );
-      dlLink.dataset.downloadurl = `image/png:image:${dlLink.href}`;
-
-      document.body.appendChild(dlLink);
-      dlLink.click();
-      document.body.removeChild(dlLink);
+      canvas.toBlob( (blob) => {
+        anchor.href = URL.createObjectURL( blob )
+        anchor.click()
+      }, 'image/png' )
     }
 
-    img.src = `data:image/svg+xml;base64,${window.btoa( svgXML )}`;
+    img.src = 'data:image/svg+xml,' + encodeURIComponent( `<svg xmlns="http://www.w3.org/2000/svg" width="${imageRef.current.offsetWidth}" height="${imageRef.current.offsetHeight}"><foreignObject width="100%" height="100%"><div xmlns="http://www.w3.org/1999/xhtml">${html}</div></foreignObject></svg>` )
   }
 
   return (
