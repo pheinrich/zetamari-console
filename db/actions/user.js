@@ -52,7 +52,7 @@ export async function updateUser( id, name, email, password )
   return await User.update( {name, email, password: hashedPassword} )
 }
 
-export async function deleteUSer( id )
+export async function deleteUser( id )
 {
   const session = await auth()
   if( !session )

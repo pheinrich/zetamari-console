@@ -22,6 +22,5 @@ SubstrateInfo.hasOne( Material )
 SubstrateInfo.belongsTo( Contour, {as: 'outside', allowNull: false} )
 SubstrateInfo.belongsTo( Contour, {as: 'inside'} )
 SubstrateInfo.belongsTo( Contour, {as: 'rabbet'} )
-Contour.hasMany( SubstrateInfo )
 
 export default SubstrateInfo

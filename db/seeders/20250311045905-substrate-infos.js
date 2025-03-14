@@ -3,6 +3,10 @@ module.exports =
 {
   async up( queryInterface, Sequelize )
   {
+    // NB: bulkInsert() respects defaultValue only if EVERY row in the request
+    // omits it. If even one row explicitly supplies a value for a column de-
+    // fined with a defaultValue, NULL will be inserted (for that column) into
+    // all the rows that don't.
     return queryInterface.bulkInsert(
       'SubstrateInfos',
       [
