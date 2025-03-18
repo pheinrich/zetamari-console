@@ -5,17 +5,18 @@ import Material from '@/db/models/Material'
 const TileInfo = sequelize.define(
   'TileInfo',
   {
-    id: { type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
+    materialId: { type: DataTypes.INTEGER, primaryKey: true },
     color: { type: DataTypes.STRING, allowNull: false },
     width: { type: DataTypes.FLOAT, defaultValue: 20.0 },
     height: { type: DataTypes.FLOAT, defaultValue: 20.0 },
     depth: { type: DataTypes.FLOAT, defaultValue: 5.0 },
   },
   {
+    noPrimaryKey: true,    // currently ignored, so materialId substitute required above
     timestamps: false,
   })
 
-Material.belongsTo( TileInfo )
-TileInfo.hasOne( Material )
+Material.hasOne( TileInfo, {foreignKey: 'materialId'} )
+TileInfo.belongsTo( Material, {allowNull: false, foreignKey: 'materialId'} )
 
 export default TileInfo

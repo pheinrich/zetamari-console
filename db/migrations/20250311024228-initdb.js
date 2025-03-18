@@ -28,9 +28,6 @@ module.exports =
       'Materials',
       {
         id: { type: Sequelize.DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
-        beadInfoId: { type: Sequelize.DataTypes.INTEGER, foreignKey: true },
-        substrateInfoId: { type: Sequelize.DataTypes.INTEGER, foreignKey: true },
-        TileInfoId: { type: Sequelize.DataTypes.INTEGER, foreignKey: true },
         name: { type: Sequelize.DataTypes.STRING, unique: true, allowNull: false },
         type: { type: Sequelize.DataTypes.ENUM( 'bead', 'birdhouse', 'grout', 'mirror', 'frame', 'tile', 'substrate' ), allowNull: false },
         sku: { type: Sequelize.DataTypes.STRING, unique: true, allowNull: false },
@@ -40,13 +37,11 @@ module.exports =
       })
 
     await queryInterface.createTable(
-      'ProductMaterial',
+      'ProductMaterials',
       {
         productId: { type: Sequelize.DataTypes.INTEGER, allowNull: false, foreignKey: true },
         materialId: { type: Sequelize.DataTypes.INTEGER, allowNull: false, foreignKey: true },
         quantity: { type: Sequelize.DataTypes.FLOAT, allowNull: false },
-        width: { type: Sequelize.DataTypes.FLOAT, defaultValue: 1.0 },
-        height: { type: Sequelize.DataTypes.FLOAT, defaultValue: 1.0 },
       },
       {
         uniqueKeys: [
@@ -57,7 +52,7 @@ module.exports =
     await queryInterface.createTable(
       'BeadInfos',
       {
-        id: { type: Sequelize.DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
+        materialId: { type: Sequelize.DataTypes.INTEGER, allowNull: false, foreignKey: true },
         type: { type: Sequelize.DataTypes.ENUM( 'ceramic', 'plastic', 'metal' ), defaultValue: 'plastic' },
         finish: { type: Sequelize.DataTypes.ENUM( 'fire-polished', 'iridized', 'metalized', 'plain' ), defaultValue: 'plain' },
         color: { type: Sequelize.DataTypes.STRING, allowNull: false },
@@ -69,7 +64,7 @@ module.exports =
     await queryInterface.createTable(
       'SubstrateInfos',
       {
-        id: { type: Sequelize.DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
+        materialId: { type: Sequelize.DataTypes.INTEGER, allowNull: false, foreignKey: true },
         outsideId: { type: Sequelize.DataTypes.INTEGER, allowNull: false, foreignKey: true },
         insideId: { type: Sequelize.DataTypes.INTEGER, foreignKey: true },
         rabbetId: { type: Sequelize.DataTypes.INTEGER, foreignKey: true },
@@ -82,7 +77,7 @@ module.exports =
     await queryInterface.createTable(
       'TileInfos',
       {
-        id: { type: Sequelize.DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
+        materialId: { type: Sequelize.DataTypes.INTEGER, allowNull: false, foreignKey: true },
         color: { type: Sequelize.DataTypes.STRING, allowNull: false },
         width: { type: Sequelize.DataTypes.FLOAT, defaultValue: 20.0 },
         height: { type: Sequelize.DataTypes.FLOAT, defaultValue: 20.0 },
@@ -96,10 +91,60 @@ module.exports =
         name: { type: Sequelize.DataTypes.STRING, unique: true, allowNull: false },
         svgData: { type: Sequelize.DataTypes.TEXT },
       })
+
+    await queryInterface.createTable(
+      'Suppliers',
+      {
+        id: { type: Sequelize.DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
+        name: { type: Sequelize.DataTypes.STRING, unique: true, allowNull: false },
+        email: { type: Sequelize.DataTypes.STRING },
+        address: { type: Sequelize.DataTypes.STRING },
+        url: { type: Sequelize.DataTypes.STRING },
+        notes: { type: Sequelize.DataTypes.TEXT },
+      })
+
+    await queryInterface.createTable(
+      'SuppierMaterials',
+      {
+        supplierId: { type: Sequelize.DataTypes.INTEGER, allowNull: false, foreignKey: true },
+        materialId: { type: Sequelize.DataTypes.INTEGER, allowNull: false, foreignKey: true },
+        url: { type: Sequelize.DataTypes.STRING },
+        cost: { type: Sequelize.DataTypes.FLOAT },
+      })
+
+    await queryInterface.createTable(
+      'Orders',
+      {
+        id: { type: Sequelize.DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
+        createdOn: { type: Sequelize.DataTypes.DATEONLY, defaultValue: Sequelize.DataTypes.NOW },
+        completedOn: { type: Sequelize.DataTypes.DATEONLY },
+        packedOn: { type: Sequelize.DataTypes.DATEONLY },
+      })
+
+    await queryInterface.createTable(
+      'OrderProducts',
+      {
+        orderId: { type: Sequelize.DataTypes.INTEGER, allowNull: false, foreignKey: true },
+        productId: { type: Sequelize.DataTypes.INTEGER, allowNull: false, foreignKey: true },
+        quantity: { type: Sequelize.DataTypes.FLOAT, defaultValue: 1 },
+      })
+
+    await queryInterface.createTable(
+      'Shipments',
+      {
+        orderId: { type: Sequelize.DataTypes.INTEGER, allowNull: false, foreignKey: true },
+        carrier: { type: Sequelize.DataTypes.STRING, allowNull: false },
+        tracking: { type: Sequelize.DataTypes.STRING, allowNull: false },
+        createdOn: { type: Sequelize.DataTypes.DATEONLY, defaultValue: Sequelize.DataTypes.NOW },
+      })
   },
 
   async down( queryInterface, Sequelize )
   {
+    await queryInterface.dropTable( 'Shiments' )
+    await queryInterface.dropTable( 'OrderProducts' )
+    await queryInterface.dropTable( 'Orders' )
+    await queryInterface.dropTable( 'Suppliers' )
     await queryInterface.dropTable( 'Contours' )
     await queryInterface.dropTable( 'TileInfos' )
     await queryInterface.dropTable( 'SubstrateInfos' )

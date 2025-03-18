@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import { readMaterials } from '@/db/actions/material'
 
 export default async function MaterialsPage()
@@ -9,7 +10,9 @@ export default async function MaterialsPage()
       <h1>Materials List</h1>
       <ul>
         {materials.map( material => (
-          <li key={material.id}>[{material.id}] {material.name} ({material.sku}): {material.type}</li>
+          <li key={material.id}>
+            [{material.id}] <Link href={`/materials/${material.id}`}>{material.name}</Link> ({material.sku}): {material.type}
+          </li>
         ))}
       </ul>
     </div>

@@ -6,7 +6,7 @@ const Material = sequelize.define(
   {
     id: { type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
     name: { type: DataTypes.STRING, unique: true, allowNull: false },
-    type: { type: DataTypes.ENUM( 'bead', 'birdhouse', 'grout', 'mirror', 'frame', 'tile', 'substrate' ), allowNull: false },
+    type: { type: DataTypes.ENUM( 'bead', 'birdhouse', 'frame', 'grout', 'millefiori', 'mirror', 'substrate', 'tile' ), allowNull: false },
     sku: { type: DataTypes.STRING, unique: true, allowNull: false },
     units: { type: DataTypes.STRING, defaultValue: 'each' },
     weight: { type: DataTypes.FLOAT },

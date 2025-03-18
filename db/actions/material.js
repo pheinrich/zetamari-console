@@ -2,6 +2,7 @@
 
 import Material from '@/db/models/Material'
 import BeadInfo from '@/db/models/BeadInfo'
+import Contour from '@/db/models/Contour'
 import SubstrateInfo from '@/db/models/SubstrateInfo'
 import TileInfo from '@/db/models/TileInfo'
 import sequelize from '@/db/sequelize'
@@ -27,7 +28,6 @@ export async function readMaterial( id, eager )
   if( eager )
     return await Material.findOne({
       where: { id: id },
-      include: { all: true, nested: true },
     })
   else
     return await Material.findByPk( id )

@@ -9,8 +9,6 @@ const ProductMaterial = sequelize.define(
     productId: { type: DataTypes.INTEGER, references: { model: Product, key: id } },
     materialId: { type: DataTypes.INTEGER, references: { model: Material, key: id } },
     quantity: { type: DataTypes.FLOAT, allowNull: false },
-    width: { type: DataTypes.FLOAT, defaultValue: 1.0 },
-    height: { type: DataTypes.FLOAT, defaultValue: 1.0 },
   },
   {
     timestamps: false,

@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import { readContours } from '@/db/actions/contour'
 
 export default async function ContoursPage()
@@ -17,7 +18,9 @@ export default async function ContoursPage()
       <h1>Contours List</h1>
       <ul>
         {contours.map( contour => (
-          <li key={contour.id}>[{contour.id}] {contour.name}: {truncate( contour.svgData, 50 )}</li>
+          <li key={contour.id}>
+            [{contour.id}] <Link href={`/contours/${contour.id}`}>{contour.name}</Link>: {truncate( contour.svgData, 50 )}
+          </li>
         ))}
       </ul>
     </div>
