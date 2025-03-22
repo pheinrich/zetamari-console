@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation'
 import { readContour } from '@/db/actions/contour'
 import ContourView from '@/app/Contours/ContourView'
 import ContourViewWithBead from '@/app/Contours/ContourViewWithBead'
+import ReverseContourForm from '@/components/ReverseContourForm'
 
 export default async function ContourPage( {params} )
 {
@@ -13,8 +14,8 @@ export default async function ContourPage( {params} )
 
   return (
     <>
-      <ContourView contour={contour} />
       <ContourViewWithBead contour={contour} />
+      <ReverseContourForm id={id} />
     </>
   )
 }

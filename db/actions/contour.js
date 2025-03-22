@@ -46,7 +46,7 @@ export async function updateContour( id, name, svgData )
   if( !contour )
     throw new Error( 'Contour not found', {cause: 404} )
 
-  return await Contour.update( {name, svgData} )
+  return await contour.update( {name, svgData} )
 }
 
 export async function deleteContour( id )
@@ -62,4 +62,8 @@ export async function deleteContour( id )
     throw new Error( 'Contour not found', {cause: 404} )
 
   return await contour.destroy()
+}
+
+export async function reverse( id )
+{
 }

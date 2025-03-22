@@ -1,6 +1,9 @@
-import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { readMaterial } from '@/db/actions/material'
+import { build } from '@/lib/mirror'
+import BeadInfoView from './BeadInfoView'
+import SubstrateInfoView from './SubstrateInfoView'
+import TileInfoView from './TileInfoView'
 
 export default async function MaterialPage( {params} )
 {
@@ -14,18 +17,17 @@ export default async function MaterialPage( {params} )
   const substrateInfo = await material.getSubstrateInfo()
   const tileInfo = await material.getTileInfo()
 
-  console.log( await substrateInfo.getRabbet() )
-
   return (
     <div>
       <h1>Material: {material.name}</h1>
-      { substrateInfo && <>
-        Outside Contour: <Link href={`/contours/${substrateInfo.outsideId}`}>{substrateInfo.outsideId}</Link><br/>
-        Inside Contour: <Link href={`/contours/${substrateInfo.insideId}`}>{substrateInfo.insideId}</Link><br/>
-        Rabbet Contour: <Link href={`/contours/${substrateInfo.rabbetId}`}>{substrateInfo.rabbetId}</Link><br/>
-        Dimensions: {substrateInfo.width} x {substrateInfo.height}<br/>
-        Border: {substrateInfo.border}
-      </>}
+      <div>Type: {material.type}</div>
+      <div>SKU: {material.sku}</div>
+      <div>Units: {material.units}</div>
+      <div>Weight: {material.weight}</div>
+      <div>Description: {material.description}</div>
+      { beadInfo && <BeadInfoView substrateInfo={beadInfo} /> }
+      { substrateInfo && <SubstrateInfoView substrateInfo={substrateInfo} /> }
+      { tileInfo && <TileInfoView substrateInfo={TileInfo} /> }
     </div>
   )
 }

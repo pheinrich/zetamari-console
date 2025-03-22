@@ -67,7 +67,9 @@ module.exports =
         { id: 48, name: '30" Square Substrate', type: 'substrate', sku: 'MSMSq30', weight: -1 },
 
         { id: 49, name: '17"x61" Willow Leaf Substrate', type: 'substrate', sku: 'MSMWf1761', weight: -1 },
-     ])
+
+        { id: 50, name: '4mm Round, Opaque White', type: 'bead', sku: '', weight: -1 },
+      ])
   },
 
   async down( queryInterface, Sequelize )

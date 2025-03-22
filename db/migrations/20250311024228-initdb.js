@@ -53,8 +53,9 @@ module.exports =
       'BeadInfos',
       {
         materialId: { type: Sequelize.DataTypes.INTEGER, allowNull: false, foreignKey: true },
-        type: { type: Sequelize.DataTypes.ENUM( 'ceramic', 'plastic', 'metal' ), defaultValue: 'plastic' },
-        finish: { type: Sequelize.DataTypes.ENUM( 'fire-polished', 'iridized', 'metalized', 'plain' ), defaultValue: 'plain' },
+        type: { type: Sequelize.DataTypes.ENUM( 'glass', 'plastic', 'ceramic', 'shell', 'metal', 'rhinestone', 'cabochon', 'other' ), defaultValue: 'plastic' },
+        finish: { type: Sequelize.DataTypes.ENUM( 'fire-polished', 'silvered', 'opaque', 'opaque luster', 'transparent', 'aurora borealis', 'plain' ), defaultValue: 'plain' },
+        shape: { type: Sequelize.DataTypes.ENUM( 'round', 'faceted round', 'bicone', 'drop', 'rondelle', 'rivoli', 'chaton', 'other' ), defaultValue: 'round' },
         color: { type: Sequelize.DataTypes.STRING, allowNull: false },
         width: { type: Sequelize.DataTypes.FLOAT, defaultValue: 6.0 },
         height: { type: Sequelize.DataTypes.FLOAT, defaultValue: 6.0 },
@@ -99,15 +100,17 @@ module.exports =
         name: { type: Sequelize.DataTypes.STRING, unique: true, allowNull: false },
         email: { type: Sequelize.DataTypes.STRING },
         address: { type: Sequelize.DataTypes.STRING },
+        phone: { type: Sequelize.DataTypes.STRING },
         url: { type: Sequelize.DataTypes.STRING },
         notes: { type: Sequelize.DataTypes.TEXT },
       })
 
     await queryInterface.createTable(
-      'SuppierMaterials',
+      'SupplierMaterials',
       {
         supplierId: { type: Sequelize.DataTypes.INTEGER, allowNull: false, foreignKey: true },
         materialId: { type: Sequelize.DataTypes.INTEGER, allowNull: false, foreignKey: true },
+        partNumber: { type: Sequelize.DataTypes.STRING, allowNull: false },
         url: { type: Sequelize.DataTypes.STRING },
         cost: { type: Sequelize.DataTypes.FLOAT },
       })
@@ -141,15 +144,16 @@ module.exports =
 
   async down( queryInterface, Sequelize )
   {
-    await queryInterface.dropTable( 'Shiments' )
+    await queryInterface.dropTable( 'Shipments' )
     await queryInterface.dropTable( 'OrderProducts' )
     await queryInterface.dropTable( 'Orders' )
+    await queryInterface.dropTable( 'SupplierMaterials' )
     await queryInterface.dropTable( 'Suppliers' )
     await queryInterface.dropTable( 'Contours' )
     await queryInterface.dropTable( 'TileInfos' )
     await queryInterface.dropTable( 'SubstrateInfos' )
     await queryInterface.dropTable( 'BeadInfos' )
-    await queryInterface.dropTable( 'ProductMaterial' )
+    await queryInterface.dropTable( 'ProductMaterials' )
     await queryInterface.dropTable( 'Materials' )
     await queryInterface.dropTable( 'Products' )
     await queryInterface.dropTable( 'Users' )

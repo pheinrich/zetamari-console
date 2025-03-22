@@ -8,6 +8,7 @@ const Supplier = sequelize.define(
     name: { type: DataTypes.STRING, unique: true, allowNull: false },
     email: { type: DataTypes.STRING },
     address: { type: DataTypes.STRING },
+    phone: { type: DataTypes.STRING },
     url: { type: DataTypes.STRING },
     notes: { type: DataTypes.TEXT },
   },
