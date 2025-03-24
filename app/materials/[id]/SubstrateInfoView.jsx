@@ -9,8 +9,8 @@ export default async function SubstrateInfoView( {substrateInfo} )
     substrateInfo.width,
     substrateInfo.height,
     substrateInfo.border,
-    substrateInfo.materialId,
-    substrateInfo.outside?.svgData,
+    substrateInfo.outsideId,
+    substrateInfo.outside.svgData,
     substrateInfo.inside?.svgData,
     substrateInfo.rabbet?.svgData,    
   )

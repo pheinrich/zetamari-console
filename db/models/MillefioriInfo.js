@@ -17,7 +17,7 @@ const MillefioriInfo = sequelize.define(
     timestamps: false,
   })
 
-Material.hasOne( MillefioriInfo, {as: 'millefioriInfo', foreignKey: 'materialId'} )
-MillefioriInfo.belongsTo( Material, {as: 'material', allowNull: false, foreignKey: 'materialId'} )
+Material.hasOne( MillefioriInfo, {as: 'millefioriInfo', foreignKey: 'materialId', onDelete: 'CASCADE'} )
+MillefioriInfo.belongsTo( Material, {as: 'material', allowNull: false, foreignKey: 'materialId', onDelete: 'CASCADE'} )
 
 export default MillefioriInfo

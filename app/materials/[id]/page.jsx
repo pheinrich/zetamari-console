@@ -30,7 +30,7 @@ export default async function MaterialPage( {params} )
       <div>Description: {material.description}</div>
       { beadInfo && <BeadInfoView beadInfo={beadInfo} /> }
       { substrateInfo && <SubstrateInfoView substrateInfo={substrateInfo} /> }
-      { tileInfo && <TileInfoView tileInfo={TileInfo} /> }
+      { tileInfo && <TileInfoView tileInfo={tileInfo} /> }
     </div>
   )
 }

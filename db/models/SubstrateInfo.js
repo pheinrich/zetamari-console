@@ -17,11 +17,11 @@ const SubstrateInfo = sequelize.define(
     timestamps: false,
   })
 
-Material.hasOne( SubstrateInfo, {as: 'substrateInfo', foreignKey: 'materialId'} )
-SubstrateInfo.belongsTo( Material, {as: 'material', allowNull: false, foreignKey: 'materialId'} )
+Material.hasOne( SubstrateInfo, {as: 'substrateInfo', foreignKey: 'materialId', onDelete: 'CASCADE'} )
+SubstrateInfo.belongsTo( Material, {as: 'material', allowNull: false, foreignKey: 'materialId', onDelete: 'CASCADE'} )
 
 SubstrateInfo.belongsTo( Contour, {as: 'outside', allowNull: false} )
-SubstrateInfo.belongsTo( Contour, {as: 'inside'} )
-SubstrateInfo.belongsTo( Contour, {as: 'rabbet'} )
+SubstrateInfo.belongsTo( Contour, {as: 'inside', allowNull: true, defaultValue: null} )
+SubstrateInfo.belongsTo( Contour, {as: 'rabbet', allowNull: true, defaultValue: null} )
 
 export default SubstrateInfo

@@ -17,7 +17,7 @@ const MirrorInfo = sequelize.define(
     timestamps: false,
   })
 
-Material.hasOne( MirrorInfo, {as: 'mirrorInfo', foreignKey: 'materialId'} )
-MirrorInfo.belongsTo( Material, {as: 'material', allowNull: false, foreignKey: 'materialId'} )
+Material.hasOne( MirrorInfo, {as: 'mirrorInfo', foreignKey: 'materialId', onDelete: 'CASCADE'} )
+MirrorInfo.belongsTo( Material, {as: 'material', allowNull: false, foreignKey: 'materialId', onDelete: 'CASCADE'} )
 
 export default MirrorInfo

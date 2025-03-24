@@ -19,7 +19,7 @@ const FrameInfo = sequelize.define(
     timestamps: false,
   })
 
-Material.hasOne( FrameInfo, {as: 'frameInfo', foreignKey: 'materialId'} )
-FrameInfo.belongsTo( Material, {as: 'material', allowNull: false, foreignKey: 'materialId'} )
+Material.hasOne( FrameInfo, {as: 'frameInfo', foreignKey: 'materialId', onDelete: 'CASCADE'} )
+FrameInfo.belongsTo( Material, {as: 'material', allowNull: false, foreignKey: 'materialId', onDelete: 'CASCADE'} )
 
 export default FrameInfo

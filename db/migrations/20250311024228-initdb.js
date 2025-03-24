@@ -52,7 +52,7 @@ module.exports =
     await queryInterface.createTable(
       'BeadInfos',
       {
-        materialId: { type: Sequelize.DataTypes.INTEGER, allowNull: false, foreignKey: true },
+        materialId: { type: Sequelize.DataTypes.INTEGER, references: { model: 'Materials', key: 'id' }, onDelete: 'CASCADE', allowNull: false },
         category: { type: Sequelize.DataTypes.ENUM( 'glass', 'plastic', 'ceramic', 'shell', 'metal', 'rhinestone', 'cabochon', 'other' ), defaultValue: 'plastic' },
         finish: { type: Sequelize.DataTypes.ENUM( 'fire-polished', 'silvered', 'opaque', 'opaque luster', 'transparent', 'aurora borealis', 'plain' ), defaultValue: 'plain' },
         shape: { type: Sequelize.DataTypes.ENUM( 'round', 'faceted round', 'bicone', 'drop', 'rondelle', 'rivoli', 'chaton', 'other' ), defaultValue: 'round' },
@@ -65,7 +65,7 @@ module.exports =
     await queryInterface.createTable(
       'FrameInfos',
       {
-        materialId: { type: Sequelize.DataTypes.INTEGER, allowNull: false, foreignKey: true },
+        materialId: { type: Sequelize.DataTypes.INTEGER, references: { model: 'Materials', key: 'id' }, onDelete: 'CASCADE', allowNull: false },
         width: { type: Sequelize.DataTypes.FLOAT, defaultValue: 20.0 },
         height: { type: Sequelize.DataTypes.FLOAT, defaultValue: 20.0 },
         thickness: { type: Sequelize.DataTypes.FLOAT, defaultValue: 5.5 },
@@ -78,7 +78,7 @@ module.exports =
     await queryInterface.createTable(
       'MillefioriInfos',
       {
-        materialId: { type: Sequelize.DataTypes.INTEGER, allowNull: false, foreignKey: true },
+        materialId: { type: Sequelize.DataTypes.INTEGER, references: { model: 'Materials', key: 'id' }, onDelete: 'CASCADE', allowNull: false },
         shape: { type: Sequelize.DataTypes.ENUM( 'round', 'square' ), defaultValue: 'round' },
         color: { type: Sequelize.DataTypes.STRING, allowNull: false },
         length: { type: Sequelize.DataTypes.FLOAT, defaultValue: 5.0 },
@@ -89,7 +89,7 @@ module.exports =
     await queryInterface.createTable(
       'MirrorInfos',
       {
-        materialId: { type: Sequelize.DataTypes.INTEGER, allowNull: false, foreignKey: true },
+        materialId: { type: Sequelize.DataTypes.INTEGER, references: { model: 'Materials', key: 'id' }, onDelete: 'CASCADE', allowNull: false },
         shape: { type: Sequelize.DataTypes.ENUM( 'chapel arch', 'circle', 'gothic arch', 'oval', 'rectangle', 'square', 'vesica picscis', 'other' ), defaultValue: 'circle' },
         width: { type: Sequelize.DataTypes.FLOAT, defaultValue: 6 },
         height: { type: Sequelize.DataTypes.FLOAT, defaultValue: 6 },
@@ -100,10 +100,10 @@ module.exports =
     await queryInterface.createTable(
       'SubstrateInfos',
       {
-        materialId: { type: Sequelize.DataTypes.INTEGER, allowNull: false, foreignKey: true },
+        materialId: { type: Sequelize.DataTypes.INTEGER, references: { model: 'Materials', key: 'id' }, onDelete: 'CASCADE', allowNull: false },
         outsideId: { type: Sequelize.DataTypes.INTEGER, allowNull: false, foreignKey: true },
-        insideId: { type: Sequelize.DataTypes.INTEGER, foreignKey: true },
-        rabbetId: { type: Sequelize.DataTypes.INTEGER, foreignKey: true },
+        insideId: { type: Sequelize.DataTypes.INTEGER, allowNull: true, defaultValue: null, foreignKey: true },
+        rabbetId: { type: Sequelize.DataTypes.INTEGER, allowNull: true, defaultValue: null, foreignKey: true },
         width: { type: Sequelize.DataTypes.FLOAT, allowNull: false },
         height: { type: Sequelize.DataTypes.FLOAT, allowNull: false },
         thickness: { type: Sequelize.DataTypes.FLOAT, defaultValue: 0.455 },
@@ -113,7 +113,7 @@ module.exports =
     await queryInterface.createTable(
       'TileInfos',
       {
-        materialId: { type: Sequelize.DataTypes.INTEGER, allowNull: false, foreignKey: true },
+        materialId: { type: Sequelize.DataTypes.INTEGER, references: { model: 'Materials', key: 'id' }, onDelete: 'CASCADE', allowNull: false },
         color: { type: Sequelize.DataTypes.STRING, allowNull: false },
         width: { type: Sequelize.DataTypes.FLOAT, defaultValue: 20.0 },
         height: { type: Sequelize.DataTypes.FLOAT, defaultValue: 20.0 },

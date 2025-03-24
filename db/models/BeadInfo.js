@@ -19,7 +19,7 @@ const BeadInfo = sequelize.define(
     timestamps: false,
   })
 
-Material.hasOne( BeadInfo, {as: 'beadInfo', foreignKey: 'materialId'} )
-BeadInfo.belongsTo( Material, {as: 'material', allowNull: false, foreignKey: 'materialId'} )
+Material.hasOne( BeadInfo, {as: 'beadInfo', foreignKey: 'materialId', onDelete: 'CASCADE'} )
+BeadInfo.belongsTo( Material, {as: 'material', allowNull: false, foreignKey: 'materialId', onDelete: 'CASCADE'} )
 
 export default BeadInfo

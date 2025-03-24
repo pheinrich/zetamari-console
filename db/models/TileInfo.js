@@ -16,7 +16,7 @@ const TileInfo = sequelize.define(
     timestamps: false,
   })
 
-Material.hasOne( TileInfo, {as: 'tileInfo', foreignKey: 'materialId'} )
-TileInfo.belongsTo( Material, {as: 'material', allowNull: false, foreignKey: 'materialId'} )
+Material.hasOne( TileInfo, {as: 'tileInfo', foreignKey: 'materialId', onDelete: 'CASCADE'} )
+TileInfo.belongsTo( Material, {as: 'material', allowNull: false, foreignKey: 'materialId', onDelete: 'CASCADE'} )
 
 export default TileInfo
