@@ -14,6 +14,9 @@ export default async function MaterialPage( {params} )
     return notFound()
 
   const beadInfo = await material.getBeadInfo()
+  const frameInfo = await material.getFrameInfo()
+  const millefioriInfo = await material.getMillefioriInfo()
+  const mirrorInfo = await material.getMirrorInfo()
   const substrateInfo = await material.getSubstrateInfo()
   const tileInfo = await material.getTileInfo()
 
@@ -25,9 +28,9 @@ export default async function MaterialPage( {params} )
       <div>Units: {material.units}</div>
       <div>Weight: {material.weight}</div>
       <div>Description: {material.description}</div>
-      { beadInfo && <BeadInfoView substrateInfo={beadInfo} /> }
+      { beadInfo && <BeadInfoView beadInfo={beadInfo} /> }
       { substrateInfo && <SubstrateInfoView substrateInfo={substrateInfo} /> }
-      { tileInfo && <TileInfoView substrateInfo={TileInfo} /> }
+      { tileInfo && <TileInfoView tileInfo={TileInfo} /> }
     </div>
   )
 }

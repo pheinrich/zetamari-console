@@ -4,13 +4,13 @@ export default async function BeadInfoView( {beadInfo} )
 {
   return (
     <>
-      Type: {beadInfo.type}<br/>
+      Category: {beadInfo.category}<br/>
       Finish: {beadInfo.finish}<br/>
       Shape: {beadInfo.shape}<br/>
       Color: {beadInfo.color}<br/>
-      Width: {beadInfo.width}<br/>
+      Length: {beadInfo.length}<br/>
       Height: {beadInfo.height}<br/>
-      Depth: {beadInfo.depth}
+      Thickness: {beadInfo.thickness}
     </>
   )
 }

@@ -7,7 +7,7 @@ module.exports =
     return queryInterface.bulkInsert(
       'BeadInfos',
       [
-        { materialId: 50, type: 'glass', finish: 'opaque luster', shape: 'round', color: 'white', length: 4, width: 4, height: 4 },
+        { materialId: 50, category: 'glass', finish: 'opaque luster', shape: 'round', color: 'white', length: 4, height: 4, thickness: 4 },
       ])
   },
 

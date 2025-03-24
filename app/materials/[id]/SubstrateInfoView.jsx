@@ -20,7 +20,8 @@ export default async function SubstrateInfoView( {substrateInfo} )
       Outside Contour: <Link href={`/contours/${substrateInfo.outsideId}`}>{substrateInfo.outsideId}</Link><br/>
       Inside Contour: <Link href={`/contours/${substrateInfo.insideId}`}>{substrateInfo.insideId}</Link><br/>
       Rabbet Contour: <Link href={`/contours/${substrateInfo.rabbetId}`}>{substrateInfo.rabbetId}</Link><br/>
-      Dimensions: {substrateInfo.width} x {substrateInfo.height}<br/>
+      Dimensions: {substrateInfo.width}" x {substrateInfo.height}"<br/>
+      Thickness: {substrateInfo.thickness}"<br/>
       Border: {substrateInfo.border}
     </>
   )

@@ -6,7 +6,7 @@ const BeadInfo = sequelize.define(
   'BeadInfo',
   {
     materialId: { type: DataTypes.INTEGER, primaryKey: true },
-    type: { type: DataTypes.ENUM( 'glass', 'plastic', 'ceramic', 'shell', 'metal', 'rhinestone', 'cabochon', 'other' ), defaultValue: 'plastic' },
+    category: { type: DataTypes.ENUM( 'glass', 'plastic', 'ceramic', 'shell', 'metal', 'rhinestone', 'cabochon', 'other' ), defaultValue: 'plastic' },
     finish: { type: DataTypes.ENUM( 'fire-polished', 'silvered', 'opaque', 'opaque luster', 'transparent', 'aurora borealis', 'plain' ), defaultValue: 'plain' },
     shape: { type: DataTypes.ENUM( 'round', 'faceted round', 'bicone', 'drop', 'rondelle', 'rivoli', 'chaton', 'other' ), defaultValue: 'round' },
     color: { type: DataTypes.STRING, allowNull: false },

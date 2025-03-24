@@ -53,7 +53,7 @@ module.exports =
       'BeadInfos',
       {
         materialId: { type: Sequelize.DataTypes.INTEGER, allowNull: false, foreignKey: true },
-        type: { type: Sequelize.DataTypes.ENUM( 'glass', 'plastic', 'ceramic', 'shell', 'metal', 'rhinestone', 'cabochon', 'other' ), defaultValue: 'plastic' },
+        category: { type: Sequelize.DataTypes.ENUM( 'glass', 'plastic', 'ceramic', 'shell', 'metal', 'rhinestone', 'cabochon', 'other' ), defaultValue: 'plastic' },
         finish: { type: Sequelize.DataTypes.ENUM( 'fire-polished', 'silvered', 'opaque', 'opaque luster', 'transparent', 'aurora borealis', 'plain' ), defaultValue: 'plain' },
         shape: { type: Sequelize.DataTypes.ENUM( 'round', 'faceted round', 'bicone', 'drop', 'rondelle', 'rivoli', 'chaton', 'other' ), defaultValue: 'round' },
         color: { type: Sequelize.DataTypes.STRING, allowNull: false },
@@ -94,7 +94,7 @@ module.exports =
         width: { type: Sequelize.DataTypes.FLOAT, defaultValue: 6 },
         height: { type: Sequelize.DataTypes.FLOAT, defaultValue: 6 },
         thickness: { type: Sequelize.DataTypes.FLOAT, defaultValue: 0.125 },
-        bevel: { type: Sequelize.DataTypes.FLOAT, 0 },
+        bevel: { type: Sequelize.DataTypes.FLOAT, defaultValue: 0.0 },
       })
 
     await queryInterface.createTable(

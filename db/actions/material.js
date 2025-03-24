@@ -3,6 +3,7 @@
 import { Sequelize } from 'sequelize'
 import BeadInfo from '@/db/models/BeadInfo'
 import Contour from '@/db/models/Contour'
+import FrameInfo from '@/db/models/FrameInfo'
 import Material from '@/db/models/Material'
 import MillefioriInfo from '@/db/models/MillefioriInfo'
 import MirrorInfo from '@/db/models/MirrorInfo'
@@ -19,24 +20,62 @@ export async function createMaterial( prevState, formData )
 
   await sequelize.sync()
 
-  const name = formData.get( 'name' )
-  const type = formData.get( 'type' )
-  const sku = formData.get( 'sku' )
-  const units = formData.get( 'units' )
-  const weight = formData.get( 'weight' )
-  const description = formData.get( 'description' )
+  const data = {}, info = {};
+  ['name', 'type', 'sku', 'units', 'weight', 'description'].forEach( f => {
+    data[f] = formData.get( f )
+  })
 
-  if( !name || !type || !sku )
+  if( !data.name || !data.type || !data.sku )
     return {error: 'Name, type, and sku are required'}
 
   try
   {
     const result = await sequelize.transaction( async t => {
-      await Material.create( {name, type, sku, units, weight, description} )
+      const material = await Material.create( data )
 
-      switch( type )
+      switch( data.type )
       {
         case 'bead':
+          ['type', 'finish', 'shape', 'color', 'length', 'height', 'thickness'].forEach( f => {
+            info[f] = formData.get( f )
+          })
+          await BeadInfo.create( {...info, materialId: material.id} )
+          break
+
+        case 'frame':
+          ['width', 'height', 'thickness', 'channel', 'border', 'photoWidth', 'photoHeight'].forEach( f => {
+            info[f] = formData.get( f )
+          })
+          await FrameInfo.create( {...info, materialId: material.id} )
+          break
+
+        case 'millefiori':
+          ['shape', 'color', 'length', 'width', 'height'].forEach( f => {
+            info[f] = formData.get( f )
+          })
+          await MillefioriInfo.create( {...info, materialId: material.id} )
+          break
+
+        case 'mirror':
+          ['shape', 'width', 'height', 'thickness', 'bevel'].forEach( f => {
+            info[f] = formData.get( f )
+          })
+          await MirrorInfo.create( {...info, materialId: material.id} )
+          break
+
+        case 'substrate':
+          ['outsideId', 'insideId', 'rabbetId', 'width', 'height', 'thickness', 'border'].forEach( f => {
+            info[f] = formData.get( f )
+          })
+          await SubstrateInfo.create( {...info, materialId: material.id} )
+          break
+
+        case 'tile':
+          ['color', 'width', 'height', 'thickness'].forEach( f => {
+            info[f] = formData.get( f )
+          })
+          await TileInfo.create( {...info, materialId: material.id} )
+          break
       }
     })
     return {success: true}
