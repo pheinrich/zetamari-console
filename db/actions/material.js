@@ -4,6 +4,8 @@ import { Sequelize } from 'sequelize'
 import BeadInfo from '@/db/models/BeadInfo'
 import Contour from '@/db/models/Contour'
 import Material from '@/db/models/Material'
+import MillefioriInfo from '@/db/models/MillefioriInfo'
+import MirrorInfo from '@/db/models/MirrorInfo'
 import SubstrateInfo from '@/db/models/SubstrateInfo'
 import TileInfo from '@/db/models/TileInfo'
 import sequelize from '@/db/sequelize'
@@ -29,7 +31,14 @@ export async function createMaterial( prevState, formData )
 
   try
   {
-    await Material.create( {name, type, sku, units, weight, description} )
+    const result = await sequelize.transaction( async t => {
+      await Material.create( {name, type, sku, units, weight, description} )
+
+      switch( type )
+      {
+        case 'bead':
+      }
+    })
     return {success: true}
   }
   catch( error )

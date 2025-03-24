@@ -10,9 +10,9 @@ const BeadInfo = sequelize.define(
     finish: { type: DataTypes.ENUM( 'fire-polished', 'silvered', 'opaque', 'opaque luster', 'transparent', 'aurora borealis', 'plain' ), defaultValue: 'plain' },
     shape: { type: DataTypes.ENUM( 'round', 'faceted round', 'bicone', 'drop', 'rondelle', 'rivoli', 'chaton', 'other' ), defaultValue: 'round' },
     color: { type: DataTypes.STRING, allowNull: false },
-    width: { type: DataTypes.FLOAT, defaultValue: 6.0 },
+    length: { type: DataTypes.FLOAT, defaultValue: 6.0 },
     height: { type: DataTypes.FLOAT, defaultValue: 6.0 },
-    depth: { type: DataTypes.FLOAT, defaultValue: 6.0 },
+    thickness: { type: DataTypes.FLOAT, defaultValue: 6.0 },
   },
   {
     noPrimaryKey: true,    // currently ignored, so materialId substitute required above

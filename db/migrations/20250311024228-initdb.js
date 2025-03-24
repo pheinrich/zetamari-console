@@ -57,9 +57,44 @@ module.exports =
         finish: { type: Sequelize.DataTypes.ENUM( 'fire-polished', 'silvered', 'opaque', 'opaque luster', 'transparent', 'aurora borealis', 'plain' ), defaultValue: 'plain' },
         shape: { type: Sequelize.DataTypes.ENUM( 'round', 'faceted round', 'bicone', 'drop', 'rondelle', 'rivoli', 'chaton', 'other' ), defaultValue: 'round' },
         color: { type: Sequelize.DataTypes.STRING, allowNull: false },
-        width: { type: Sequelize.DataTypes.FLOAT, defaultValue: 6.0 },
+        length: { type: Sequelize.DataTypes.FLOAT, defaultValue: 6.0 },
         height: { type: Sequelize.DataTypes.FLOAT, defaultValue: 6.0 },
-        depth: { type: Sequelize.DataTypes.FLOAT, defaultValue: 6.0 },
+        thickness: { type: Sequelize.DataTypes.FLOAT, defaultValue: 6.0 },
+      })
+
+    await queryInterface.createTable(
+      'FrameInfos',
+      {
+        materialId: { type: Sequelize.DataTypes.INTEGER, allowNull: false, foreignKey: true },
+        width: { type: Sequelize.DataTypes.FLOAT, defaultValue: 20.0 },
+        height: { type: Sequelize.DataTypes.FLOAT, defaultValue: 20.0 },
+        thickness: { type: Sequelize.DataTypes.FLOAT, defaultValue: 5.5 },
+        channel: { type: Sequelize.DataTypes.FLOAT, defaultValue: 1.75 },
+        border: { type: Sequelize.DataTypes.FLOAT, defaultValue: 0.25 },
+        photoWidth: { type: Sequelize.DataTypes.FLOAT, defaultValue: 4 },
+        photoHeight: { type: Sequelize.DataTypes.FLOAT, defaultValue: 6 },
+      })
+
+    await queryInterface.createTable(
+      'MillefioriInfos',
+      {
+        materialId: { type: Sequelize.DataTypes.INTEGER, allowNull: false, foreignKey: true },
+        shape: { type: Sequelize.DataTypes.ENUM( 'round', 'square' ), defaultValue: 'round' },
+        color: { type: Sequelize.DataTypes.STRING, allowNull: false },
+        length: { type: Sequelize.DataTypes.FLOAT, defaultValue: 5.0 },
+        width: { type: Sequelize.DataTypes.FLOAT, defaultValue: 5.0 },
+        height: { type: Sequelize.DataTypes.FLOAT, defaultValue: 5.0 },
+      })
+
+    await queryInterface.createTable(
+      'MirrorInfos',
+      {
+        materialId: { type: Sequelize.DataTypes.INTEGER, allowNull: false, foreignKey: true },
+        shape: { type: Sequelize.DataTypes.ENUM( 'chapel arch', 'circle', 'gothic arch', 'oval', 'rectangle', 'square', 'vesica picscis', 'other' ), defaultValue: 'circle' },
+        width: { type: Sequelize.DataTypes.FLOAT, defaultValue: 6 },
+        height: { type: Sequelize.DataTypes.FLOAT, defaultValue: 6 },
+        thickness: { type: Sequelize.DataTypes.FLOAT, defaultValue: 0.125 },
+        bevel: { type: Sequelize.DataTypes.FLOAT, 0 },
       })
 
     await queryInterface.createTable(
@@ -71,7 +106,7 @@ module.exports =
         rabbetId: { type: Sequelize.DataTypes.INTEGER, foreignKey: true },
         width: { type: Sequelize.DataTypes.FLOAT, allowNull: false },
         height: { type: Sequelize.DataTypes.FLOAT, allowNull: false },
-        depth: { type: Sequelize.DataTypes.FLOAT, defaultValue: 0.455 },
+        thickness: { type: Sequelize.DataTypes.FLOAT, defaultValue: 0.455 },
         border: { type: Sequelize.DataTypes.FLOAT, defaultValue: 1.0 },
       })
 
@@ -82,7 +117,7 @@ module.exports =
         color: { type: Sequelize.DataTypes.STRING, allowNull: false },
         width: { type: Sequelize.DataTypes.FLOAT, defaultValue: 20.0 },
         height: { type: Sequelize.DataTypes.FLOAT, defaultValue: 20.0 },
-        depth: { type: Sequelize.DataTypes.FLOAT, defaultValue: 5.5 },
+        thickness: { type: Sequelize.DataTypes.FLOAT, defaultValue: 5.5 },
       })
 
     await queryInterface.createTable(
@@ -152,6 +187,8 @@ module.exports =
     await queryInterface.dropTable( 'Contours' )
     await queryInterface.dropTable( 'TileInfos' )
     await queryInterface.dropTable( 'SubstrateInfos' )
+    await queryInterface.dropTable( 'MirrorInfos' )
+    await queryInterface.dropTable( 'MillefioriInfos' )
     await queryInterface.dropTable( 'BeadInfos' )
     await queryInterface.dropTable( 'ProductMaterials' )
     await queryInterface.dropTable( 'Materials' )

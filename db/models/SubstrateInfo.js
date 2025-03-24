@@ -9,7 +9,7 @@ const SubstrateInfo = sequelize.define(
     materialId: { type: DataTypes.INTEGER, primaryKey: true },
     width: { type: DataTypes.FLOAT, allowNull: false },
     height: { type: DataTypes.FLOAT, allowNull: false },
-    depth: { type: DataTypes.FLOAT, defaultValue: 0.455 },
+    thickness: { type: DataTypes.FLOAT, defaultValue: 0.455 },
     border: { type: DataTypes.FLOAT, defaultValue: 1.0 },
   },
   {

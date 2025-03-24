@@ -14,7 +14,7 @@ const initialState =
 export default function NewMaterialForm( {contourList} )
 {
   const [state, formAction] = useActionState( createMaterial, initialState )
-  const [type, setType] = useState( 'bead' )
+  const [type, setType] = useState( '' )
   const [outsideId, setOutsideId] = useState( '' )
   const [insideId, setInsideId] = useState( '' )
   const [rabbetId, setRabbetId] = useState( '' )
@@ -70,7 +70,7 @@ export default function NewMaterialForm( {contourList} )
 
       <div>
         <label>Weight</label>
-        <input name='weight' placeholder='Weight' />
+        <input name='weight' placeholder='Weight in lbs' />
       </div>
 
       <div>
@@ -78,162 +78,282 @@ export default function NewMaterialForm( {contourList} )
         <textarea name='description' placeholder='Description' />
       </div>
 
-      <fieldset disabled={type !== 'bead'}>
-        <legend>Bead Details</legend>
-        <div>
+      { type === 'bead' && (
+        <fieldset>
+          <legend>Bead Details</legend>
           <div>
-            <label>Category</label>
-            <select
-              name='beadType'
-              placeholder='Category'
-              defaultValue='plastic'
-            >
-              <option value='' disabled>Select category</option>
-              <option value='glass'>Glass</option>
-              <option value='metal'>Metal</option>
-              <option value='plastic'>Plastic</option>
-              <option value='ceramic'>Ceramic</option>
-              <option value='shell'>Shell</option>
-              <option value='rhinestone'>Rhinestone</option>
-              <option value='other'>Other</option>
-            </select>
+            <div>
+              <label>Category</label>
+              <select
+                name='category'
+                placeholder='Category'
+                defaultValue='plastic'
+              >
+                <option value='' disabled>Select category</option>
+                <option value='glass'>Glass</option>
+                <option value='metal'>Metal</option>
+                <option value='plastic'>Plastic</option>
+                <option value='ceramic'>Ceramic</option>
+                <option value='shell'>Shell</option>
+                <option value='rhinestone'>Rhinestone</option>
+                <option value='other'>Other</option>
+              </select>
+            </div>
+            <div>
+              <label>Finish</label>
+              <select
+                name='finish'
+                placeholder='Finish'
+                defaultValue='plain'
+              >
+                <option value='' disabled>Select finish</option>
+                <option value='fire-polished'>Fire-Polished</option>
+                <option value='silvered'>Silvered</option>
+                <option value='opaque'>Opaque</option>
+                <option value='opaque luster'>Opaque Luster</option>
+                <option value='transparent'>Transparent</option>
+                <option value='aurora borealis'>Aurora Borealis</option>
+                <option value='plain'>Plain</option>
+              </select>
+            </div>
+            <div>
+              <label>Shape</label>
+              <select
+                name='shape'
+                placeholder='Shape'
+                defaultValue='round'
+              >
+                <option value='' disabled>Select shape</option>
+                <option value='round'>Round</option>
+                <option value='faceted round'>Faceted Round</option>
+                <option value='rondelle'>Rondelle</option>
+                <option value='drop'>Drop</option>
+                <option value='bicone'>Bicone/Diamond</option>
+                <option value='rivoli'>Rivoli</option>
+                <option value='chaton'>Chaton</option>
+                <option value='other'>Other</option>
+              </select>
+            </div>
+            <div>
+              <label>Color</label>
+              <input name='color' placeholder='Color' required />
+            </div>
+            <div>
+              <label>Length</label>
+              <input name='length' placeholder='Length in mm' />
+            </div>
+            <div>
+              <label>Height</label>
+              <input name='height' placeholder='Width in mm' />
+            </div>
+            <div>
+              <label>Thickness</label>
+              <input name='thickness' placeholder='Thickness in mm' />
+            </div>
           </div>
-          <div>
-            <label>Finish</label>
-            <select
-              name='beadFinish'
-              placeholder='Finish'
-              defaultValue='plain'
-            >
-              <option value='' disabled>Select finish</option>
-              <option value='fire-polished'>Fire-Polished</option>
-              <option value='silvered'>Silvered</option>
-              <option value='opaque'>Opaque</option>
-              <option value='opaque luster'>Opaque Luster</option>
-              <option value='transparent'>Transparent</option>
-              <option value='aurora borealis'>Aurora Borealis</option>
-              <option value='plain'>Plain</option>
-            </select>
-          </div>
-          <div>
-            <label>Shape</label>
-            <select
-              name='beadShape'
-              placeholder='Shape'
-              defaultValue='round'
-            >
-              <option value='' disabled>Select shape</option>
-              <option value='round'>Round</option>
-              <option value='faceted round'>Faceted Round</option>
-              <option value='rondelle'>Rondelle</option>
-              <option value='drop'>Drop</option>
-              <option value='bicone'>Bicone/Diamond</option>
-              <option value='rivoli'>Rivoli</option>
-              <option value='chaton'>Chaton</option>
-              <option value='other'>Other</option>
-            </select>
-          </div>
-          <div>
-            <label>Color</label>
-            <input name='beadColor' placeholder='Color' required />
-          </div>
-          <div>
-            <label>Width</label>
-            <input name='beadWidth' placeholder='Width in mm' />
-          </div>
-          <div>
-            <label>Height</label>
-            <input name='beadHeight' placeholder='Height in mm' />
-          </div>
-          <div>
-            <label>Depth</label>
-            <input name='beadDepth' placeholder='Depth in mm' />
-          </div>
-        </div>
-      </fieldset>
+        </fieldset>
+      )}
 
-      <fieldset disabled={type !== 'tile'}>
-        <legend>Tile Details</legend>
-        <div>
+      { type === 'tile' && (
+        <fieldset>
+          <legend>Tile Details</legend>
           <div>
-            <label>Color</label>
-            <input name='tileColor' placeholder='Color' required />
+            <div>
+              <label>Color</label>
+              <input name='color' placeholder='Color' required />
+            </div>
+            <div>
+              <label>Width</label>
+              <input name='width' placeholder='Width in mm' />
+            </div>
+            <div>
+              <label>Height</label>
+              <input name='height' placeholder='Height in mm' />
+            </div>
+            <div>
+              <label>Thickness</label>
+              <input name='thickness' placeholder='Thickness in mm' />
+            </div>
           </div>
-          <div>
-            <label>Width</label>
-            <input name='tileWidth' placeholder='Width in mm' />
-          </div>
-          <div>
-            <label>Height</label>
-            <input name='tileHeight' placeholder='Height in mm' />
-          </div>
-          <div>
-            <label>Depth</label>
-            <input name='tileDepth' placeholder='Depth in mm' />
-          </div>
-        </div>
-      </fieldset>
+        </fieldset>
+      )}
 
-      <fieldset disabled={type !== 'substrate'}>
-        <legend>Substrate Details</legend>
-        <div>
+      { type === 'substrate' && (
+        <fieldset>
+          <legend>Substrate Details</legend>
           <div>
-            <label>Outside Contour</label>
-            <select
-              name='substrateOutsideId'
-              onChange={(evt) => setOutsideId( evt.target.value )}
-              required
-            >
-              <option value='' disabled>Select outside contour</option>
-              {contourList.map( (contour) => (
-                <option key={`oc-${contour.id}`} value={contour.id}>{contour.name}</option>
-              ))}
-            </select>
+            <div>
+              <label>Outside Contour</label>
+              <select
+                name='outsideId'
+                onChange={(evt) => setOutsideId( evt.target.value )}
+                required
+              >
+                <option value='' disabled>Select outside contour</option>
+                {contourList.map( (contour) => (
+                  <option key={`oc-${contour.id}`} value={contour.id}>{contour.name}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label>Inside Contour</label>
+              <select
+                name='insideId'
+                onChange={(evt) => setInsideId( evt.target.value )}
+                defaultValue=''
+              >
+                <option value=''>Select inside contour</option>
+                {contourList.map( (contour) => (
+                  <option key={`ic-${contour.id}`} value={contour.id}>{contour.name}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label>Rabbet Contour</label>
+              <select
+                name='rabbetId'
+                onChange={(evt) => setRabbetId( evt.target.value )}
+                defaultValue=''
+              >
+                <option value=''>Select rabbet contour</option>
+                {contourList.map( (contour) => (
+                  <option key={`rc-${contour.id}`} value={contour.id}>{contour.name}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label>Width</label>
+              <input name='width' placeholder='Width in inches' required />
+            </div>
+            <div>
+              <label>Height</label>
+              <input name='height' placeholder='Height in inches' required />
+            </div>
+            <div>
+              <label>Thickness</label>
+              <input name='thickness' placeholder='Thickness in inches' defaultValue='0.455' />
+            </div>
+            <div>
+              <label>Border</label>
+              <input name='border' placeholder='Border in inches' defaultValue='1' />
+            </div>
           </div>
+        </fieldset>
+      )}
+
+      { type === 'millefiori' && (
+        <fieldset>
+          <legend>Millefiori Details</legend>
           <div>
-            <label>Inside Contour</label>
-            <select
-              name='substrateInsideId'
-              onChange={(evt) => setInsideId( evt.target.value )}
-              defaultValue=''
-            >
-              <option value=''>Select inside contour</option>
-              {contourList.map( (contour) => (
-                <option key={`ic-${contour.id}`} value={contour.id}>{contour.name}</option>
-              ))}
-            </select>
+            <div>
+              <label>Shape</label>
+              <select
+                name='shape'
+                placeholder='Shape'
+                defaultValue='round'
+              >
+                <option value='' disabled>Select shape</option>
+                <option value='round'>Round</option>
+                <option value='square'>Square</option>
+              </select>
+            </div>
+            <div>
+              <label>Color</label>
+              <input name='color' placeholder='Color' required />
+            </div>
+            <div>
+              <label>Length</label>
+              <input name='length' placeholder='Length in mm' />
+            </div>
+            <div>
+              <label>Width</label>
+              <input name='width' placeholder='Width in mm' />
+            </div>
+            <div>
+              <label>Height</label>
+              <input name='height' placeholder='Height in mm' />
+            </div>
           </div>
+        </fieldset>
+      )}
+
+      { type === 'mirror' && (
+        <fieldset>
+          <legend>Mirror Details</legend>
           <div>
-            <label>Rabbet Contour</label>
-            <select
-              name='substrateRabbetId'
-              onChange={(evt) => setRabbetId( evt.target.value )}
-              defaultValue=''
-            >
-              <option value=''>Select rabbet contour</option>
-              {contourList.map( (contour) => (
-                <option key={`rc-${contour.id}`} value={contour.id}>{contour.name}</option>
-              ))}
-            </select>
+            <div>
+              <label>Shape</label>
+              <select
+                name='shape'
+                placeholder='Shape'
+                defaultValue='circle'
+              >
+                <option value='' disabled>Select shape</option>
+                <option value='chapel arch'>Chapel Arch</option>
+                <option value='circle'>Circle</option>
+                <option value='gothic arch'>Gothic Arch</option>
+                <option value='oval'>Oval</option>
+                <option value='rectangle'>Rectangle</option>
+                <option value='square'>Square</option>
+                <option value='vesica piscis'>Vesica Piscis</option>
+                <option value='other'>Other</option>
+              </select>
+            </div>
+            <div>
+              <label>Width</label>
+              <input name='width' placeholder='Width in inches' />
+            </div>
+            <div>
+              <label>Height</label>
+              <input name='height' placeholder='Height in inches' />
+            </div>
+            <div>
+              <label>Thickness</label>
+              <input name='thickness' placeholder='Thickness in inches' />
+            </div>
+            <div>
+              <label>Bevel</label>
+              <input name='bevel' placeholder='Bevel size in inches' required />
+            </div>
           </div>
+        </fieldset>
+      )}
+
+      { type === 'frame' && (
+        <fieldset>
+          <legend>Frame Details</legend>
           <div>
-            <label>Width</label>
-            <input name='substrateWidth' placeholder='Width in inches' required />
+            <div>
+              <label>Width</label>
+              <input name='width' placeholder='Width in inches' />
+            </div>
+            <div>
+              <label>Height</label>
+              <input name='height' placeholder='Height in inches' />
+            </div>
+            <div>
+              <label>Thickness</label>
+              <input name='thickness' placeholder='Thickness in inches' />
+            </div>
+            <div>
+              <label>Channel</label>
+              <input name='channel' placeholder='Channel size in inches' />
+            </div>
+            <div>
+              <label>Border</label>
+              <input name='border' placeholder='Channel border in inches' />
+            </div>
+            <div>
+              <label>Photo Width</label>
+              <input name='photoWidth' placeholder='Photo width in inches' />
+            </div>
+            <div>
+              <label>Photo Height</label>
+              <input name='photoHeight' placeholder='Photo height in inches' required />
+            </div>
           </div>
-          <div>
-            <label>Height</label>
-            <input name='substrateHeight' placeholder='Height in inches' required />
-          </div>
-          <div>
-            <label>Depth</label>
-            <input name='substrateDepth' placeholder='Depth in inches' defaultValue='0.455' />
-          </div>
-          <div>
-            <label>Border</label>
-            <input name='substrateBorder' placeholder='Border in inches' defaultValue='1' />
-          </div>
-        </div>
-      </fieldset>
+        </fieldset>
+      )}
 
       <button type='submit'>Create</button>
     </form>

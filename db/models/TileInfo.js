@@ -9,7 +9,7 @@ const TileInfo = sequelize.define(
     color: { type: DataTypes.STRING, allowNull: false },
     width: { type: DataTypes.FLOAT, defaultValue: 20.0 },
     height: { type: DataTypes.FLOAT, defaultValue: 20.0 },
-    depth: { type: DataTypes.FLOAT, defaultValue: 5.0 },
+    thickness: { type: DataTypes.FLOAT, defaultValue: 5.0 },
   },
   {
     noPrimaryKey: true,    // currently ignored, so materialId substitute required above
