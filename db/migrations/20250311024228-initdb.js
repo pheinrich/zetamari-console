@@ -29,7 +29,7 @@ module.exports =
       {
         id: { type: Sequelize.DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
         name: { type: Sequelize.DataTypes.STRING, unique: true, allowNull: false },
-        type: { type: Sequelize.DataTypes.ENUM( 'bead', 'birdhouse', 'grout', 'mirror', 'frame', 'tile', 'substrate' ), allowNull: false },
+        type: { type: Sequelize.DataTypes.ENUM( 'bead', 'birdhouse', 'frame', 'grout', 'millefiori', 'mirror', 'substrate', 'tile', 'other' ), allowNull: false },
         sku: { type: Sequelize.DataTypes.STRING, unique: true, allowNull: false },
         units: { type: Sequelize.DataTypes.STRING, defaultValue: 'each' },
         weight: { type: Sequelize.DataTypes.FLOAT },
@@ -189,6 +189,7 @@ module.exports =
     await queryInterface.dropTable( 'SubstrateInfos' )
     await queryInterface.dropTable( 'MirrorInfos' )
     await queryInterface.dropTable( 'MillefioriInfos' )
+    await queryInterface.dropTable( 'FrameInfos' )
     await queryInterface.dropTable( 'BeadInfos' )
     await queryInterface.dropTable( 'ProductMaterials' )
     await queryInterface.dropTable( 'Materials' )

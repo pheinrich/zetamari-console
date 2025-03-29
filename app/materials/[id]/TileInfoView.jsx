@@ -7,7 +7,7 @@ export default async function TileInfoView( {tileInfo} )
       Color: {tileInfo.color}<br/>
       Width: {tileInfo.width} mm<br/>
       Height: {tileInfo.height} mm<br/>
-      Depth: {tileInfo.thickness} mm
+      Thickness: {tileInfo.thickness} mm
     </>
   )
 }

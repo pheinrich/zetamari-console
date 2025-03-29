@@ -9,6 +9,15 @@ module.exports =
       [
         {
           id: 1,
+          name: 'Zetamari',
+          email: 'angie@zetamari.com',
+          address: '503 N 62nd St, Seattle, WA 98103, USA',
+          phone: '(206) 383-2698',
+          url: 'https://www.zetamari.com/',
+          notes: '',
+        },
+        {
+          id: 2,
           name: 'Shipwreck Beads',
           email: 'info@shipwreckbeads.com',
           address: '8535 Commerce Pl Dr NE Ste A, Lacey, WA 98516, USA',

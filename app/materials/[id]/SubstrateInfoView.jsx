@@ -2,9 +2,7 @@ import Link from 'next/link'
 import { build } from '@/lib/mirror'
 
 export default async function SubstrateInfoView( {substrateInfo} )
-{
-  substrateInfo.outside = await substrateInfo.getOutside()
-  
+{  
   const mirror = build(
     substrateInfo.width,
     substrateInfo.height,

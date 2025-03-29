@@ -6,8 +6,8 @@ import sequelize from '@/db/sequelize.js'
 const SupplierMaterial = sequelize.define(
   'SupplierMaterial',
   {
-    supplierId: { type: DataTypes.INTEGER, references: { model: Supplier, key: id } },
-    materialId: { type: DataTypes.INTEGER, references: { model: Material, key: id } },
+    supplierId: { type: DataTypes.INTEGER, references: { model: Supplier, key: 'id' } },
+    materialId: { type: DataTypes.INTEGER, references: { model: Material, key: 'id' } },
     partNumber: { type: DataTypes.STRING, allowNull: false },
     url: { type: DataTypes.STRING },
     cost: { type: DataTypes.FLOAT },
@@ -16,7 +16,7 @@ const SupplierMaterial = sequelize.define(
     timestamps: false,
   })
 
-Supplier.belongsToMany( Material, { through: SupplierMaterial } )
-Material.belongsToMany( Supplier, { through: SupplierMaterial } )
+Supplier.belongsToMany( Material, { through: SupplierMaterial, as: 'materials' } )
+Material.belongsToMany( Supplier, { through: SupplierMaterial, as: 'suppliers' } )
 
 export default SupplierMaterial
