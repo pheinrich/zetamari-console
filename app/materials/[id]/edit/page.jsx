@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import MaterialForm from '../../MaterialForm'
 import { notFound } from 'next/navigation'
 import { readContours } from '@/db/actions/contour'
@@ -11,15 +12,18 @@ export default async function EditMaterialPage( {params} )
   if( !material )
     return notFound()
 
-  console.dir( material, {depth: null} )
-
   const contours = await readContours()
 
   return (
-    <MaterialForm
-      onSubmit={updateMaterial}
-      contourList={contours.map( (c) => ({id: c.id, name: c.name}) )}
-      initialData={material}
-    />
+    <>
+      <MaterialForm
+        onSubmit={updateMaterial}
+        contourList={contours.map( (c) => ({id: c.id, name: c.name}) )}
+        initialData={material}
+      />
+      <hr />
+      <Link href={`/materials/${id}`}>Cancel</Link><br/>
+      <Link href='/materials'>All Materials</Link>
+    </>
   )
 }

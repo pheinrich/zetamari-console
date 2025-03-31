@@ -1,5 +1,6 @@
 'use client'
 
+import { redirect } from 'next/navigation'
 import { useState } from 'react'
 import { z } from 'zod'
 import { useFormSubmit } from '@/util/formSubmitHook'
@@ -81,6 +82,9 @@ export default function MaterialForm( {contourList, initialData={}} )
     schema,
     onSubmit: isEdit ? updateMaterial : createMaterial
   })
+
+  if( success )
+    redirect( '/materials' )
 
   return(
     <form onSubmit={handleSubmit}>

@@ -1,5 +1,6 @@
 'use server'
 
+import { notFound, unauthorized } from 'next/navigation'
 import { Sequelize } from 'sequelize'
 import BeadInfo from '@/db/models/BeadInfo'
 import Contour from '@/db/models/Contour'
@@ -17,7 +18,7 @@ export async function createMaterial( data )
 {
   const session = await auth()
   if( !session )
-    throw new Error( 'Unauthorized', {cause: 401} )
+    unauthorized()
 
   await sequelize.sync()
 
@@ -63,7 +64,7 @@ export async function readMaterial( id, eager )
 {
   const session = await auth()
   if( !session )
-    throw new Error( 'Unauthorized', {cause: 401} )
+    unauthorized()
 
   await sequelize.sync()
   let material
@@ -110,7 +111,7 @@ export async function readMaterials()
 {
   const session = await auth()
   if( !session )
-    throw new Error( 'Unauthorized', {cause: 401} )
+    unauthorized()
 
   await sequelize.sync()
   return await Material.findAll()
@@ -120,13 +121,13 @@ export async function updateMaterial( data )
 {
   const session = await auth()
   if( !session )
-    throw new Error( 'Unauthorized', {cause: 401} )
+    unauthorized()
 
   await sequelize.sync()
-  const material = await Material.findByPk( data.id )
 
+  const material = await Material.findByPk( data.id )
   if( !material )
-    throw new Error( 'Material not found', {cause: 404} )
+    notFound()
 
   try
   {
@@ -171,13 +172,13 @@ export async function deleteMaterial( id )
 {
   const session = await auth()
   if( !session )
-    throw new Error( 'Unauthorized', {cause: 401} )
+    unauthorized()
 
   await sequelize.sync()
 
   const material = await Material.findByPk( id )
   if( !material )
-    throw new Error( 'Material not found', {cause: 404} )
+    notFound()
 
   await material.destroy()
 }
