@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { build } from '@/lib/mirror'
+import { build } from '@/libs/mirror'
 
 export default async function SubstrateInfoView( {substrateInfo} )
 {  

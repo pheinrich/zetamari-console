@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { deleteMaterial, readMaterial } from '@/db/actions/material'
-import { build } from '@/lib/mirror'
+import { build } from '@/libs/mirror'
 import BeadInfoView from './BeadInfoView'
 import FrameInfoView from './FrameInfoView'
 import MillefioriInfoView from './MillefioriInfoView'

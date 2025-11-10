@@ -1,6 +1,7 @@
 'use server'
 
 import { notFound, unauthorized } from 'next/navigation'
+import { getServerSession } from 'next-auth/next'
 import { Sequelize } from 'sequelize'
 import BeadInfo from '@/db/models/BeadInfo'
 import Contour from '@/db/models/Contour'
@@ -12,11 +13,10 @@ import SubstrateInfo from '@/db/models/SubstrateInfo'
 import Supplier from '@/db/models/Supplier'
 import TileInfo from '@/db/models/TileInfo'
 import sequelize from '@/db/sequelize'
-import { auth } from '@/lib/auth'
 
 export async function createMaterial( data )
 {
-  const session = await auth()
+  const session = await getServerSession()
   if( !session )
     unauthorized()
 
@@ -62,7 +62,7 @@ export async function createMaterial( data )
 
 export async function readMaterial( id, eager )
 {
-  const session = await auth()
+  const session = await getServerSession()
   if( !session )
     unauthorized()
 
@@ -109,7 +109,7 @@ export async function readMaterial( id, eager )
 
 export async function readMaterials()
 {
-  const session = await auth()
+  const session = await getServerSession()
   if( !session )
     unauthorized()
 
@@ -119,7 +119,7 @@ export async function readMaterials()
 
 export async function updateMaterial( data )
 {
-  const session = await auth()
+  const session = await getServerSession()
   if( !session )
     unauthorized()
 
@@ -170,7 +170,7 @@ export async function updateMaterial( data )
 
 export async function deleteMaterial( id )
 {
-  const session = await auth()
+  const session = await getServerSession()
   if( !session )
     unauthorized()
 

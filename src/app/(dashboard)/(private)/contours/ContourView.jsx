@@ -1,11 +1,9 @@
-import { buildFromSVGData, buildFromType, getDims, getSVGData } from '@/lib/mirror'
-import { subdividePath } from '@/lib/kit'
+import { buildFromSVGData, buildFromType, getDims, getSVGData } from '@/libs/mirror'
 
-export default async function ContourViewWithBead( {contour} )
+export default async function ContourView( {contour} )
 {
   const geometry = contour.svgData ? buildFromSVGData( contour.svgData ) : buildFromType( contour.id, 20, 32.4 )
-//  const svgData = contour.svgData || getSVGData( geometry )
-  const svgData = subdividePath( geometry )
+  const svgData = contour.svgData || getSVGData( geometry )
   const dims = getDims( geometry )
 
   const center = dims.center
@@ -43,22 +41,6 @@ export default async function ContourViewWithBead( {contour} )
           height='500'
           viewBox={viewBox}
         >
-          <defs>
-            <marker
-              id='bead-marker'
-              viewBox='0 0 500 500'
-              refX='20'
-              refY='20'
-              markerUnits='userSpaceOnUse'
-              markerWidth='20'
-              markerHeight='20'
-              orient='auto'
-              fill='#f88'
-            >
-              <path d='M0 0 10 0 20 10 10 20 0 20 10 10Z' />
-            </marker>
-          </defs>
-
           <path
             fill='none'
             stroke='#666'
@@ -66,9 +48,6 @@ export default async function ContourViewWithBead( {contour} )
             strokeLinecap='round'
             strokeLinejoin='round'
             strokeOpacity='1'
-            markerStart='url(#bead-marker)'
-            markerEnd='url(#bead-marker)'
-            markerMid='url(#bead-marker)'
             d={svgData}
           />
         </svg>
