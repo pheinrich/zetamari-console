@@ -6,8 +6,8 @@ import Order from '@/db/models/Order'
 const OrderProduct = sequelize.define(
   'OrderProduct',
   {
-    orderId: { type: DataTypes.INTEGER, references: { model: Order, key: id } },
-    productId: { type: DataTypes.INTEGER, references: { model: Product, key: id } },
+    orderId: { type: DataTypes.INTEGER, references: { model: Order, key: 'id' } },
+    productId: { type: DataTypes.INTEGER, references: { model: Product, key: 'id' } },
     quantity: { type: DataTypes.FLOAT, defaultValue: 1 },
   },
   {

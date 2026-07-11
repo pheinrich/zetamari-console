@@ -3,22 +3,30 @@
 import { redirect } from 'next/navigation'
 import { useState } from 'react'
 import { z } from 'zod'
-import { useFormSubmit } from '@/util/formSubmitHook'
-import { createMaterial, updateMaterial } from '@/db/actions/material'
+import { useFormSubmit } from '@/utils/formSubmitHook'
+import { createProduct, updateProduct } from '@/db/actions/product'
 
 const optionalPositiveNumber = z.preprocess(
   (val) => (val === '' || val == null ? undefined : val),
   z.coerce.number().optional()
 )
 
+const optionalType = z.preprocess(
+  (val) => (val === '' || val == null ? undefined : val),
+  z.enum( ['bead', 'birdhouse', 'frame', 'grout', 'millefiori', 'mirror', 'substrate', 'tile', 'other'] ).optional()
+)
+
 const schema = z.object({
   id: optionalPositiveNumber,
   name: z.string().min( 1 ),
-  type: z.enum( ['bead', 'birdhouse', 'frame', 'grout', 'millefiori', 'mirror', 'substrate', 'tile', 'other'] ),
+  type: optionalType,
   sku: z.string().min( 1 ),
+  sellable: z.preprocess( (val) => val === 'on' || val === true, z.boolean() ),
   units: z.string().optional(),
   weight: optionalPositiveNumber,
   description: z.string().optional(),
+  priceWholesale: optionalPositiveNumber,
+  priceRetail: optionalPositiveNumber,
 
   beadInfo: z.object({
     category: z.enum( ['glass', 'plastic', 'ceramic', 'shell', 'metal', 'rhinestone', 'cabochon', 'other'] ).optional(),
@@ -74,23 +82,23 @@ const schema = z.object({
   }).optional(),
 })
 
-export default function MaterialForm( {contourList, initialData={}} )
+export default function ProductForm( {contourList, initialData={}} )
 {
   const isEdit = Boolean( initialData?.id )
-  const [type, setType] = useState( initialData?.type )
+  const [type, setType] = useState( initialData?.type || '' )
   const { handleSubmit, loading, errors, success } = useFormSubmit({
     schema,
-    onSubmit: isEdit ? updateMaterial : createMaterial
+    onSubmit: isEdit ? updateProduct : createProduct
   })
 
   if( success )
-    redirect( '/materials' )
+    redirect( '/products' )
 
   return(
     <form onSubmit={handleSubmit}>
-      <h1>{isEdit ? 'Update' : 'Create'} Material</h1>
+      <h1>{isEdit ? 'Update' : 'Create'} Product</h1>
 
-      {success && <p>Material {isEdit ? 'updated' : 'created'} successfully</p>}
+      {success && <p>Product {isEdit ? 'updated' : 'created'} successfully</p>}
       {errors && <pre>{JSON.stringify( errors, null, 2 )}</pre>}
 
       {isEdit && <input type='hidden' name='id' value={initialData?.id} />}
@@ -104,14 +112,48 @@ export default function MaterialForm( {contourList, initialData={}} )
       </div>
 
       <div>
-        <label>Type</label>
+        <label>SKU</label>
+        <input
+          name='sku'
+          defaultValue={initialData?.sku || ''}
+          required />
+      </div>
+
+      <div>
+        <label>
+          <input
+            type='checkbox'
+            name='sellable'
+            defaultChecked={initialData?.sellable ?? true}
+          />
+          Sellable directly to customers
+        </label>
+      </div>
+
+      <div>
+        <label>Wholesale Price</label>
+        <input
+          name='priceWholesale'
+          defaultValue={initialData?.priceWholesale || ''}
+        />
+      </div>
+
+      <div>
+        <label>Retail Price</label>
+        <input
+          name='priceRetail'
+          defaultValue={initialData?.priceRetail || ''}
+        />
+      </div>
+
+      <div>
+        <label>Material Type</label>
         <select
           name='type'
-          placeholder='Type'
           defaultValue={initialData?.type || ''}
           onChange={(evt) => setType( evt.target.value )}
         >
-          <option value='' disabled>Select Type</option>
+          <option value=''>None (finished/assembled product)</option>
           <option value='bead'>Bead</option>
           <option value='birdhouse'>Birdhouse</option>
           <option value='frame'>Frame</option>
@@ -122,14 +164,6 @@ export default function MaterialForm( {contourList, initialData={}} )
           <option value='tile'>Tile</option>
           <option value='other'>Other</option>
         </select>
-      </div>
-
-      <div>
-        <label>SKU</label>
-        <input
-          name='sku'
-          defaultValue={initialData?.sku || ''}
-          required />
       </div>
 
       <div>

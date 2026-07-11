@@ -3,22 +3,25 @@
 import bcrypt from 'bcryptjs'
 import User from '@/db/models/User'
 import sequelize from '@/db/sequelize'
-import { getServerSession } from 'next-auth/next'
+import { auth } from '@/lib/auth'
 
 export async function createUser( name, email, password )
 {
-  const session = await getServerSession()
+  const session = await auth()
   if( !session )
     throw new Error( 'Unauthorized', {cause: 401} )
 
-  const hashedPassword = await bcrypt.hash( password, 10 )
   await sequelize.sync()
-  return await User.create( {name, email, password: hashedPassword} )
+
+  // NB: password is intentionally passed through unhashed - User's
+  // beforeCreate hook hashes it. Hashing here too would double-hash it and
+  // make the account impossible to log into.
+  return await User.create( {name, email, password} )
 }
 
 export async function readUser( id )
 {
-  const session = await getServerSession()
+  const session = await auth()
   if( !session )
     throw new Error( 'Unauthorized', {cause: 401} )
 
@@ -28,7 +31,7 @@ export async function readUser( id )
 
 export async function readUsers()
 {
-  const session = await getServerSession()
+  const session = await auth()
   if( !session )
     throw new Error( 'Unauthorized', {cause: 401} )
 
@@ -38,7 +41,7 @@ export async function readUsers()
 
 export async function updateUser( id, name, email, password )
 {
-  const session = await getServerSession()
+  const session = await auth()
   if( !session )
     throw new Error( 'Unauthorized', {cause: 401} )
 
@@ -48,13 +51,15 @@ export async function updateUser( id, name, email, password )
   if( !user )
     throw new Error( 'User not found', {cause: 404} )
 
+  // User has no beforeUpdate hook (only beforeCreate), so this path has to
+  // hash the password itself when one is supplied.
   const hashedPassword = password ? await bcrypt.hash( password, 10 ) : user.password
-  return await User.update( {name, email, password: hashedPassword} )
+  return await user.update( {name, email, password: hashedPassword} )
 }
 
 export async function deleteUser( id )
 {
-  const session = await getServerSession()
+  const session = await auth()
   if( !session )
     throw new Error( 'Unauthorized', {cause: 401} )
 

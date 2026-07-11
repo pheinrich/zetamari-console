@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { z } from 'zod'
-import { formDataToDeepJSON } from '@/util/formData'
+import { formDataToDeepJSON } from '@/utils/formData'
 
 export function useFormSubmit( {schema, onSubmit} )
 {

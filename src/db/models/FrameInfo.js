@@ -1,11 +1,13 @@
 import { DataTypes } from 'sequelize'
 import sequelize from '@/db/sequelize.js'
-import Material from '@/db/models/Material'
+import Product from '@/db/models/Product'
 
+// Frames are always rectangular, so there's intentionally no shape or
+// contour reference here - just physical dimensions.
 const FrameInfo = sequelize.define(
   'FrameInfo',
   {
-    materialId: { type: DataTypes.INTEGER, primaryKey: true },
+    productId: { type: DataTypes.INTEGER, primaryKey: true },
     width: { type: DataTypes.FLOAT, defaultValue: 7.75 },
     height: { type: DataTypes.FLOAT, defaultValue: 9.75 },
     thickness: { type: DataTypes.FLOAT, defaultValue: 0.625 },
@@ -15,11 +17,11 @@ const FrameInfo = sequelize.define(
     photoHeight: { type: DataTypes.FLOAT, defaultValue: 6 },
   },
   {
-    noPrimaryKey: true,    // currently ignored, so materialId substitute required above
+    noPrimaryKey: true,    // currently ignored, so productId substitute required above
     timestamps: false,
   })
 
-Material.hasOne( FrameInfo, {as: 'frameInfo', foreignKey: 'materialId', onDelete: 'CASCADE'} )
-FrameInfo.belongsTo( Material, {as: 'material', allowNull: false, foreignKey: 'materialId', onDelete: 'CASCADE'} )
+Product.hasOne( FrameInfo, {as: 'frameInfo', foreignKey: 'productId', onDelete: 'CASCADE'} )
+FrameInfo.belongsTo( Product, {as: 'product', allowNull: false, foreignKey: 'productId', onDelete: 'CASCADE'} )
 
 export default FrameInfo

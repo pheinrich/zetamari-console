@@ -2,7 +2,7 @@
 import { redirect } from 'next/navigation'
 
 // Third-party Imports
-import { getServerSession } from 'next-auth'
+import { auth } from '@/lib/auth'
 
 // Config Imports
 import themeConfig from '@configs/themeConfig'
@@ -10,7 +10,7 @@ import themeConfig from '@configs/themeConfig'
 // Util Imports
 
 const GuestOnlyRoute = async ({ children }) => {
-  const session = await getServerSession()
+  const session = await auth()
 
   if (session) {
     redirect(themeConfig.homePageUrl)

@@ -17,4 +17,4 @@ const Order = sequelize.define(
 User.hasMany( Order )
 Order.belongsTo( User )
 
-export default Product
+export default Order

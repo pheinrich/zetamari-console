@@ -2,11 +2,11 @@
 
 import Contour from '@/db/models/Contour'
 import sequelize from '@/db/sequelize'
-import { getServerSession } from 'next-auth/next'
+import { auth } from '@/lib/auth'
 
 export async function createContour( name, svgData )
 {
-  const session = await getServerSession()
+  const session = await auth()
   if( !session )
     throw new Error( 'Unauthorized', {cause: 401} )
 
@@ -16,7 +16,7 @@ export async function createContour( name, svgData )
 
 export async function readContour( id )
 {
-  const session = await getServerSession()
+  const session = await auth()
   if( !session )
     throw new Error( 'Unauthorized', {cause: 401} )
 
@@ -26,7 +26,7 @@ export async function readContour( id )
 
 export async function readContours()
 {
-  const session = await getServerSession()
+  const session = await auth()
   if( !session )
     throw new Error( 'Unauthorized', {cause: 401} )
 
@@ -36,7 +36,7 @@ export async function readContours()
 
 export async function updateContour( id, name, svgData )
 {
-  const session = await getServerSession()
+  const session = await auth()
   if( !session )
     throw new Error( 'Unauthorized', {cause: 401} )
 
@@ -51,7 +51,7 @@ export async function updateContour( id, name, svgData )
 
 export async function deleteContour( id )
 {
-  const session = await getServerSession()
+  const session = await auth()
   if( !session )
     throw new Error( 'Unauthorized', {cause: 401} )
 

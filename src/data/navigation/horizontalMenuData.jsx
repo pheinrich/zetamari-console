@@ -33,6 +33,32 @@ const horizontalMenuData = () => [
     ]
   },
   {
+    label: 'inventory',
+    icon: 'ri-shapes-line',
+    children: [
+      {
+        label: 'products',
+        icon: 'ri-shapes-line',
+        href: '/products'
+      },
+      {
+        label: 'contours',
+        icon: 'ri-shape-2-line',
+        href: '/contours'
+      },
+      {
+        label: 'suppliers',
+        icon: 'ri-truck-line',
+        href: '/suppliers'
+      },
+      {
+        label: 'users',
+        icon: 'ri-team-line',
+        href: '/users'
+      }
+    ]
+  },
+  {
     label: 'apps',
     icon: 'ri-mail-open-line',
     children: [

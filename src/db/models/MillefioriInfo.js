@@ -1,11 +1,11 @@
 import { DataTypes } from 'sequelize'
 import sequelize from '@/db/sequelize.js'
-import Material from '@/db/models/Material'
+import Product from '@/db/models/Product'
 
 const MillefioriInfo = sequelize.define(
   'MillefioriInfo',
   {
-    materialId: { type: DataTypes.INTEGER, primaryKey: true },
+    productId: { type: DataTypes.INTEGER, primaryKey: true },
     shape: { type: DataTypes.ENUM( 'round', 'square' ), defaultValue: 'round' },
     color: { type: DataTypes.STRING, allowNull: false },
     length: { type: DataTypes.FLOAT, defaultValue: 5.0 },
@@ -13,11 +13,11 @@ const MillefioriInfo = sequelize.define(
     height: { type: DataTypes.FLOAT, defaultValue: 5.0 },
   },
   {
-    noPrimaryKey: true,    // currently ignored, so materialId substitute required above
+    noPrimaryKey: true,    // currently ignored, so productId substitute required above
     timestamps: false,
   })
 
-Material.hasOne( MillefioriInfo, {as: 'millefioriInfo', foreignKey: 'materialId', onDelete: 'CASCADE'} )
-MillefioriInfo.belongsTo( Material, {as: 'material', allowNull: false, foreignKey: 'materialId', onDelete: 'CASCADE'} )
+Product.hasOne( MillefioriInfo, {as: 'millefioriInfo', foreignKey: 'productId', onDelete: 'CASCADE'} )
+MillefioriInfo.belongsTo( Product, {as: 'product', allowNull: false, foreignKey: 'productId', onDelete: 'CASCADE'} )
 
 export default MillefioriInfo

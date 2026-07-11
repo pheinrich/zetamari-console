@@ -5,7 +5,7 @@ module.exports =
   async up( queryInterface, Sequelize )
   {
     return queryInterface.bulkInsert(
-      'Materials',
+      'Products',
       [
         { id: 1, name: '24"x36" Chapel Arch Substrate', type: 'substrate', sku: 'MSMCa2436', weight: -1 },
         { id: 2, name: '45"x32" Cloud Substrate', type: 'substrate', sku: 'MSMCa4532', weight: -1 },
@@ -74,6 +74,6 @@ module.exports =
 
   async down( queryInterface, Sequelize )
   {
-    return queryInterface.bulkDelete( 'Materials', null, {} )
+    return queryInterface.bulkDelete( 'Products', null, {} )
   }
 }

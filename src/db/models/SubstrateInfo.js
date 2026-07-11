@@ -1,24 +1,26 @@
 import { DataTypes } from 'sequelize'
 import sequelize from '@/db/sequelize.js'
-import Material from '@/db/models/Material'
+import Product from '@/db/models/Product'
 import Contour from '@/db/models/Contour'
 
+// The "complex shape" case: defined by an outside contour (required) plus
+// optional inside and rabbet contours.
 const SubstrateInfo = sequelize.define(
   'SubstrateInfo',
   {
-    materialId: { type: DataTypes.INTEGER, primaryKey: true },
+    productId: { type: DataTypes.INTEGER, primaryKey: true },
     width: { type: DataTypes.FLOAT, allowNull: false },
     height: { type: DataTypes.FLOAT, allowNull: false },
     thickness: { type: DataTypes.FLOAT, defaultValue: 0.455 },
     border: { type: DataTypes.FLOAT, defaultValue: 1.0 },
   },
   {
-    noPrimaryKey: true,    // currently ignored, so materialId substitute required above
+    noPrimaryKey: true,    // currently ignored, so productId substitute required above
     timestamps: false,
   })
 
-Material.hasOne( SubstrateInfo, {as: 'substrateInfo', foreignKey: 'materialId', onDelete: 'CASCADE'} )
-SubstrateInfo.belongsTo( Material, {as: 'material', allowNull: false, foreignKey: 'materialId', onDelete: 'CASCADE'} )
+Product.hasOne( SubstrateInfo, {as: 'substrateInfo', foreignKey: 'productId', onDelete: 'CASCADE'} )
+SubstrateInfo.belongsTo( Product, {as: 'product', allowNull: false, foreignKey: 'productId', onDelete: 'CASCADE'} )
 
 SubstrateInfo.belongsTo( Contour, {as: 'outside', allowNull: false} )
 SubstrateInfo.belongsTo( Contour, {as: 'inside', allowNull: true, defaultValue: null} )
