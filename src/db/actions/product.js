@@ -11,6 +11,11 @@ import MirrorInfo from '@/db/models/MirrorInfo'
 import Product from '@/db/models/Product'
 import SubstrateInfo from '@/db/models/SubstrateInfo'
 import Supplier from '@/db/models/Supplier'
+// Imported for its side effect: this is where Product<->Supplier
+// (belongsToMany, as 'suppliers'/'products') gets registered. Without it,
+// readProduct()'s eager include below throws "Supplier is not associated
+// to Product!" whenever this module loads before supplier.js does.
+import '@/db/models/SupplierProduct'
 import TileInfo from '@/db/models/TileInfo'
 import sequelize from '@/db/sequelize'
 import { auth } from '@/lib/auth'
