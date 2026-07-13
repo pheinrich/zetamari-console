@@ -21,7 +21,7 @@ function Path( {fill, color, stroke, data, transform} )
   )
 }
 
-export default function MirrorView( {mirror, settings, imageRef} )
+export default function MirrorView( {mirror, settings, imageRef, size = 500} )
 {
   if( !(mirror && mirror.outside) )
     return <div>Loading...</div>
@@ -40,8 +40,8 @@ export default function MirrorView( {mirror, settings, imageRef} )
           boxSizing: 'content-box',
           top: 0,
           left: 0,
-          width: 500,
-          height: 500
+          width: size,
+          height: size
         }}
       >
         <svg
@@ -49,8 +49,8 @@ export default function MirrorView( {mirror, settings, imageRef} )
           version='1.1'
           xmlns='http://www.w3.org/2000/svg'
           xmlnsXlink='http://www.w3.org/1999/xlink'
-          width='500'
-          height='500'
+          width={size}
+          height={size}
           viewBox={viewBox}
         >
           {/* This <g> element is necessary because the transform property is
@@ -94,6 +94,8 @@ export default function MirrorView( {mirror, settings, imageRef} )
           origin={center}
           zoom={settings.zoom}
           isFlipped={settings.showBack}
+          width={size}
+          height={size}
         />}
         { (settings.showDims & 2) === 2 && mirror.outside.dims && (settings.showBack && settings.showGlass ? mirror.glass.dims : mirror.inside.dims) && <Dimensions
           labelAnchor={{x: mirror.outside.dims.right.x, y: mirror.outside.dims.top.y}}
@@ -102,6 +104,8 @@ export default function MirrorView( {mirror, settings, imageRef} )
           zoom={settings.zoom}
           isFlipped={settings.showBack}
           color='blue'
+          width={size}
+          height={size}
         />}
       </div>
     </div>

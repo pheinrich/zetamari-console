@@ -16,7 +16,7 @@ import SnapshotDialog from './SnapshotDialog'
 // the @mui/icons-material icons it used aren't available in this app (which
 // uses Remix Icon classes throughout instead), so those are swapped for the
 // closest equivalents.
-export default function MirrorPanel( {mirror} )
+export default function MirrorPanel( {mirror, size = 500} )
 {
   const imageRef = useRef( null )
   const [settings, setSettings] = useState({
@@ -28,7 +28,7 @@ export default function MirrorPanel( {mirror} )
 
   return (
     <Stack>
-      <MirrorView mirror={mirror} settings={settings} imageRef={imageRef} />
+      <MirrorView mirror={mirror} settings={settings} imageRef={imageRef} size={size} />
       <Stack direction='row' justifyContent='space-between' alignItems='center'>
         <Box>
           <Tooltip title={settings.showGlass ? 'Hide Glass' : 'Show Glass'}>
