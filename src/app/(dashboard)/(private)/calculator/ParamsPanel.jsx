@@ -43,11 +43,34 @@ function shapeTypeLabel( shapeType )
   return shapeType.replace( /\b\w/g, c => c.toUpperCase() )
 }
 
+// border is stored (in substrateInfo) as build() expects it - a fraction
+// where 1 = 100% when isPercent, or a plain inches value otherwise. This
+// converts that stored value to what the field should display.
+function toDisplayBorder( border, isPercent )
+{
+  if( null === border || undefined === border || '' === border )
+    return ''
+
+  return isPercent ? 100 * border : border
+}
+
 export default function ParamsPanel( {substrateInfo, setSubstrateInfo, contours, substrateProducts, initialProduct} )
 {
   const router = useRouter()
   const outsideContour = contours.find( c => c.id === substrateInfo.outsideId )
   const shapeType = outsideContour?.svgData ? undefined : outsideContour?.shapeType
+
+  // build() (@/libs/mirror) treats `border` differently depending on
+  // whether an inside contour is explicitly set: with only an outside
+  // contour, border is a constant inches offset (the inside contour is
+  // buffered inward from the outside by that distance everywhere). Once an
+  // inside contour is explicitly specified, there's no guarantee the two
+  // contours are equidistant at every point, so a constant offset doesn't
+  // make sense - border instead scales the inside contour, with 1 = 100%
+  // (its natural/authored size, unscaled), values below 1 shrinking the
+  // border (scaling the inside contour up, toward touching the outside),
+  // and values above 1 growing it (scaling the inside contour down).
+  const isPercent = Boolean( substrateInfo.insideId )
 
   // Width/height/border are echoed from local state while typing, and only
   // pushed up to substrateInfo (which triggers a live geometry recompute -
@@ -58,11 +81,14 @@ export default function ParamsPanel( {substrateInfo, setSubstrateInfo, contours,
   // degenerate shapes - see the Dimensions.jsx crash this was fixing.
   const [width, setWidth] = useState( substrateInfo.width ?? '' )
   const [height, setHeight] = useState( substrateInfo.height ?? '' )
-  const [border, setBorder] = useState( substrateInfo.border ?? '' )
+  const [border, setBorder] = useState( () => toDisplayBorder( substrateInfo.border, isPercent ) )
 
   useEffect( () => { setWidth( substrateInfo.width ?? '' ) }, [substrateInfo.width] )
   useEffect( () => { setHeight( substrateInfo.height ?? '' ) }, [substrateInfo.height] )
-  useEffect( () => { setBorder( substrateInfo.border ?? '' ) }, [substrateInfo.border] )
+  useEffect(
+    () => { setBorder( toDisplayBorder( substrateInfo.border, isPercent ) ) },
+    [substrateInfo.border, isPercent]
+  )
 
   function handleWidthBlur( evt )
   {
@@ -88,11 +114,11 @@ export default function ParamsPanel( {substrateInfo, setSubstrateInfo, contours,
 
   function handleBorderBlur( evt )
   {
-    const b = Number( evt.target.value )
-    if( !Number.isFinite( b ) || b < 0 )
-      return setBorder( substrateInfo.border ?? '' )
+    const entered = Number( evt.target.value )
+    if( !Number.isFinite( entered ) || entered < 0 )
+      return setBorder( toDisplayBorder( substrateInfo.border, isPercent ) )
 
-    setSubstrateInfo( {...substrateInfo, border: b} )
+    setSubstrateInfo( {...substrateInfo, border: isPercent ? entered / 100 : entered} )
   }
 
   // Picking a product here reuses the same ?productId= navigation as the
@@ -150,13 +176,20 @@ export default function ParamsPanel( {substrateInfo, setSubstrateInfo, contours,
           value={border}
           onChange={evt => setBorder( evt.target.value )}
           onBlur={handleBorderBlur}
-          InputProps={{endAdornment: <InputAdornment position='end'>in</InputAdornment>}}
+          InputProps={{endAdornment: <InputAdornment position='end'>{isPercent ? '%' : 'in'}</InputAdornment>}}
         />
       </Stack>
 
       {shapeType && (
         <Typography variant='caption' color='text.secondary'>
           {shapeTypeLabel( shapeType )} constrains width/height to a fixed aspect ratio.
+        </Typography>
+      )}
+      {isPercent && (
+        <Typography variant='caption' color='text.secondary'>
+          This product has an explicit inside contour, so a constant inches border isn&rsquo;t guaranteed to fit -
+          border above scales that contour instead: 100% is its original size, below 100% narrows the border,
+          above 100% widens it.
         </Typography>
       )}
     </Stack>
