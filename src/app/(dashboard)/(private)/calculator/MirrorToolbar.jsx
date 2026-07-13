@@ -2,19 +2,18 @@
 
 import Box from '@mui/material/Box'
 import Checkbox from '@mui/material/Checkbox'
-import IconButton from '@mui/material/IconButton'
 import Slider from '@mui/material/Slider'
 import Stack from '@mui/material/Stack'
 import Tooltip from '@mui/material/Tooltip'
 
 import SnapshotDialog from './SnapshotDialog'
 
-// Visualization controls (front/back, glass, dimension callouts, zoom),
-// extracted out of MirrorPanel so CalculatorPanel can render this same
-// toolbar either inline below the preview (expanded panels) or inside a
-// hover overlay on top of it (collapsed panels), against one shared
-// controlled `settings` object either way.
-export default function MirrorToolbar( {settings, onSettingsChange, imageRef, onBroadcast} )
+// Visualization controls (front/back, glass, dimension callouts, zoom).
+// Kept as a controlled component (settings/onSettingsChange/imageRef all
+// owned by the caller) so the same toolbar can render either inline below
+// the working panel's preview or, in principle, elsewhere against the
+// same settings object.
+export default function MirrorToolbar( {settings, onSettingsChange, imageRef} )
 {
   return (
     <Stack direction='row' justifyContent='space-between' alignItems='center'>
@@ -52,13 +51,6 @@ export default function MirrorToolbar( {settings, onSettingsChange, imageRef, on
           />
         </Tooltip>
         <SnapshotDialog imageRef={imageRef} />
-        {onBroadcast && (
-          <Tooltip title='Apply these view settings to every panel'>
-            <IconButton onClick={onBroadcast}>
-              <i className='ri-broadcast-line' />
-            </IconButton>
-          </Tooltip>
-        )}
       </Box>
       <Slider
         sx={{ width: '50%', mr: '5px'}}
