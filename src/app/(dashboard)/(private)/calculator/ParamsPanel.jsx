@@ -121,10 +121,10 @@ export default function ParamsPanel( {substrateInfo, setSubstrateInfo, contours}
 
   return (
     <Stack spacing={4}>
-      <Stack direction='row' spacing={4} flexWrap='wrap'>
+      <Stack direction='row' spacing={2} flexWrap='wrap' justifyContent='center'>
         <TextField
           label='Width'
-          style={{width: 130}}
+          style={{width: 110}}
           value={width}
           onChange={evt => setWidth( evt.target.value )}
           onBlur={handleWidthBlur}
@@ -133,7 +133,7 @@ export default function ParamsPanel( {substrateInfo, setSubstrateInfo, contours}
         <Typography alignSelf='center' variant='h6'>X</Typography>
         <TextField
           label='Height'
-          style={{width: 130}}
+          style={{width: 110}}
           value={height}
           onChange={evt => setHeight( evt.target.value )}
           onBlur={handleHeightBlur}
@@ -142,7 +142,7 @@ export default function ParamsPanel( {substrateInfo, setSubstrateInfo, contours}
         <Typography alignSelf='center' variant='h6'>/</Typography>
         <TextField
           label='Border'
-          style={{width: 130}}
+          style={{width: 110}}
           value={border}
           onChange={evt => setBorder( evt.target.value )}
           onBlur={handleBorderBlur}

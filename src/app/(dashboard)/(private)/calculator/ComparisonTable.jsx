@@ -1,71 +1,48 @@
 'use client'
 
-import { useState } from 'react'
-
-import IconButton from '@mui/material/IconButton'
 import Table from '@mui/material/Table'
 import TableBody from '@mui/material/TableBody'
 import TableCell from '@mui/material/TableCell'
 import TableHead from '@mui/material/TableHead'
 import TableRow from '@mui/material/TableRow'
-import Collapse from '@mui/material/Collapse'
 import Typography from '@mui/material/Typography'
 
 import { computeAreaStats, computeWeightStats, computeCostStats, formatAreaFt2, formatWeightLb, formatCost } from './calculatorStats'
 
-// One Area/Weight/Retail section: an always-visible headline row plus an
-// expandable itemized breakdown, both with one column per open panel. This
-// generalizes the old single-panel CollapseArea/Weight/Cost (one value
-// column) to N panels shown side by side - the actual formulas live in
-// calculatorStats.js so both share one implementation.
+// One Area/Weight/Retail section: one row per open panel, one column per
+// stat (Mosaic Surface, Visible Glass, ...). Pivoted from an earlier
+// stat-per-row/panel-per-column layout - with panels as columns the table
+// only ever grew wider as panels were added, and columns didn't line up
+// cleanly under their headers. Panels as rows instead lets the table grow
+// vertically (the natural direction for "add another panel") and keeps
+// the width bounded by the fixed set of stat columns.
 function ComparisonSection( {title, panels, compute, format} )
 {
-  const [expanded, setExpanded] = useState( false )
   const stats = panels.map( p => compute( p.mirror ) )
-  const rowLabels = stats[0]?.rows.map( r => r.label ) ?? []
+  const columnLabels = stats[0]?.rows.map( r => r.label ) ?? []
 
   return (
-    <Table size='small'>
-      <TableHead>
-        <TableRow>
-          <TableCell />
-          {panels.map( p => <TableCell key={p.id} align='right'>{p.label}</TableCell> )}
-        </TableRow>
-      </TableHead>
-      <TableBody>
-        <TableRow>
-          <TableCell>
-            <IconButton size='small' onClick={() => setExpanded( !expanded )} aria-expanded={expanded} aria-label='show more'>
-              <i className={expanded ? 'ri-arrow-up-s-line' : 'ri-arrow-down-s-line'} />
-            </IconButton>
-            <Typography component='span' variant='subtitle1'>{title}</Typography>
-          </TableCell>
-          {stats.map( (s, i) => (
-            <TableCell key={panels[i].id} align='right'>
-              <Typography variant='subtitle1'>{format( s.headline )}</Typography>
-            </TableCell>
+    <div className='flex flex-col gap-2'>
+      <Typography variant='subtitle1'>{title}</Typography>
+      <Table size='small'>
+        <TableHead>
+          <TableRow>
+            <TableCell>Panel</TableCell>
+            {columnLabels.map( label => <TableCell key={label} align='right'>{label}</TableCell> )}
+          </TableRow>
+        </TableHead>
+        <TableBody>
+          {panels.map( (p, i) => (
+            <TableRow key={p.id}>
+              <TableCell>{p.label}</TableCell>
+              {stats[i].rows.map( (row, ri) => (
+                <TableCell key={columnLabels[ri]} align='right'>{format( row.value )}</TableCell>
+              ) )}
+            </TableRow>
           ) )}
-        </TableRow>
-        <TableRow>
-          <TableCell style={{padding: 0, borderBottom: expanded ? undefined : 'none'}} colSpan={panels.length + 1}>
-            <Collapse in={expanded} timeout='auto' unmountOnExit>
-              <Table size='small'>
-                <TableBody>
-                  {rowLabels.map( (label, ri) => (
-                    <TableRow key={label}>
-                      <TableCell>{label}</TableCell>
-                      {stats.map( (s, i) => (
-                        <TableCell key={panels[i].id} align='right'>{format( s.rows[ri].value )}</TableCell>
-                      ) )}
-                    </TableRow>
-                  ) )}
-                </TableBody>
-              </Table>
-            </Collapse>
-          </TableCell>
-        </TableRow>
-      </TableBody>
-    </Table>
+        </TableBody>
+      </Table>
+    </div>
   )
 }
 
@@ -73,7 +50,7 @@ export default function ComparisonTable( {panels} )
 {
   // Only panels with a resolved mirror can be compared - one still
   // loading/degenerate (see the crash Dimensions.jsx used to hit) just
-  // doesn't contribute a column yet rather than breaking the table.
+  // doesn't contribute a row yet rather than breaking the table.
   const ready = panels.filter( p => p.mirror )
 
   if( 0 === ready.length )

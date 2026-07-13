@@ -20,7 +20,16 @@ import ParamsPanel from './ParamsPanel'
 import MirrorPanel from './MirrorPanel'
 import SaveAsProductDialog from './SaveAsProductDialog'
 
-const PANEL_PREVIEW_SIZE = 300
+// MirrorPanel's visualization toolbar (four toggle checkboxes, snapshot
+// button, zoom slider) is laid out to match the preview's own width, so
+// bumping this up is what actually gives those icons breathing room - a
+// wider card with a small preview still leaves the toolbar cramped.
+const PANEL_PREVIEW_SIZE = 380
+
+// Wider than the preview - the dimensions row (three TextFields plus
+// separators) needs more horizontal room than the (roughly square)
+// preview + toolbar do.
+const PANEL_CARD_WIDTH = 460
 
 // Resolves one panel's full substrateInfo from its spec (a possibly-
 // edited productId/width/height/border, see urlCodec.js) plus whichever
@@ -128,7 +137,7 @@ export default function CalculatorPanel( {spec, contours, substrateProducts, onC
   }, [mirror, label] )
 
   return (
-    <Card variant='outlined' style={{width: PANEL_PREVIEW_SIZE + 40}}>
+    <Card variant='outlined' style={{width: PANEL_CARD_WIDTH}}>
       <CardHeader
         title={
           <FormControl fullWidth size='small'>
@@ -156,7 +165,7 @@ export default function CalculatorPanel( {spec, contours, substrateProducts, onC
           </Tooltip>
         }
       />
-      <CardContent className='flex flex-col gap-4'>
+      <CardContent className='flex flex-col items-center gap-4'>
         {!mirror ? (
           <Typography>Loading...</Typography>
         ) : (
