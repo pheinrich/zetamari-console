@@ -14,43 +14,40 @@ import TextField from '@mui/material/TextField'
 import Typography from '@mui/material/Typography'
 
 import { useFormSubmit } from '@/utils/formSubmitHook'
-import { createSupplier, updateSupplier } from '@/db/actions/supplier'
+import { createUser, updateUser } from '@/db/actions/user'
 
-const optionalString = z.preprocess( (val) => (val === '' ? undefined : val), z.string().optional() )
+const optionalString = z.preprocess( (val) => (val === '' || val == null ? undefined : val), z.string().optional() )
 
 const schema = z.object({
   id: z.preprocess( (val) => (val === '' || val == null ? undefined : val), z.coerce.number().optional() ),
   name: z.string().min( 1 ),
-  email: optionalString,
-  address: optionalString,
-  phone: optionalString,
-  url: optionalString,
-  notes: optionalString,
+  email: z.string().email(),
+  password: optionalString,
 })
 
-export default function SupplierForm( {initialData={}} )
+export default function UserForm( {initialData={}} )
 {
   const isEdit = Boolean( initialData?.id )
   const { handleSubmit, loading, errors, success } = useFormSubmit({
-    schema,
-    onSubmit: isEdit ? updateSupplier : createSupplier
+    schema: isEdit ? schema : schema.extend( {password: z.string().min( 8, 'Password must be at least 8 characters' )} ),
+    onSubmit: isEdit ? updateUser : createUser
   })
 
   if( success )
-    redirect( '/suppliers' )
+    redirect( '/users' )
 
   return (
     <form onSubmit={handleSubmit}>
       <Grid container spacing={6}>
         <Grid size={{ xs: 12 }}>
           <div className='flex flex-wrap sm:items-center justify-between max-sm:flex-col gap-6'>
-            <Typography variant='h4'>{isEdit ? 'Update' : 'Create'} Supplier</Typography>
+            <Typography variant='h4'>{isEdit ? 'Update' : 'Create'} User</Typography>
             <div className='flex flex-wrap gap-4'>
-              <Button variant='outlined' color='secondary' component={NextLink} href={isEdit ? `/suppliers/${initialData.id}` : '/suppliers'}>
+              <Button variant='outlined' color='secondary' component={NextLink} href={isEdit ? `/users/${initialData.id}` : '/users'}>
                 Cancel
               </Button>
               <Button type='submit' variant='contained' disabled={loading}>
-                {loading ? 'Saving...' : isEdit ? 'Save Changes' : 'Create Supplier'}
+                {loading ? 'Saving...' : isEdit ? 'Save Changes' : 'Create User'}
               </Button>
             </div>
           </div>
@@ -68,32 +65,24 @@ export default function SupplierForm( {initialData={}} )
 
         <Grid size={{ xs: 12 }}>
           <Card>
-            <CardHeader title='Supplier Information' />
+            <CardHeader title='User Information' />
             <CardContent>
               <Grid container spacing={5}>
                 <Grid size={{ xs: 12, sm: 6 }}>
                   <TextField fullWidth label='Name' name='name' defaultValue={initialData?.name || ''} required />
                 </Grid>
                 <Grid size={{ xs: 12, sm: 6 }}>
-                  <TextField fullWidth label='Email' name='email' defaultValue={initialData?.email || ''} />
+                  <TextField fullWidth type='email' label='Email' name='email' defaultValue={initialData?.email || ''} required />
                 </Grid>
                 <Grid size={{ xs: 12, sm: 6 }}>
-                  <TextField fullWidth label='Phone' name='phone' defaultValue={initialData?.phone || ''} />
-                </Grid>
-                <Grid size={{ xs: 12, sm: 6 }}>
-                  <TextField fullWidth label='URL' name='url' defaultValue={initialData?.url || ''} />
-                </Grid>
-                <Grid size={{ xs: 12 }}>
-                  <TextField fullWidth label='Address' name='address' defaultValue={initialData?.address || ''} />
-                </Grid>
-                <Grid size={{ xs: 12 }}>
                   <TextField
                     fullWidth
-                    multiline
-                    minRows={3}
-                    label='Notes'
-                    name='notes'
-                    defaultValue={initialData?.notes || ''}
+                    type='password'
+                    label='Password'
+                    name='password'
+                    autoComplete='new-password'
+                    required={!isEdit}
+                    helperText={isEdit ? 'Leave blank to keep the current password.' : 'At least 8 characters.'}
                   />
                 </Grid>
               </Grid>

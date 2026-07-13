@@ -78,7 +78,21 @@ export async function readSuppliers()
     unauthorized()
 
   await sequelize.sync()
-  return await Supplier.findAll()
+  const suppliers = await Supplier.findAll()
+
+  // Product count per supplier, for the list view - a single grouped
+  // query rather than eager-loading every SupplierProduct row.
+  const counts = await SupplierProduct.findAll({
+    attributes: ['supplierId', [Sequelize.fn( 'COUNT', Sequelize.col( 'id' ) ), 'count']],
+    group: ['supplierId'],
+  })
+  const countBySupplierId = {}
+  for( const c of counts )
+    countBySupplierId[c.supplierId] = Number( c.get( 'count' ) )
+
+  // Plain objects, not Sequelize instances - needed once this crosses into
+  // a 'use client' table component (same reasoning as readProduct).
+  return suppliers.map( s => ({...s.toJSON(), productCount: countBySupplierId[s.id] || 0}) )
 }
 
 export async function updateSupplier( data )

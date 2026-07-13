@@ -4,14 +4,17 @@ import Contour from '@/db/models/Contour'
 import sequelize from '@/db/sequelize'
 import { auth } from '@/lib/auth'
 
-export async function createContour( name, svgData )
+// Takes a single `data` object ({name, svgData}) rather than positional
+// args, matching product.js/supplier.js - safe to change since nothing
+// called this yet (no create/edit UI existed before this pass).
+export async function createContour( data )
 {
   const session = await auth()
   if( !session )
     throw new Error( 'Unauthorized', {cause: 401} )
 
   await sequelize.sync()
-  return await Contour.create( {name, svgData} )
+  return await Contour.create( {name: data.name, svgData: data.svgData || null} )
 }
 
 export async function readContour( id )
@@ -21,7 +24,12 @@ export async function readContour( id )
     throw new Error( 'Unauthorized', {cause: 401} )
 
   await sequelize.sync()
-  return await Contour.findByPk( id )
+  const contour = await Contour.findByPk( id )
+
+  // Plain object, not a Sequelize instance - this crosses the server/client
+  // boundary into 'use client' form/table components, which can't
+  // serialize a model instance (same reasoning as readProduct/readSupplier).
+  return contour?.toJSON()
 }
 
 export async function readContours()
@@ -31,22 +39,23 @@ export async function readContours()
     throw new Error( 'Unauthorized', {cause: 401} )
 
   await sequelize.sync()
-  return await Contour.findAll()
+  const contours = await Contour.findAll()
+  return contours.map( c => c.toJSON() )
 }
 
-export async function updateContour( id, name, svgData )
+export async function updateContour( data )
 {
   const session = await auth()
   if( !session )
     throw new Error( 'Unauthorized', {cause: 401} )
 
   await sequelize.sync()
-  const contour = await Contour.findByPk( id )
+  const contour = await Contour.findByPk( data.id )
 
   if( !contour )
     throw new Error( 'Contour not found', {cause: 404} )
 
-  return await contour.update( {name, svgData} )
+  return await contour.update( {name: data.name, svgData: data.svgData || null} )
 }
 
 export async function deleteContour( id )

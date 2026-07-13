@@ -1,28 +1,22 @@
-import Link from 'next/link'
+import Grid from '@mui/material/Grid2'
+import { ToastContainer } from 'react-toastify'
 import { readContours } from '@/db/actions/contour'
+import { computeContourThumbnail } from './contourThumbnail'
+import ContoursListTable from './ContoursListTable'
 
 export default async function ContoursPage()
 {
   const contours = await readContours()
-
-  function truncate( str, maxLen )
-  {
-    if( !str || str.length <= maxLen )
-      return str
-    else
-      return str.slice( 0, maxLen - 3 ) + "..."
-  }
+  const contourData = contours.map( c => ({...c, thumbnail: computeContourThumbnail( c )}) )
 
   return (
-    <div>
-      <h1>Contours List</h1>
-      <ul>
-        {contours.map( contour => (
-          <li key={contour.id}>
-            [{contour.id}] <Link href={`/contours/${contour.id}`}>{contour.name}</Link>: {truncate( contour.svgData, 50 )}
-          </li>
-        ))}
-      </ul>
-    </div>
+    <>
+      <ToastContainer />
+      <Grid container spacing={6}>
+        <Grid size={{ xs: 12 }}>
+          <ContoursListTable contourData={contourData} />
+        </Grid>
+      </Grid>
+    </>
   )
 }

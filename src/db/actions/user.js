@@ -1,11 +1,16 @@
 'use server'
 
 import bcrypt from 'bcryptjs'
+import { Sequelize } from 'sequelize'
 import User from '@/db/models/User'
 import sequelize from '@/db/sequelize'
 import { auth } from '@/lib/auth'
 
-export async function createUser( name, email, password )
+// Never select the hashed password out to the client - these two are the
+// only reads used by the admin User CRUD UI.
+const PUBLIC_ATTRIBUTES = ['id', 'name', 'email']
+
+export async function createUser( data )
 {
   const session = await auth()
   if( !session )
@@ -13,10 +18,24 @@ export async function createUser( name, email, password )
 
   await sequelize.sync()
 
-  // NB: password is intentionally passed through unhashed - User's
-  // beforeCreate hook hashes it. Hashing here too would double-hash it and
-  // make the account impossible to log into.
-  return await User.create( {name, email, password} )
+  try
+  {
+    // NB: password is intentionally passed through unhashed - User's
+    // beforeCreate hook hashes it. Hashing here too would double-hash it
+    // and make the account impossible to log into.
+    const user = await User.create( {name: data.name, email: data.email, password: data.password} )
+    return {success: true, id: user.id}
+  }
+  catch( error )
+  {
+    if( error instanceof Sequelize.ValidationError )
+    {
+      const message = error.errors.map( (e) => e.message ).join( '; ' )
+      return {error: `Validation failed: ${message}`}
+    }
+
+    return {error: error.message || 'An unexpected error occurred while creating the user'}
+  }
 }
 
 export async function readUser( id )
@@ -26,7 +45,8 @@ export async function readUser( id )
     throw new Error( 'Unauthorized', {cause: 401} )
 
   await sequelize.sync()
-  return await User.findByPk( id )
+  const user = await User.findByPk( id, {attributes: PUBLIC_ATTRIBUTES} )
+  return user?.toJSON()
 }
 
 export async function readUsers()
@@ -36,25 +56,41 @@ export async function readUsers()
     throw new Error( 'Unauthorized', {cause: 401} )
 
   await sequelize.sync()
-  return await User.findAll()
+  const users = await User.findAll( {attributes: PUBLIC_ATTRIBUTES} )
+  return users.map( u => u.toJSON() )
 }
 
-export async function updateUser( id, name, email, password )
+export async function updateUser( data )
 {
   const session = await auth()
   if( !session )
     throw new Error( 'Unauthorized', {cause: 401} )
 
   await sequelize.sync()
-  const user = await User.findByPk( id )
+  const user = await User.findByPk( data.id )
 
   if( !user )
     throw new Error( 'User not found', {cause: 404} )
 
-  // User has no beforeUpdate hook (only beforeCreate), so this path has to
-  // hash the password itself when one is supplied.
-  const hashedPassword = password ? await bcrypt.hash( password, 10 ) : user.password
-  return await user.update( {name, email, password: hashedPassword} )
+  try
+  {
+    // User has no beforeUpdate hook (only beforeCreate), so this path has
+    // to hash the password itself when one is supplied. An empty/omitted
+    // password leaves the existing one unchanged.
+    const hashedPassword = data.password ? await bcrypt.hash( data.password, 10 ) : user.password
+    await user.update( {name: data.name, email: data.email, password: hashedPassword} )
+    return {success: true}
+  }
+  catch( error )
+  {
+    if( error instanceof Sequelize.ValidationError )
+    {
+      const message = error.errors.map( (e) => e.message ).join( '; ' )
+      return {error: `Validation failed: ${message}`}
+    }
+
+    return {error: error.message || 'An unexpected error occurred while updating the user'}
+  }
 }
 
 export async function deleteUser( id )
