@@ -1,111 +1,81 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import NextLink from 'next/link'
 
-import Alert from '@mui/material/Alert'
-import Box from '@mui/material/Box'
 import Button from '@mui/material/Button'
 import Card from '@mui/material/Card'
 import CardContent from '@mui/material/CardContent'
 import CardHeader from '@mui/material/CardHeader'
-import Stack from '@mui/material/Stack'
-import Tab from '@mui/material/Tab'
-import Tabs from '@mui/material/Tabs'
+import Divider from '@mui/material/Divider'
 import Typography from '@mui/material/Typography'
 
-import { build } from '@/libs/mirror'
+import { encodePanels } from './urlCodec'
+import CalculatorPanel from './CalculatorPanel'
+import ComparisonTable from './ComparisonTable'
 
-import ParamsPanel from './ParamsPanel'
-import MirrorPanel from './MirrorPanel'
-import CollapseArea from './CollapseArea'
-import CollapseCost from './CollapseCost'
-import CollapseWeight from './CollapseWeight'
-import SaveAsProductDialog from './SaveAsProductDialog'
-
-function a11yProps( index )
+// The board: owns the list of open panels and keeps the URL in sync for
+// bookmarking/sharing. Each CalculatorPanel is independent (its own
+// substrateInfo state, its own memoized mirror) - this component never
+// computes geometry itself, it only aggregates each panel's reported
+// {label, mirror} for the shared ComparisonTable.
+export default function MirrorCalculator( {initialPanels, contours, substrateProducts} )
 {
-  return {
-    id: `calculator-tab-${index}`,
-    'aria-controls': `calculator-tabpanel-${index}`,
+  // Ids are assigned once, deterministically, from the initial (server-
+  // decoded) panels array - safe for SSR/hydration since both server and
+  // client process the same initialPanels in the same order. Panels added
+  // later (via "Add Panel") only ever happen post-hydration, so a plain
+  // incrementing ref is fine for those.
+  const [panels, setPanels] = useState( () => initialPanels.map( (p, i) => ({...p, id: `panel-${i}`}) ) )
+  const nextIdRef = useRef( initialPanels.length )
+
+  // id -> {label, mirror}, reported up by each CalculatorPanel whenever its
+  // own geometry recomputes. Feeds the ComparisonTable.
+  const [resolved, setResolved] = useState( {} )
+
+  const handleResolvedChange = useCallback( (id, data) => {
+    setResolved( prev => ({...prev, [id]: data}) )
+  }, [] )
+
+  function addPanel()
+  {
+    const id = `panel-${nextIdRef.current}`
+    nextIdRef.current += 1
+    setPanels( prev => [...prev, {id, productId: undefined, width: undefined, height: undefined, border: undefined}] )
   }
-}
 
-function CalculatorTabPanel( {children, value, index} )
-{
-  if( value !== index )
-    return null
-
-  return (
-    <div role='tabpanel' id={`calculator-tabpanel-${index}`} aria-labelledby={`calculator-tab-${index}`}>
-      <Box sx={{ pt: 5 }}>{children}</Box>
-    </div>
-  )
-}
-
-function defaultSubstrateInfo( contours )
-{
-  const contour = contours.find( c => 'circle' === c.shapeType ) || contours.find( c => !c.svgData ) || contours[0]
-
-  return {
-    outsideId: contour?.id,
-    insideId: undefined,
-    rabbetId: undefined,
-    width: 6,
-    height: 6,
-    border: 1,
+  function removePanel( id )
+  {
+    setPanels( prev => (1 < prev.length ? prev.filter( p => p.id !== id ) : prev) )
+    setResolved( prev => {
+      const next = {...prev}
+      delete next[id]
+      return next
+    })
   }
-}
 
-// This runs @/libs/mirror's build() (jsts-based geometry) client-side,
-// unlike the rest of the app which deliberately keeps jsts out of the
-// client bundle by precomputing thumbnails server-side. The calculator is
-// the one place that genuinely needs live recomputation as the user drags
-// sliders/edits dimensions, so that tradeoff is made deliberately here.
-export default function MirrorCalculator( {initialProduct, contours, substrateProducts} )
-{
-  const [tab, setTab] = useState( 0 )
-  const [saveOpen, setSaveOpen] = useState( false )
-  const [substrateInfo, setSubstrateInfo] = useState( () =>
-    initialProduct?.substrateInfo
-      ? {
-        outsideId: initialProduct.substrateInfo.outsideId,
-        insideId: initialProduct.substrateInfo.insideId ?? undefined,
-        rabbetId: initialProduct.substrateInfo.rabbetId ?? undefined,
-        width: initialProduct.substrateInfo.width,
-        height: initialProduct.substrateInfo.height,
-        border: initialProduct.substrateInfo.border,
-      }
-      : defaultSubstrateInfo( contours )
-  )
+  function updatePanel( id, patch )
+  {
+    setPanels( prev => prev.map( p => (p.id === id ? {...p, ...patch} : p) ) )
+  }
 
-  const outsideContour = contours.find( c => c.id === substrateInfo.outsideId )
-  const insideContour = contours.find( c => c.id === substrateInfo.insideId )
-  const rabbetContour = contours.find( c => c.id === substrateInfo.rabbetId )
+  // Keeps ?panels= in sync so the current comparison (including any edits,
+  // not just which products are tied) is bookmarkable/shareable. Uses the
+  // raw History API rather than router.replace() deliberately - the latter
+  // would re-run this page's Server Component and, since it's keyed on the
+  // search params (see page.jsx), remount the whole board on every edit.
+  useEffect( () => {
+    const encoded = encodePanels( panels )
+    const url = new URL( window.location.href )
 
-  const mirror = useMemo( () => {
-    if( !outsideContour || (!outsideContour.svgData && !outsideContour.shapeType) )
-      return undefined
-    if( !substrateInfo.width || !substrateInfo.height )
-      return undefined
+    url.searchParams.delete( 'productId' )
+    if( encoded )
+      url.searchParams.set( 'panels', encoded )
+    else
+      url.searchParams.delete( 'panels' )
 
-    try
-    {
-      return build(
-        Number( substrateInfo.width ),
-        Number( substrateInfo.height ),
-        Number( substrateInfo.border ) || 0,
-        outsideContour.shapeType,
-        outsideContour.svgData,
-        insideContour?.svgData,
-        rabbetContour?.svgData,
-      )
-    }
-    catch( err )
-    {
-      return undefined
-    }
-  }, [substrateInfo, outsideContour, insideContour, rabbetContour] )
+    window.history.replaceState( null, '', url.toString() )
+  }, [panels] )
 
   if( 0 === contours.length )
   {
@@ -121,66 +91,43 @@ export default function MirrorCalculator( {initialProduct, contours, substratePr
     )
   }
 
+  const resolvedPanels = panels.map( p => ({
+    id: p.id,
+    label: resolved[p.id]?.label ?? '…',
+    mirror: resolved[p.id]?.mirror,
+  }) )
+
   return (
     <Card>
       <CardHeader
-        title={initialProduct ? `Calculator — ${initialProduct.name}` : 'Mirror Calculator'}
+        title='Mirror Calculator'
+        subheader='Add panels to compare shapes and dimensions side by side.'
         action={
-          <Button variant='contained' onClick={() => setSaveOpen( true )} startIcon={<i className='ri-add-line' />}>
-            Save as New Product
+          <Button variant='contained' onClick={addPanel} startIcon={<i className='ri-add-line' />}>
+            Add Panel
           </Button>
         }
       />
-      <CardContent>
-        <Stack spacing={5}>
-          {initialProduct && (
-            <Alert severity='info'>
-              Exploring <NextLink href={`/products/${initialProduct.id}`}>{initialProduct.name}</NextLink> ({initialProduct.sku}).
-              Changes here are local to this page and aren&rsquo;t saved back to the product automatically.
-            </Alert>
-          )}
+      <CardContent className='flex flex-col gap-6'>
+        <div className='flex flex-wrap items-start gap-6'>
+          {panels.map( p => (
+            <CalculatorPanel
+              key={p.id}
+              spec={p}
+              contours={contours}
+              substrateProducts={substrateProducts}
+              onChange={updatePanel}
+              onRemove={removePanel}
+              onResolvedChange={handleResolvedChange}
+              canRemove={1 < panels.length}
+            />
+          ) )}
+        </div>
 
-          {!mirror ? (
-            <Typography>Loading...</Typography>
-          ) : (
-            <Stack direction={{xs: 'column', lg: 'row'}} justifyContent='space-between' gap={6}>
-              <MirrorPanel mirror={mirror} />
-              <Box flex={1} minWidth={0}>
-                <Tabs value={tab} onChange={(evt, val) => setTab( val )}>
-                  <Tab label='Dimensions' {...a11yProps( 0 )} />
-                  <Tab label='Materials' {...a11yProps( 1 )} />
-                  <Tab label='Rates' {...a11yProps( 2 )} />
-                </Tabs>
+        <Divider />
 
-                <CalculatorTabPanel value={tab} index={0}>
-                  <ParamsPanel
-                    substrateInfo={substrateInfo}
-                    setSubstrateInfo={setSubstrateInfo}
-                    contours={contours}
-                    substrateProducts={substrateProducts}
-                    initialProduct={initialProduct}
-                  />
-                  <Card sx={{ mt: 8 }} variant='outlined'>
-                    <CardContent>
-                      <CollapseArea mirror={mirror} />
-                      <CollapseWeight mirror={mirror} />
-                      <CollapseCost mirror={mirror} />
-                    </CardContent>
-                  </Card>
-                </CalculatorTabPanel>
-                <CalculatorTabPanel value={tab} index={1}>
-                  <Typography color='text.secondary'>Materials breakdown isn&rsquo;t built yet.</Typography>
-                </CalculatorTabPanel>
-                <CalculatorTabPanel value={tab} index={2}>
-                  <Typography color='text.secondary'>Rate configuration isn&rsquo;t built yet.</Typography>
-                </CalculatorTabPanel>
-              </Box>
-            </Stack>
-          )}
-        </Stack>
+        <ComparisonTable panels={resolvedPanels} />
       </CardContent>
-
-      <SaveAsProductDialog open={saveOpen} onClose={() => setSaveOpen( false )} substrateInfo={substrateInfo} />
     </Card>
   )
 }

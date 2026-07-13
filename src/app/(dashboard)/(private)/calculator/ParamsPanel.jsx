@@ -1,14 +1,8 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
 
-import Box from '@mui/material/Box'
-import FormControl from '@mui/material/FormControl'
 import InputAdornment from '@mui/material/InputAdornment'
-import InputLabel from '@mui/material/InputLabel'
-import MenuItem from '@mui/material/MenuItem'
-import Select from '@mui/material/Select'
 import Stack from '@mui/material/Stack'
 import TextField from '@mui/material/TextField'
 import Typography from '@mui/material/Typography'
@@ -54,9 +48,13 @@ function toDisplayBorder( border, isPercent )
   return isPercent ? 100 * border : border
 }
 
-export default function ParamsPanel( {substrateInfo, setSubstrateInfo, contours, substrateProducts, initialProduct} )
+// Dimensions-only form (width/height/border) for one panel. Which product
+// (and therefore which outside/inside/rabbet contours) is loaded is
+// controlled by the caller (CalculatorPanel) - this component only cares
+// about the resulting shapeType (for aspect-ratio locking) and whether an
+// inside contour is present (for the percent-vs-inches border switch).
+export default function ParamsPanel( {substrateInfo, setSubstrateInfo, contours} )
 {
-  const router = useRouter()
   const outsideContour = contours.find( c => c.id === substrateInfo.outsideId )
   const shapeType = outsideContour?.svgData ? undefined : outsideContour?.shapeType
 
@@ -74,7 +72,7 @@ export default function ParamsPanel( {substrateInfo, setSubstrateInfo, contours,
 
   // Width/height/border are echoed from local state while typing, and only
   // pushed up to substrateInfo (which triggers a live geometry recompute -
-  // see MirrorCalculator) on blur. Committing on every keystroke let
+  // see CalculatorPanel) on blur. Committing on every keystroke let
   // transient/invalid intermediate values (an empty field, a width smaller
   // than the current border, a momentarily out-of-sync width/height pair
   // for aspect-locked shapes) reach the geometry engine and produce
@@ -121,58 +119,30 @@ export default function ParamsPanel( {substrateInfo, setSubstrateInfo, contours,
     setSubstrateInfo( {...substrateInfo, border: isPercent ? entered / 100 : entered} )
   }
 
-  // Picking a product here reuses the same ?productId= navigation as the
-  // blank calculator's entry point (see page.jsx), rather than copying its
-  // outside/inside/rabbet/width/height/border into local state by hand -
-  // that keeps this in one place and gets the same fresh-remount handling
-  // (see MirrorCalculator's key) instead of risking stale state.
-  function handleProductChange( productId )
-  {
-    router.push( productId ? `/calculator?productId=${productId}` : '/calculator' )
-  }
-
   return (
-    <Stack spacing={6}>
-      <Box>
-        <Typography variant='body2' color='text.secondary' className='mbe-2'>Product</Typography>
-        <FormControl fullWidth>
-          <InputLabel id='calc-product'>Load a Substrate Product</InputLabel>
-          <Select
-            labelId='calc-product'
-            label='Load a Substrate Product'
-            value={initialProduct?.id ?? ''}
-            onChange={e => handleProductChange( e.target.value )}
-          >
-            <MenuItem value=''>— None (blank shape) —</MenuItem>
-            {substrateProducts.map( p => (
-              <MenuItem key={p.id} value={p.id}>{p.name}</MenuItem>
-            ) )}
-          </Select>
-        </FormControl>
-      </Box>
-
+    <Stack spacing={4}>
       <Stack direction='row' spacing={4} flexWrap='wrap'>
         <TextField
           label='Width'
-          style={{width: 150}}
+          style={{width: 130}}
           value={width}
           onChange={evt => setWidth( evt.target.value )}
           onBlur={handleWidthBlur}
           InputProps={{endAdornment: <InputAdornment position='end'>in</InputAdornment>}}
         />
-        <Typography alignSelf='center' variant='h5'>X</Typography>
+        <Typography alignSelf='center' variant='h6'>X</Typography>
         <TextField
           label='Height'
-          style={{width: 150}}
+          style={{width: 130}}
           value={height}
           onChange={evt => setHeight( evt.target.value )}
           onBlur={handleHeightBlur}
           InputProps={{endAdornment: <InputAdornment position='end'>in</InputAdornment>}}
         />
-        <Typography alignSelf='center' variant='h5'>/</Typography>
+        <Typography alignSelf='center' variant='h6'>/</Typography>
         <TextField
           label='Border'
-          style={{width: 150}}
+          style={{width: 130}}
           value={border}
           onChange={evt => setBorder( evt.target.value )}
           onBlur={handleBorderBlur}
@@ -187,9 +157,8 @@ export default function ParamsPanel( {substrateInfo, setSubstrateInfo, contours,
       )}
       {isPercent && (
         <Typography variant='caption' color='text.secondary'>
-          This product has an explicit inside contour, so a constant inches border isn&rsquo;t guaranteed to fit -
-          border above scales that contour instead: 100% is its original size, below 100% narrows the border,
-          above 100% widens it.
+          This product has an explicit inside contour, so border above scales it instead of offsetting a constant
+          distance: 100% is its original size, below 100% narrows the border, above 100% widens it.
         </Typography>
       )}
     </Stack>
