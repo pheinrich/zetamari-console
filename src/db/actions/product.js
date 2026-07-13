@@ -190,7 +190,8 @@ export async function toggleProductSellable( id, sellable )
   if( !product )
     notFound()
 
-  return await product.update( {sellable} )
+  await product.update( {sellable} )
+  return product.toJSON()
 }
 
 export async function updateProduct( data )
@@ -303,7 +304,8 @@ export async function updateBomLine( id, quantity )
   if( !line )
     notFound()
 
-  return await line.update( {quantity} )
+  await line.update( {quantity} )
+  return line.toJSON()
 }
 
 export async function removeBomLine( id )
@@ -392,7 +394,8 @@ export async function reorderProductImage( id, sortOrder )
   if( !link )
     notFound()
 
-  return await link.update( {sortOrder} )
+  await link.update( {sortOrder} )
+  return link.toJSON()
 }
 
 // Create or update the extra info row associated with a product. This may

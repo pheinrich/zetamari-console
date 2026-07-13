@@ -106,7 +106,7 @@ export async function updateSupplier( data )
   if( !supplier )
     notFound()
 
-  return await supplier.update({
+  await supplier.update({
     name: data.name,
     email: data.email,
     address: data.address,
@@ -114,6 +114,7 @@ export async function updateSupplier( data )
     url: data.url,
     notes: data.notes,
   })
+  return supplier.toJSON()
 }
 
 export async function deleteSupplier( id )
@@ -169,7 +170,8 @@ export async function updateSupplierProductPrice( id, updates )
   if( !link )
     notFound()
 
-  return await link.update( updates )
+  await link.update( updates )
+  return link.toJSON()
 }
 
 export async function removeSupplierProductPrice( id )

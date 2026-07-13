@@ -14,7 +14,8 @@ export async function createContour( data )
     throw new Error( 'Unauthorized', {cause: 401} )
 
   await sequelize.sync()
-  return await Contour.create( {name: data.name, svgData: data.svgData || null} )
+  const contour = await Contour.create( {name: data.name, svgData: data.svgData || null} )
+  return contour.toJSON()
 }
 
 export async function readContour( id )
@@ -55,7 +56,8 @@ export async function updateContour( data )
   if( !contour )
     throw new Error( 'Contour not found', {cause: 404} )
 
-  return await contour.update( {name: data.name, svgData: data.svgData || null} )
+  await contour.update( {name: data.name, svgData: data.svgData || null} )
+  return contour.toJSON()
 }
 
 export async function deleteContour( id )
