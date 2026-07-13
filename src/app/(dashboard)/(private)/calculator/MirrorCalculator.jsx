@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import NextLink from 'next/link'
 
+import Button from '@mui/material/Button'
 import Card from '@mui/material/Card'
 import CardContent from '@mui/material/CardContent'
 import CardHeader from '@mui/material/CardHeader'
@@ -17,6 +18,7 @@ import Menu from '@mui/material/Menu'
 import MenuItem from '@mui/material/MenuItem'
 import Select from '@mui/material/Select'
 import Stack from '@mui/material/Stack'
+import Tooltip from '@mui/material/Tooltip'
 import Typography from '@mui/material/Typography'
 
 import { build } from '@/libs/mirror'
@@ -28,9 +30,15 @@ import ParamsPanel from './ParamsPanel'
 import MirrorPanel from './MirrorPanel'
 import StatsSummary from './StatsSummary'
 import LightboxStrip from './LightboxStrip'
+import ComparisonTable from './ComparisonTable'
 import SaveAsProductDialog from './SaveAsProductDialog'
 
 const MAIN_PREVIEW_SIZE = 460
+
+function settingsEqual( a, b )
+{
+  return a.showBack === b.showBack && a.showDims === b.showDims && a.showGlass === b.showGlass && a.zoom === b.zoom
+}
 
 // The calculator: one working panel (product picker, live preview,
 // dimensions, stats) plus a lightbox strip of saved snapshots below it.
@@ -102,6 +110,17 @@ export default function MirrorCalculator( {initialState, contours, substrateProd
     setSelectedId( prev => (prev === id ? null : prev) )
   }
 
+  function clearLightbox()
+  {
+    if( 0 === gallery.length )
+      return
+    if( !window.confirm( `Remove all ${gallery.length} saved prototype${1 === gallery.length ? '' : 's'} from the lightbox? This can't be undone.` ) )
+      return
+
+    setGallery( [] )
+    setSelectedId( null )
+  }
+
   function reorderGallery( fromId, toId )
   {
     setGallery( prev => {
@@ -141,7 +160,20 @@ export default function MirrorCalculator( {initialState, contours, substrateProd
 
   function handleTogglePinned()
   {
-    setPinned( p => !p )
+    const nextPinned = !pinned
+
+    // Unpinning hands control of the view settings back to whichever
+    // entry is selected. Without this, the display would keep showing
+    // the (no-longer-pinned) override until the next thumbnail click,
+    // silently pretending to be unpinned while still looking pinned.
+    if( !nextPinned && selectedId )
+    {
+      const entry = gallery.find( e => e.id === selectedId )
+      if( entry?.settings && !settingsEqual( entry.settings, settings ) )
+        setSettings( entry.settings )
+    }
+
+    setPinned( nextPinned )
     setMenuAnchor( null )
   }
 
@@ -239,15 +271,20 @@ export default function MirrorCalculator( {initialState, contours, substrateProd
           </FormControl>
         }
         action={
-          <>
+          <Stack direction='row' spacing={2}>
+            <Button
+              variant='outlined'
+              size='small'
+              onClick={handleAddToLightbox}
+              disabled={!mirror}
+              startIcon={<i className='ri-gallery-line' />}
+            >
+              Add to Lightbox
+            </Button>
             <IconButton onClick={evt => setMenuAnchor( evt.currentTarget )}>
               <i className='ri-more-2-fill' />
             </IconButton>
             <Menu anchorEl={menuAnchor} open={Boolean( menuAnchor )} onClose={() => setMenuAnchor( null )}>
-              <MenuItem onClick={handleAddToLightbox} disabled={!mirror}>
-                <ListItemIcon><i className='ri-gallery-line' /></ListItemIcon>
-                <ListItemText>Add to Lightbox</ListItemText>
-              </MenuItem>
               <MenuItem onClick={handleTogglePinned}>
                 <ListItemIcon><i className={pinned ? 'ri-pushpin-2-fill' : 'ri-pushpin-2-line'} /></ListItemIcon>
                 <ListItemText>{pinned ? 'Unpin Settings' : 'Pin Settings'}</ListItemText>
@@ -258,7 +295,7 @@ export default function MirrorCalculator( {initialState, contours, substrateProd
                 <ListItemText>Save as New Product</ListItemText>
               </MenuItem>
             </Menu>
-          </>
+          </Stack>
         }
       />
       <CardContent className='flex flex-col gap-6'>
@@ -290,7 +327,16 @@ export default function MirrorCalculator( {initialState, contours, substrateProd
         <Divider />
 
         <div>
-          <Typography variant='subtitle1' className='mbe-2'>Lightbox</Typography>
+          <Stack direction='row' alignItems='center' justifyContent='space-between' className='mbe-2'>
+            <Typography variant='subtitle1'>Lightbox</Typography>
+            <Tooltip title='Remove all lightbox entries'>
+              <span>
+                <IconButton size='small' onClick={clearLightbox} disabled={0 === gallery.length}>
+                  <i className='ri-delete-bin-line' />
+                </IconButton>
+              </span>
+            </Tooltip>
+          </Stack>
           <LightboxStrip
             gallery={gallery}
             contours={contours}
@@ -301,6 +347,8 @@ export default function MirrorCalculator( {initialState, contours, substrateProd
             onReorder={reorderGallery}
           />
         </div>
+
+        <ComparisonTable gallery={gallery} contours={contours} substrateProducts={substrateProducts} />
       </CardContent>
 
       <SaveAsProductDialog open={saveOpen} onClose={() => setSaveOpen( false )} substrateInfo={substrateInfo} />
