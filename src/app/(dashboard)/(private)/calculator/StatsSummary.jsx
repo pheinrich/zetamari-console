@@ -2,71 +2,51 @@
 
 import { useState } from 'react'
 
-import Collapse from '@mui/material/Collapse'
-import IconButton from '@mui/material/IconButton'
+import Box from '@mui/material/Box'
+import Tab from '@mui/material/Tab'
 import Table from '@mui/material/Table'
 import TableBody from '@mui/material/TableBody'
 import TableCell from '@mui/material/TableCell'
 import TableRow from '@mui/material/TableRow'
-import Typography from '@mui/material/Typography'
+import Tabs from '@mui/material/Tabs'
 
 import { computeAreaStats, computeWeightStats, computeCostStats, formatAreaFt2, formatWeightLb, formatCost } from './calculatorStats'
 
-// One Area/Weight/Retail section for the single working panel: an
-// always-visible headline plus an expandable itemized breakdown. This is
-// the single-panel counterpart to the old multi-panel ComparisonTable -
-// with only one panel on screen at a time there's nothing to compare
-// side by side against, just this panel's own numbers.
-function StatSection( {title, mirror, compute, format} )
-{
-  const [expanded, setExpanded] = useState( false )
-  const stats = compute( mirror )
+const SECTIONS = [
+  {label: 'Area', compute: computeAreaStats, format: formatAreaFt2},
+  {label: 'Weight', compute: computeWeightStats, format: formatWeightLb},
+  {label: 'Pricing', compute: computeCostStats, format: formatCost},
+]
 
-  return (
-    <Table size='small'>
-      <TableBody>
-        <TableRow>
-          <TableCell>
-            <IconButton size='small' onClick={() => setExpanded( !expanded )} aria-expanded={expanded} aria-label='show more'>
-              <i className={expanded ? 'ri-arrow-up-s-line' : 'ri-arrow-down-s-line'} />
-            </IconButton>
-            <Typography component='span' variant='subtitle1'>{title}</Typography>
-          </TableCell>
-          <TableCell align='right'>
-            <Typography variant='subtitle1'>{format( stats.headline )}</Typography>
-          </TableCell>
-        </TableRow>
-        <TableRow>
-          <TableCell style={{padding: 0, borderBottom: expanded ? undefined : 'none'}} colSpan={2}>
-            <Collapse in={expanded} timeout='auto' unmountOnExit>
-              <Table size='small'>
-                <TableBody>
-                  {stats.rows.map( row => (
-                    <TableRow key={row.label}>
-                      <TableCell>{row.label}</TableCell>
-                      <TableCell align='right'>{format( row.value )}</TableCell>
-                    </TableRow>
-                  ) )}
-                </TableBody>
-              </Table>
-            </Collapse>
-          </TableCell>
-        </TableRow>
-      </TableBody>
-    </Table>
-  )
-}
-
+// Area/Weight/Pricing for the single working panel, as a 3-tab switcher
+// rather than three stacked accordion sections - only one category's
+// numbers are relevant at a time, so there's no need to keep all three
+// on screen (or collapsed-but-present) at once.
 export default function StatsSummary( {mirror} )
 {
+  const [tab, setTab] = useState( 0 )
+
   if( !mirror )
     return null
 
+  const {compute, format} = SECTIONS[tab]
+  const stats = compute( mirror )
+
   return (
-    <div className='flex flex-col gap-4'>
-      <StatSection title='Area' mirror={mirror} compute={computeAreaStats} format={formatAreaFt2} />
-      <StatSection title='Weight' mirror={mirror} compute={computeWeightStats} format={formatWeightLb} />
-      <StatSection title='Retail' mirror={mirror} compute={computeCostStats} format={formatCost} />
-    </div>
+    <Box>
+      <Tabs value={tab} onChange={(evt, val) => setTab( val )}>
+        {SECTIONS.map( s => <Tab key={s.label} label={s.label} /> )}
+      </Tabs>
+      <Table size='small'>
+        <TableBody>
+          {stats.rows.map( row => (
+            <TableRow key={row.label}>
+              <TableCell>{row.label}</TableCell>
+              <TableCell align='right'>{format( row.value )}</TableCell>
+            </TableRow>
+          ) )}
+        </TableBody>
+      </Table>
+    </Box>
   )
 }
