@@ -1,51 +1,98 @@
-// Encodes/decodes the calculator's `panels` query param, e.g.
-// ?panels=7:8:10:0.75,:6:6:1 - two panels: one tied to product 7 shown at
-// 8x10 with a 0.75 border, one blank at 6x6/1. Each panel's width/height/
-// border travel in the URL (not just its product id) so a bookmarked or
-// shared link reproduces edits made after loading a product, not just that
-// product's originally saved values.
+// Encodes/decodes the calculator's query params for the single-working-
+// panel + lightbox gallery layout:
+//   ?current=<entry>          - the main panel's live state
+//   ?gallery=<entry>,<entry>  - the lightbox strip, in order
+//   ?pinned=1                 - whether view settings are pinned (see
+//                                MirrorCalculator's Pin/Unpin Settings)
+//
+// Each <entry> is productId:width:height:border:showBack:showDims:
+// showGlass:zoom - shape data plus the view settings (toggles/zoom) that
+// were active when it was captured, so clicking a lightbox thumbnail can
+// restore both (unless settings are pinned - see MirrorCalculator).
+//
+// Also still honors the older single-panel ?productId= link (e.g. a
+// product's "Open in Calculator" button) and the even older multi-panel
+// ?panels= link, both taking the first/only value as the working panel.
+import { DEFAULT_SETTINGS } from './mirrorSettings'
+
 const FIELD_SEP = ':'
-const PANEL_SEP = ','
+const LIST_SEP = ','
 
-export function encodePanels( panels )
+export function encodeEntry( entry )
 {
-  return panels
-    .map( p => [p.productId ?? '', p.width ?? '', p.height ?? '', p.border ?? ''].join( FIELD_SEP ) )
-    .join( PANEL_SEP )
+  const s = entry?.settings ?? DEFAULT_SETTINGS
+
+  return [
+    entry?.productId ?? '',
+    entry?.width ?? '',
+    entry?.height ?? '',
+    entry?.border ?? '',
+    s.showBack ? 1 : 0,
+    s.showDims ?? 0,
+    s.showGlass ? 1 : 0,
+    s.zoom ?? '',
+  ].join( FIELD_SEP )
 }
 
-function decodePanelsString( value )
+export function encodeEntryList( entries )
 {
-  return value
-    .split( PANEL_SEP )
-    .filter( Boolean )
-    .map( entry => {
-      const [productId, width, height, border] = entry.split( FIELD_SEP )
-
-      return {
-        productId: productId ? Number( productId ) : undefined,
-        width: width ? Number( width ) : undefined,
-        height: height ? Number( height ) : undefined,
-        border: border ? Number( border ) : undefined,
-      }
-    })
+  return entries.map( encodeEntry ).join( LIST_SEP )
 }
 
-// `panelsParam` is the raw ?panels= value, if present. `legacyProductId` is
-// the older single-panel ?productId= link (still used by e.g. a product's
-// "Open in Calculator" button) - only honored when panels isn't present,
-// since panels is the newer, more complete format and takes precedence.
-export function decodePanelsParam( panelsParam, legacyProductId )
+function decodeEntry( str )
 {
-  if( panelsParam )
+  const [productId, width, height, border, showBack, showDims, showGlass, zoom] = str.split( FIELD_SEP )
+
+  return {
+    productId: productId ? Number( productId ) : undefined,
+    width: width ? Number( width ) : undefined,
+    height: height ? Number( height ) : undefined,
+    border: border ? Number( border ) : undefined,
+    settings: {
+      showBack: '1' === showBack,
+      showDims: showDims ? Number( showDims ) : 0,
+      // Legacy 4-field entries (from the old ?panels= format) have no
+      // showGlass field at all - default that (and only that) case to
+      // true, matching DEFAULT_SETTINGS, rather than reading it as false.
+      showGlass: (undefined === showGlass || '' === showGlass) ? true : '1' === showGlass,
+      zoom: zoom ? Number( zoom ) : DEFAULT_SETTINGS.zoom,
+    },
+  }
+}
+
+export function decodeEntryList( value )
+{
+  if( !value )
+    return []
+
+  return value.split( LIST_SEP ).filter( Boolean ).map( decodeEntry )
+}
+
+// Resolves {current, gallery, pinned} from whichever query params are
+// present, oldest-format links still falling back gracefully.
+export function decodeInitialState( params )
+{
+  if( params?.current )
   {
-    const panels = decodePanelsString( panelsParam )
-    if( panels.length )
-      return panels
+    return {
+      current: decodeEntry( params.current ),
+      gallery: decodeEntryList( params.gallery ),
+      pinned: '1' === params?.pinned,
+    }
   }
 
-  if( legacyProductId )
-    return [{productId: Number( legacyProductId )}]
+  // Legacy single-panel link.
+  if( params?.productId )
+    return {current: {productId: Number( params.productId ), settings: DEFAULT_SETTINGS}, gallery: [], pinned: false}
 
-  return [{}]
+  // Legacy multi-panel link - the first panel becomes the working panel,
+  // any others seed the gallery.
+  if( params?.panels )
+  {
+    const [first, ...rest] = decodeEntryList( params.panels )
+    if( first )
+      return {current: first, gallery: rest, pinned: false}
+  }
+
+  return {current: {settings: DEFAULT_SETTINGS}, gallery: [], pinned: false}
 }
