@@ -1,6 +1,5 @@
-import Link from 'next/link'
-import ProductForm from '../../ProductForm'
 import { notFound } from 'next/navigation'
+import ProductForm from '../../ProductForm'
 import { readContours } from '@/db/actions/contour'
 import { readProduct } from '@/db/actions/product'
 
@@ -14,14 +13,9 @@ export default async function EditProductPage( {params} )
   const contours = await readContours()
 
   return (
-    <>
-      <ProductForm
-        contourList={contours.map( (c) => ({id: c.id, name: c.name}) )}
-        initialData={product}
-      />
-      <hr />
-      <Link href={`/products/${id}`}>Cancel</Link><br/>
-      <Link href='/products'>All Products</Link>
-    </>
+    <ProductForm
+      contourList={contours.map( (c) => ({id: c.id, name: c.name}) )}
+      initialData={product}
+    />
   )
 }

@@ -1,14 +1,25 @@
-import Link from 'next/link'
+import Grid from '@mui/material/Grid2'
+import Typography from '@mui/material/Typography'
 
-export default async function MirrorInfoView( {mirrorInfo} )
+function Field( {label, value} )
 {
   return (
-    <>
-      Shape: {mirrorInfo.shape}<br/>
-      Width: {mirrorInfo.width}<br/>
-      Height: {mirrorInfo.height}<br/>
-      Thickness: {mirrorInfo.thickness}<br/>
-      Bevel: {mirrorInfo.bevel}<br/>
-    </>
+    <Grid size={{ xs: 6, sm: 3 }}>
+      <Typography variant='body2' color='text.secondary'>{label}</Typography>
+      <Typography>{value ?? '—'}</Typography>
+    </Grid>
+  )
+}
+
+export default function MirrorInfoView( {mirrorInfo} )
+{
+  return (
+    <Grid container spacing={4}>
+      <Field label='Shape' value={mirrorInfo.shape} />
+      <Field label='Width' value={mirrorInfo.width} />
+      <Field label='Height' value={mirrorInfo.height} />
+      <Field label='Thickness' value={mirrorInfo.thickness} />
+      <Field label='Bevel' value={mirrorInfo.bevel} />
+    </Grid>
   )
 }

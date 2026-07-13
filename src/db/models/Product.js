@@ -15,6 +15,10 @@ const Product = sequelize.define(
     sku: { type: DataTypes.STRING, unique: true, allowNull: false },
     type: { type: DataTypes.ENUM( 'bead', 'birdhouse', 'frame', 'grout', 'millefiori', 'mirror', 'substrate', 'tile', 'other' ), allowNull: true },
     sellable: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: true },
+    // Whether this product should be shown anywhere customer-facing. Only
+    // 'visible'/'hidden' for now; more values (e.g. 'discontinued') may be
+    // added later.
+    status: { type: DataTypes.ENUM( 'visible', 'hidden' ), allowNull: false, defaultValue: 'visible' },
     units: { type: DataTypes.STRING, defaultValue: 'each' },
     weight: { type: DataTypes.FLOAT },
     description: { type: DataTypes.TEXT },

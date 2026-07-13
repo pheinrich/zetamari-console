@@ -3,12 +3,24 @@
 import { useState, useTransition } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+
+import Button from '@mui/material/Button'
+import FormControl from '@mui/material/FormControl'
+import IconButton from '@mui/material/IconButton'
+import InputLabel from '@mui/material/InputLabel'
+import MenuItem from '@mui/material/MenuItem'
+import Select from '@mui/material/Select'
+import TextField from '@mui/material/TextField'
+import Typography from '@mui/material/Typography'
+
 import { setSupplierProductPrice, updateSupplierProductPrice, removeSupplierProductPrice } from '@/db/actions/supplier'
+import tableStyles from '@core/styles/table.module.css'
 
 // A product can come from zero or more suppliers, each charging its own
 // price. `suppliers` is the product's eager-loaded Supplier list (each with
 // a `.SupplierProduct` join row attached by Sequelize); `supplierOptions`
-// is every supplier available to add.
+// is every supplier available to add. Rendered inside a Card by the
+// caller, which supplies the "Supplier Pricing" title.
 export default function SupplierProductView( {product, suppliers, supplierOptions} )
 {
   const router = useRouter()
@@ -61,63 +73,81 @@ export default function SupplierProductView( {product, suppliers, supplierOption
   }
 
   return (
-    <div>
-      <h2>Suppliers</h2>
-      <table>
-        <thead>
-          <tr>
-            <th>Supplier</th>
-            <th>Part #</th>
-            <th>Cost / {product.units}</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody>
-          {suppliers.map( (supplier) => (
-            <tr key={supplier.SupplierProduct.id}>
-              <td><Link href={`/suppliers/${supplier.id}`}>{supplier.name}</Link></td>
-              <td>{supplier.SupplierProduct.partNumber}</td>
-              <td>
-                <input
-                  type='number'
-                  step='0.00001'
-                  min='0'
-                  defaultValue={supplier.SupplierProduct.cost ?? ''}
-                  onBlur={(e) => handleUpdateCost( supplier.SupplierProduct.id, e.target.value )}
-                  disabled={isPending}
-                />
-              </td>
-              <td>
-                <button type='button' onClick={() => handleRemove( supplier.SupplierProduct.id )} disabled={isPending}>Remove</button>
-              </td>
+    <div className='flex flex-col gap-4'>
+      <div className='overflow-x-auto'>
+        <table className={tableStyles.table}>
+          <thead>
+            <tr>
+              <th>Supplier</th>
+              <th>Part #</th>
+              <th>Cost / {product.units}</th>
+              <th></th>
             </tr>
-          ))}
-          {suppliers.length === 0 && (
-            <tr><td colSpan={4}>Not linked to any suppliers yet.</td></tr>
-          )}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {suppliers.map( (supplier) => (
+              <tr key={supplier.SupplierProduct.id}>
+                <td><Link href={`/suppliers/${supplier.id}`}>{supplier.name}</Link></td>
+                <td>{supplier.SupplierProduct.partNumber}</td>
+                <td>
+                  <TextField
+                    type='number'
+                    size='small'
+                    inputProps={{step: '0.00001', min: '0'}}
+                    defaultValue={supplier.SupplierProduct.cost ?? ''}
+                    onBlur={(e) => handleUpdateCost( supplier.SupplierProduct.id, e.target.value )}
+                    disabled={isPending}
+                    className='is-24'
+                  />
+                </td>
+                <td>
+                  <IconButton size='small' disabled={isPending} onClick={() => handleRemove( supplier.SupplierProduct.id )}>
+                    <i className='ri-delete-bin-7-line' />
+                  </IconButton>
+                </td>
+              </tr>
+            ) )}
+            {suppliers.length === 0 && (
+              <tr><td colSpan={4}>Not linked to any suppliers yet.</td></tr>
+            )}
+          </tbody>
+        </table>
+      </div>
 
-      <div>
-        <select value={supplierId} onChange={(e) => setSupplierId( e.target.value )}>
-          <option value=''>Select a supplier...</option>
-          {available.map( (s) => (
-            <option key={s.id} value={s.id}>{s.name}</option>
-          ))}
-        </select>
-        <input placeholder='Part #' value={partNumber} onChange={(e) => setPartNumber( e.target.value )} />
-        <input
+      <div className='flex flex-wrap items-end gap-4'>
+        <FormControl size='small' className='min-is-[180px]'>
+          <InputLabel id='supplier-select'>Add a supplier</InputLabel>
+          <Select
+            labelId='supplier-select'
+            label='Add a supplier'
+            value={supplierId}
+            onChange={(e) => setSupplierId( e.target.value )}
+          >
+            {available.map( (s) => (
+              <MenuItem key={s.id} value={s.id}>{s.name}</MenuItem>
+            ) )}
+          </Select>
+        </FormControl>
+        <TextField
+          size='small'
+          label='Part #'
+          value={partNumber}
+          onChange={(e) => setPartNumber( e.target.value )}
+        />
+        <TextField
           type='number'
-          step='0.00001'
-          min='0'
-          placeholder='Cost'
+          size='small'
+          label='Cost'
+          inputProps={{step: '0.00001', min: '0'}}
           value={cost}
           onChange={(e) => setCost( e.target.value )}
-          style={{width: '6em'}}
+          className='is-24'
         />
-        <button type='button' onClick={handleAdd} disabled={isPending || !supplierId}>Add</button>
+        <Button variant='outlined' disabled={isPending || !supplierId} onClick={handleAdd}>
+          Add
+        </Button>
       </div>
-      {error && <p>{error}</p>}
+      {error && <Typography color='error' variant='body2'>{error}</Typography>}
     </div>
   )
 }

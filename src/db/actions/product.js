@@ -6,9 +6,11 @@ import BeadInfo from '@/db/models/BeadInfo'
 import BillOfMaterial from '@/db/models/BillOfMaterial'
 import Contour from '@/db/models/Contour'
 import FrameInfo from '@/db/models/FrameInfo'
+import Image from '@/db/models/Image'
 import MillefioriInfo from '@/db/models/MillefioriInfo'
 import MirrorInfo from '@/db/models/MirrorInfo'
 import Product from '@/db/models/Product'
+import ProductImage from '@/db/models/ProductImage'
 import SubstrateInfo from '@/db/models/SubstrateInfo'
 import Supplier from '@/db/models/Supplier'
 // Imported for its side effect: this is where Product<->Supplier
@@ -39,6 +41,7 @@ export async function createProduct( data )
         type: data.type || null,
         sku: data.sku,
         sellable: data.sellable ?? true,
+        status: data.status || 'visible',
         units: data.units,
         weight: data.weight,
         description: data.description,
@@ -86,6 +89,11 @@ export async function readProduct( id, eager )
     product = await Product.findByPk( id, {
       include: [
         {
+          model: Image,
+          as: 'images',
+          through: { attributes: ['id', 'sortOrder'] },
+        },
+        {
           model: Supplier,
           as: 'suppliers',
           through: {
@@ -122,7 +130,15 @@ export async function readProduct( id, eager )
   else
     product = await Product.findByPk( id )
 
-  return product?.toJSON()
+  const plain = product?.toJSON()
+
+  // Sequelize doesn't support ordering a belongsToMany's `include` by the
+  // through table's own column, so sort the gallery here instead - lowest
+  // ProductImage.sortOrder (the primary/thumbnail image) first.
+  if( plain?.images )
+    plain.images.sort( (a, b) => (a.ProductImage?.sortOrder ?? 0) - (b.ProductImage?.sortOrder ?? 0) )
+
+  return plain
 }
 
 export async function readProducts()
@@ -132,7 +148,49 @@ export async function readProducts()
     unauthorized()
 
   await sequelize.sync()
-  return await Product.findAll()
+  const products = await Product.findAll()
+
+  // Attach each product's primary (lowest sortOrder) image, if any, as
+  // `primaryImage` for list-view thumbnails. Done as a single follow-up
+  // query rather than a nested `include` with a per-row limit, which
+  // Sequelize doesn't support cleanly for a belongsToMany.
+  const primaryImageByProductId = {}
+
+  if( products.length )
+  {
+    const links = await ProductImage.findAll({
+      where: { productId: products.map( p => p.id ) },
+      include: [{ model: Image, as: 'image' }],
+      order: [['sortOrder', 'ASC']],
+    })
+
+    for( const link of links )
+      if( !(link.productId in primaryImageByProductId) )
+        primaryImageByProductId[link.productId] = link.image
+  }
+
+  return products.map( product => {
+    const plain = product.toJSON()
+    plain.primaryImage = primaryImageByProductId[product.id] ?? null
+    return plain
+  })
+}
+
+// Toggle just the `sellable` flag, for the list page's inline switch -
+// avoids sending a full update() payload (and re-running setProductInfo)
+// for what's a single boolean flip.
+export async function toggleProductSellable( id, sellable )
+{
+  const session = await auth()
+  if( !session )
+    unauthorized()
+
+  await sequelize.sync()
+  const product = await Product.findByPk( id )
+  if( !product )
+    notFound()
+
+  return await product.update( {sellable} )
 }
 
 export async function updateProduct( data )
@@ -155,6 +213,7 @@ export async function updateProduct( data )
         type: data.type || null,
         sku: data.sku,
         sellable: data.sellable ?? true,
+        status: data.status || 'visible',
         units: data.units,
         weight: data.weight,
         description: data.description,
@@ -259,6 +318,81 @@ export async function removeBomLine( id )
     notFound()
 
   return await line.destroy()
+}
+
+// --- Images --------------------------------------------------------------
+//
+// Images live in S3 and are referenced by URL. The same Image row may be
+// attached to more than one product, so attaching a URL reuses the
+// existing Image row for that URL if one exists rather than duplicating it.
+
+export async function addProductImage( productId, url, altText )
+{
+  const session = await auth()
+  if( !session )
+    unauthorized()
+
+  if( !url )
+    return {error: 'Image URL is required'}
+
+  await sequelize.sync()
+
+  try
+  {
+    return await sequelize.transaction( async t => {
+      const [image] = await Image.findOrCreate({
+        where: {url},
+        defaults: {url, altText},
+        transaction: t,
+      })
+
+      const maxSortOrder = await ProductImage.max( 'sortOrder', {where: {productId}, transaction: t} )
+      const link = await ProductImage.create({
+        productId,
+        imageId: image.id,
+        sortOrder: Number.isFinite( maxSortOrder ) ? maxSortOrder + 1 : 0,
+      }, {transaction: t})
+
+      return {success: true, id: link.id, image: image.toJSON()}
+    })
+  }
+  catch( error )
+  {
+    if( error instanceof Sequelize.ValidationError || error instanceof Sequelize.UniqueConstraintError )
+      return {error: 'That image is already attached to this product.'}
+
+    return {error: error.message || 'An unexpected error occurred while adding the image'}
+  }
+}
+
+// Unlinks the image from this product only - the shared Image row (and any
+// other product it's attached to) is untouched.
+export async function removeProductImage( id )
+{
+  const session = await auth()
+  if( !session )
+    unauthorized()
+
+  await sequelize.sync()
+  const link = await ProductImage.findByPk( id )
+  if( !link )
+    notFound()
+
+  return await link.destroy()
+}
+
+export async function reorderProductImage( id, sortOrder )
+{
+  const session = await auth()
+  if( !session )
+    unauthorized()
+
+  await sequelize.sync()
+  const link = await ProductImage.findByPk( id )
+  if( !link )
+    notFound()
+
+  return await link.update( {sortOrder} )
 }
 
 // Create or update the extra info row associated with a product. This may

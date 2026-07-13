@@ -94,6 +94,7 @@
     "eslint": "8.57.1",
     "eslint-config-next": "15.1.2",
     "eslint-config-prettier": "9.1.0",
+    "eslint-plugin-unused-imports": "^4.1.4",
     "eslint-plugin-import": "2.31.0",
     "globby": "14.0.2",
     "postcss": "8.4.49",

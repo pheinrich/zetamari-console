@@ -1,16 +1,27 @@
-import Link from 'next/link'
+import Grid from '@mui/material/Grid2'
+import Typography from '@mui/material/Typography'
 
-export default async function BeadInfoView( {beadInfo} )
+function Field( {label, value} )
 {
   return (
-    <>
-      Category: {beadInfo.category}<br/>
-      Finish: {beadInfo.finish}<br/>
-      Shape: {beadInfo.shape}<br/>
-      Color: {beadInfo.color}<br/>
-      Length: {beadInfo.length}<br/>
-      Height: {beadInfo.height}<br/>
-      Thickness: {beadInfo.thickness}
-    </>
+    <Grid size={{ xs: 6, sm: 3 }}>
+      <Typography variant='body2' color='text.secondary'>{label}</Typography>
+      <Typography>{value ?? '—'}</Typography>
+    </Grid>
+  )
+}
+
+export default function BeadInfoView( {beadInfo} )
+{
+  return (
+    <Grid container spacing={4}>
+      <Field label='Category' value={beadInfo.category} />
+      <Field label='Finish' value={beadInfo.finish} />
+      <Field label='Shape' value={beadInfo.shape} />
+      <Field label='Color' value={beadInfo.color} />
+      <Field label='Length' value={beadInfo.length} />
+      <Field label='Height' value={beadInfo.height} />
+      <Field label='Thickness' value={beadInfo.thickness} />
+    </Grid>
   )
 }
