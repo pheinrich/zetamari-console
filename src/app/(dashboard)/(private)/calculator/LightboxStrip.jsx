@@ -20,13 +20,20 @@ export default function LightboxStrip( {gallery, contours, substrateProducts, se
   {
     return (
       <Typography variant='body2' color='text.secondary'>
-        No saved prototypes yet - use the menu (⋮) above to add the current view to the lightbox.
+        No saved prototypes yet - use the &ldquo;Add to Lightbox&rdquo; button above to add the current view.
       </Typography>
     )
   }
 
   return (
-    <div style={{display: 'flex', gap: 12, overflowX: 'auto', paddingBottom: 8}}>
+    // Padding on every side (not just bottom) so a selected thumbnail's
+    // outline - which sits 2px outside the thumbnail's own box - has room
+    // to render before hitting this container's edge. overflowX: 'auto'
+    // forces overflowY to compute to 'auto' too (per the CSS overflow
+    // spec, one non-visible axis drags the other out of 'visible'), so
+    // without this padding the outline's top/right (and, at the very
+    // start/end of the scrollable row, left/right) edges get clipped.
+    <div style={{display: 'flex', gap: 12, overflowX: 'auto', padding: 8}}>
       {gallery.map( entry => (
         <div
           key={entry.id}
