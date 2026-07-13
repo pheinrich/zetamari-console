@@ -176,6 +176,35 @@ export async function readProducts()
   })
 }
 
+// Substrate products (type: 'substrate'), with their SubstrateInfo and
+// outside/inside/rabbet Contours eagerly loaded - used by the mirror
+// calculator's "load an existing substrate" picker, which needs the
+// dimensions/contours up front rather than a per-row follow-up fetch.
+export async function readSubstrateProducts()
+{
+  const session = await auth()
+  if( !session )
+    unauthorized()
+
+  await sequelize.sync()
+  const products = await Product.findAll({
+    where: {type: 'substrate'},
+    include: [
+      {
+        model: SubstrateInfo,
+        as: 'substrateInfo',
+        include: [
+          { association: 'outside' },
+          { association: 'inside' },
+          { association: 'rabbet' },
+        ]
+      },
+    ],
+  })
+
+  return products.map( p => p.toJSON() )
+}
+
 // Toggle just the `sellable` flag, for the list page's inline switch -
 // avoids sending a full update() payload (and re-running setProductInfo)
 // for what's a single boolean flip.

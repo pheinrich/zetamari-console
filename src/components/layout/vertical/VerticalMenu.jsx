@@ -82,6 +82,9 @@ const VerticalMenu = ({ scrollMenu }) => {
           <MenuItem href='/users' icon={<i className='ri-team-line' />}>
             users
           </MenuItem>
+          <MenuItem href='/calculator' icon={<i className='ri-ruler-2-line' />}>
+            mirror calculator
+          </MenuItem>
         </MenuSection>
         <SubMenu label='frontPages' icon={<i className='ri-file-copy-line' />}>
           <MenuItem href='/front-pages/landing-page' target='_blank'>

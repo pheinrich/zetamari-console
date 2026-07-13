@@ -134,7 +134,7 @@ export default async function ProductPage( {params} )
                     { product.frameInfo && <FrameInfoView frameInfo={product.frameInfo} /> }
                     { product.millefioriInfo && <MillefioriInfoView millefioriInfo={product.millefioriInfo} /> }
                     { product.mirrorInfo && <MirrorInfoView mirrorInfo={product.mirrorInfo} /> }
-                    { product.substrateInfo && <SubstrateInfoView substrateInfo={product.substrateInfo} /> }
+                    { product.substrateInfo && <SubstrateInfoView productId={product.id} substrateInfo={product.substrateInfo} /> }
                     { product.tileInfo && <TileInfoView tileInfo={product.tileInfo} /> }
                   </CardContent>
                 </Card>

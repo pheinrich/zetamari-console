@@ -103,6 +103,9 @@ const HorizontalMenu = ({}) => {
           <MenuItem href='/users' icon={<i className='ri-team-line' />}>
             users
           </MenuItem>
+          <MenuItem href='/calculator' icon={<i className='ri-ruler-2-line' />}>
+            mirror calculator
+          </MenuItem>
         </SubMenu>
 
         <SubMenu label='apps' icon={<i className='ri-mail-open-line' />}>
