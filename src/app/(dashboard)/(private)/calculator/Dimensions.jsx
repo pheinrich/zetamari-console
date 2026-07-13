@@ -52,6 +52,12 @@ function shapeToView( shape, origin, vw, vh, scale )
 
 export default function Dimensions( {labelAnchor, dims, origin, zoom, isFlipped, color = 'red', width = 500, height = 500} )
 {
+  // dims can be undefined for a degenerate shape - e.g. a border wide
+  // enough to buffer the inside contour down to nothing. Skip the overlay
+  // rather than crash on dims.top below.
+  if( !dims )
+    return null
+
   const arrow = `${color}-arrow`
   const markerEnd = `url(#${arrow})`
 

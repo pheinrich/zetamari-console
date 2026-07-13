@@ -85,14 +85,17 @@ export default function MirrorView( {mirror, settings, imageRef} )
           </g>
         </svg>
 
-        { (settings.showDims & 1) === 1 && <Dimensions
+        { /* mirror.outside/inside/glass.dims can be undefined for a degenerate
+             shape (e.g. a border wide enough to buffer the inside contour
+             down to nothing) - skip the overlay rather than crash. */ }
+        { (settings.showDims & 1) === 1 && mirror.outside.dims && <Dimensions
           labelAnchor={{x: mirror.outside.dims.left.x, y: mirror.outside.dims.bottom.y}}
           dims={mirror.outside.dims}
           origin={center}
           zoom={settings.zoom}
           isFlipped={settings.showBack}
         />}
-        { (settings.showDims & 2) === 2 && <Dimensions
+        { (settings.showDims & 2) === 2 && mirror.outside.dims && (settings.showBack && settings.showGlass ? mirror.glass.dims : mirror.inside.dims) && <Dimensions
           labelAnchor={{x: mirror.outside.dims.right.x, y: mirror.outside.dims.top.y}}
           dims={settings.showBack && settings.showGlass ? mirror.glass.dims : mirror.inside.dims}
           origin={center}

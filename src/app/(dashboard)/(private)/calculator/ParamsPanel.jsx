@@ -1,5 +1,7 @@
 'use client'
 
+import { useEffect, useState } from 'react'
+
 import Box from '@mui/material/Box'
 import FormControl from '@mui/material/FormControl'
 import InputAdornment from '@mui/material/InputAdornment'
@@ -69,9 +71,27 @@ export default function ParamsPanel( {substrateInfo, setSubstrateInfo, contours}
   const outsideContour = contours.find( c => c.id === substrateInfo.outsideId )
   const shapeType = outsideContour?.svgData ? undefined : outsideContour?.shapeType
 
+  // Width/height/border are echoed from local state while typing, and only
+  // pushed up to substrateInfo (which triggers a live geometry recompute -
+  // see MirrorCalculator) on blur. Committing on every keystroke let
+  // transient/invalid intermediate values (an empty field, a width smaller
+  // than the current border, a momentarily out-of-sync width/height pair
+  // for aspect-locked shapes) reach the geometry engine and produce
+  // degenerate shapes - see the Dimensions.jsx crash this was fixing.
+  const [width, setWidth] = useState( substrateInfo.width ?? '' )
+  const [height, setHeight] = useState( substrateInfo.height ?? '' )
+  const [border, setBorder] = useState( substrateInfo.border ?? '' )
+
+  useEffect( () => { setWidth( substrateInfo.width ?? '' ) }, [substrateInfo.width] )
+  useEffect( () => { setHeight( substrateInfo.height ?? '' ) }, [substrateInfo.height] )
+  useEffect( () => { setBorder( substrateInfo.border ?? '' ) }, [substrateInfo.border] )
+
   function handleWidthBlur( evt )
   {
     const w = Number( evt.target.value )
+    if( !w || !Number.isFinite( w ) )
+      return setWidth( substrateInfo.width ?? '' )
+
     const h = constrainedHeight( w, shapeType ) ?? substrateInfo.height
 
     setSubstrateInfo( {...substrateInfo, width: w, height: h} )
@@ -80,9 +100,21 @@ export default function ParamsPanel( {substrateInfo, setSubstrateInfo, contours}
   function handleHeightBlur( evt )
   {
     const h = Number( evt.target.value )
+    if( !h || !Number.isFinite( h ) )
+      return setHeight( substrateInfo.height ?? '' )
+
     const w = constrainedWidth( h, shapeType ) ?? substrateInfo.width
 
     setSubstrateInfo( {...substrateInfo, width: w, height: h} )
+  }
+
+  function handleBorderBlur( evt )
+  {
+    const b = Number( evt.target.value )
+    if( !Number.isFinite( b ) || b < 0 )
+      return setBorder( substrateInfo.border ?? '' )
+
+    setSubstrateInfo( {...substrateInfo, border: b} )
   }
 
   function handleOutsideChange( outsideId )
@@ -110,8 +142,8 @@ export default function ParamsPanel( {substrateInfo, setSubstrateInfo, contours}
         <TextField
           label='Width'
           style={{width: 150}}
-          value={substrateInfo.width ?? ''}
-          onChange={evt => setSubstrateInfo( {...substrateInfo, width: evt.target.value} )}
+          value={width}
+          onChange={evt => setWidth( evt.target.value )}
           onBlur={handleWidthBlur}
           disabled={'circle' === shapeType || 'square' === shapeType}
           InputProps={{endAdornment: <InputAdornment position='end'>in</InputAdornment>}}
@@ -120,8 +152,8 @@ export default function ParamsPanel( {substrateInfo, setSubstrateInfo, contours}
         <TextField
           label='Height'
           style={{width: 150}}
-          value={substrateInfo.height ?? ''}
-          onChange={evt => setSubstrateInfo( {...substrateInfo, height: evt.target.value} )}
+          value={height}
+          onChange={evt => setHeight( evt.target.value )}
           onBlur={handleHeightBlur}
           disabled={'circle' === shapeType || 'square' === shapeType}
           InputProps={{endAdornment: <InputAdornment position='end'>in</InputAdornment>}}
@@ -130,8 +162,9 @@ export default function ParamsPanel( {substrateInfo, setSubstrateInfo, contours}
         <TextField
           label='Border'
           style={{width: 150}}
-          value={substrateInfo.border ?? ''}
-          onChange={evt => setSubstrateInfo( {...substrateInfo, border: Number( evt.target.value )} )}
+          value={border}
+          onChange={evt => setBorder( evt.target.value )}
+          onBlur={handleBorderBlur}
           InputProps={{endAdornment: <InputAdornment position='end'>in</InputAdornment>}}
         />
       </Stack>
