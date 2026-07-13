@@ -1,75 +1,115 @@
 'use client'
 
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import NextLink from 'next/link'
 
-import Button from '@mui/material/Button'
 import Card from '@mui/material/Card'
 import CardContent from '@mui/material/CardContent'
 import CardHeader from '@mui/material/CardHeader'
+import Chip from '@mui/material/Chip'
 import Divider from '@mui/material/Divider'
+import FormControl from '@mui/material/FormControl'
+import IconButton from '@mui/material/IconButton'
+import InputLabel from '@mui/material/InputLabel'
+import ListItemIcon from '@mui/material/ListItemIcon'
+import ListItemText from '@mui/material/ListItemText'
+import Menu from '@mui/material/Menu'
+import MenuItem from '@mui/material/MenuItem'
+import Select from '@mui/material/Select'
+import Stack from '@mui/material/Stack'
 import Typography from '@mui/material/Typography'
 
-import { encodePanels } from './urlCodec'
-import CalculatorPanel from './CalculatorPanel'
-import ComparisonTable from './ComparisonTable'
+import { build } from '@/libs/mirror'
 
-// The board: owns the list of open panels and keeps the URL in sync for
-// bookmarking/sharing. Each CalculatorPanel is independent (its own
-// substrateInfo state, its own memoized mirror) - this component never
-// computes geometry itself, it only aggregates each panel's reported
-// {label, mirror} for the shared ComparisonTable.
-export default function MirrorCalculator( {initialPanels, contours, substrateProducts} )
+import { DEFAULT_SETTINGS } from './mirrorSettings'
+import { resolveSubstrateInfo } from './resolveSubstrateInfo'
+import { encodeEntry, encodeEntryList } from './urlCodec'
+import ParamsPanel from './ParamsPanel'
+import MirrorPanel from './MirrorPanel'
+import StatsSummary from './StatsSummary'
+import LightboxStrip from './LightboxStrip'
+import SaveAsProductDialog from './SaveAsProductDialog'
+
+const MAIN_PREVIEW_SIZE = 460
+
+// The calculator: one working panel (product picker, live preview,
+// dimensions, stats) plus a lightbox strip of saved snapshots below it.
+// Replaces the earlier side-by-side multi-panel board - comparison now
+// happens by clicking between saved thumbnails rather than viewing many
+// panels at once.
+//
+// `initialState` comes from urlCodec's decodeInitialState(): {current,
+// gallery, pinned}, already resolved from whichever of the current/
+// legacy query params was present.
+export default function MirrorCalculator( {initialState, contours, substrateProducts} )
 {
-  // Ids are assigned once, deterministically, from the initial (server-
-  // decoded) panels array - safe for SSR/hydration since both server and
-  // client process the same initialPanels in the same order. Panels added
-  // later (via "Add Panel") only ever happen post-hydration, so a plain
-  // incrementing ref is fine for those.
-  const [panels, setPanels] = useState( () => initialPanels.map( (p, i) => ({...p, id: `panel-${i}`}) ) )
-  const nextIdRef = useRef( initialPanels.length )
+  const [productId, setProductId] = useState( initialState.current.productId ?? '' )
+  const [substrateInfo, setSubstrateInfoState] = useState( () =>
+    resolveSubstrateInfo(
+      {width: initialState.current.width, height: initialState.current.height, border: initialState.current.border},
+      substrateProducts.find( p => p.id === initialState.current.productId ) ?? null,
+      contours
+    )
+  )
+  const [settings, setSettings] = useState( initialState.current.settings ?? DEFAULT_SETTINGS )
+  const [pinned, setPinned] = useState( initialState.pinned ?? false )
 
-  // id -> {label, mirror}, reported up by each CalculatorPanel whenever its
-  // own geometry recomputes. Feeds the ComparisonTable.
-  const [resolved, setResolved] = useState( {} )
+  const [gallery, setGallery] = useState( () => initialState.gallery.map( (e, i) => ({...e, id: `g-${i}`}) ) )
+  const nextGalleryIdRef = useRef( initialState.gallery.length )
+  const [selectedId, setSelectedId] = useState( null )
 
-  const handleResolvedChange = useCallback( (id, data) => {
-    setResolved( prev => ({...prev, [id]: data}) )
-  }, [] )
+  const [saveOpen, setSaveOpen] = useState( false )
+  const [menuAnchor, setMenuAnchor] = useState( null )
 
-  // {sourceId, settings} - a new object every time a panel's "Apply to
-  // All" is clicked, handed down to every panel. Each CalculatorPanel
-  // adopts it unless it's the source (see its own effect). Not part of
-  // panels/the URL - view settings are a per-viewer preference, not
-  // shape data.
-  const [settingsBroadcast, setSettingsBroadcast] = useState( null )
+  const imageRef = useRef( null )
 
-  const handleBroadcastSettings = useCallback( (sourceId, settings) => {
-    setSettingsBroadcast( {sourceId, settings} )
-  }, [] )
-
-  // Native HTML5 drag-and-drop reordering - no extra dependency needed.
-  // Each panel's card carries a small drag handle (see CalculatorPanel's
-  // dragHandleProps); the wrapping div here is the drop target for
-  // whichever panel is currently being dragged. Reordering the `panels`
-  // array is all that's needed for the new order to persist to the URL
-  // too, since the sync effect below just re-encodes panels in whatever
-  // order they're currently in.
-  const [dragId, setDragId] = useState( null )
-
-  function handleDragOver( evt )
+  function handleProductChange( newProductId )
   {
-    evt.preventDefault()
+    const product = substrateProducts.find( p => p.id === newProductId )
+    const next = resolveSubstrateInfo( {}, product ?? null, contours )
+
+    setProductId( newProductId )
+    setSubstrateInfoState( next )
+    setSelectedId( null )
   }
 
-  function handleDrop( overId )
+  function setSubstrateInfo( next )
   {
-    setPanels( prev => {
-      if( !dragId || dragId === overId )
+    setSubstrateInfoState( next )
+    setSelectedId( null )
+  }
+
+  // Loads a lightbox entry into the working panel. Shape/dimensions
+  // always come from the entry; view settings (toggles/zoom) only come
+  // from the entry when settings aren't pinned - pinning is exactly the
+  // escape hatch for "keep looking at these settings no matter which
+  // entry I click".
+  function loadEntry( entry )
+  {
+    const product = substrateProducts.find( p => p.id === entry.productId ) ?? null
+    const next = resolveSubstrateInfo( {width: entry.width, height: entry.height, border: entry.border}, product, contours )
+
+    setProductId( entry.productId ?? '' )
+    setSubstrateInfoState( next )
+    if( !pinned )
+      setSettings( entry.settings ?? DEFAULT_SETTINGS )
+    setSelectedId( entry.id )
+  }
+
+  function removeFromLightbox( id )
+  {
+    setGallery( prev => prev.filter( e => e.id !== id ) )
+    setSelectedId( prev => (prev === id ? null : prev) )
+  }
+
+  function reorderGallery( fromId, toId )
+  {
+    setGallery( prev => {
+      if( !fromId || fromId === toId )
         return prev
 
-      const from = prev.findIndex( p => p.id === dragId )
-      const to = prev.findIndex( p => p.id === overId )
+      const from = prev.findIndex( e => e.id === fromId )
+      const to = prev.findIndex( e => e.id === toId )
       if( -1 === from || -1 === to )
         return prev
 
@@ -78,48 +118,92 @@ export default function MirrorCalculator( {initialPanels, contours, substratePro
       next.splice( to, 0, moved )
       return next
     })
-    setDragId( null )
   }
 
-  function addPanel()
+  function handleAddToLightbox()
   {
-    const id = `panel-${nextIdRef.current}`
-    nextIdRef.current += 1
-    setPanels( prev => [...prev, {id, productId: undefined, width: undefined, height: undefined, border: undefined}] )
+    const id = `g-${nextGalleryIdRef.current}`
+    nextGalleryIdRef.current += 1
+
+    const entry = {
+      id,
+      productId: productId || undefined,
+      width: substrateInfo.width,
+      height: substrateInfo.height,
+      border: substrateInfo.border,
+      settings,
+    }
+
+    setGallery( prev => [...prev, entry] )
+    setSelectedId( id )
+    setMenuAnchor( null )
   }
 
-  function removePanel( id )
+  function handleTogglePinned()
   {
-    setPanels( prev => (1 < prev.length ? prev.filter( p => p.id !== id ) : prev) )
-    setResolved( prev => {
-      const next = {...prev}
-      delete next[id]
-      return next
-    })
+    setPinned( p => !p )
+    setMenuAnchor( null )
   }
 
-  function updatePanel( id, patch )
+  function handleSaveAsProduct()
   {
-    setPanels( prev => prev.map( p => (p.id === id ? {...p, ...patch} : p) ) )
+    setSaveOpen( true )
+    setMenuAnchor( null )
   }
 
-  // Keeps ?panels= in sync so the current comparison (including any edits,
-  // not just which products are tied) is bookmarkable/shareable. Uses the
-  // raw History API rather than router.replace() deliberately - the latter
-  // would re-run this page's Server Component and, since it's keyed on the
-  // search params (see page.jsx), remount the whole board on every edit.
+  const outsideContour = contours.find( c => c.id === substrateInfo.outsideId )
+  const insideContour = contours.find( c => c.id === substrateInfo.insideId )
+  const rabbetContour = contours.find( c => c.id === substrateInfo.rabbetId )
+
+  const mirror = useMemo( () => {
+    if( !outsideContour || (!outsideContour.svgData && !outsideContour.shapeType) )
+      return undefined
+    if( !substrateInfo.width || !substrateInfo.height )
+      return undefined
+
+    try
+    {
+      return build(
+        Number( substrateInfo.width ),
+        Number( substrateInfo.height ),
+        Number( substrateInfo.border ) || 0,
+        outsideContour.shapeType,
+        outsideContour.svgData,
+        insideContour?.svgData,
+        rabbetContour?.svgData,
+      )
+    }
+    catch( err )
+    {
+      return undefined
+    }
+  }, [substrateInfo, outsideContour, insideContour, rabbetContour] )
+
+  // Keeps the working panel + gallery + pinned flag in sync with the URL
+  // for bookmarking/sharing. Uses the raw History API rather than
+  // router.replace() deliberately - the latter would re-run this page's
+  // Server Component and, since it's keyed on the search params (see
+  // page.jsx), remount this whole component on every edit.
   useEffect( () => {
-    const encoded = encodePanels( panels )
     const url = new URL( window.location.href )
 
     url.searchParams.delete( 'productId' )
-    if( encoded )
-      url.searchParams.set( 'panels', encoded )
+    url.searchParams.delete( 'panels' )
+    url.searchParams.set( 'current', encodeEntry( {productId, width: substrateInfo.width, height: substrateInfo.height, border: substrateInfo.border, settings} ) )
+
+    const galleryEncoded = encodeEntryList( gallery )
+    if( galleryEncoded )
+      url.searchParams.set( 'gallery', galleryEncoded )
     else
-      url.searchParams.delete( 'panels' )
+      url.searchParams.delete( 'gallery' )
+
+    if( pinned )
+      url.searchParams.set( 'pinned', '1' )
+    else
+      url.searchParams.delete( 'pinned' )
 
     window.history.replaceState( null, '', url.toString() )
-  }, [panels] )
+  }, [productId, substrateInfo, settings, gallery, pinned] )
 
   if( 0 === contours.length )
   {
@@ -135,56 +219,91 @@ export default function MirrorCalculator( {initialPanels, contours, substratePro
     )
   }
 
-  const resolvedPanels = panels.map( p => ({
-    id: p.id,
-    label: resolved[p.id]?.label ?? '…',
-    mirror: resolved[p.id]?.mirror,
-  }) )
-
   return (
     <Card>
       <CardHeader
-        title='Mirror Calculator'
-        subheader='Add panels to compare shapes and dimensions side by side.'
+        title={
+          <FormControl size='small' style={{minWidth: 260}}>
+            <InputLabel id='calculator-prototype'>Prototype</InputLabel>
+            <Select
+              labelId='calculator-prototype'
+              label='Prototype'
+              value={productId}
+              onChange={e => handleProductChange( e.target.value )}
+            >
+              <MenuItem value=''>— Blank Shape —</MenuItem>
+              {substrateProducts.map( p => (
+                <MenuItem key={p.id} value={p.id}>{p.name}</MenuItem>
+              ) )}
+            </Select>
+          </FormControl>
+        }
         action={
-          <Button variant='contained' onClick={addPanel} startIcon={<i className='ri-add-line' />}>
-            Add Panel
-          </Button>
+          <>
+            <IconButton onClick={evt => setMenuAnchor( evt.currentTarget )}>
+              <i className='ri-more-2-fill' />
+            </IconButton>
+            <Menu anchorEl={menuAnchor} open={Boolean( menuAnchor )} onClose={() => setMenuAnchor( null )}>
+              <MenuItem onClick={handleAddToLightbox} disabled={!mirror}>
+                <ListItemIcon><i className='ri-gallery-line' /></ListItemIcon>
+                <ListItemText>Add to Lightbox</ListItemText>
+              </MenuItem>
+              <MenuItem onClick={handleTogglePinned}>
+                <ListItemIcon><i className={pinned ? 'ri-pushpin-2-fill' : 'ri-pushpin-2-line'} /></ListItemIcon>
+                <ListItemText>{pinned ? 'Unpin Settings' : 'Pin Settings'}</ListItemText>
+              </MenuItem>
+              <Divider />
+              <MenuItem onClick={handleSaveAsProduct} disabled={!mirror}>
+                <ListItemIcon><i className='ri-save-line' /></ListItemIcon>
+                <ListItemText>Save as New Product</ListItemText>
+              </MenuItem>
+            </Menu>
+          </>
         }
       />
       <CardContent className='flex flex-col gap-6'>
-        <div className='flex flex-wrap items-start gap-6'>
-          {panels.map( p => (
-            <div
-              key={p.id}
-              onDragOver={handleDragOver}
-              onDrop={() => handleDrop( p.id )}
-              style={{opacity: dragId === p.id ? 0.4 : 1}}
-            >
-              <CalculatorPanel
-                spec={p}
-                contours={contours}
-                substrateProducts={substrateProducts}
-                onChange={updatePanel}
-                onRemove={removePanel}
-                onResolvedChange={handleResolvedChange}
-                canRemove={1 < panels.length}
-                dragHandleProps={{
-                  draggable: true,
-                  onDragStart: () => setDragId( p.id ),
-                  onDragEnd: () => setDragId( null ),
-                }}
-                settingsBroadcast={settingsBroadcast}
-                onBroadcastSettings={handleBroadcastSettings}
-              />
+        {!mirror ? (
+          <Typography>Loading...</Typography>
+        ) : (
+          <Stack direction={{xs: 'column', lg: 'row'}} gap={6}>
+            <div>
+              <MirrorPanel mirror={mirror} settings={settings} onSettingsChange={setSettings} imageRef={imageRef} size={MAIN_PREVIEW_SIZE} />
+              {pinned && (
+                <Chip
+                  className='mbs-2'
+                  size='small'
+                  color='primary'
+                  variant='outlined'
+                  icon={<i className='ri-pushpin-2-fill' />}
+                  label='Settings pinned - unaffected by lightbox selection'
+                />
+              )}
             </div>
-          ) )}
-        </div>
+            <Stack flex={1} minWidth={0} gap={6}>
+              <ParamsPanel substrateInfo={substrateInfo} setSubstrateInfo={setSubstrateInfo} contours={contours} />
+              <Divider />
+              <StatsSummary mirror={mirror} />
+            </Stack>
+          </Stack>
+        )}
 
         <Divider />
 
-        <ComparisonTable panels={resolvedPanels} />
+        <div>
+          <Typography variant='subtitle1' className='mbe-2'>Lightbox</Typography>
+          <LightboxStrip
+            gallery={gallery}
+            contours={contours}
+            substrateProducts={substrateProducts}
+            selectedId={selectedId}
+            onSelect={loadEntry}
+            onRemove={removeFromLightbox}
+            onReorder={reorderGallery}
+          />
+        </div>
       </CardContent>
+
+      <SaveAsProductDialog open={saveOpen} onClose={() => setSaveOpen( false )} substrateInfo={substrateInfo} />
     </Card>
   )
 }

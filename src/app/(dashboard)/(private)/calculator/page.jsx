@@ -1,22 +1,24 @@
 import { readContours } from '@/db/actions/contour'
 import { readSubstrateProducts } from '@/db/actions/product'
 
-import { decodePanelsParam } from './urlCodec'
+import { decodeInitialState } from './urlCodec'
 import MirrorCalculator from './MirrorCalculator'
 
-// Entry points: /calculator (one blank panel), /calculator?productId=N
-// (legacy single-panel link, e.g. from a product's "Open in Calculator"
-// button), and /calculator?panels=... (one or more panels, each carrying
-// its own productId:width:height:border - see urlCodec.js). None of these
-// edit a tied product in place - the calculator is exploratory local
-// state; the only persistence action is each panel's "Save as New
-// Product", which forks its current values into a brand new Product.
+// Entry points: /calculator (blank working panel), /calculator?current=...
+// &gallery=...&pinned=1 (the full working-panel + lightbox state - see
+// urlCodec.js), and two older links still honored for compatibility: the
+// single-panel /calculator?productId=N (e.g. a product's "Open in
+// Calculator" button) and the short-lived multi-panel /calculator?panels=.
+// None of these edit a tied product in place - the calculator is
+// exploratory local state; the only persistence action is "Save as New
+// Product" (in the working panel's ⋮ menu), which forks the current
+// values into a brand new Product.
 //
 // substrateProducts already carries every substrate product's full
 // SubstrateInfo (dimensions + outside/inside/rabbet contours), so no
 // separate per-product fetch is needed here - MirrorCalculator resolves
-// each panel's productId against this same list, both for the initial
-// load and for later in-session product switches.
+// the working panel's (and each lightbox entry's) productId against this
+// same list.
 export default async function CalculatorPage( {searchParams} )
 {
   const params = await searchParams
@@ -26,19 +28,19 @@ export default async function CalculatorPage( {searchParams} )
     readSubstrateProducts(),
   ])
 
-  const initialPanels = decodePanelsParam( params?.panels, params?.productId )
+  const initialState = decodeInitialState( params )
 
   return (
     // Keyed on the raw params so a genuinely different link (a fresh
-    // ?panels=... or ?productId=... from elsewhere, or browser back/
-    // forward) remounts the board with fresh state. In-session edits sync
-    // the URL via window.history.replaceState directly (see
-    // MirrorCalculator), which never triggers Next's router/this page
-    // re-rendering - only real navigations change `params`, so this key
-    // doesn't cause remounts from the board's own updates.
+    // ?current=...&gallery=..., or one of the legacy links, or browser
+    // back/forward) remounts with fresh state. In-session edits sync the
+    // URL via window.history.replaceState directly (see MirrorCalculator),
+    // which never triggers Next's router/this page re-rendering - only
+    // real navigations change `params`, so this key doesn't cause remounts
+    // from the calculator's own updates.
     <MirrorCalculator
-      key={params?.panels ?? params?.productId ?? 'blank'}
-      initialPanels={initialPanels}
+      key={params?.current ?? params?.gallery ?? params?.productId ?? params?.panels ?? 'blank'}
+      initialState={initialState}
       contours={contours}
       substrateProducts={substrateProducts}
     />

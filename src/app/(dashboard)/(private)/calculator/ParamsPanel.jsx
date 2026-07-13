@@ -48,9 +48,9 @@ function toDisplayBorder( border, isPercent )
   return isPercent ? 100 * border : border
 }
 
-// Dimensions-only form (width/height/border) for one panel. Which product
-// (and therefore which outside/inside/rabbet contours) is loaded is
-// controlled by the caller (CalculatorPanel) - this component only cares
+// Dimensions-only form (width/height/border) for the working panel. Which
+// product (and therefore which outside/inside/rabbet contours) is loaded
+// is controlled by the caller (MirrorCalculator) - this component only cares
 // about the resulting shapeType (for aspect-ratio locking) and whether an
 // inside contour is present (for the percent-vs-inches border switch).
 export default function ParamsPanel( {substrateInfo, setSubstrateInfo, contours} )
@@ -72,7 +72,7 @@ export default function ParamsPanel( {substrateInfo, setSubstrateInfo, contours}
 
   // Width/height/border are echoed from local state while typing, and only
   // pushed up to substrateInfo (which triggers a live geometry recompute -
-  // see CalculatorPanel) on blur. Committing on every keystroke let
+  // see MirrorCalculator) on blur. Committing on every keystroke let
   // transient/invalid intermediate values (an empty field, a width smaller
   // than the current border, a momentarily out-of-sync width/height pair
   // for aspect-locked shapes) reach the geometry engine and produce
