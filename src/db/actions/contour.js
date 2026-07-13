@@ -13,8 +13,15 @@ export async function createContour( data )
   if( !session )
     throw new Error( 'Unauthorized', {cause: 401} )
 
+  if( !data.svgData && !data.shapeType )
+    throw new Error( 'A basic shape (no path data) requires a shape type', {cause: 400} )
+
   await sequelize.sync()
-  const contour = await Contour.create( {name: data.name, svgData: data.svgData || null} )
+  const contour = await Contour.create({
+    name: data.name,
+    svgData: data.svgData || null,
+    shapeType: data.svgData ? null : data.shapeType,
+  })
   return contour.toJSON()
 }
 
@@ -56,7 +63,14 @@ export async function updateContour( data )
   if( !contour )
     throw new Error( 'Contour not found', {cause: 404} )
 
-  await contour.update( {name: data.name, svgData: data.svgData || null} )
+  if( !data.svgData && !data.shapeType )
+    throw new Error( 'A basic shape (no path data) requires a shape type', {cause: 400} )
+
+  await contour.update({
+    name: data.name,
+    svgData: data.svgData || null,
+    shapeType: data.svgData ? null : data.shapeType,
+  })
   return contour.toJSON()
 }
 

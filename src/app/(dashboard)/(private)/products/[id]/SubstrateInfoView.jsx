@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import Grid from '@mui/material/Grid2'
+import Button from '@mui/material/Button'
 import Typography from '@mui/material/Typography'
 import { build } from '@/libs/mirror'
 
@@ -13,7 +14,7 @@ function Field( {label, value} )
   )
 }
 
-export default function SubstrateInfoView( {substrateInfo} )
+export default function SubstrateInfoView( {productId, substrateInfo} )
 {
   // Computed for a future rendered preview of the assembled shape; not
   // displayed yet, kept as-is from before this restyle.
@@ -21,7 +22,7 @@ export default function SubstrateInfoView( {substrateInfo} )
     substrateInfo.width,
     substrateInfo.height,
     substrateInfo.border,
-    substrateInfo.outsideId,
+    substrateInfo.outside.shapeType,
     substrateInfo.outside.svgData,
     substrateInfo.inside?.svgData,
     substrateInfo.rabbet?.svgData,
@@ -35,6 +36,16 @@ export default function SubstrateInfoView( {substrateInfo} )
       <Field label='Dimensions' value={`${substrateInfo.width}" x ${substrateInfo.height}"`} />
       <Field label='Thickness' value={`${substrateInfo.thickness}"`} />
       <Field label='Border' value={substrateInfo.border} />
+      <Grid size={{ xs: 12 }}>
+        <Button
+          variant='outlined'
+          component={Link}
+          href={`/calculator?productId=${productId}`}
+          startIcon={<i className='ri-ruler-2-line' />}
+        >
+          Open in Calculator
+        </Button>
+      </Grid>
     </Grid>
   )
 }

@@ -3,12 +3,18 @@
 import { redirect } from 'next/navigation'
 import { z } from 'zod'
 
+import { useState } from 'react'
+
 import Grid from '@mui/material/Grid2'
 import Card from '@mui/material/Card'
 import CardHeader from '@mui/material/CardHeader'
 import CardContent from '@mui/material/CardContent'
 import Button from '@mui/material/Button'
 import Alert from '@mui/material/Alert'
+import FormControl from '@mui/material/FormControl'
+import InputLabel from '@mui/material/InputLabel'
+import MenuItem from '@mui/material/MenuItem'
+import Select from '@mui/material/Select'
 import TextField from '@mui/material/TextField'
 import Typography from '@mui/material/Typography'
 import NextLink from 'next/link'
@@ -18,15 +24,29 @@ import { createContour, updateContour } from '@/db/actions/contour'
 
 const optionalString = z.preprocess( (val) => (val === '' || val == null ? undefined : val), z.string().optional() )
 
+// Same 7 primitives buildFromType() (@/libs/mirror) knows how to draw -
+// only meaningful (and required) when svgData is blank.
+const SHAPE_TYPES = ['chapel arch', 'circle', 'gothic arch', 'oval', 'rectangle', 'square', 'vesica picscis']
+
 const schema = z.object({
   id: z.preprocess( (val) => (val === '' || val == null ? undefined : val), z.coerce.number().optional() ),
   name: z.string().min( 1 ),
   svgData: optionalString,
+  shapeType: z.preprocess( (val) => (val === '' || val == null ? undefined : val), z.enum( SHAPE_TYPES ).optional() ),
+}).refine( data => Boolean( data.svgData ) || Boolean( data.shapeType ), {
+  message: 'A basic shape (no path data) requires a shape type',
+  path: ['shapeType'],
 })
+
+function shapeTypeLabel( shapeType )
+{
+  return shapeType.replace( /\b\w/g, c => c.toUpperCase() )
+}
 
 export default function ContourForm( {initialData={}} )
 {
   const isEdit = Boolean( initialData?.id )
+  const [hasSvgData, setHasSvgData] = useState( Boolean( initialData?.svgData ) )
   const { handleSubmit, loading, errors, success } = useFormSubmit({
     schema,
     onSubmit: isEdit ? updateContour : createContour
@@ -94,8 +114,23 @@ export default function ContourForm( {initialData={}} )
                 label='SVG Path Data (optional)'
                 name='svgData'
                 defaultValue={initialData?.svgData || ''}
+                onChange={e => setHasSvgData( Boolean( e.target.value.trim() ) )}
                 helperText='Leave blank to make this a fundamental/basic shape instead of a custom contour.'
               />
+              <FormControl fullWidth disabled={hasSvgData} required={!hasSvgData}>
+                <InputLabel id='shapeType'>Shape Type</InputLabel>
+                <Select
+                  labelId='shapeType'
+                  label='Shape Type'
+                  name='shapeType'
+                  defaultValue={initialData?.shapeType || ''}
+                >
+                  <MenuItem value=''>—</MenuItem>
+                  {SHAPE_TYPES.map( shapeType => (
+                    <MenuItem key={shapeType} value={shapeType}>{shapeTypeLabel( shapeType )}</MenuItem>
+                  ) )}
+                </Select>
+              </FormControl>
             </CardContent>
           </Card>
         </Grid>

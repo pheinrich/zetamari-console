@@ -39,7 +39,11 @@ export function buildFromSVGData( data )
   return new GeometryFactory().createPolygon( coords )
 }
 
-export function buildFromType( type, width, height )
+// `shapeType` is a Contour.shapeType value ('circle', 'oval', etc - see
+// src/db/models/Contour.js) rather than the numeric codes this used
+// before shapeType existed; those only ever "worked" by coincidence of
+// contour insertion order.
+export function buildFromType( shapeType, width, height )
 {
   let coords, geometry
   let gf = new GeometryFactory()
@@ -50,10 +54,9 @@ export function buildFromType( type, width, height )
   gsf.setNumPoints( 100 )
   gsf.setBase( new Coordinate( 0, 0 ) )
 
-  switch( type )
+  switch( shapeType )
   {
-    case 1:
-      // Chapel Arch
+    case 'chapel arch':
       gsf.setSize( width )
       coords = gsf.createArc( Math.PI, Math.PI ).getCoordinates()
 
@@ -63,14 +66,12 @@ export function buildFromType( type, width, height )
       geometry = gf.createPolygon( coords )
       break
 
-    case 2:
-      // Circle
+    case 'circle':
       gsf.setHeight( width )
       geometry = gsf.createCircle()
       break
 
-    case 3:
-      // Gothic Arch
+    case 'gothic arch':
       gsf.setSize( 2*width )
       gsf.setBase( new Coordinate( 0, -width * GA_ADJ ) )
       coords = gsf.createArc( Math.PI, Math.PI/3 ).getCoordinates()
@@ -84,20 +85,17 @@ export function buildFromType( type, width, height )
       geometry = gf.createPolygon( coords )
       break
 
-    case 4:
-      // Oval
+    case 'oval':
       geometry = gsf.createEllipse()
       break
 
-    case 6:
+    case 'square':
       gsf.setHeight( width )
-    case 5:
-      // Rectangle & Square
+    case 'rectangle':
       geometry = gsf.createRectangle()
       break
 
-    case 7:
-      // Vesica Piscis
+    case 'vesica picscis':
       gsf.setSize( 2*width )
       gsf.setBase( new Coordinate( 0, -width * GA_ADJ ) )
       coords = gsf.createArc( 2*Math.PI/3, 2*Math.PI/3 ).getCoordinates()
@@ -269,13 +267,13 @@ function getCorners( geometry, offset, maxAngle )
   return result
 }
 
-export function build( width, height, border, shapeId, outsideSVG, insideSVG, rabbetSVG )
+export function build( width, height, border, shapeType, outsideSVG, insideSVG, rabbetSVG )
 {
   let op, ip, rp, gp
   let outsideDims, insideDims
 
   if( !outsideSVG )
-    op = buildFromType( shapeId, width, height )
+    op = buildFromType( shapeType, width, height )
   else
     op = buildFromSVGData( outsideSVG )
   outsideDims = getDims( op )
