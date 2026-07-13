@@ -37,6 +37,50 @@ export default function MirrorCalculator( {initialPanels, contours, substratePro
     setResolved( prev => ({...prev, [id]: data}) )
   }, [] )
 
+  // {sourceId, settings} - a new object every time a panel's "Apply to
+  // All" is clicked, handed down to every panel. Each CalculatorPanel
+  // adopts it unless it's the source (see its own effect). Not part of
+  // panels/the URL - view settings are a per-viewer preference, not
+  // shape data.
+  const [settingsBroadcast, setSettingsBroadcast] = useState( null )
+
+  const handleBroadcastSettings = useCallback( (sourceId, settings) => {
+    setSettingsBroadcast( {sourceId, settings} )
+  }, [] )
+
+  // Native HTML5 drag-and-drop reordering - no extra dependency needed.
+  // Each panel's card carries a small drag handle (see CalculatorPanel's
+  // dragHandleProps); the wrapping div here is the drop target for
+  // whichever panel is currently being dragged. Reordering the `panels`
+  // array is all that's needed for the new order to persist to the URL
+  // too, since the sync effect below just re-encodes panels in whatever
+  // order they're currently in.
+  const [dragId, setDragId] = useState( null )
+
+  function handleDragOver( evt )
+  {
+    evt.preventDefault()
+  }
+
+  function handleDrop( overId )
+  {
+    setPanels( prev => {
+      if( !dragId || dragId === overId )
+        return prev
+
+      const from = prev.findIndex( p => p.id === dragId )
+      const to = prev.findIndex( p => p.id === overId )
+      if( -1 === from || -1 === to )
+        return prev
+
+      const next = [...prev]
+      const [moved] = next.splice( from, 1 )
+      next.splice( to, 0, moved )
+      return next
+    })
+    setDragId( null )
+  }
+
   function addPanel()
   {
     const id = `panel-${nextIdRef.current}`
@@ -111,16 +155,29 @@ export default function MirrorCalculator( {initialPanels, contours, substratePro
       <CardContent className='flex flex-col gap-6'>
         <div className='flex flex-wrap items-start gap-6'>
           {panels.map( p => (
-            <CalculatorPanel
+            <div
               key={p.id}
-              spec={p}
-              contours={contours}
-              substrateProducts={substrateProducts}
-              onChange={updatePanel}
-              onRemove={removePanel}
-              onResolvedChange={handleResolvedChange}
-              canRemove={1 < panels.length}
-            />
+              onDragOver={handleDragOver}
+              onDrop={() => handleDrop( p.id )}
+              style={{opacity: dragId === p.id ? 0.4 : 1}}
+            >
+              <CalculatorPanel
+                spec={p}
+                contours={contours}
+                substrateProducts={substrateProducts}
+                onChange={updatePanel}
+                onRemove={removePanel}
+                onResolvedChange={handleResolvedChange}
+                canRemove={1 < panels.length}
+                dragHandleProps={{
+                  draggable: true,
+                  onDragStart: () => setDragId( p.id ),
+                  onDragEnd: () => setDragId( null ),
+                }}
+                settingsBroadcast={settingsBroadcast}
+                onBroadcastSettings={handleBroadcastSettings}
+              />
+            </div>
           ) )}
         </div>
 
