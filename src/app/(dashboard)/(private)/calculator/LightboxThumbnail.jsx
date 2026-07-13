@@ -5,10 +5,8 @@ import { useMemo, useState } from 'react'
 import IconButton from '@mui/material/IconButton'
 import Tooltip from '@mui/material/Tooltip'
 
-import { build } from '@/libs/mirror'
-
 import MirrorView from './MirrorView'
-import { resolveSubstrateInfo } from './resolveSubstrateInfo'
+import { resolveEntryMirror } from './resolveEntryMirror'
 
 export const THUMBNAIL_SIZE = 110
 
@@ -26,39 +24,10 @@ export default function LightboxThumbnail( {entry, contours, substrateProducts, 
 {
   const [hovering, setHovering] = useState( false )
 
-  const product = substrateProducts.find( p => p.id === entry.productId ) ?? null
-  const substrateInfo = useMemo(
-    () => resolveSubstrateInfo( {width: entry.width, height: entry.height, border: entry.border}, product, contours ),
-    [entry, product, contours]
+  const mirror = useMemo(
+    () => resolveEntryMirror( entry, contours, substrateProducts ),
+    [entry, contours, substrateProducts]
   )
-
-  const outsideContour = contours.find( c => c.id === substrateInfo.outsideId )
-  const insideContour = contours.find( c => c.id === substrateInfo.insideId )
-  const rabbetContour = contours.find( c => c.id === substrateInfo.rabbetId )
-
-  const mirror = useMemo( () => {
-    if( !outsideContour || (!outsideContour.svgData && !outsideContour.shapeType) )
-      return undefined
-    if( !substrateInfo.width || !substrateInfo.height )
-      return undefined
-
-    try
-    {
-      return build(
-        Number( substrateInfo.width ),
-        Number( substrateInfo.height ),
-        Number( substrateInfo.border ) || 0,
-        outsideContour.shapeType,
-        outsideContour.svgData,
-        insideContour?.svgData,
-        rabbetContour?.svgData,
-      )
-    }
-    catch( err )
-    {
-      return undefined
-    }
-  }, [substrateInfo, outsideContour, insideContour, rabbetContour] )
 
   // Dimension callouts are unreadable clutter at thumbnail size, so they're
   // always suppressed here regardless of what the entry itself captured -
