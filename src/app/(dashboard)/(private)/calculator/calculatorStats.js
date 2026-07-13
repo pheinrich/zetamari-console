@@ -1,5 +1,5 @@
 // Area/weight/retail-cost formulas, extracted from the old CollapseArea/
-// CollapseWeight/CollapseCost so ComparisonTable (and anything else that
+// CollapseWeight/CollapseCost so StatsSummary (and anything else that
 // wants these numbers) has one shared implementation instead of duplicating
 // the constants and math per component. Values are returned in their raw
 // unit (in^2 for area, lb for weight, $ for cost) - formatting/unit
