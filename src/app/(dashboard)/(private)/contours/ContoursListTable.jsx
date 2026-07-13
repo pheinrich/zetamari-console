@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState, useTransition } from 'react'
+import { useMemo, useTransition } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { toast } from 'react-toastify'
@@ -35,7 +35,15 @@ import {
 
 import ContourThumbnail from './ContourThumbnail'
 import { deleteContour } from '@/db/actions/contour'
+import { useTableViewState } from '@/hooks/useTableViewState'
 import tableStyles from '@core/styles/table.module.css'
+
+const DEFAULT_VIEW = {
+  sorting: [],
+  pagination: {pageIndex: 0, pageSize: 10},
+  globalFilter: '',
+  filters: {kind: ''},
+}
 
 const fuzzyFilter = (row, columnId, value, addMeta) => {
   const itemRank = rankItem( row.getValue( columnId ), value )
@@ -49,8 +57,8 @@ export default function ContoursListTable( {contourData} )
 {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
-  const [kind, setKind] = useState( '' )
-  const [globalFilter, setGlobalFilter] = useState( '' )
+  const { view, updateView, onSortingChange, onPaginationChange } = useTableViewState( 'contours', DEFAULT_VIEW )
+  const kind = view.filters.kind
 
   const filteredData = useMemo( () => contourData.filter( c => {
     if( kind === 'basic' && c.svgData ) return false
@@ -126,10 +134,11 @@ export default function ContoursListTable( {contourData} )
     data: filteredData,
     columns,
     filterFns: { fuzzy: fuzzyFilter },
-    state: { globalFilter },
-    initialState: { pagination: {pageSize: 10} },
+    state: { sorting: view.sorting, pagination: view.pagination, globalFilter: view.globalFilter },
     globalFilterFn: fuzzyFilter,
-    onGlobalFilterChange: setGlobalFilter,
+    onSortingChange,
+    onPaginationChange,
+    onGlobalFilterChange: value => updateView( {globalFilter: value} ),
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     getSortedRowModel: getSortedRowModel(),
@@ -144,7 +153,7 @@ export default function ContoursListTable( {contourData} )
           <Grid size={{ xs: 12, sm: 4 }}>
             <FormControl fullWidth>
               <InputLabel id='kind-select'>Type</InputLabel>
-              <Select labelId='kind-select' label='Type' value={kind} onChange={e => setKind( e.target.value )}>
+              <Select labelId='kind-select' label='Type' value={kind} onChange={e => updateView( {filters: {...view.filters, kind: e.target.value}} )}>
                 <MenuItem value=''>All</MenuItem>
                 <MenuItem value='basic'>Basic Shape</MenuItem>
                 <MenuItem value='custom'>Custom</MenuItem>
@@ -157,8 +166,8 @@ export default function ContoursListTable( {contourData} )
       <div className='flex justify-between flex-col items-start sm:flex-row sm:items-center gap-y-4 p-5'>
         <TextField
           size='small'
-          value={globalFilter ?? ''}
-          onChange={e => setGlobalFilter( e.target.value )}
+          value={view.globalFilter ?? ''}
+          onChange={e => updateView( {globalFilter: e.target.value} )}
           placeholder='Search Contours'
           className='max-sm:is-full'
         />

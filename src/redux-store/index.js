@@ -10,19 +10,21 @@ import calendarReducer from '@/redux-store/slices/calendar'
 import kanbanReducer from '@/redux-store/slices/kanban'
 import emailReducer from '@/redux-store/slices/email'
 import calculatorReducer from '@/redux-store/slices/calculator'
+import tableViewReducer from '@/redux-store/slices/tableView'
 
 const rootReducer = combineReducers({
 /*  chatReducer,
   calendarReducer,
   kanbanReducer,
   emailReducer,
-*/  calculatorReducer  
+*/  calculatorReducer,
+  tableViewReducer
 })
 
 const persistConfig = {
   key: 'root',
   storage: storageSession,
-  whitelist: ['calculatorReducer'],
+  whitelist: ['calculatorReducer', 'tableViewReducer'],
 }
 const persistedReducer = persistReducer( persistConfig, rootReducer )
 

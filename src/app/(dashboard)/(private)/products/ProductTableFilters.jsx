@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 
 import Grid from '@mui/material/Grid2'
 import CardContent from '@mui/material/CardContent'
@@ -11,11 +11,13 @@ import Select from '@mui/material/Select'
 
 import { PRODUCT_TYPE_META } from './ProductTypeMeta'
 
-export default function ProductTableFilters( {productData, setData} )
+// Controlled by the caller (filters + onFiltersChange) rather than owning
+// its own state, so the selected values can be persisted (see
+// ProductListTable's useTableViewState) instead of resetting whenever
+// this component remounts.
+export default function ProductTableFilters( {productData, setData, filters, onFiltersChange} )
 {
-  const [type, setType] = useState( '' )
-  const [sellable, setSellable] = useState( '' )
-  const [status, setStatus] = useState( '' )
+  const { type, sellable, status } = filters
 
   useEffect( () => {
     const filtered = productData?.filter( product => {
@@ -43,7 +45,7 @@ export default function ProductTableFilters( {productData, setData} )
               id='select-type'
               label='Type'
               value={type}
-              onChange={e => setType( e.target.value )}
+              onChange={e => onFiltersChange( {...filters, type: e.target.value} )}
               labelId='type-select'
             >
               <MenuItem value=''>All Types</MenuItem>
@@ -61,7 +63,7 @@ export default function ProductTableFilters( {productData, setData} )
               fullWidth
               id='select-sellable'
               value={sellable}
-              onChange={e => setSellable( e.target.value )}
+              onChange={e => onFiltersChange( {...filters, sellable: e.target.value} )}
               label='Sellable'
               labelId='sellable-select'
             >
@@ -78,7 +80,7 @@ export default function ProductTableFilters( {productData, setData} )
               fullWidth
               id='select-status'
               value={status}
-              onChange={e => setStatus( e.target.value )}
+              onChange={e => onFiltersChange( {...filters, status: e.target.value} )}
               label='Status'
               labelId='status-select'
             >

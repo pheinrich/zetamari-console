@@ -32,10 +32,18 @@ import ProductTableFilters from './ProductTableFilters'
 import { productTypeMeta } from './ProductTypeMeta'
 import { formatCurrency } from './productFormat'
 import { deleteProduct, toggleProductSellable } from '@/db/actions/product'
+import { useTableViewState } from '@/hooks/useTableViewState'
 import CustomAvatar from '@core/components/mui/Avatar'
 import OptionMenu from '@core/components/option-menu'
 
 import tableStyles from '@core/styles/table.module.css'
+
+const DEFAULT_VIEW = {
+  sorting: [],
+  pagination: {pageIndex: 0, pageSize: 10},
+  globalFilter: '',
+  filters: {type: '', sellable: '', status: ''},
+}
 
 const fuzzyFilter = (row, columnId, value, addMeta) => {
   const itemRank = rankItem( row.getValue( columnId ), value )
@@ -64,7 +72,7 @@ export default function ProductListTable( {productData} )
   const [isPending, startTransition] = useTransition()
   const [data, setData] = useState( productData )
   const [filteredData, setFilteredData] = useState( productData )
-  const [globalFilter, setGlobalFilter] = useState( '' )
+  const { view, updateView, onSortingChange, onPaginationChange } = useTableViewState( 'products', DEFAULT_VIEW )
 
   useEffect( () => { setData( productData ) }, [productData] )
 
@@ -216,10 +224,11 @@ export default function ProductListTable( {productData} )
     data: filteredData,
     columns,
     filterFns: { fuzzy: fuzzyFilter },
-    state: { globalFilter },
-    initialState: { pagination: {pageSize: 10} },
+    state: { sorting: view.sorting, pagination: view.pagination, globalFilter: view.globalFilter },
     globalFilterFn: fuzzyFilter,
-    onGlobalFilterChange: setGlobalFilter,
+    onSortingChange,
+    onPaginationChange,
+    onGlobalFilterChange: value => updateView( {globalFilter: value} ),
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     getSortedRowModel: getSortedRowModel(),
@@ -229,12 +238,17 @@ export default function ProductListTable( {productData} )
   return (
     <Card>
       <CardHeader title='Filters' className='pbe-4' />
-      <ProductTableFilters productData={data} setData={setFilteredData} />
+      <ProductTableFilters
+        productData={data}
+        setData={setFilteredData}
+        filters={view.filters}
+        onFiltersChange={filters => updateView( {filters} )}
+      />
       <Divider />
       <div className='flex justify-between flex-col items-start sm:flex-row sm:items-center gap-y-4 p-5'>
         <DebouncedInput
-          value={globalFilter ?? ''}
-          onChange={value => setGlobalFilter( String( value ) )}
+          value={view.globalFilter ?? ''}
+          onChange={value => updateView( {globalFilter: String( value )} )}
           placeholder='Search Products'
           className='max-sm:is-full'
         />

@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState, useTransition } from 'react'
+import { useMemo, useTransition } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { toast } from 'react-toastify'
@@ -28,8 +28,15 @@ import {
 } from '@tanstack/react-table'
 
 import { deleteSupplier } from '@/db/actions/supplier'
+import { useTableViewState } from '@/hooks/useTableViewState'
 import CustomAvatar from '@core/components/mui/Avatar'
 import tableStyles from '@core/styles/table.module.css'
+
+const DEFAULT_VIEW = {
+  sorting: [],
+  pagination: {pageIndex: 0, pageSize: 10},
+  globalFilter: '',
+}
 
 const fuzzyFilter = (row, columnId, value, addMeta) => {
   const itemRank = rankItem( row.getValue( columnId ), value )
@@ -43,7 +50,7 @@ export default function SuppliersListTable( {supplierData} )
 {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
-  const [globalFilter, setGlobalFilter] = useState( '' )
+  const { view, updateView, onSortingChange, onPaginationChange } = useTableViewState( 'suppliers', DEFAULT_VIEW )
 
   function handleDelete( supplier )
   {
@@ -121,10 +128,11 @@ export default function SuppliersListTable( {supplierData} )
     data: supplierData,
     columns,
     filterFns: { fuzzy: fuzzyFilter },
-    state: { globalFilter },
-    initialState: { pagination: {pageSize: 10} },
+    state: { sorting: view.sorting, pagination: view.pagination, globalFilter: view.globalFilter },
     globalFilterFn: fuzzyFilter,
-    onGlobalFilterChange: setGlobalFilter,
+    onSortingChange,
+    onPaginationChange,
+    onGlobalFilterChange: value => updateView( {globalFilter: value} ),
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     getSortedRowModel: getSortedRowModel(),
@@ -138,8 +146,8 @@ export default function SuppliersListTable( {supplierData} )
       <div className='flex justify-between flex-col items-start sm:flex-row sm:items-center gap-y-4 p-5'>
         <TextField
           size='small'
-          value={globalFilter ?? ''}
-          onChange={e => setGlobalFilter( e.target.value )}
+          value={view.globalFilter ?? ''}
+          onChange={e => updateView( {globalFilter: e.target.value} )}
           placeholder='Search Suppliers'
           className='max-sm:is-full'
         />
