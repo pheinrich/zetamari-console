@@ -90,6 +90,21 @@ const HorizontalMenu = ({}) => {
           </MenuItem>
         </SubMenu>
 
+        <SubMenu label='inventory' icon={<i className='ri-shapes-line' />}>
+          <MenuItem href='/products' icon={<i className='ri-shapes-line' />}>
+            products
+          </MenuItem>
+          <MenuItem href='/contours' icon={<i className='ri-shape-2-line' />}>
+            contours
+          </MenuItem>
+          <MenuItem href='/suppliers' icon={<i className='ri-truck-line' />}>
+            suppliers
+          </MenuItem>
+          <MenuItem href='/users' icon={<i className='ri-team-line' />}>
+            users
+          </MenuItem>
+        </SubMenu>
+
         <SubMenu label='apps' icon={<i className='ri-mail-open-line' />}>
           <SubMenu label='eCommerce' icon={<i className='ri-shopping-bag-3-line' />}>
             <MenuItem href='/apps/ecommerce/dashboard'>dashboard</MenuItem>

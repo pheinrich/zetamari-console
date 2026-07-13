@@ -69,6 +69,20 @@ const VerticalMenu = ({ scrollMenu }) => {
           <MenuItem href='/dashboards/academy'>academy</MenuItem>
           <MenuItem href='/dashboards/logistics'>logistics</MenuItem>
         </SubMenu>
+        <MenuSection label='inventory'>
+          <MenuItem href='/products' icon={<i className='ri-shapes-line' />}>
+            products
+          </MenuItem>
+          <MenuItem href='/contours' icon={<i className='ri-shape-2-line' />}>
+            contours
+          </MenuItem>
+          <MenuItem href='/suppliers' icon={<i className='ri-truck-line' />}>
+            suppliers
+          </MenuItem>
+          <MenuItem href='/users' icon={<i className='ri-team-line' />}>
+            users
+          </MenuItem>
+        </MenuSection>
         <SubMenu label='frontPages' icon={<i className='ri-file-copy-line' />}>
           <MenuItem href='/front-pages/landing-page' target='_blank'>
             landing
