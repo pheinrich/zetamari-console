@@ -145,7 +145,6 @@ export default function ParamsPanel( {substrateInfo, setSubstrateInfo, contours}
           value={width}
           onChange={evt => setWidth( evt.target.value )}
           onBlur={handleWidthBlur}
-          disabled={'circle' === shapeType || 'square' === shapeType}
           InputProps={{endAdornment: <InputAdornment position='end'>in</InputAdornment>}}
         />
         <Typography alignSelf='center' variant='h5'>X</Typography>
@@ -155,7 +154,6 @@ export default function ParamsPanel( {substrateInfo, setSubstrateInfo, contours}
           value={height}
           onChange={evt => setHeight( evt.target.value )}
           onBlur={handleHeightBlur}
-          disabled={'circle' === shapeType || 'square' === shapeType}
           InputProps={{endAdornment: <InputAdornment position='end'>in</InputAdornment>}}
         />
         <Typography alignSelf='center' variant='h5'>/</Typography>
