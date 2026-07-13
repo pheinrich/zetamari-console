@@ -141,10 +141,10 @@ export default function CalculatorPanel( {spec, contours, substrateProducts, onC
       <CardHeader
         title={
           <FormControl fullWidth size='small'>
-            <InputLabel id={`panel-product-${spec.id}`}>Product</InputLabel>
+            <InputLabel id={`panel-product-${spec.id}`}>Prototype</InputLabel>
             <Select
               labelId={`panel-product-${spec.id}`}
-              label='Product'
+              label='Prototype'
               value={productId}
               onChange={e => handleProductChange( e.target.value )}
             >
