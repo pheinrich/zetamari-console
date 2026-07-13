@@ -30,13 +30,13 @@ export default async function CalculatorPage( {searchParams} )
 
   return (
     // Keyed on the tied product (or 'blank' when there isn't one) so
-    // switching products - e.g. via the "start from an existing substrate"
-    // select, which just does a router.push to a new ?productId= - remounts
-    // the calculator with fresh state instead of keeping whatever shape/
-    // dimensions were already loaded from the previous product. Without
-    // this, only props-driven bits (like the "Exploring X" banner) would
-    // update; the internal substrateInfo state, seeded once via useState,
-    // would stay stale until a full page reload.
+    // switching products - e.g. via ParamsPanel's "Load a Substrate
+    // Product" select, which just does a router.push to a new ?productId= -
+    // remounts the calculator with fresh state instead of keeping whatever
+    // shape/dimensions were already loaded from the previous product.
+    // Without this, only props-driven bits (like the "Exploring X" banner)
+    // would update; the internal substrateInfo state, seeded once via
+    // useState, would stay stale until a full page reload.
     <MirrorCalculator
       key={initialProduct?.id ?? 'blank'}
       initialProduct={initialProduct}

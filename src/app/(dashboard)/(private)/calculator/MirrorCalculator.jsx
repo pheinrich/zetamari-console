@@ -1,7 +1,6 @@
 'use client'
 
 import { useMemo, useState } from 'react'
-import { useRouter } from 'next/navigation'
 import NextLink from 'next/link'
 
 import Alert from '@mui/material/Alert'
@@ -10,10 +9,6 @@ import Button from '@mui/material/Button'
 import Card from '@mui/material/Card'
 import CardContent from '@mui/material/CardContent'
 import CardHeader from '@mui/material/CardHeader'
-import FormControl from '@mui/material/FormControl'
-import InputLabel from '@mui/material/InputLabel'
-import MenuItem from '@mui/material/MenuItem'
-import Select from '@mui/material/Select'
 import Stack from '@mui/material/Stack'
 import Tab from '@mui/material/Tab'
 import Tabs from '@mui/material/Tabs'
@@ -69,7 +64,6 @@ function defaultSubstrateInfo( contours )
 // sliders/edits dimensions, so that tradeoff is made deliberately here.
 export default function MirrorCalculator( {initialProduct, contours, substrateProducts} )
 {
-  const router = useRouter()
   const [tab, setTab] = useState( 0 )
   const [saveOpen, setSaveOpen] = useState( false )
   const [substrateInfo, setSubstrateInfo] = useState( () =>
@@ -146,22 +140,6 @@ export default function MirrorCalculator( {initialProduct, contours, substratePr
             </Alert>
           )}
 
-          {!initialProduct && 0 < substrateProducts.length && (
-            <FormControl style={{maxWidth: 350}}>
-              <InputLabel id='load-substrate'>Or start from an existing substrate</InputLabel>
-              <Select
-                labelId='load-substrate'
-                label='Or start from an existing substrate'
-                value=''
-                onChange={e => router.push( `/calculator?productId=${e.target.value}` )}
-              >
-                {substrateProducts.map( p => (
-                  <MenuItem key={p.id} value={p.id}>{p.name}</MenuItem>
-                ) )}
-              </Select>
-            </FormControl>
-          )}
-
           {!mirror ? (
             <Typography>Loading...</Typography>
           ) : (
@@ -175,7 +153,13 @@ export default function MirrorCalculator( {initialProduct, contours, substratePr
                 </Tabs>
 
                 <CalculatorTabPanel value={tab} index={0}>
-                  <ParamsPanel substrateInfo={substrateInfo} setSubstrateInfo={setSubstrateInfo} contours={contours} />
+                  <ParamsPanel
+                    substrateInfo={substrateInfo}
+                    setSubstrateInfo={setSubstrateInfo}
+                    contours={contours}
+                    substrateProducts={substrateProducts}
+                    initialProduct={initialProduct}
+                  />
                   <Card sx={{ mt: 8 }} variant='outlined'>
                     <CardContent>
                       <CollapseArea mirror={mirror} />

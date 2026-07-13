@@ -1,12 +1,12 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 
 import Box from '@mui/material/Box'
 import FormControl from '@mui/material/FormControl'
 import InputAdornment from '@mui/material/InputAdornment'
 import InputLabel from '@mui/material/InputLabel'
-import ListSubheader from '@mui/material/ListSubheader'
 import MenuItem from '@mui/material/MenuItem'
 import Select from '@mui/material/Select'
 import Stack from '@mui/material/Stack'
@@ -43,31 +43,9 @@ function shapeTypeLabel( shapeType )
   return shapeType.replace( /\b\w/g, c => c.toUpperCase() )
 }
 
-function ContourSelect( {label, value, onChange, contours, allowNone} )
+export default function ParamsPanel( {substrateInfo, setSubstrateInfo, contours, substrateProducts, initialProduct} )
 {
-  const basics = contours.filter( c => !c.svgData )
-  const customs = contours.filter( c => c.svgData )
-
-  return (
-    <FormControl fullWidth>
-      <InputLabel id={`contour-${label}`}>{label}</InputLabel>
-      <Select labelId={`contour-${label}`} label={label} value={value ?? ''} onChange={e => onChange( e.target.value )}>
-        {allowNone && <MenuItem value=''>None</MenuItem>}
-        {0 < basics.length && [
-          <ListSubheader key='basics-header'>Basic Shapes</ListSubheader>,
-          ...basics.map( c => <MenuItem key={c.id} value={c.id}>{c.name}</MenuItem> )
-        ]}
-        {0 < customs.length && [
-          <ListSubheader key='customs-header'>Custom Contours</ListSubheader>,
-          ...customs.map( c => <MenuItem key={c.id} value={c.id}>{c.name}</MenuItem> )
-        ]}
-      </Select>
-    </FormControl>
-  )
-}
-
-export default function ParamsPanel( {substrateInfo, setSubstrateInfo, contours} )
-{
+  const router = useRouter()
   const outsideContour = contours.find( c => c.id === substrateInfo.outsideId )
   const shapeType = outsideContour?.svgData ? undefined : outsideContour?.shapeType
 
@@ -117,25 +95,34 @@ export default function ParamsPanel( {substrateInfo, setSubstrateInfo, contours}
     setSubstrateInfo( {...substrateInfo, border: b} )
   }
 
-  function handleOutsideChange( outsideId )
+  // Picking a product here reuses the same ?productId= navigation as the
+  // blank calculator's entry point (see page.jsx), rather than copying its
+  // outside/inside/rabbet/width/height/border into local state by hand -
+  // that keeps this in one place and gets the same fresh-remount handling
+  // (see MirrorCalculator's key) instead of risking stale state.
+  function handleProductChange( productId )
   {
-    const contour = contours.find( c => c.id === outsideId )
-    const nextShapeType = contour?.svgData ? undefined : contour?.shapeType
-    const h = constrainedHeight( substrateInfo.width, nextShapeType )
-
-    setSubstrateInfo( {...substrateInfo, outsideId, height: h ?? substrateInfo.height} )
+    router.push( productId ? `/calculator?productId=${productId}` : '/calculator' )
   }
 
   return (
     <Stack spacing={6}>
       <Box>
-        <Typography variant='body2' color='text.secondary' className='mbe-2'>Shape</Typography>
-        <ContourSelect
-          label='Outside Contour'
-          value={substrateInfo.outsideId}
-          onChange={handleOutsideChange}
-          contours={contours}
-        />
+        <Typography variant='body2' color='text.secondary' className='mbe-2'>Product</Typography>
+        <FormControl fullWidth>
+          <InputLabel id='calc-product'>Load a Substrate Product</InputLabel>
+          <Select
+            labelId='calc-product'
+            label='Load a Substrate Product'
+            value={initialProduct?.id ?? ''}
+            onChange={e => handleProductChange( e.target.value )}
+          >
+            <MenuItem value=''>— None (blank shape) —</MenuItem>
+            {substrateProducts.map( p => (
+              <MenuItem key={p.id} value={p.id}>{p.name}</MenuItem>
+            ) )}
+          </Select>
+        </FormControl>
       </Box>
 
       <Stack direction='row' spacing={4} flexWrap='wrap'>
@@ -165,27 +152,6 @@ export default function ParamsPanel( {substrateInfo, setSubstrateInfo, contours}
           onBlur={handleBorderBlur}
           InputProps={{endAdornment: <InputAdornment position='end'>in</InputAdornment>}}
         />
-      </Stack>
-
-      <Stack direction='row' spacing={4} flexWrap='wrap'>
-        <Box flex={1} minWidth={220}>
-          <ContourSelect
-            label='Inside Contour'
-            value={substrateInfo.insideId}
-            onChange={insideId => setSubstrateInfo( {...substrateInfo, insideId: insideId || undefined} )}
-            contours={contours}
-            allowNone
-          />
-        </Box>
-        <Box flex={1} minWidth={220}>
-          <ContourSelect
-            label='Rabbet Contour'
-            value={substrateInfo.rabbetId}
-            onChange={rabbetId => setSubstrateInfo( {...substrateInfo, rabbetId: rabbetId || undefined} )}
-            contours={contours}
-            allowNone
-          />
-        </Box>
       </Stack>
 
       {shapeType && (
