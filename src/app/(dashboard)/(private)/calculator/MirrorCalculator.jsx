@@ -336,6 +336,20 @@ export default function MirrorCalculator( {initialState, contours, substrateProd
                 <ListItemText>Revert to Prototype Dimensions</ListItemText>
               </MenuItem>
               <Divider />
+              <MenuItem
+                component={NextLink}
+                href={{
+                  pathname: '/calculator/report',
+                  query: {current: encodeEntry( {productId, width: substrateInfo.width, height: substrateInfo.height, border: substrateInfo.border, settings} )},
+                }}
+                target='_blank'
+                rel='noopener noreferrer'
+                onClick={() => setMenuAnchor( null )}
+                disabled={!mirror}
+              >
+                <ListItemIcon><i className='ri-printer-line' /></ListItemIcon>
+                <ListItemText>Print Report</ListItemText>
+              </MenuItem>
               <MenuItem onClick={handleSaveAsProduct} disabled={!mirror}>
                 <ListItemIcon><i className='ri-save-line' /></ListItemIcon>
                 <ListItemText>Save as New Product</ListItemText>
@@ -375,13 +389,29 @@ export default function MirrorCalculator( {initialState, contours, substrateProd
         <div>
           <Stack direction='row' alignItems='center' justifyContent='space-between' className='mbe-2'>
             <Typography variant='subtitle1'>Lightbox</Typography>
-            <Tooltip title='Remove all lightbox entries'>
-              <span>
-                <IconButton size='small' onClick={clearLightbox} disabled={0 === gallery.length}>
-                  <i className='ri-delete-bin-line' />
-                </IconButton>
-              </span>
-            </Tooltip>
+            <Stack direction='row'>
+              <Tooltip title={0 === gallery.length ? 'Add prototypes to the lightbox first' : 'Print a report of the lightbox'}>
+                <span>
+                  <IconButton
+                    component={NextLink}
+                    href={{pathname: '/calculator/report/lightbox', query: {gallery: encodeEntryList( gallery )}}}
+                    target='_blank'
+                    rel='noopener noreferrer'
+                    size='small'
+                    disabled={0 === gallery.length}
+                  >
+                    <i className='ri-printer-line' />
+                  </IconButton>
+                </span>
+              </Tooltip>
+              <Tooltip title='Remove all lightbox entries'>
+                <span>
+                  <IconButton size='small' onClick={clearLightbox} disabled={0 === gallery.length}>
+                    <i className='ri-delete-bin-line' />
+                  </IconButton>
+                </span>
+              </Tooltip>
+            </Stack>
           </Stack>
           {1 < gallery.length && (
             <Typography variant='body2' color='text.secondary' className='mbe-2'>
