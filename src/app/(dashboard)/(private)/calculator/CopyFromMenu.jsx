@@ -24,6 +24,28 @@ function parseBaseVariant( name )
   return m ? {base: m[1], variant: m[2]} : null
 }
 
+// The "family" name used for a copied product's working-panel label -
+// the Base for a grouped shape ("Cora (Large)" -> "Cora"), or the shape's
+// own name unchanged if it doesn't follow the Base (Variant) convention
+// ("Circle", "Willow Leaf"). Computed straight from the shape name rather
+// than from menu/grouping state, so it comes out the same whether or not
+// a particular product's variant happened to get hoisted below.
+function familyNameFor( shapeName )
+{
+  return parseBaseVariant( shapeName )?.base ?? shapeName
+}
+
+// Products are identified by dimensions alone in this menu (the
+// shape/variant context is already established by the menu path to get
+// there) - falls back to the product's own name if dimensions are
+// somehow missing.
+function dimensionLabel( product )
+{
+  const w = product.substrateInfo?.width
+  const h = product.substrateInfo?.height
+  return (w && h) ? `${Number( w )}"x${Number( h )}"` : product.name
+}
+
 // One entry per distinct outside-contour shape (see Contour.js's `shape`
 // association / @/db/models/ShapeType), with every substrate product
 // that uses it.
@@ -48,7 +70,11 @@ function groupByShape( substrateProducts )
 }
 
 // Builds the top-level menu items: standalone shapes (type 'shape'), plus
-// nested groups (type 'group') for any Base shared by 2+ Variants.
+// nested groups (type 'group') for any Base shared by 2+ Variants. A
+// group's own children mix directly-pickable leaves (a variant with just
+// one product - no point clicking through an intermediary "Large ▶" that
+// only ever leads to one thing) with further-expandable variants (2+
+// products).
 function buildTopItems( shapeEntries )
 {
   const byBase = new Map()
@@ -70,14 +96,21 @@ function buildTopItems( shapeEntries )
 
   for( const [base, variants] of byBase )
   {
+    variants.sort( (a, b) => a.label.localeCompare( b.label ) )
+
     if( 1 === variants.length )
+    {
       items.push( {type: 'shape', label: variants[0].entry.name, entry: variants[0].entry} )
-    else
-      items.push( {
-        type: 'group',
-        label: base,
-        variants: variants.sort( (a, b) => a.label.localeCompare( b.label ) ),
-      } )
+      continue
+    }
+
+    const children = variants.map( v => (
+      1 === v.entry.products.length
+        ? {type: 'leaf', product: v.entry.products[0]}
+        : {type: 'variant', label: v.label, products: v.entry.products}
+    ) )
+
+    items.push( {type: 'group', label: base, children} )
   }
 
   return items
@@ -107,7 +140,9 @@ function splitSections( items )
 // after drifting from it - there's no ongoing live link to maintain.
 // Up to three click-through menu levels (top-level shape/group -> group's
 // variants -> products) rather than a hover flyout, to match the app's
-// other click-opened menus and work on touch.
+// other click-opened menus and work on touch. `onSelect(product, label)`
+// - the label is dimensions + family name (e.g. '30"x33" Leaf'), computed
+// here since the Base (Variant) parsing this depends on lives in this file.
 export default function CopyFromMenu( {substrateProducts, onSelect} )
 {
   const [anchorEl, setAnchorEl] = useState( null )
@@ -131,7 +166,8 @@ export default function CopyFromMenu( {substrateProducts, onSelect} )
 
   function pick( product )
   {
-    onSelect( product )
+    const shapeName = product.substrateInfo?.outside?.shape?.name || 'Shape'
+    onSelect( product, `${dimensionLabel( product )} ${familyNameFor( shapeName )}` )
     close()
   }
 
@@ -159,6 +195,25 @@ export default function CopyFromMenu( {substrateProducts, onSelect} )
     )
   }
 
+  function renderGroupChild( child )
+  {
+    if( 'leaf' === child.type )
+    {
+      return (
+        <MenuItem key={child.product.id} onClick={() => pick( child.product )}>
+          {dimensionLabel( child.product )}
+        </MenuItem>
+      )
+    }
+
+    return (
+      <MenuItem key={child.label} selected={openVariant?.label === child.label} onClick={evt => openSub( evt, child )}>
+        <ListItemText>{child.label}</ListItemText>
+        <i className='ri-arrow-right-s-line' />
+      </MenuItem>
+    )
+  }
+
   return (
     <>
       <Button
@@ -177,7 +232,7 @@ export default function CopyFromMenu( {substrateProducts, onSelect} )
         {otherItems.map( renderTopItem )}
       </Menu>
 
-      {/* Level 2: a standalone shape's products, or a group's size/flavor variants */}
+      {/* Level 2: a standalone shape's products, or a group's children (mixed leaves + expandable variants) */}
       <Menu
         anchorEl={midAnchorEl}
         open={Boolean( midAnchorEl )}
@@ -187,22 +242,13 @@ export default function CopyFromMenu( {substrateProducts, onSelect} )
       >
         {'shape' === openTop?.type && openTop.entry.products.map( product => (
           <MenuItem key={product.id} onClick={() => pick( product )}>
-            {product.name}
+            {dimensionLabel( product )}
           </MenuItem>
         ) )}
-        {'group' === openTop?.type && openTop.variants.map( variant => (
-          <MenuItem
-            key={variant.label}
-            selected={openVariant?.label === variant.label}
-            onClick={evt => openSub( evt, variant )}
-          >
-            <ListItemText>{variant.label}</ListItemText>
-            <i className='ri-arrow-right-s-line' />
-          </MenuItem>
-        ) )}
+        {'group' === openTop?.type && openTop.children.map( renderGroupChild )}
       </Menu>
 
-      {/* Level 3: a group's variant's products */}
+      {/* Level 3: a group's (multi-product) variant's products */}
       <Menu
         anchorEl={subAnchorEl}
         open={Boolean( subAnchorEl )}
@@ -210,9 +256,9 @@ export default function CopyFromMenu( {substrateProducts, onSelect} )
         anchorOrigin={{vertical: 'top', horizontal: 'right'}}
         transformOrigin={{vertical: 'top', horizontal: 'left'}}
       >
-        {openVariant?.entry.products.map( product => (
+        {openVariant?.products.map( product => (
           <MenuItem key={product.id} onClick={() => pick( product )}>
-            {product.name}
+            {dimensionLabel( product )}
           </MenuItem>
         ) )}
       </Menu>

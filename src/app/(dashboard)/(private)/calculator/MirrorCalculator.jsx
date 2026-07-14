@@ -229,12 +229,16 @@ export default function MirrorCalculator( {initialState, contours, substrateProd
   // the selected entry the same way any other working-panel edit does -
   // so re-picking the same product later is how you "revert" after
   // drifting from it, without keeping any ongoing live link to maintain.
-  function handleCopyFrom( product )
+  // `label` (dimensions + shape family, e.g. '30"x33" Leaf') is computed
+  // by CopyFromMenu itself, not derived from product.name here - the
+  // menu's Base (Variant) parsing that the family name depends on lives
+  // there.
+  function handleCopyFrom( product, label )
   {
     const next = resolveSubstrateInfo( {}, product, contours )
 
     setSubstrateInfoState( next )
-    setLabel( product.name )
+    setLabel( label )
     if( selectedId )
     {
       updateSelectedEntry( {
@@ -244,7 +248,7 @@ export default function MirrorCalculator( {initialState, contours, substrateProd
         width: next.width,
         height: next.height,
         border: next.border,
-        label: product.name,
+        label,
       } )
     }
   }
