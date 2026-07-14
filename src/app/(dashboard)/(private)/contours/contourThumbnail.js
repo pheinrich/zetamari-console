@@ -10,7 +10,7 @@ export function computeContourThumbnail( contour )
 {
   try
   {
-    const geometry = contour.svgData ? buildFromSVGData( contour.svgData ) : buildFromType( contour.shapeType, 20, 32.4 )
+    const geometry = contour.svgData ? buildFromSVGData( contour.svgData ) : buildFromType( contour.shape?.key, 20, 32.4 )
     const svgData = contour.svgData || getSVGData( geometry )
     const dims = getDims( geometry )
 

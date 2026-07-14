@@ -7,7 +7,7 @@ import { subdividePath } from '@/libs/kit'
 // the same geometry logic as before this restyle (unchanged).
 export default function ContourViewWithBead( {contour} )
 {
-  const geometry = contour.svgData ? buildFromSVGData( contour.svgData ) : buildFromType( contour.shapeType, 20, 32.4 )
+  const geometry = contour.svgData ? buildFromSVGData( contour.svgData ) : buildFromType( contour.shape?.key, 20, 32.4 )
   const svgData = subdividePath( geometry )
   const dims = getDims( geometry )
 

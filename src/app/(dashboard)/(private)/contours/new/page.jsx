@@ -1,6 +1,9 @@
 import ContourForm from '../ContourForm'
+import { readShapeTypes } from '@/db/actions/shapeType'
 
-export default function NewContourPage()
+export default async function NewContourPage()
 {
-  return <ContourForm />
+  const shapeTypes = await readShapeTypes()
+
+  return <ContourForm shapeTypes={shapeTypes} />
 }

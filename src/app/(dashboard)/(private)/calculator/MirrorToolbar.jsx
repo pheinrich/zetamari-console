@@ -18,36 +18,36 @@ export default function MirrorToolbar( {settings, onSettingsChange, imageRef} )
   return (
     <Stack direction='row' justifyContent='space-between' alignItems='center'>
       <Box>
-        <Tooltip title={settings.showGlass ? 'Hide Glass' : 'Show Glass'}>
-          <Checkbox
-            checked={settings.showGlass}
-            icon={<i className='ri-eye-off-line' />}
-            checkedIcon={<i className='ri-eye-line' />}
-            onChange={() => onSettingsChange( {...settings, showGlass: !settings.showGlass} )}
-          />
-        </Tooltip>
-        <Tooltip title={settings.showBack ? 'Show Front' : 'Show Back'}>
-          <Checkbox
-            checked={settings.showBack}
-            icon={<i className='ri-flip-horizontal-line' />}
-            checkedIcon={<i className='ri-flip-horizontal-2-line' />}
-            onChange={() => onSettingsChange( {...settings, showBack: !settings.showBack} )}
-          />
-        </Tooltip>
         <Tooltip title={(settings.showDims & 1) === 1 ? 'Hide Outside Dimensions' : 'Show Outside Dimensions'}>
           <Checkbox
             checked={(settings.showDims & 1) === 1}
-            icon={<i className='ri-crop-2-line' />}
-            checkedIcon={<i className='ri-crop-2-line' />}
+            icon={<i className='ri-expand-diagonal-fill' />}
+            checkedIcon={<i className='ri-expand-diagonal-fill' />}
             onChange={() => onSettingsChange( {...settings, showDims: settings.showDims ^ 1} )}
           />
         </Tooltip>
         <Tooltip title={(settings.showDims & 2) === 2 ? 'Hide Inside Dimensions' : 'Show Inside Dimensions'}>
           <Checkbox
             checked={(settings.showDims & 2) === 2}
-            icon={<i className='ri-crop-line' />}
-            checkedIcon={<i className='ri-crop-line' />}
+            icon={<i className='ri-collapse-diagonal-fill' />}
+            checkedIcon={<i className='ri-collapse-diagonal-fill' />}
             onChange={() => onSettingsChange( {...settings, showDims: settings.showDims ^ 2} )}
+          />
+        </Tooltip>
+        <Tooltip title={settings.showBack ? 'Show Front' : 'Show Back'}>
+          <Checkbox
+            checked={settings.showBack}
+            icon={<i className='ri-arrow-go-back-fill' />}
+            checkedIcon={<i className='ri-arrow-go-back-fill' />}
+            onChange={() => onSettingsChange( {...settings, showBack: !settings.showBack} )}
+          />
+        </Tooltip>
+        <Tooltip title={settings.showGlass ? 'Hide Glass' : 'Show Glass'}>
+          <Checkbox
+            checked={settings.showGlass}
+            icon={<i className='ri-eye-off-line' />}
+            checkedIcon={<i className='ri-eye-line' />}
+            onChange={() => onSettingsChange( {...settings, showGlass: !settings.showGlass} )}
           />
         </Tooltip>
         <SnapshotDialog imageRef={imageRef} />
