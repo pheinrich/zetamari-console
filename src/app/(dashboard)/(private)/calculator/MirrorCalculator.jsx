@@ -81,10 +81,32 @@ export default function MirrorCalculator( {initialState, contours, substrateProd
     setSelectedId( null )
   }
 
+  // Dimensions edits live-update the selected lightbox entry (if any)
+  // rather than clearing the selection - adjusting a saved prototype's
+  // size/border is treated as refining that same entry, not starting a
+  // new one. (Switching to a different product, below, is still treated
+  // as a big enough jump to drop the selection instead.)
   function setSubstrateInfo( next )
   {
     setSubstrateInfoState( next )
-    setSelectedId( null )
+    if( selectedId )
+      updateSelectedEntry( {width: next.width, height: next.height, border: next.border} )
+  }
+
+  // Settings/zoom edits also live-update the selected entry - unless
+  // pinned, in which case pinning has explicitly decoupled the working
+  // panel's settings from any one entry, so they shouldn't get written
+  // back into it.
+  function handleSettingsChange( next )
+  {
+    setSettings( next )
+    if( !pinned && selectedId )
+      updateSelectedEntry( {settings: next} )
+  }
+
+  function updateSelectedEntry( patch )
+  {
+    setGallery( prev => prev.map( e => (e.id === selectedId ? {...e, ...patch} : e) ) )
   }
 
   // Loads a lightbox entry into the working panel. Shape/dimensions
@@ -180,6 +202,26 @@ export default function MirrorCalculator( {initialState, contours, substrateProd
   function handleSaveAsProduct()
   {
     setSaveOpen( true )
+    setMenuAnchor( null )
+  }
+
+  const selectedProduct = substrateProducts.find( p => p.id === productId ) ?? null
+  const canRevert = Boolean( selectedProduct?.substrateInfo ) && (
+    substrateInfo.width !== selectedProduct.substrateInfo.width
+    || substrateInfo.height !== selectedProduct.substrateInfo.height
+    || substrateInfo.border !== selectedProduct.substrateInfo.border
+  )
+
+  // Discards local width/height/border edits, restoring the values
+  // actually saved on the tied product. Reuses setSubstrateInfo so this
+  // also live-updates the selected lightbox entry, same as any other
+  // dimensions edit.
+  function handleRevert()
+  {
+    if( !selectedProduct?.substrateInfo )
+      return
+
+    setSubstrateInfo( resolveSubstrateInfo( {}, selectedProduct, contours ) )
     setMenuAnchor( null )
   }
 
@@ -289,6 +331,10 @@ export default function MirrorCalculator( {initialState, contours, substrateProd
                 <ListItemIcon><i className={pinned ? 'ri-pushpin-2-fill' : 'ri-pushpin-2-line'} /></ListItemIcon>
                 <ListItemText>{pinned ? 'Unpin Settings' : 'Pin Settings'}</ListItemText>
               </MenuItem>
+              <MenuItem onClick={handleRevert} disabled={!canRevert}>
+                <ListItemIcon><i className='ri-arrow-go-back-line' /></ListItemIcon>
+                <ListItemText>Revert to Prototype Dimensions</ListItemText>
+              </MenuItem>
               <Divider />
               <MenuItem onClick={handleSaveAsProduct} disabled={!mirror}>
                 <ListItemIcon><i className='ri-save-line' /></ListItemIcon>
@@ -304,7 +350,7 @@ export default function MirrorCalculator( {initialState, contours, substrateProd
         ) : (
           <Stack direction={{xs: 'column', lg: 'row'}} gap={6}>
             <div>
-              <MirrorPanel mirror={mirror} settings={settings} onSettingsChange={setSettings} imageRef={imageRef} size={MAIN_PREVIEW_SIZE} />
+              <MirrorPanel mirror={mirror} settings={settings} onSettingsChange={handleSettingsChange} imageRef={imageRef} size={MAIN_PREVIEW_SIZE} />
               {pinned && (
                 <Chip
                   className='mbs-2'
@@ -337,6 +383,11 @@ export default function MirrorCalculator( {initialState, contours, substrateProd
               </span>
             </Tooltip>
           </Stack>
+          {1 < gallery.length && (
+            <Typography variant='body2' color='text.secondary' className='mbe-2'>
+              Drag a thumbnail to reorder the lightbox.
+            </Typography>
+          )}
           <LightboxStrip
             gallery={gallery}
             contours={contours}
