@@ -7,6 +7,9 @@ import Divider from '@mui/material/Divider'
 import ListItemText from '@mui/material/ListItemText'
 import Menu from '@mui/material/Menu'
 import MenuItem from '@mui/material/MenuItem'
+import MenuList from '@mui/material/MenuList'
+import Paper from '@mui/material/Paper'
+import Popper from '@mui/material/Popper'
 
 // Shape names following a "Base (Variant)" convention (e.g. "Cora
 // (Large)", "Mandala (Starlight) (Mini)" - see the
@@ -228,34 +231,34 @@ export default function CopyFromMenu( {substrateProducts, onSelect} )
       </Menu>
 
       {/*
-        Level 2: the hovered shape/group's products. hideBackdrop is the
-        key piece here - Menu/Popover otherwise renders an invisible
-        modal backdrop over the whole viewport while open, which sits
-        above the top-level Menu's items and swallows their pointer
-        events, so hovering off the first-opened item never reaches its
-        siblings (the submenu looks "locked" open). With no backdrop of
-        its own, clicks outside this submenu simply fall through to
-        whatever's beneath them - typically another top-level item (hover
-        opens its submenu instead) or the top Menu's own backdrop, which
-        still closes everything as usual.
+        Level 2: the hovered shape/group's products, as a plain Popper
+        rather than another Menu. A nested Menu is a whole second Modal,
+        and Modal renders a viewport-covering (invisible) backdrop even
+        when "hidden" from view - that backdrop still sits above the
+        top-level Menu's item list in stacking order and swallows its
+        pointer events, so hovering off the first-opened item never
+        reaches its siblings, and (once the backdrop is suppressed
+        outright) clicks stop reaching anything reliably either. A Popper
+        has no backdrop, no focus trap, and no modal stacking at all -
+        it's just a positioned box - so it can't shadow the top-level
+        Menu's own click-away/hover handling in either direction.
       */}
-      <Menu
-        anchorEl={midAnchorEl}
+      <Popper
         open={Boolean( midAnchorEl )}
-        onClose={close}
-        hideBackdrop
-        disableAutoFocus
-        disableEnforceFocus
-        disableRestoreFocus
-        anchorOrigin={{vertical: 'top', horizontal: 'right'}}
-        transformOrigin={{vertical: 'top', horizontal: 'left'}}
+        anchorEl={midAnchorEl}
+        placement='right-start'
+        sx={{zIndex: theme => theme.zIndex.modal + 1}}
       >
-        {midProducts?.map( product => (
-          <MenuItem key={product.id} onClick={() => pick( product )}>
-            {dimensionLabel( product )}
-          </MenuItem>
-        ) )}
-      </Menu>
+        <Paper elevation={8}>
+          <MenuList>
+            {midProducts?.map( product => (
+              <MenuItem key={product.id} onClick={() => pick( product )}>
+                {dimensionLabel( product )}
+              </MenuItem>
+            ) )}
+          </MenuList>
+        </Paper>
+      </Popper>
     </>
   )
 }
