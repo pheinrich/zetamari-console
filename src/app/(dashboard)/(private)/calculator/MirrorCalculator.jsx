@@ -258,25 +258,38 @@ export default function MirrorCalculator( {initialState, contours, substrateProd
   // router.replace() deliberately - the latter would re-run this page's
   // Server Component and, since it's keyed on the search params (see
   // page.jsx), remount this whole component on every edit.
+  //
+  // Debounced: MirrorToolbar's zoom Slider uses onChange (fires on every
+  // tick of a drag, not just on release), and when a lightbox entry is
+  // selected each tick also patches `gallery` via handleSettingsChange.
+  // Calling replaceState() synchronously on every tick blew past the
+  // browser's ~100-calls-per-10-seconds throttle ("Attempt to use
+  // history.replaceState() more than 100 times per 10 seconds"). Waiting
+  // for a short pause in changes keeps the URL synced without calling
+  // replaceState() on every drag tick.
   useEffect( () => {
-    const url = new URL( window.location.href )
+    const timeoutId = setTimeout( () => {
+      const url = new URL( window.location.href )
 
-    url.searchParams.delete( 'productId' )
-    url.searchParams.delete( 'panels' )
-    url.searchParams.set( 'current', encodeEntry( {productId, width: substrateInfo.width, height: substrateInfo.height, border: substrateInfo.border, settings} ) )
+      url.searchParams.delete( 'productId' )
+      url.searchParams.delete( 'panels' )
+      url.searchParams.set( 'current', encodeEntry( {productId, width: substrateInfo.width, height: substrateInfo.height, border: substrateInfo.border, settings} ) )
 
-    const galleryEncoded = encodeEntryList( gallery )
-    if( galleryEncoded )
-      url.searchParams.set( 'gallery', galleryEncoded )
-    else
-      url.searchParams.delete( 'gallery' )
+      const galleryEncoded = encodeEntryList( gallery )
+      if( galleryEncoded )
+        url.searchParams.set( 'gallery', galleryEncoded )
+      else
+        url.searchParams.delete( 'gallery' )
 
-    if( pinned )
-      url.searchParams.set( 'pinned', '1' )
-    else
-      url.searchParams.delete( 'pinned' )
+      if( pinned )
+        url.searchParams.set( 'pinned', '1' )
+      else
+        url.searchParams.delete( 'pinned' )
 
-    window.history.replaceState( null, '', url.toString() )
+      window.history.replaceState( null, '', url.toString() )
+    }, 300 )
+
+    return () => clearTimeout( timeoutId )
   }, [productId, substrateInfo, settings, gallery, pinned] )
 
   if( 0 === contours.length )
