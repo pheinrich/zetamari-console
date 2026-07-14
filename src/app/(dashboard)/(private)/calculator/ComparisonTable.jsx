@@ -25,13 +25,13 @@ const SECTIONS = [
 // lightbox entry and one column per stat (Mosaic Surface, Visible Glass,
 // ...) - rows growing with the gallery rather than columns, so this
 // doesn't get wider as more prototypes get saved.
-function ComparisonSection( {title, rows, compute, format} )
+function ComparisonSection( {title, rows, compute, format, defaultExpanded} )
 {
   const stats = rows.map( r => compute( r.mirror ) )
   const columnLabels = stats[0]?.rows.map( s => s.label ) ?? []
 
   return (
-    <Accordion>
+    <Accordion defaultExpanded={defaultExpanded}>
       <AccordionSummary expandIcon={<i className='ri-arrow-down-s-line' />}>
         <Typography>{title}</Typography>
       </AccordionSummary>
@@ -64,7 +64,9 @@ function ComparisonSection( {title, rows, compute, format} )
 // section so all three can be checked without permanently taking up
 // space. Entries without a resolvable mirror (in-flight or degenerate)
 // are left out of the comparison rather than breaking it.
-export default function ComparisonTable( {gallery, contours, substrateProducts} )
+// `defaultExpanded` opens every section up front - used by the print
+// report, where a collapsed Accordion's contents wouldn't print at all.
+export default function ComparisonTable( {gallery, contours, substrateProducts, defaultExpanded = false} )
 {
   const rows = useMemo(
     () => gallery
@@ -79,7 +81,7 @@ export default function ComparisonTable( {gallery, contours, substrateProducts} 
   return (
     <div className='flex flex-col gap-2'>
       {SECTIONS.map( s => (
-        <ComparisonSection key={s.title} title={s.title} rows={rows} compute={s.compute} format={s.format} />
+        <ComparisonSection key={s.title} title={s.title} rows={rows} compute={s.compute} format={s.format} defaultExpanded={defaultExpanded} />
       ) )}
     </div>
   )
