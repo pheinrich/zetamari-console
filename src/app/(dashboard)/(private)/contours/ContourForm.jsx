@@ -11,6 +11,7 @@ import CardHeader from '@mui/material/CardHeader'
 import CardContent from '@mui/material/CardContent'
 import Button from '@mui/material/Button'
 import Alert from '@mui/material/Alert'
+import Autocomplete from '@mui/material/Autocomplete'
 import FormControl from '@mui/material/FormControl'
 import InputLabel from '@mui/material/InputLabel'
 import MenuItem from '@mui/material/MenuItem'
@@ -24,33 +25,45 @@ import { createContour, updateContour } from '@/db/actions/contour'
 
 const optionalString = z.preprocess( (val) => (val === '' || val == null ? undefined : val), z.string().optional() )
 
-// Same 7 primitives buildFromType() (@/libs/mirror) knows how to draw -
-// only meaningful (and required) when svgData is blank.
-const SHAPE_TYPES = ['chapel arch', 'circle', 'gothic arch', 'oval', 'rectangle', 'square', 'vesica picscis']
-
 const schema = z.object({
   id: z.preprocess( (val) => (val === '' || val == null ? undefined : val), z.coerce.number().optional() ),
   name: z.string().min( 1 ),
   svgData: optionalString,
-  shapeType: z.preprocess( (val) => (val === '' || val == null ? undefined : val), z.enum( SHAPE_TYPES ).optional() ),
-}).refine( data => Boolean( data.svgData ) || Boolean( data.shapeType ), {
-  message: 'A basic shape (no path data) requires a shape type',
-  path: ['shapeType'],
+  // Set (and required) for a parametric ("no path data") contour - picked
+  // from the Select below, which only lists shape families buildFromType()
+  // (@/libs/mirror) actually knows how to draw.
+  shapeTypeId: z.preprocess( (val) => (val === '' || val == null ? undefined : val), z.coerce.number().int().optional() ),
+  // Set (and required) for a custom (svgData) contour - free-typed into
+  // the Autocomplete below; the server resolves it to an existing or
+  // brand-new ShapeType by name (see resolveShapeTypeId in
+  // @/db/actions/contour).
+  shapeName: optionalString,
 })
+  .refine( data => Boolean( data.svgData ) || Boolean( data.shapeTypeId ), {
+    message: 'A basic shape (no path data) requires a shape type',
+    path: ['shapeTypeId'],
+  })
+  .refine( data => !data.svgData || Boolean( data.shapeName ), {
+    message: 'A custom shape requires a shape family name',
+    path: ['shapeName'],
+  })
 
-function shapeTypeLabel( shapeType )
-{
-  return shapeType.replace( /\b\w/g, c => c.toUpperCase() )
-}
-
-export default function ContourForm( {initialData={}} )
+export default function ContourForm( {initialData={}, shapeTypes=[]} )
 {
   const isEdit = Boolean( initialData?.id )
   const [hasSvgData, setHasSvgData] = useState( Boolean( initialData?.svgData ) )
+  const [shapeName, setShapeName] = useState( initialData?.shape?.name || '' )
   const { handleSubmit, loading, errors, success } = useFormSubmit({
     schema,
     onSubmit: isEdit ? updateContour : createContour
   })
+
+  // Only the shapes buildFromType() can actually draw parametrically -
+  // custom (svgData) contours can belong to any shape family, including
+  // ones that only ever exist as traced paths, so the Select is
+  // deliberately narrower than the full shapeTypes list the Autocomplete
+  // below draws from.
+  const parametricShapeTypes = shapeTypes.filter( s => s.key )
 
   if( success )
     redirect( '/contours' )
@@ -117,20 +130,42 @@ export default function ContourForm( {initialData={}} )
                 onChange={e => setHasSvgData( Boolean( e.target.value.trim() ) )}
                 helperText='Leave blank to make this a fundamental/basic shape instead of a custom contour.'
               />
-              <FormControl fullWidth disabled={hasSvgData} required={!hasSvgData}>
-                <InputLabel id='shapeType'>Shape Type</InputLabel>
-                <Select
-                  labelId='shapeType'
-                  label='Shape Type'
-                  name='shapeType'
-                  defaultValue={initialData?.shapeType || ''}
-                >
-                  <MenuItem value=''>—</MenuItem>
-                  {SHAPE_TYPES.map( shapeType => (
-                    <MenuItem key={shapeType} value={shapeType}>{shapeTypeLabel( shapeType )}</MenuItem>
-                  ) )}
-                </Select>
-              </FormControl>
+
+              {hasSvgData ? (
+                <>
+                  <Autocomplete
+                    freeSolo
+                    fullWidth
+                    options={shapeTypes.map( s => s.name )}
+                    inputValue={shapeName}
+                    onInputChange={(e, value) => setShapeName( value )}
+                    renderInput={params => (
+                      <TextField
+                        {...params}
+                        label='Shape Family'
+                        required
+                        helperText='Existing shape families are suggested - type a new name to create one (e.g. adding a matching "..., Inside" contour to an existing shape).'
+                      />
+                    )}
+                  />
+                  <input type='hidden' name='shapeName' value={shapeName} />
+                </>
+              ) : (
+                <FormControl fullWidth required>
+                  <InputLabel id='shapeTypeId'>Shape Type</InputLabel>
+                  <Select
+                    labelId='shapeTypeId'
+                    label='Shape Type'
+                    name='shapeTypeId'
+                    defaultValue={initialData?.shapeTypeId ?? ''}
+                  >
+                    <MenuItem value=''>—</MenuItem>
+                    {parametricShapeTypes.map( shapeType => (
+                      <MenuItem key={shapeType.id} value={shapeType.id}>{shapeType.name}</MenuItem>
+                    ) )}
+                  </Select>
+                </FormControl>
+              )}
             </CardContent>
           </Card>
         </Grid>

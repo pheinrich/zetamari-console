@@ -7,24 +7,22 @@ import ListItemText from '@mui/material/ListItemText'
 import Menu from '@mui/material/Menu'
 import MenuItem from '@mui/material/MenuItem'
 
-function titleCase( str )
-{
-  return str.replace( /\w\S*/g, word => word.charAt( 0 ).toUpperCase() + word.slice( 1 ) )
-}
-
-// Groups substrate products by the shape of their outside contour - its
-// shapeType if it's a basic parametric shape ('chapel arch' -> 'Chapel
-// Arch'), or the contour's own name for a custom svgData-traced shape -
-// so the picker stays manageable as the product list grows. No schema
-// change: this reads the shapeType enum that already exists on Contour.
+// Groups substrate products by their outside contour's shape family (see
+// Contour.js's `shape` association / @/db/models/ShapeType) - e.g.
+// "Circle", "Chapel Arch", "Willow Leaf" - so the picker stays manageable
+// as the product list grows. Every contour has a shape family now (not
+// just the 7 parametric ones), and custom shapes stored as separate
+// Outside/Inside/Rabbet contour rows (e.g. "Willow Leaf, Outside" / "...,
+// Inside" / "..., Rabbet") share one family name rather than one group
+// each, since grouping is keyed on shapeTypeId, not the contour's own row
+// name.
 function groupProducts( substrateProducts )
 {
   const groups = new Map()
 
   for( const product of substrateProducts )
   {
-    const outside = product.substrateInfo?.outside
-    const key = outside?.shapeType ? titleCase( outside.shapeType ) : (outside?.name ? `Custom: ${outside.name}` : 'Other')
+    const key = product.substrateInfo?.outside?.shape?.name || 'Other'
 
     if( !groups.has( key ) )
       groups.set( key, [] )

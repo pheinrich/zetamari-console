@@ -16,7 +16,7 @@ export function resolveEntryMirror( entry, contours )
   const insideContour = contours.find( c => c.id === entry.insideId )
   const rabbetContour = contours.find( c => c.id === entry.rabbetId )
 
-  if( !outsideContour || (!outsideContour.svgData && !outsideContour.shapeType) )
+  if( !outsideContour || (!outsideContour.svgData && !outsideContour.shape?.key) )
     return undefined
   if( !entry.width || !entry.height )
     return undefined
@@ -27,7 +27,7 @@ export function resolveEntryMirror( entry, contours )
       Number( entry.width ),
       Number( entry.height ),
       Number( entry.border ) || 0,
-      outsideContour.shapeType,
+      outsideContour.shape?.key,
       outsideContour.svgData,
       insideContour?.svgData,
       rabbetContour?.svgData,

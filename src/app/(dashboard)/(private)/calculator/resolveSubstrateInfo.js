@@ -26,7 +26,7 @@ export function resolveSubstrateInfo( overrides, product, contours )
     }
   }
 
-  const defaultContour = contours.find( c => 'circle' === c.shapeType ) || contours.find( c => !c.svgData ) || contours[0]
+  const defaultContour = contours.find( c => 'circle' === c.shape?.key ) || contours.find( c => !c.svgData ) || contours[0]
 
   return {
     outsideId: defaultContour?.id,

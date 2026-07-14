@@ -191,6 +191,17 @@ export default function MirrorCalculator( {initialState, contours, substrateProd
       loadEntry( entry )
   }
 
+  // Resets the working panel to a blank shape and clears the label/
+  // selection - the "start fresh" action the old Prototype dropdown's
+  // "— Blank Shape —" option used to provide. Doesn't touch settings
+  // (view toggles/zoom), matching that same old behavior.
+  function handleNew()
+  {
+    setSubstrateInfoState( resolveSubstrateInfo( {}, null, contours ) )
+    setLabel( '' )
+    setSelectedId( null )
+  }
+
   function handleAddToLightbox()
   {
     const id = `g-${nextGalleryIdRef.current}`
@@ -268,7 +279,7 @@ export default function MirrorCalculator( {initialState, contours, substrateProd
   const rabbetContour = contours.find( c => c.id === substrateInfo.rabbetId )
 
   const mirror = useMemo( () => {
-    if( !outsideContour || (!outsideContour.svgData && !outsideContour.shapeType) )
+    if( !outsideContour || (!outsideContour.svgData && !outsideContour.shape?.key) )
       return undefined
     if( !substrateInfo.width || !substrateInfo.height )
       return undefined
@@ -279,7 +290,7 @@ export default function MirrorCalculator( {initialState, contours, substrateProd
         Number( substrateInfo.width ),
         Number( substrateInfo.height ),
         Number( substrateInfo.border ) || 0,
-        outsideContour.shapeType,
+        outsideContour.shape?.key,
         outsideContour.svgData,
         insideContour?.svgData,
         rabbetContour?.svgData,
@@ -350,6 +361,14 @@ export default function MirrorCalculator( {initialState, contours, substrateProd
         title={<EditableLabel value={label} onChange={setEntryLabel} />}
         action={
           <Stack direction='row' spacing={2}>
+            <Button
+              variant='outlined'
+              size='small'
+              onClick={handleNew}
+              startIcon={<i className='ri-add-line' />}
+            >
+              New
+            </Button>
             <CopyFromMenu substrateProducts={substrateProducts} onSelect={handleCopyFrom} />
             <Button
               variant='outlined'

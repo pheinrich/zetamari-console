@@ -37,8 +37,8 @@ export default function MirrorToolbar( {settings, onSettingsChange, imageRef} )
         <Tooltip title={settings.showBack ? 'Show Front' : 'Show Back'}>
           <Checkbox
             checked={settings.showBack}
-            icon={<i className='ri-arrow-turn-forward-line' />}
-            checkedIcon={<i className='ri-arrow-turn-forward-line' />}
+            icon={<i className='ri-arrow-go-back-fill' />}
+            checkedIcon={<i className='ri-arrow-go-back-fill' />}
             onChange={() => onSettingsChange( {...settings, showBack: !settings.showBack} )}
           />
         </Tooltip>

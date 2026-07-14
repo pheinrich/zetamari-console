@@ -104,7 +104,7 @@ export default function ContoursListTable( {contourData} )
         header: 'Type',
         cell: ({ row }) => (
           <Chip
-            label={row.original.svgData ? 'Custom' : (row.original.shapeType || 'Basic Shape')}
+            label={row.original.svgData ? 'Custom' : (row.original.shape?.name || 'Basic Shape')}
             variant='tonal'
             color={row.original.svgData ? 'primary' : 'secondary'}
             size='small'

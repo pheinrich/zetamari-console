@@ -30,7 +30,7 @@ const SECTIONS = [
 // gallery itself (via onSort, up in ComparisonTable/MirrorCalculator) so
 // the lightbox strip and every other section stay in the same order
 // rather than each table drifting independently.
-function ComparisonSection( {title, rows, compute, format, selectedId, onSelectEntry, sortState, onSort} )
+function ComparisonSection( {title, rows, compute, format, defaultExpanded, selectedId, onSelectEntry, sortState, onSort} )
 {
   const stats = rows.map( r => compute( r.mirror ) )
   const columnLabels = stats[0]?.rows.map( s => s.label ) ?? []
@@ -49,7 +49,7 @@ function ComparisonSection( {title, rows, compute, format, selectedId, onSelectE
   }
 
   return (
-    <Accordion>
+    <Accordion defaultExpanded={defaultExpanded}>
       <AccordionSummary expandIcon={<i className='ri-arrow-down-s-line' />}>
         <Typography>{title}</Typography>
       </AccordionSummary>
@@ -109,7 +109,7 @@ function ComparisonSection( {title, rows, compute, format, selectedId, onSelectE
 // is called with the full reordered id list whenever a column header is
 // clicked to sort, so the caller can apply that same order to `gallery`
 // (which the lightbox strip and every section here all derive from).
-export default function ComparisonTable( {gallery, contours, selectedId, onSelectEntry, onReorder} )
+export default function ComparisonTable( {gallery, contours, defaultExpanded = true, selectedId, onSelectEntry, onReorder} )
 {
   const [sortState, setSortState] = useState( null )
 
@@ -138,6 +138,7 @@ export default function ComparisonTable( {gallery, contours, selectedId, onSelec
           rows={rows}
           compute={s.compute}
           format={s.format}
+          defaultExpanded={defaultExpanded}
           selectedId={selectedId}
           onSelectEntry={onSelectEntry}
           sortState={sortState}

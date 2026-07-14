@@ -22,7 +22,7 @@ export default function SubstrateInfoView( {productId, substrateInfo} )
     substrateInfo.width,
     substrateInfo.height,
     substrateInfo.border,
-    substrateInfo.outside.shapeType,
+    substrateInfo.outside.shape?.key,
     substrateInfo.outside.svgData,
     substrateInfo.inside?.svgData,
     substrateInfo.rabbet?.svgData,

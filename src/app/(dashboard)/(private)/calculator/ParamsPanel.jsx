@@ -9,32 +9,28 @@ import Typography from '@mui/material/Typography'
 
 const ROOT3 = Math.sqrt( 3 )
 
-// Shape types whose outside contour constrains height/width to a fixed
-// aspect ratio (matches buildFromType()'s geometry in @/libs/mirror -
-// circles/squares are 1:1, vesica piscis is 1:root(3)).
-function constrainedHeight( width, shapeType )
+// Shape keys (ShapeType.key - see @/db/models/ShapeType) whose outside
+// contour constrains height/width to a fixed aspect ratio (matches
+// buildFromType()'s geometry in @/libs/mirror - circles/squares are 1:1,
+// vesica piscis is 1:root(3)).
+function constrainedHeight( width, shapeKey )
 {
-  if( 'circle' === shapeType || 'square' === shapeType )
+  if( 'circle' === shapeKey || 'square' === shapeKey )
     return width
-  if( 'vesica picscis' === shapeType )
+  if( 'vesica picscis' === shapeKey )
     return ROOT3 * width
 
   return undefined
 }
 
-function constrainedWidth( height, shapeType )
+function constrainedWidth( height, shapeKey )
 {
-  if( 'circle' === shapeType || 'square' === shapeType )
+  if( 'circle' === shapeKey || 'square' === shapeKey )
     return height
-  if( 'vesica picscis' === shapeType )
+  if( 'vesica picscis' === shapeKey )
     return height / ROOT3
 
   return undefined
-}
-
-function shapeTypeLabel( shapeType )
-{
-  return shapeType.replace( /\b\w/g, c => c.toUpperCase() )
 }
 
 // border is stored (in substrateInfo) as build() expects it - a fraction
@@ -51,12 +47,12 @@ function toDisplayBorder( border, isPercent )
 // Dimensions-only form (width/height/border) for the working panel. Which
 // product (and therefore which outside/inside/rabbet contours) is loaded
 // is controlled by the caller (MirrorCalculator) - this component only cares
-// about the resulting shapeType (for aspect-ratio locking) and whether an
+// about the resulting shape (for aspect-ratio locking) and whether an
 // inside contour is present (for the percent-vs-inches border switch).
 export default function ParamsPanel( {substrateInfo, setSubstrateInfo, contours} )
 {
   const outsideContour = contours.find( c => c.id === substrateInfo.outsideId )
-  const shapeType = outsideContour?.svgData ? undefined : outsideContour?.shapeType
+  const shapeKey = outsideContour?.svgData ? undefined : outsideContour?.shape?.key
 
   // build() (@/libs/mirror) treats `border` differently depending on
   // whether an inside contour is explicitly set: with only an outside
@@ -94,7 +90,7 @@ export default function ParamsPanel( {substrateInfo, setSubstrateInfo, contours}
     if( !w || !Number.isFinite( w ) )
       return setWidth( substrateInfo.width ?? '' )
 
-    const h = constrainedHeight( w, shapeType ) ?? substrateInfo.height
+    const h = constrainedHeight( w, shapeKey ) ?? substrateInfo.height
 
     setSubstrateInfo( {...substrateInfo, width: w, height: h} )
   }
@@ -105,7 +101,7 @@ export default function ParamsPanel( {substrateInfo, setSubstrateInfo, contours}
     if( !h || !Number.isFinite( h ) )
       return setHeight( substrateInfo.height ?? '' )
 
-    const w = constrainedWidth( h, shapeType ) ?? substrateInfo.width
+    const w = constrainedWidth( h, shapeKey ) ?? substrateInfo.width
 
     setSubstrateInfo( {...substrateInfo, width: w, height: h} )
   }
@@ -150,9 +146,9 @@ export default function ParamsPanel( {substrateInfo, setSubstrateInfo, contours}
         />
       </Stack>
 
-      {shapeType && (
+      {shapeKey && (
         <Typography variant='caption' color='text.secondary'>
-          {shapeTypeLabel( shapeType )} constrains width/height to a fixed aspect ratio.
+          {outsideContour.shape.name} constrains width/height to a fixed aspect ratio.
         </Typography>
       )}
       {isPercent && (
