@@ -11,8 +11,8 @@ import MenuItem from '@mui/material/MenuItem'
 // Shape names following a "Base (Variant)" convention (e.g. "Cora
 // (Large)", "Mandala (Starlight) (Mini)" - see the
 // 20260715020000-split-mandala-starlight.js migration) get nested under
-// a "Base" submenu with just the Variant as the leaf label, so the top
-// level doesn't end up with one entry per size of the same shape family.
+// a "Base" submenu, so the top level doesn't end up with one entry per
+// size of the same shape family.
 //
 // Only applied when the Variant is a recognized SIZE word - "Cora
 // (Large)" groups under "Cora", but "Mandala (Avens)" is its own
@@ -36,23 +36,34 @@ function parseBaseVariant( name )
 // The "family" name used for a copied product's working-panel label -
 // the Base for a grouped shape ("Cora (Large)" -> "Cora"), or the shape's
 // own name unchanged if it doesn't follow the Base (Variant) convention
-// ("Circle", "Willow Leaf"). Computed straight from the shape name rather
-// than from menu/grouping state, so it comes out the same whether or not
-// a particular product's variant happened to get hoisted below.
+// ("Circle", "Willow Leaf", "Mandala (Avens)"). Computed straight from
+// the shape name rather than from menu/grouping state, so it comes out
+// the same regardless of how the menu happens to list that product.
 function familyNameFor( shapeName )
 {
   return parseBaseVariant( shapeName )?.base ?? shapeName
 }
 
-// Products are identified by dimensions alone in this menu (the
-// shape/variant context is already established by the menu path to get
-// there) - falls back to the product's own name if dimensions are
-// somehow missing.
+// Products are identified by dimensions alone in this menu (the shape
+// context is already established by the menu path to get there) - falls
+// back to the product's own name if dimensions are somehow missing.
 function dimensionLabel( product )
 {
   const w = product.substrateInfo?.width
   const h = product.substrateInfo?.height
   return (w && h) ? `${Number( w )}"x${Number( h )}"` : product.name
+}
+
+// Numeric sort by dimensions (width, then height) rather than
+// alphabetically by product name - leaves are displayed as dimensions in
+// this menu, and string sort would put '10"x10"' before '7"x7"'.
+function byDimensions( a, b )
+{
+  const wa = Number( a.substrateInfo?.width ) || 0
+  const wb = Number( b.substrateInfo?.width ) || 0
+  if( wa !== wb )
+    return wa - wb
+  return (Number( a.substrateInfo?.height ) || 0) - (Number( b.substrateInfo?.height ) || 0)
 }
 
 // One entry per distinct outside-contour shape (see Contour.js's `shape`
@@ -72,27 +83,19 @@ function groupByShape( substrateProducts )
     byName.get( name ).products.push( product )
   }
 
-  // Sorted numerically by dimensions (width, then height) rather than
-  // alphabetically by product name - leaves are displayed as dimensions
-  // in this menu, and string sort would put '10"x10"' before '7"x7"'.
   for( const entry of byName.values() )
-    entry.products.sort( (a, b) => {
-      const wa = Number( a.substrateInfo?.width ) || 0
-      const wb = Number( b.substrateInfo?.width ) || 0
-      if( wa !== wb )
-        return wa - wb
-      return (Number( a.substrateInfo?.height ) || 0) - (Number( b.substrateInfo?.height ) || 0)
-    } )
+    entry.products.sort( byDimensions )
 
   return [...byName.values()]
 }
 
 // Builds the top-level menu items: standalone shapes (type 'shape'), plus
 // nested groups (type 'group') for any Base shared by 2+ Variants. A
-// group's own children mix directly-pickable leaves (a variant with just
-// one product - no point clicking through an intermediary "Large ▶" that
-// only ever leads to one thing) with further-expandable variants (2+
-// products).
+// group's own products are every product across every one of its size
+// variants, flattened into one dimension-sorted list - there's no
+// further submenu per size, just the group's full size range in one
+// place (e.g. Mandala (Starlight)'s Mini/Small/Medium/Large all appear
+// directly under "Mandala (Starlight)").
 function buildTopItems( shapeEntries )
 {
   const byBase = new Map()
@@ -109,26 +112,19 @@ function buildTopItems( shapeEntries )
 
     if( !byBase.has( parsed.base ) )
       byBase.set( parsed.base, [] )
-    byBase.get( parsed.base ).push( {label: parsed.variant, entry} )
+    byBase.get( parsed.base ).push( entry )
   }
 
-  for( const [base, variants] of byBase )
+  for( const [base, entries] of byBase )
   {
-    variants.sort( (a, b) => a.label.localeCompare( b.label ) )
-
-    if( 1 === variants.length )
+    if( 1 === entries.length )
     {
-      items.push( {type: 'shape', label: variants[0].entry.name, entry: variants[0].entry} )
+      items.push( {type: 'shape', label: entries[0].name, entry: entries[0]} )
       continue
     }
 
-    const children = variants.map( v => (
-      1 === v.entry.products.length
-        ? {type: 'leaf', product: v.entry.products[0]}
-        : {type: 'variant', label: v.label, products: v.entry.products}
-    ) )
-
-    items.push( {type: 'group', label: base, children} )
+    const products = entries.flatMap( e => e.products ).sort( byDimensions )
+    items.push( {type: 'group', label: base, products} )
   }
 
   return items
@@ -156,19 +152,17 @@ function splitSections( items )
 // initializes the working panel's dimensions/contours/label fresh from
 // that product, so re-picking the same product later is how you "revert"
 // after drifting from it - there's no ongoing live link to maintain.
-// Up to three menu levels (top-level shape/group -> group's variants ->
-// products); the top-level Button is click-opened, but navigating deeper
-// (level 2 and level 3) happens on hover, like a flyout menu - only
-// picking a leaf product is a click. `onSelect(product, label)` - the
-// label is dimensions + family name (e.g. '30"x33" Leaf'), computed here
-// since the Base (Variant) parsing this depends on lives in this file.
+// Two menu levels (top-level shape/group -> that shape's products); the
+// top-level Button is click-opened, and the level-2 submenu opens on
+// hover, like a flyout menu - only picking a leaf product is a click.
+// `onSelect(product, label)` - the label is dimensions + family name
+// (e.g. '30"x33" Leaf'), computed here since the Base (Variant) parsing
+// this depends on lives in this file.
 export default function CopyFromMenu( {substrateProducts, onSelect} )
 {
   const [anchorEl, setAnchorEl] = useState( null )
   const [midAnchorEl, setMidAnchorEl] = useState( null )
   const [openTop, setOpenTop] = useState( null )
-  const [subAnchorEl, setSubAnchorEl] = useState( null )
-  const [openVariant, setOpenVariant] = useState( null )
 
   const shapeEntries = groupByShape( substrateProducts )
   const topItems = buildTopItems( shapeEntries )
@@ -179,8 +173,6 @@ export default function CopyFromMenu( {substrateProducts, onSelect} )
     setAnchorEl( null )
     setMidAnchorEl( null )
     setOpenTop( null )
-    setSubAnchorEl( null )
-    setOpenVariant( null )
   }
 
   function pick( product )
@@ -194,20 +186,12 @@ export default function CopyFromMenu( {substrateProducts, onSelect} )
   {
     setMidAnchorEl( evt.currentTarget )
     setOpenTop( item )
-    setSubAnchorEl( null )
-    setOpenVariant( null )
   }
 
-  function openSub( evt, variant )
-  {
-    setSubAnchorEl( evt.currentTarget )
-    setOpenVariant( variant )
-  }
-
-  // Submenus open on hover (onMouseEnter) rather than requiring a click,
-  // for every level below the top "Copy From..." button. onClick is kept
-  // alongside it (not replaced) purely so keyboard nav (arrow keys +
-  // Enter, which fire onClick, not onMouseEnter) and touch still work.
+  // Submenu opens on hover (onMouseEnter) rather than requiring a click.
+  // onClick is kept alongside it (not replaced) purely so keyboard nav
+  // (arrow keys + Enter, which fire onClick, not onMouseEnter) and touch
+  // still work.
   function renderTopItem( item )
   {
     return (
@@ -223,29 +207,7 @@ export default function CopyFromMenu( {substrateProducts, onSelect} )
     )
   }
 
-  function renderGroupChild( child )
-  {
-    if( 'leaf' === child.type )
-    {
-      return (
-        <MenuItem key={child.product.id} onClick={() => pick( child.product )}>
-          {dimensionLabel( child.product )}
-        </MenuItem>
-      )
-    }
-
-    return (
-      <MenuItem
-        key={child.label}
-        selected={openVariant?.label === child.label}
-        onMouseEnter={evt => openSub( evt, child )}
-        onClick={evt => openSub( evt, child )}
-      >
-        <ListItemText>{child.label}</ListItemText>
-        <i className='ri-arrow-right-s-line' />
-      </MenuItem>
-    )
-  }
+  const midProducts = 'shape' === openTop?.type ? openTop.entry.products : openTop?.products
 
   return (
     <>
@@ -265,31 +227,30 @@ export default function CopyFromMenu( {substrateProducts, onSelect} )
         {otherItems.map( renderTopItem )}
       </Menu>
 
-      {/* Level 2: a standalone shape's products, or a group's children (mixed leaves + expandable variants) */}
+      {/*
+        Level 2: the hovered shape/group's products. hideBackdrop is the
+        key piece here - Menu/Popover otherwise renders an invisible
+        modal backdrop over the whole viewport while open, which sits
+        above the top-level Menu's items and swallows their pointer
+        events, so hovering off the first-opened item never reaches its
+        siblings (the submenu looks "locked" open). With no backdrop of
+        its own, clicks outside this submenu simply fall through to
+        whatever's beneath them - typically another top-level item (hover
+        opens its submenu instead) or the top Menu's own backdrop, which
+        still closes everything as usual.
+      */}
       <Menu
         anchorEl={midAnchorEl}
         open={Boolean( midAnchorEl )}
         onClose={close}
+        hideBackdrop
+        disableAutoFocus
+        disableEnforceFocus
+        disableRestoreFocus
         anchorOrigin={{vertical: 'top', horizontal: 'right'}}
         transformOrigin={{vertical: 'top', horizontal: 'left'}}
       >
-        {'shape' === openTop?.type && openTop.entry.products.map( product => (
-          <MenuItem key={product.id} onClick={() => pick( product )}>
-            {dimensionLabel( product )}
-          </MenuItem>
-        ) )}
-        {'group' === openTop?.type && openTop.children.map( renderGroupChild )}
-      </Menu>
-
-      {/* Level 3: a group's (multi-product) variant's products */}
-      <Menu
-        anchorEl={subAnchorEl}
-        open={Boolean( subAnchorEl )}
-        onClose={close}
-        anchorOrigin={{vertical: 'top', horizontal: 'right'}}
-        transformOrigin={{vertical: 'top', horizontal: 'left'}}
-      >
-        {openVariant?.products.map( product => (
+        {midProducts?.map( product => (
           <MenuItem key={product.id} onClick={() => pick( product )}>
             {dimensionLabel( product )}
           </MenuItem>
