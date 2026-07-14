@@ -157,7 +157,12 @@ export function getMinBoundRect( geometry )
     let obb = MinimumDiameter.getMinimumRectangle( geometry )
 
     area = obb.getArea()
-    coords = obb.getCoordinates()
+    // Plain {x, y} objects, not the JSTS Coordinate instances
+    // getCoordinates() returns - build()'s result (this is nested inside
+    // it, under outside.obb/glass.obb) needs to stay serializable so it
+    // can cross the server/client boundary (see the printable calculator
+    // reports, which resolve geometry in a Server Component).
+    coords = obb.getCoordinates().map( c => ({x: c.x, y: c.y}) )
     theta = 180*Math.atan( (coords[1].x - coords[0].x) / (coords[1].y - coords[0].y) ) / Math.PI
 
     while( -90 > theta )
