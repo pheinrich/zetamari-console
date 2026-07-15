@@ -8,6 +8,9 @@ import Card from '@mui/material/Card'
 import CardContent from '@mui/material/CardContent'
 import CardHeader from '@mui/material/CardHeader'
 import Chip from '@mui/material/Chip'
+import Dialog from '@mui/material/Dialog'
+import DialogContent from '@mui/material/DialogContent'
+import DialogTitle from '@mui/material/DialogTitle'
 import Divider from '@mui/material/Divider'
 import IconButton from '@mui/material/IconButton'
 import ListItemIcon from '@mui/material/ListItemIcon'
@@ -41,13 +44,6 @@ function settingsEqual( a, b )
 
 // Builds a query string via URLSearchParams (correct percent-encoding
 // for the ':'/','-delimited entry format) for the print-report pages.
-// Opened with plain window.open() rather than a MenuItem/IconButton
-// polymorphically rendered as NextLink with target='_blank' - that
-// pattern doesn't reliably open a genuine new tab in Safari (it can
-// navigate the current tab instead), and Safari's print handling then
-// bounces back to the calculator's own previous history entry, showing
-// blank while it reloads. window.open() sidesteps the ambiguity by
-// asking the browser directly for a new, independent window.
 function reportHref( pathname, params )
 {
   return `${pathname}?${new URLSearchParams( params ).toString()}`
@@ -86,6 +82,20 @@ export default function MirrorCalculator( {initialState, contours, substrateProd
 
   const [saveOpen, setSaveOpen] = useState( false )
   const [menuAnchor, setMenuAnchor] = useState( null )
+
+  // Print reports render in an in-page Dialog with the report page
+  // loaded into an iframe, rather than a separate tab/window. Safari has
+  // a cross-tab bug where, with this calculator still open in its own
+  // tab, printing a report opened via window.open() (even with
+  // noopener) can navigate the report tab back to the calculator's own
+  // URL instead of printing - closing the calculator tab first reliably
+  // avoided it, confirming it's specifically about the two tabs
+  // coexisting. An iframe keeps everything in one tab/window/history
+  // stack, so there's no second browsing context for Safari to get
+  // confused about; calling window.print() from a script running inside
+  // the iframe (as the report page's own Print button already does)
+  // prints that iframe's document, not the whole calculator page.
+  const [printReportUrl, setPrintReportUrl] = useState( null )
 
   const imageRef = useRef( null )
 
@@ -408,7 +418,7 @@ export default function MirrorCalculator( {initialState, contours, substrateProd
               <Divider />
               <MenuItem
                 onClick={() => {
-                  window.open( reportHref( '/calculator/report', {current: encodeEntry( {...substrateInfo, label, settings} )} ), '_blank', 'noopener,noreferrer' )
+                  setPrintReportUrl( reportHref( '/calculator/report', {current: encodeEntry( {...substrateInfo, label, settings} )} ) )
                   setMenuAnchor( null )
                 }}
                 disabled={!mirror}
@@ -459,7 +469,7 @@ export default function MirrorCalculator( {initialState, contours, substrateProd
               <Tooltip title={0 === gallery.length ? 'Add prototypes to the lightbox first' : 'Print a report of the lightbox'}>
                 <span>
                   <IconButton
-                    onClick={() => window.open( reportHref( '/calculator/report/lightbox', {gallery: encodeEntryList( gallery )} ), '_blank', 'noopener,noreferrer' )}
+                    onClick={() => setPrintReportUrl( reportHref( '/calculator/report/lightbox', {gallery: encodeEntryList( gallery )} ) )}
                     size='small'
                     disabled={0 === gallery.length}
                   >
@@ -501,6 +511,30 @@ export default function MirrorCalculator( {initialState, contours, substrateProd
       </CardContent>
 
       <SaveAsProductDialog open={saveOpen} onClose={() => setSaveOpen( false )} substrateInfo={substrateInfo} />
+
+      {/* Print reports render here, in an in-page iframe, rather than a
+          separate tab/window - see the printReportUrl state comment above
+          for why (Safari cross-tab print bug). The report page's own Print
+          button calls window.print() from inside the iframe, which prints
+          only the iframe's document. */}
+      <Dialog fullScreen open={Boolean( printReportUrl )} onClose={() => setPrintReportUrl( null )}>
+        <DialogTitle className='flex items-center justify-between'>
+          Report Preview
+          <IconButton onClick={() => setPrintReportUrl( null )}>
+            <i className='ri-close-line' />
+          </IconButton>
+        </DialogTitle>
+        <DialogContent style={{padding: 0, display: 'flex'}}>
+          {printReportUrl && (
+            <iframe
+              key={printReportUrl}
+              src={printReportUrl}
+              title='Report Preview'
+              style={{width: '100%', height: '100%', border: 0, flex: 1}}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </Card>
   )
 }
