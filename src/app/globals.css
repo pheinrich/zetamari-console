@@ -130,3 +130,26 @@ code {
   background-color: rgb(var(--mui-palette-info-mainChannel) / 0.08);
   border: 0;
 }
+
+/* Safari has a long-standing print bug where content inside a
+   display:flex container can fail to render at all when printing
+   (renders fine on screen; the print/print-preview pass leaves it
+   blank) - widely reported, standard workaround is to switch flex to
+   block for print. The calculator's print reports
+   (/calculator/report, /calculator/report/lightbox) are the only pages
+   in this app that ever get printed, and their layout leans on
+   Tailwind's .flex utility plus MUI's Stack (which is display:flex
+   internally) - hence a broad, print-only override rather than
+   patching each container individually. This trades flex-specific
+   behavior (row direction, gap spacing, center alignment) for content
+   that actually prints in Safari; the report's data tables are plain
+   HTML <table> markup and were never flex-based, so they're unaffected
+   either way. */
+@media print {
+  .flex,
+  .MuiStack-root,
+  .MuiAccordionSummary-root,
+  .MuiAccordionSummary-content {
+    display: block !important;
+  }
+}
