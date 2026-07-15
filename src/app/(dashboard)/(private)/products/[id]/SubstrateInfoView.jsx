@@ -1,3 +1,5 @@
+'use client'
+
 import Link from 'next/link'
 import Grid from '@mui/material/Grid2'
 import Button from '@mui/material/Button'
