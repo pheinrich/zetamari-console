@@ -39,6 +39,20 @@ function settingsEqual( a, b )
   return a.showBack === b.showBack && a.showDims === b.showDims && a.showGlass === b.showGlass && a.zoom === b.zoom
 }
 
+// Builds a query string via URLSearchParams (correct percent-encoding
+// for the ':'/','-delimited entry format) for the print-report pages.
+// Opened with plain window.open() rather than a MenuItem/IconButton
+// polymorphically rendered as NextLink with target='_blank' - that
+// pattern doesn't reliably open a genuine new tab in Safari (it can
+// navigate the current tab instead), and Safari's print handling then
+// bounces back to the calculator's own previous history entry, showing
+// blank while it reloads. window.open() sidesteps the ambiguity by
+// asking the browser directly for a new, independent window.
+function reportHref( pathname, params )
+{
+  return `${pathname}?${new URLSearchParams( params ).toString()}`
+}
+
 // The calculator: one working panel (editable label, live preview,
 // dimensions, stats) plus a lightbox strip of saved snapshots below it,
 // and a sortable comparison table below that. Replaces the earlier
@@ -393,14 +407,10 @@ export default function MirrorCalculator( {initialState, contours, substrateProd
               </MenuItem>
               <Divider />
               <MenuItem
-                component={NextLink}
-                href={{
-                  pathname: '/calculator/report',
-                  query: {current: encodeEntry( {...substrateInfo, label, settings} )},
+                onClick={() => {
+                  window.open( reportHref( '/calculator/report', {current: encodeEntry( {...substrateInfo, label, settings} )} ), '_blank', 'noopener,noreferrer' )
+                  setMenuAnchor( null )
                 }}
-                target='_blank'
-                rel='noopener noreferrer'
-                onClick={() => setMenuAnchor( null )}
                 disabled={!mirror}
               >
                 <ListItemIcon><i className='ri-printer-line' /></ListItemIcon>
@@ -449,10 +459,7 @@ export default function MirrorCalculator( {initialState, contours, substrateProd
               <Tooltip title={0 === gallery.length ? 'Add prototypes to the lightbox first' : 'Print a report of the lightbox'}>
                 <span>
                   <IconButton
-                    component={NextLink}
-                    href={{pathname: '/calculator/report/lightbox', query: {gallery: encodeEntryList( gallery )}}}
-                    target='_blank'
-                    rel='noopener noreferrer'
+                    onClick={() => window.open( reportHref( '/calculator/report/lightbox', {gallery: encodeEntryList( gallery )} ), '_blank', 'noopener,noreferrer' )}
                     size='small'
                     disabled={0 === gallery.length}
                   >

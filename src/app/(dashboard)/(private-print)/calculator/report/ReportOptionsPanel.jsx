@@ -19,7 +19,6 @@ const DEFAULT_OPTIONS = {
   showCompany: false,
   showNotes: false,
   notes: '',
-  consolidated: false,
   sections: {Area: true, Weight: true, Pricing: true},
 }
 
@@ -30,17 +29,16 @@ function storageKey( reportKind )
 
 // Print-only options panel (hidden on print via Tailwind's print:hidden):
 // lets the person generating a report choose what appears on it - date,
-// company branding, notes, and either a consolidated stats table
-// (working-panel report only) or per-section Area/Weight/Pricing toggles
-// (lightbox report only, to help trim the comparison table down to fit
-// one printed page) - before hitting Print.
+// company branding, notes, and (lightbox report only) per-section
+// Area/Weight/Pricing toggles, to help trim the comparison table down to
+// fit one printed page - before hitting Print.
 //
 // Toggle/notes choices persist to localStorage per report kind, so they
 // don't need re-picking every visit. Company name/logo persist to the
 // database instead (Settings/updateSettings) - that's meant to be entered
 // once and reused on every future report from any device, not just
 // remembered locally.
-export default function ReportOptionsPanel( {reportKind, initialSettings, showConsolidatedToggle, showSectionToggles, onChange} )
+export default function ReportOptionsPanel( {reportKind, initialSettings, showSectionToggles, onChange} )
 {
   const [options, setOptions] = useState( DEFAULT_OPTIONS )
   const [companyName, setCompanyName] = useState( initialSettings?.companyName ?? '' )
@@ -144,13 +142,6 @@ export default function ReportOptionsPanel( {reportKind, initialSettings, showCo
             />
           )}
         </div>
-
-        {showConsolidatedToggle && (
-          <FormControlLabel
-            control={<Checkbox checked={options.consolidated} onChange={evt => updateOption( {consolidated: evt.target.checked} )} />}
-            label='Consolidated data table (one table instead of three)'
-          />
-        )}
 
         {showSectionToggles && (
           <div>

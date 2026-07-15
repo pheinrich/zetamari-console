@@ -34,7 +34,6 @@ export default function WorkingPanelReport( {label, mirror, settings, initialSet
       <ReportOptionsPanel
         reportKind='working'
         initialSettings={initialSettings}
-        showConsolidatedToggle
         onChange={setOptions}
       />
 
@@ -63,7 +62,7 @@ export default function WorkingPanelReport( {label, mirror, settings, initialSet
 
             <Divider />
 
-            <ReportStatsTable mirror={mirror} consolidated={Boolean( options?.consolidated )} />
+            <ReportStatsTable mirror={mirror} />
 
             {options?.showNotes && options.notes && (
               <>
