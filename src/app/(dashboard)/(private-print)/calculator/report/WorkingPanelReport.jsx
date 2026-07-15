@@ -15,7 +15,7 @@ import ReportOptionsPanel from './ReportOptionsPanel'
 import ReportStatsTable from './ReportStatsTable'
 
 // Small enough that a single-shape report comfortably fits one printed
-// page (see the @page rule in globals.css) alongside its stats table.
+// page alongside its stats table.
 const PREVIEW_SIZE = 320
 
 // MirrorView takes an imageRef for the SnapshotDialog's PNG export -

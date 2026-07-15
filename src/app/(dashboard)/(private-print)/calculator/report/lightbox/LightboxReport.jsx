@@ -14,9 +14,9 @@ import ReportOptionsPanel from '../ReportOptionsPanel'
 
 // Small enough that a typical gallery's thumbnail grid plus the full
 // three-section comparison table has a real shot at fitting one printed
-// page (see the @page rule in globals.css) - THUMB_SIZE in particular
-// drove most of the old layout's height, since MirrorView's aspect-ratio
-// box scales everything else (labels, gaps) along with it.
+// page - THUMB_SIZE in particular drove most of the old layout's height,
+// since MirrorView's aspect-ratio box scales everything else (labels,
+// gaps) along with it.
 const THUMB_SIZE = 130
 
 // See WorkingPanelReport.jsx - MirrorView takes an imageRef only for
