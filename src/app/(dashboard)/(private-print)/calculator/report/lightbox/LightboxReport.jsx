@@ -12,39 +12,44 @@ import ComparisonTable from '@/app/(dashboard)/(private)/calculator/ComparisonTa
 
 import ReportOptionsPanel from '../ReportOptionsPanel'
 
-const THUMB_SIZE = 220
+// Small enough that a typical gallery's thumbnail grid plus the full
+// three-section comparison table has a real shot at fitting one printed
+// page (see the @page rule in globals.css) - THUMB_SIZE in particular
+// drove most of the old layout's height, since MirrorView's aspect-ratio
+// box scales everything else (labels, gaps) along with it.
+const THUMB_SIZE = 130
 
 // See WorkingPanelReport.jsx - MirrorView takes an imageRef only for
 // SnapshotDialog's PNG export, unused here.
 const NO_IMAGE_REF = {current: null}
 
-export default function LightboxReport( {entries, gallery, contours, substrateProducts, initialSettings} )
+export default function LightboxReport( {entries, gallery, contours, initialSettings} )
 {
   const [options, setOptions] = useState( null )
 
   const ready = entries.filter( e => e.mirror )
 
   return (
-    <div className='p-6 flex flex-col gap-6' style={{maxWidth: 1100, marginInline: 'auto'}}>
+    <div className='p-4 flex flex-col gap-3' style={{maxWidth: 900, marginInline: 'auto'}}>
       <ReportOptionsPanel
         reportKind='lightbox'
         initialSettings={initialSettings}
-        showConsolidatedToggle={false}
+        showSectionToggles
         onChange={setOptions}
       />
 
       {options?.showCompany && (options.companyName || options.logoUrl) && (
-        <Stack direction='row' spacing={3} alignItems='center'>
+        <Stack direction='row' spacing={2} alignItems='center'>
           {/* eslint-disable-next-line @next/next/no-img-element -- arbitrary user-supplied logo URL, can't be pre-registered with next/image */}
-          {options.logoUrl && <img src={options.logoUrl} alt='' style={{height: 48}} />}
-          {options.companyName && <Typography variant='h5'>{options.companyName}</Typography>}
+          {options.logoUrl && <img src={options.logoUrl} alt='' style={{height: 36}} />}
+          {options.companyName && <Typography variant='h6'>{options.companyName}</Typography>}
         </Stack>
       )}
 
-      <Typography variant='h4'>Lightbox Comparison</Typography>
+      <Typography variant='h5'>Lightbox Comparison</Typography>
 
       {options?.showDate && (
-        <Typography variant='body2' color='text.secondary'>
+        <Typography variant='caption' color='text.secondary'>
           Generated {new Date().toLocaleDateString()}
         </Typography>
       )}
@@ -57,26 +62,37 @@ export default function LightboxReport( {entries, gallery, contours, substratePr
             style={{
               display: 'grid',
               gridTemplateColumns: `repeat(auto-fill, minmax(${THUMB_SIZE}px, 1fr))`,
-              gap: 24,
+              gap: 12,
             }}
           >
             {ready.map( entry => (
-              <div key={entry.id} className='flex flex-col gap-2 items-center' style={{breakInside: 'avoid'}}>
+              <div key={entry.id} className='flex flex-col gap-1 items-center' style={{breakInside: 'avoid'}}>
                 <MirrorView
                   mirror={entry.mirror}
                   settings={{...(entry.settings ?? DEFAULT_SETTINGS), showDims: 0}}
                   imageRef={NO_IMAGE_REF}
                   size={THUMB_SIZE}
                 />
-                <Typography variant='body2'>{entry.label}</Typography>
+                <Typography variant='caption'>{entry.label}</Typography>
               </div>
             ) )}
           </div>
 
           <Divider />
 
-          {/* defaultExpanded: a collapsed Accordion's contents wouldn't print */}
-          <ComparisonTable gallery={gallery} contours={contours} substrateProducts={substrateProducts} defaultExpanded />
+          {/* defaultExpanded: a collapsed Accordion's contents wouldn't
+              print at all. sections/dense come from the options panel's
+              per-section toggles - un-consolidated (still the regular
+              Area/Weight/Pricing sections, just individually
+              includable/excludable) and shrunk down, both in service of
+              fitting the whole gallery on one printed page. */}
+          <ComparisonTable
+            gallery={gallery}
+            contours={contours}
+            defaultExpanded
+            sections={options?.sections}
+            dense
+          />
         </>
       )}
 
@@ -84,7 +100,7 @@ export default function LightboxReport( {entries, gallery, contours, substratePr
         <>
           <Divider />
           <Typography variant='subtitle1'>Notes</Typography>
-          <Typography style={{whiteSpace: 'pre-wrap'}}>{options.notes}</Typography>
+          <Typography variant='body2' style={{whiteSpace: 'pre-wrap'}}>{options.notes}</Typography>
         </>
       )}
     </div>

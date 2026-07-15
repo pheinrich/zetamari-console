@@ -130,3 +130,14 @@ code {
   background-color: rgb(var(--mui-palette-info-mainChannel) / 0.08);
   border: 0;
 }
+
+/* Targets the calculator's printable reports (/calculator/report,
+   /calculator/report/lightbox) at a single US Letter page - 8.5"x11"
+   with a 0.5" margin on every side, a 7.5"x10" content area (2250x3000px
+   at 300dpi). Global rather than scoped to those pages specifically -
+   @page only has any effect while printing, so it's inert everywhere
+   else, and nothing else in the app is meant to be printed. */
+@page {
+  size: letter;
+  margin: 0.5in;
+}

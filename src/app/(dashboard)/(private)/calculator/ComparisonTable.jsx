@@ -30,10 +30,16 @@ const SECTIONS = [
 // gallery itself (via onSort, up in ComparisonTable/MirrorCalculator) so
 // the lightbox strip and every other section stay in the same order
 // rather than each table drifting independently.
-function ComparisonSection( {title, rows, compute, format, defaultExpanded, selectedId, onSelectEntry, sortState, onSort} )
+// `dense` shrinks row height/font size further than Table's own
+// size='small' already does - opt-in (default off, so the live
+// interactive calculator is unaffected) and used by the print reports,
+// where fitting a whole gallery's comparison data on one page matters
+// more than touch-friendly row height.
+function ComparisonSection( {title, rows, compute, format, defaultExpanded, selectedId, onSelectEntry, sortState, onSort, dense} )
 {
   const stats = rows.map( r => compute( r.mirror ) )
   const columnLabels = stats[0]?.rows.map( s => s.label ) ?? []
+  const cellSx = dense ? {paddingBlock: '2px', paddingInline: '8px', fontSize: '0.7rem'} : undefined
 
   function handleSortClick( col )
   {
@@ -49,19 +55,22 @@ function ComparisonSection( {title, rows, compute, format, defaultExpanded, sele
   }
 
   return (
-    <Accordion defaultExpanded={defaultExpanded}>
-      <AccordionSummary expandIcon={<i className='ri-arrow-down-s-line' />}>
-        <Typography>{title}</Typography>
+    <Accordion defaultExpanded={defaultExpanded} disableGutters={dense}>
+      <AccordionSummary
+        expandIcon={<i className='ri-arrow-down-s-line' />}
+        sx={dense ? {minHeight: 32, '& .MuiAccordionSummary-content': {marginBlock: '4px'}} : undefined}
+      >
+        <Typography variant={dense ? 'body2' : 'body1'}>{title}</Typography>
       </AccordionSummary>
-      <AccordionDetails>
+      <AccordionDetails sx={dense ? {padding: '4px 8px 8px'} : undefined}>
         <Table size='small'>
           <TableHead>
             <TableRow>
-              <TableCell>Name</TableCell>
+              <TableCell sx={cellSx}>Name</TableCell>
               {columnLabels.map( (label, col) => {
                 const active = sortState?.section === title && sortState?.col === col
                 return (
-                  <TableCell key={label} align='right' sortDirection={active ? sortState.dir : false}>
+                  <TableCell key={label} align='right' sortDirection={active ? sortState.dir : false} sx={cellSx}>
                     <TableSortLabel
                       active={active}
                       direction={active ? sortState.dir : 'asc'}
@@ -77,18 +86,18 @@ function ComparisonSection( {title, rows, compute, format, defaultExpanded, sele
           <TableBody>
             {rows.map( (r, i) => (
               <TableRow key={r.id} selected={r.id === selectedId} hover>
-                <TableCell>
+                <TableCell sx={cellSx}>
                   <Typography
                     component='span'
-                    variant='body2'
-                    onClick={() => onSelectEntry( r.id )}
-                    style={{cursor: 'pointer', fontWeight: r.id === selectedId ? 600 : 400}}
+                    variant={dense ? 'caption' : 'body2'}
+                    onClick={() => onSelectEntry?.( r.id )}
+                    style={{cursor: onSelectEntry ? 'pointer' : 'default', fontWeight: r.id === selectedId ? 600 : 400}}
                   >
                     {r.label}
                   </Typography>
                 </TableCell>
                 {stats[i].rows.map( (s, si) => (
-                  <TableCell key={columnLabels[si]} align='right'>{format( s.value )}</TableCell>
+                  <TableCell key={columnLabels[si]} align='right' sx={cellSx}>{format( s.value )}</TableCell>
                 ) )}
               </TableRow>
             ) )}
@@ -104,12 +113,20 @@ function ComparisonSection( {title, rows, compute, format, defaultExpanded, sele
 // section so all three can be checked without permanently taking up
 // space. Entries without a resolvable mirror (in-flight or degenerate)
 // are left out of the comparison rather than breaking it.
+// `defaultExpanded` opens every section up front - used by the print
+// report, where a collapsed Accordion's contents wouldn't print at all.
 // `selectedId`/`onSelectEntry` let clicking a row's name select that
 // entry exactly like clicking its lightbox thumbnail would; `onReorder`
 // is called with the full reordered id list whenever a column header is
 // clicked to sort, so the caller can apply that same order to `gallery`
 // (which the lightbox strip and every section here all derive from).
-export default function ComparisonTable( {gallery, contours, defaultExpanded = true, selectedId, onSelectEntry, onReorder} )
+// `sections` optionally restricts which of Area/Weight/Pricing render -
+// {Area: true, Weight: false, Pricing: true} - undefined/omitted shows
+// all three (the live calculator's usage); the lightbox print report
+// uses this to let a person trim sections that don't fit on one page.
+// `dense` shrinks row height/font size for the same print report - see
+// ComparisonSection.
+export default function ComparisonTable( {gallery, contours, defaultExpanded = true, selectedId, onSelectEntry, onReorder, sections, dense} )
 {
   const [sortState, setSortState] = useState( null )
 
@@ -129,9 +146,11 @@ export default function ComparisonTable( {gallery, contours, defaultExpanded = t
     onReorder?.( orderedIds )
   }
 
+  const visibleSections = SECTIONS.filter( s => sections?.[s.title] ?? true )
+
   return (
     <div className='flex flex-col gap-2'>
-      {SECTIONS.map( s => (
+      {visibleSections.map( s => (
         <ComparisonSection
           key={s.title}
           title={s.title}
@@ -143,6 +162,7 @@ export default function ComparisonTable( {gallery, contours, defaultExpanded = t
           onSelectEntry={onSelectEntry}
           sortState={sortState}
           onSort={handleSort}
+          dense={dense}
         />
       ) )}
     </div>

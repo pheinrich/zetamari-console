@@ -12,12 +12,15 @@ import Typography from '@mui/material/Typography'
 
 import { updateSettings } from '@/db/actions/settings'
 
+const SECTION_TITLES = ['Area', 'Weight', 'Pricing']
+
 const DEFAULT_OPTIONS = {
   showDate: true,
   showCompany: false,
   showNotes: false,
   notes: '',
   consolidated: false,
+  sections: {Area: true, Weight: true, Pricing: true},
 }
 
 function storageKey( reportKind )
@@ -27,15 +30,17 @@ function storageKey( reportKind )
 
 // Print-only options panel (hidden on print via Tailwind's print:hidden):
 // lets the person generating a report choose what appears on it - date,
-// company branding, notes, and (working-panel report only) a consolidated
-// stats table - before hitting Print.
+// company branding, notes, and either a consolidated stats table
+// (working-panel report only) or per-section Area/Weight/Pricing toggles
+// (lightbox report only, to help trim the comparison table down to fit
+// one printed page) - before hitting Print.
 //
 // Toggle/notes choices persist to localStorage per report kind, so they
 // don't need re-picking every visit. Company name/logo persist to the
 // database instead (Settings/updateSettings) - that's meant to be entered
 // once and reused on every future report from any device, not just
 // remembered locally.
-export default function ReportOptionsPanel( {reportKind, initialSettings, showConsolidatedToggle, onChange} )
+export default function ReportOptionsPanel( {reportKind, initialSettings, showConsolidatedToggle, showSectionToggles, onChange} )
 {
   const [options, setOptions] = useState( DEFAULT_OPTIONS )
   const [companyName, setCompanyName] = useState( initialSettings?.companyName ?? '' )
@@ -66,6 +71,11 @@ export default function ReportOptionsPanel( {reportKind, initialSettings, showCo
   function updateOption( patch )
   {
     setOptions( prev => ({...prev, ...patch}) )
+  }
+
+  function toggleSection( title, checked )
+  {
+    setOptions( prev => ({...prev, sections: {...prev.sections, [title]: checked}}) )
   }
 
   async function handleSaveBranding()
@@ -140,6 +150,26 @@ export default function ReportOptionsPanel( {reportKind, initialSettings, showCo
             control={<Checkbox checked={options.consolidated} onChange={evt => updateOption( {consolidated: evt.target.checked} )} />}
             label='Consolidated data table (one table instead of three)'
           />
+        )}
+
+        {showSectionToggles && (
+          <div>
+            <Typography variant='body2' className='mbe-1'>Comparison table sections</Typography>
+            <Stack className='pis-2'>
+              {SECTION_TITLES.map( title => (
+                <FormControlLabel
+                  key={title}
+                  control={
+                    <Checkbox
+                      checked={options.sections[title] ?? true}
+                      onChange={evt => toggleSection( title, evt.target.checked )}
+                    />
+                  }
+                  label={title}
+                />
+              ) )}
+            </Stack>
+          </div>
         )}
 
         <Button variant='contained' onClick={() => window.print()} startIcon={<i className='ri-printer-line' />}>

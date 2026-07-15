@@ -14,7 +14,9 @@ import { DEFAULT_SETTINGS } from '@/app/(dashboard)/(private)/calculator/mirrorS
 import ReportOptionsPanel from './ReportOptionsPanel'
 import ReportStatsTable from './ReportStatsTable'
 
-const PREVIEW_SIZE = 480
+// Small enough that a single-shape report comfortably fits one printed
+// page (see the @page rule in globals.css) alongside its stats table.
+const PREVIEW_SIZE = 320
 
 // MirrorView takes an imageRef for the SnapshotDialog's PNG export -
 // nothing on the report page needs that, so it just gets a static object
@@ -28,7 +30,7 @@ export default function WorkingPanelReport( {label, mirror, settings, initialSet
   const [options, setOptions] = useState( null )
 
   return (
-    <div className='p-6 flex flex-col gap-6' style={{maxWidth: 900, marginInline: 'auto'}}>
+    <div className='p-4 flex flex-col gap-3' style={{maxWidth: 700, marginInline: 'auto'}}>
       <ReportOptionsPanel
         reportKind='working'
         initialSettings={initialSettings}
@@ -40,19 +42,19 @@ export default function WorkingPanelReport( {label, mirror, settings, initialSet
         <Typography>Nothing to report - no shape or dimensions were provided.</Typography>
       ) : (
         <Card variant='outlined'>
-          <CardContent className='flex flex-col gap-4'>
+          <CardContent className='flex flex-col gap-3'>
             {options?.showCompany && (options.companyName || options.logoUrl) && (
-              <Stack direction='row' spacing={3} alignItems='center'>
+              <Stack direction='row' spacing={2} alignItems='center'>
                 {/* eslint-disable-next-line @next/next/no-img-element -- arbitrary user-supplied logo URL, can't be pre-registered with next/image */}
-                {options.logoUrl && <img src={options.logoUrl} alt='' style={{height: 48}} />}
-                {options.companyName && <Typography variant='h5'>{options.companyName}</Typography>}
+                {options.logoUrl && <img src={options.logoUrl} alt='' style={{height: 36}} />}
+                {options.companyName && <Typography variant='h6'>{options.companyName}</Typography>}
               </Stack>
             )}
 
-            <Typography variant='h4'>{label}</Typography>
+            <Typography variant='h5'>{label}</Typography>
 
             {options?.showDate && (
-              <Typography variant='body2' color='text.secondary'>
+              <Typography variant='caption' color='text.secondary'>
                 Generated {new Date().toLocaleDateString()}
               </Typography>
             )}
@@ -67,7 +69,7 @@ export default function WorkingPanelReport( {label, mirror, settings, initialSet
               <>
                 <Divider />
                 <Typography variant='subtitle1'>Notes</Typography>
-                <Typography style={{whiteSpace: 'pre-wrap'}}>{options.notes}</Typography>
+                <Typography variant='body2' style={{whiteSpace: 'pre-wrap'}}>{options.notes}</Typography>
               </>
             )}
           </CardContent>
