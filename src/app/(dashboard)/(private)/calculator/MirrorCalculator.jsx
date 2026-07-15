@@ -9,14 +9,11 @@ import CardContent from '@mui/material/CardContent'
 import CardHeader from '@mui/material/CardHeader'
 import Chip from '@mui/material/Chip'
 import Divider from '@mui/material/Divider'
-import FormControl from '@mui/material/FormControl'
 import IconButton from '@mui/material/IconButton'
-import InputLabel from '@mui/material/InputLabel'
 import ListItemIcon from '@mui/material/ListItemIcon'
 import ListItemText from '@mui/material/ListItemText'
 import Menu from '@mui/material/Menu'
 import MenuItem from '@mui/material/MenuItem'
-import Select from '@mui/material/Select'
 import Stack from '@mui/material/Stack'
 import Tooltip from '@mui/material/Tooltip'
 import Typography from '@mui/material/Typography'
@@ -26,6 +23,8 @@ import { build } from '@/libs/mirror'
 import { DEFAULT_SETTINGS } from './mirrorSettings'
 import { resolveSubstrateInfo } from './resolveSubstrateInfo'
 import { encodeEntry, encodeEntryList } from './urlCodec'
+import CopyFromMenu from './CopyFromMenu'
+import EditableLabel from './EditableLabel'
 import ParamsPanel from './ParamsPanel'
 import MirrorPanel from './MirrorPanel'
 import StatsSummary from './StatsSummary'
@@ -40,25 +39,30 @@ function settingsEqual( a, b )
   return a.showBack === b.showBack && a.showDims === b.showDims && a.showGlass === b.showGlass && a.zoom === b.zoom
 }
 
-// The calculator: one working panel (product picker, live preview,
-// dimensions, stats) plus a lightbox strip of saved snapshots below it.
-// Replaces the earlier side-by-side multi-panel board - comparison now
-// happens by clicking between saved thumbnails rather than viewing many
-// panels at once.
+// The calculator: one working panel (editable label, live preview,
+// dimensions, stats) plus a lightbox strip of saved snapshots below it,
+// and a sortable comparison table below that. Replaces the earlier
+// side-by-side multi-panel board - comparison now happens by clicking
+// between saved thumbnails (or comparison table rows) rather than
+// viewing many panels at once.
 //
 // `initialState` comes from urlCodec's decodeInitialState(): {current,
-// gallery, pinned}, already resolved from whichever of the current/
-// legacy query params was present.
+// gallery, pinned}, already fully resolved (contour ids + label, not a
+// productId) from whichever of the current/legacy query params was
+// present - this component no longer resolves anything against a
+// product at mount time; "Copy From..." (below) is the only place a
+// product's stored values get pulled in, and only as a one-shot copy.
 export default function MirrorCalculator( {initialState, contours, substrateProducts} )
 {
-  const [productId, setProductId] = useState( initialState.current.productId ?? '' )
-  const [substrateInfo, setSubstrateInfoState] = useState( () =>
-    resolveSubstrateInfo(
-      {width: initialState.current.width, height: initialState.current.height, border: initialState.current.border},
-      substrateProducts.find( p => p.id === initialState.current.productId ) ?? null,
-      contours
-    )
-  )
+  const [substrateInfo, setSubstrateInfoState] = useState( () => ({
+    outsideId: initialState.current.outsideId,
+    insideId: initialState.current.insideId,
+    rabbetId: initialState.current.rabbetId,
+    width: initialState.current.width,
+    height: initialState.current.height,
+    border: initialState.current.border,
+  }) )
+  const [label, setLabel] = useState( initialState.current.label ?? '' )
   const [settings, setSettings] = useState( initialState.current.settings ?? DEFAULT_SETTINGS )
   const [pinned, setPinned] = useState( initialState.pinned ?? false )
 
@@ -71,26 +75,24 @@ export default function MirrorCalculator( {initialState, contours, substrateProd
 
   const imageRef = useRef( null )
 
-  function handleProductChange( newProductId )
-  {
-    const product = substrateProducts.find( p => p.id === newProductId )
-    const next = resolveSubstrateInfo( {}, product ?? null, contours )
-
-    setProductId( newProductId )
-    setSubstrateInfoState( next )
-    setSelectedId( null )
-  }
-
   // Dimensions edits live-update the selected lightbox entry (if any)
   // rather than clearing the selection - adjusting a saved prototype's
   // size/border is treated as refining that same entry, not starting a
-  // new one. (Switching to a different product, below, is still treated
-  // as a big enough jump to drop the selection instead.)
+  // new one.
   function setSubstrateInfo( next )
   {
     setSubstrateInfoState( next )
     if( selectedId )
       updateSelectedEntry( {width: next.width, height: next.height, border: next.border} )
+  }
+
+  // Renaming the label live-updates the selected entry too, same as any
+  // other working-panel edit.
+  function setEntryLabel( next )
+  {
+    setLabel( next )
+    if( selectedId )
+      updateSelectedEntry( {label: next} )
   }
 
   // Settings/zoom edits also live-update the selected entry - unless
@@ -109,18 +111,24 @@ export default function MirrorCalculator( {initialState, contours, substrateProd
     setGallery( prev => prev.map( e => (e.id === selectedId ? {...e, ...patch} : e) ) )
   }
 
-  // Loads a lightbox entry into the working panel. Shape/dimensions
+  // Loads a lightbox entry into the working panel. Shape/dimensions/label
   // always come from the entry; view settings (toggles/zoom) only come
   // from the entry when settings aren't pinned - pinning is exactly the
   // escape hatch for "keep looking at these settings no matter which
-  // entry I click".
+  // entry I click". Also used when a comparison table row's name is
+  // clicked (see handleSelectFromTable below) - clicking a name is meant
+  // to behave exactly like clicking the matching thumbnail.
   function loadEntry( entry )
   {
-    const product = substrateProducts.find( p => p.id === entry.productId ) ?? null
-    const next = resolveSubstrateInfo( {width: entry.width, height: entry.height, border: entry.border}, product, contours )
-
-    setProductId( entry.productId ?? '' )
-    setSubstrateInfoState( next )
+    setSubstrateInfoState( {
+      outsideId: entry.outsideId,
+      insideId: entry.insideId,
+      rabbetId: entry.rabbetId,
+      width: entry.width,
+      height: entry.height,
+      border: entry.border,
+    } )
+    setLabel( entry.label ?? '' )
     if( !pinned )
       setSettings( entry.settings ?? DEFAULT_SETTINGS )
     setSelectedId( entry.id )
@@ -161,6 +169,39 @@ export default function MirrorCalculator( {initialState, contours, substrateProd
     })
   }
 
+  // Applies a full reordering - used by the comparison table's column
+  // sort, as opposed to reorderGallery's single drag move above. Reuses
+  // the same `gallery` state the lightbox strip and every comparison
+  // section already derive from, so sorting by any stat reorders all of
+  // them together.
+  function applyGalleryOrder( orderedIds )
+  {
+    setGallery( prev => {
+      const byId = new Map( prev.map( e => [e.id, e] ) )
+      return orderedIds.map( id => byId.get( id ) ).filter( Boolean )
+    })
+  }
+
+  // Clicking a name in the comparison table selects that entry exactly as
+  // if its lightbox thumbnail had been clicked directly.
+  function handleSelectFromTable( id )
+  {
+    const entry = gallery.find( e => e.id === id )
+    if( entry )
+      loadEntry( entry )
+  }
+
+  // Resets the working panel to a blank shape and clears the label/
+  // selection - the "start fresh" action the old Prototype dropdown's
+  // "— Blank Shape —" option used to provide. Doesn't touch settings
+  // (view toggles/zoom), matching that same old behavior.
+  function handleNew()
+  {
+    setSubstrateInfoState( resolveSubstrateInfo( {}, null, contours ) )
+    setLabel( '' )
+    setSelectedId( null )
+  }
+
   function handleAddToLightbox()
   {
     const id = `g-${nextGalleryIdRef.current}`
@@ -168,7 +209,10 @@ export default function MirrorCalculator( {initialState, contours, substrateProd
 
     const entry = {
       id,
-      productId: productId || undefined,
+      label: label || 'Blank Shape',
+      outsideId: substrateInfo.outsideId,
+      insideId: substrateInfo.insideId,
+      rabbetId: substrateInfo.rabbetId,
       width: substrateInfo.width,
       height: substrateInfo.height,
       border: substrateInfo.border,
@@ -177,7 +221,36 @@ export default function MirrorCalculator( {initialState, contours, substrateProd
 
     setGallery( prev => [...prev, entry] )
     setSelectedId( id )
-    setMenuAnchor( null )
+  }
+
+  // "Copy From..." replaces both the old Prototype dropdown and the
+  // Revert-to-Prototype-Dimensions menu item: picking a product always
+  // initializes dimensions/contours/label fresh from it, live-updating
+  // the selected entry the same way any other working-panel edit does -
+  // so re-picking the same product later is how you "revert" after
+  // drifting from it, without keeping any ongoing live link to maintain.
+  // `label` (dimensions + shape family, e.g. '30"x33" Leaf') is computed
+  // by CopyFromMenu itself, not derived from product.name here - the
+  // menu's Base (Variant) parsing that the family name depends on lives
+  // there.
+  function handleCopyFrom( product, label )
+  {
+    const next = resolveSubstrateInfo( {}, product, contours )
+
+    setSubstrateInfoState( next )
+    setLabel( label )
+    if( selectedId )
+    {
+      updateSelectedEntry( {
+        outsideId: next.outsideId,
+        insideId: next.insideId,
+        rabbetId: next.rabbetId,
+        width: next.width,
+        height: next.height,
+        border: next.border,
+        label,
+      } )
+    }
   }
 
   function handleTogglePinned()
@@ -205,32 +278,12 @@ export default function MirrorCalculator( {initialState, contours, substrateProd
     setMenuAnchor( null )
   }
 
-  const selectedProduct = substrateProducts.find( p => p.id === productId ) ?? null
-  const canRevert = Boolean( selectedProduct?.substrateInfo ) && (
-    substrateInfo.width !== selectedProduct.substrateInfo.width
-    || substrateInfo.height !== selectedProduct.substrateInfo.height
-    || substrateInfo.border !== selectedProduct.substrateInfo.border
-  )
-
-  // Discards local width/height/border edits, restoring the values
-  // actually saved on the tied product. Reuses setSubstrateInfo so this
-  // also live-updates the selected lightbox entry, same as any other
-  // dimensions edit.
-  function handleRevert()
-  {
-    if( !selectedProduct?.substrateInfo )
-      return
-
-    setSubstrateInfo( resolveSubstrateInfo( {}, selectedProduct, contours ) )
-    setMenuAnchor( null )
-  }
-
   const outsideContour = contours.find( c => c.id === substrateInfo.outsideId )
   const insideContour = contours.find( c => c.id === substrateInfo.insideId )
   const rabbetContour = contours.find( c => c.id === substrateInfo.rabbetId )
 
   const mirror = useMemo( () => {
-    if( !outsideContour || (!outsideContour.svgData && !outsideContour.shapeType) )
+    if( !outsideContour || (!outsideContour.svgData && !outsideContour.shape?.key) )
       return undefined
     if( !substrateInfo.width || !substrateInfo.height )
       return undefined
@@ -241,7 +294,7 @@ export default function MirrorCalculator( {initialState, contours, substrateProd
         Number( substrateInfo.width ),
         Number( substrateInfo.height ),
         Number( substrateInfo.border ) || 0,
-        outsideContour.shapeType,
+        outsideContour.shape?.key,
         outsideContour.svgData,
         insideContour?.svgData,
         rabbetContour?.svgData,
@@ -273,7 +326,7 @@ export default function MirrorCalculator( {initialState, contours, substrateProd
 
       url.searchParams.delete( 'productId' )
       url.searchParams.delete( 'panels' )
-      url.searchParams.set( 'current', encodeEntry( {productId, width: substrateInfo.width, height: substrateInfo.height, border: substrateInfo.border, settings} ) )
+      url.searchParams.set( 'current', encodeEntry( {...substrateInfo, label, settings} ) )
 
       const galleryEncoded = encodeEntryList( gallery )
       if( galleryEncoded )
@@ -290,7 +343,7 @@ export default function MirrorCalculator( {initialState, contours, substrateProd
     }, 300 )
 
     return () => clearTimeout( timeoutId )
-  }, [productId, substrateInfo, settings, gallery, pinned] )
+  }, [substrateInfo, label, settings, gallery, pinned] )
 
   if( 0 === contours.length )
   {
@@ -309,24 +362,18 @@ export default function MirrorCalculator( {initialState, contours, substrateProd
   return (
     <Card>
       <CardHeader
-        title={
-          <FormControl size='small' style={{minWidth: 260}}>
-            <InputLabel id='calculator-prototype'>Prototype</InputLabel>
-            <Select
-              labelId='calculator-prototype'
-              label='Prototype'
-              value={productId}
-              onChange={e => handleProductChange( e.target.value )}
-            >
-              <MenuItem value=''>— Blank Shape —</MenuItem>
-              {substrateProducts.map( p => (
-                <MenuItem key={p.id} value={p.id}>{p.name}</MenuItem>
-              ) )}
-            </Select>
-          </FormControl>
-        }
+        title={<EditableLabel value={label} onChange={setEntryLabel} />}
         action={
           <Stack direction='row' spacing={2}>
+            <Button
+              variant='outlined'
+              size='small'
+              onClick={handleNew}
+              startIcon={<i className='ri-add-line' />}
+            >
+              New
+            </Button>
+            <CopyFromMenu substrateProducts={substrateProducts} onSelect={handleCopyFrom} />
             <Button
               variant='outlined'
               size='small'
@@ -344,16 +391,12 @@ export default function MirrorCalculator( {initialState, contours, substrateProd
                 <ListItemIcon><i className={pinned ? 'ri-pushpin-2-fill' : 'ri-pushpin-2-line'} /></ListItemIcon>
                 <ListItemText>{pinned ? 'Unpin Settings' : 'Pin Settings'}</ListItemText>
               </MenuItem>
-              <MenuItem onClick={handleRevert} disabled={!canRevert}>
-                <ListItemIcon><i className='ri-arrow-go-back-line' /></ListItemIcon>
-                <ListItemText>Revert to Prototype Dimensions</ListItemText>
-              </MenuItem>
               <Divider />
               <MenuItem
                 component={NextLink}
                 href={{
                   pathname: '/calculator/report',
-                  query: {current: encodeEntry( {productId, width: substrateInfo.width, height: substrateInfo.height, border: substrateInfo.border, settings} )},
+                  query: {current: encodeEntry( {...substrateInfo, label, settings} )},
                 }}
                 target='_blank'
                 rel='noopener noreferrer'
@@ -434,7 +477,6 @@ export default function MirrorCalculator( {initialState, contours, substrateProd
           <LightboxStrip
             gallery={gallery}
             contours={contours}
-            substrateProducts={substrateProducts}
             selectedId={selectedId}
             onSelect={loadEntry}
             onRemove={removeFromLightbox}
@@ -442,7 +484,13 @@ export default function MirrorCalculator( {initialState, contours, substrateProd
           />
         </div>
 
-        <ComparisonTable gallery={gallery} contours={contours} substrateProducts={substrateProducts} />
+        <ComparisonTable
+          gallery={gallery}
+          contours={contours}
+          selectedId={selectedId}
+          onSelectEntry={handleSelectFromTable}
+          onReorder={applyGalleryOrder}
+        />
       </CardContent>
 
       <SaveAsProductDialog open={saveOpen} onClose={() => setSaveOpen( false )} substrateInfo={substrateInfo} />

@@ -6,19 +6,22 @@ import MirrorCalculator from './MirrorCalculator'
 
 // Entry points: /calculator (blank working panel), /calculator?current=...
 // &gallery=...&pinned=1 (the full working-panel + lightbox state - see
-// urlCodec.js), and two older links still honored for compatibility: the
+// urlCodec.js), and three older links still honored for compatibility:
+// the pre-"Copy From" ?current=... format (which identified a shape by
+// productId rather than by contour ids + an editable label), the
 // single-panel /calculator?productId=N (e.g. a product's "Open in
-// Calculator" button) and the short-lived multi-panel /calculator?panels=.
-// None of these edit a tied product in place - the calculator is
-// exploratory local state; the only persistence action is "Save as New
-// Product" (in the working panel's ⋮ menu), which forks the current
-// values into a brand new Product.
+// Calculator" button), and the short-lived multi-panel /calculator?panels=.
+// None of these tie the working panel to a product in an ongoing way -
+// the calculator is exploratory local state; "Copy From..." (in the
+// working panel's header) only ever copies a product's values in once,
+// and the only persistence action is "Save as New Product" (in the ⋮
+// menu), which forks the current values into a brand new Product.
 //
 // substrateProducts already carries every substrate product's full
 // SubstrateInfo (dimensions + outside/inside/rabbet contours), so no
-// separate per-product fetch is needed here - MirrorCalculator resolves
-// the working panel's (and each lightbox entry's) productId against this
-// same list.
+// separate per-product fetch is needed here - decodeInitialState uses
+// this same list (and contours) to resolve any of the legacy,
+// productId-keyed link formats into the current contour-id-based shape.
 export default async function CalculatorPage( {searchParams} )
 {
   const params = await searchParams
@@ -28,7 +31,7 @@ export default async function CalculatorPage( {searchParams} )
     readSubstrateProducts(),
   ])
 
-  const initialState = decodeInitialState( params )
+  const initialState = decodeInitialState( params, contours, substrateProducts )
 
   return (
     // Keyed on the raw params so a genuinely different link (a fresh

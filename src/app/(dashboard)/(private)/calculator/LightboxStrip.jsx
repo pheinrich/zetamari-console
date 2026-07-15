@@ -12,7 +12,7 @@ import LightboxThumbnail from './LightboxThumbnail'
 // press-and-move gesture, which doesn't interfere with a plain click to
 // select), and the wrapping div here is the drop target that actually
 // performs the reorder.
-export default function LightboxStrip( {gallery, contours, substrateProducts, selectedId, onSelect, onRemove, onReorder} )
+export default function LightboxStrip( {gallery, contours, selectedId, onSelect, onRemove, onReorder} )
 {
   const [dragId, setDragId] = useState( null )
 
@@ -43,7 +43,6 @@ export default function LightboxStrip( {gallery, contours, substrateProducts, se
           <LightboxThumbnail
             entry={entry}
             contours={contours}
-            substrateProducts={substrateProducts}
             selected={selectedId === entry.id}
             onSelect={() => onSelect( entry )}
             onRemove={() => onRemove( entry.id )}

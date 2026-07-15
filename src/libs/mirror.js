@@ -39,10 +39,11 @@ export function buildFromSVGData( data )
   return new GeometryFactory().createPolygon( coords )
 }
 
-// `shapeType` is a Contour.shapeType value ('circle', 'oval', etc - see
-// src/db/models/Contour.js) rather than the numeric codes this used
-// before shapeType existed; those only ever "worked" by coincidence of
-// contour insertion order.
+// `shapeType` is a ShapeType.key value ('circle', 'oval', etc - see
+// src/db/models/ShapeType.js, joined onto a Contour via its `shape`
+// association) rather than the numeric codes this used before shapeType
+// existed; those only ever "worked" by coincidence of contour insertion
+// order.
 export function buildFromType( shapeType, width, height )
 {
   let coords, geometry

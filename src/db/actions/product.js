@@ -104,9 +104,9 @@ export async function readProduct( id, eager )
           model: SubstrateInfo,
           as: 'substrateInfo',
           include: [
-            { association: 'outside' },
-            { association: 'inside' },
-            { association: 'rabbet' },
+            { association: 'outside', include: [{association: 'shape'}] },
+            { association: 'inside', include: [{association: 'shape'}] },
+            { association: 'rabbet', include: [{association: 'shape'}] },
           ]
         },
         { model: BeadInfo, as: 'beadInfo' },
@@ -177,9 +177,11 @@ export async function readProducts()
 }
 
 // Substrate products (type: 'substrate'), with their SubstrateInfo and
-// outside/inside/rabbet Contours eagerly loaded - used by the mirror
+// outside/inside/rabbet Contours (each with its shape family - see
+// Contour.js's `shape` association) eagerly loaded - used by the mirror
 // calculator's "load an existing substrate" picker, which needs the
-// dimensions/contours up front rather than a per-row follow-up fetch.
+// dimensions/contours/shape family up front rather than a per-row
+// follow-up fetch (the "Copy From..." menu groups by shape family).
 export async function readSubstrateProducts()
 {
   const session = await auth()
@@ -194,9 +196,9 @@ export async function readSubstrateProducts()
         model: SubstrateInfo,
         as: 'substrateInfo',
         include: [
-          { association: 'outside' },
-          { association: 'inside' },
-          { association: 'rabbet' },
+          { association: 'outside', include: [{association: 'shape'}] },
+          { association: 'inside', include: [{association: 'shape'}] },
+          { association: 'rabbet', include: [{association: 'shape'}] },
         ]
       },
     ],

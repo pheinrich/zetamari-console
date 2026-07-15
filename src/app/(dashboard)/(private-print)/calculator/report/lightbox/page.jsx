@@ -16,6 +16,9 @@ import LightboxReport from './LightboxReport'
 // its own rows client-side (it's reused as-is from the interactive
 // calculator), so `gallery` is passed through in its raw encoded shape
 // alongside the pre-resolved `entries` used for the thumbnail grid.
+// `substrateProducts` is only needed here, for decodeEntryList()'s
+// legacy (pre-Copy-From) link fallback - current-format entries carry
+// their own contour ids/label directly, and nothing downstream needs it.
 export default async function CalculatorLightboxReportPage( {searchParams} )
 {
   const params = await searchParams
@@ -26,12 +29,12 @@ export default async function CalculatorLightboxReportPage( {searchParams} )
     readSettings(),
   ])
 
-  const gallery = decodeEntryList( params?.gallery ).map( (entry, i) => ({...entry, id: `g-${i}`}) )
+  const gallery = decodeEntryList( params?.gallery, contours, substrateProducts ).map( (entry, i) => ({...entry, id: `g-${i}`}) )
 
   const entries = gallery.map( entry => ({
     id: entry.id,
-    label: labelForEntry( entry, substrateProducts ),
-    mirror: resolveEntryMirror( entry, contours, substrateProducts ),
+    label: labelForEntry( entry ),
+    mirror: resolveEntryMirror( entry, contours ),
     settings: entry.settings,
   }) )
 
@@ -40,7 +43,6 @@ export default async function CalculatorLightboxReportPage( {searchParams} )
       entries={entries}
       gallery={gallery}
       contours={contours}
-      substrateProducts={substrateProducts}
       initialSettings={settings}
     />
   )

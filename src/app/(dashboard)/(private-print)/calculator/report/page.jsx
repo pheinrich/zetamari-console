@@ -24,9 +24,9 @@ export default async function CalculatorReportPage( {searchParams} )
     readSettings(),
   ])
 
-  const {current} = decodeInitialState( params )
-  const mirror = resolveEntryMirror( current, contours, substrateProducts )
-  const label = labelForEntry( current, substrateProducts )
+  const {current} = decodeInitialState( params, contours, substrateProducts )
+  const mirror = resolveEntryMirror( current, contours )
+  const label = labelForEntry( current )
 
   return (
     <WorkingPanelReport
