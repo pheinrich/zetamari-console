@@ -10,9 +10,13 @@ import { build } from './mirror'
 
 // Flat defaults for labor stages that don't correlate with geometry at
 // all - design and finishing time are roughly constant regardless of a
-// mirror's size, so there's no heuristic to derive them from.
-const LABOR_DESIGN_HR = 0.5     // 30 minutes
-const LABOR_FINISHING_HR = 5 / 60  // 5 minutes
+// mirror's size, so there's no heuristic to derive them from. In
+// minutes, like every other Labor CostFactor (see the
+// 20260718000000-labor-quantities-to-minutes.js migration) - these
+// quantities are typically well under an hour, so decimal-hour values
+// were awkward to read/edit.
+const LABOR_DESIGN_MIN = 30
+const LABOR_FINISHING_MIN = 5
 
 // Which area-based material CostFactor a BOM component type stands in
 // for, once it's actually in the bill of materials - a mirror component
@@ -93,12 +97,16 @@ export function computeSupersededFactors( product )
 // into machine run-time, and the sq-in/hr throughput constants seed the
 // sanding/glueing/grouting heuristics. Any of these can be null/unset
 // (not yet configured), in which case the dependent quantities default
-// to 0 rather than a misleading guess. All the labor/machine CostFactors
-// this feeds are in hours (see CostFactors.unit), regardless of the
-// units the shop enters these constants in - feedRateInPerMin is in/min,
-// so cutDistance/feedRate yields minutes and needs an extra /60; the
+// to 0 rather than a misleading guess. Machine-category CostFactors
+// (machineWear, utilities) are in their physical units (in, hr); Labor-
+// category ones are all in minutes (see CostFactors.unit and the
+// 20260718000000-labor-quantities-to-minutes.js migration), regardless
+// of the units the shop enters these constants in - feedRateInPerMin is
+// in/min, so cutDistance/feedRate yields minutes directly for
+// laborCnc, but utilities still wants hours so that's divided by 60; the
 // *RateSqInPerHr constants are a throughput (sq-in of coverage per hour,
-// bigger = faster), so time is area/rate rather than area*rate.
+// bigger = faster), so hours is area/rate, and the labor quantities
+// multiply that back out to minutes.
 export function computeDefaultQuantities( product, settings )
 {
   const mirror = buildGeometry( product )
@@ -113,7 +121,7 @@ export function computeDefaultQuantities( product, settings )
   const cutDistance = mirror?.outside?.dims?.perimeter ?? 0
 
   const feedRate = settings?.feedRateInPerMin || 0
-  const runTimeHr = feedRate > 0 ? (cutDistance / feedRate) / 60 : 0
+  const runTimeMin = feedRate > 0 ? cutDistance / feedRate : 0
 
   const sandingRate = settings?.sandingRateSqInPerHr || 0
   const glueingRate = settings?.glueingRateSqInPerHr || 0
@@ -133,14 +141,15 @@ export function computeDefaultQuantities( product, settings )
     substrate: substrateArea,
     bom: bomCost,
     machineWear: cutDistance,
-    // Utilities and CNC labor both derive from the same machine run-time -
-    // an operator is occupied for as long as the machine is cutting.
-    utilities: runTimeHr,
-    laborCnc: runTimeHr,
-    laborDesign: LABOR_DESIGN_HR,
-    laborSanding: sandingRate > 0 ? mosaicArea / sandingRate : 0,
-    laborGlueing: glueingRate > 0 ? mosaicArea / glueingRate : 0,
-    laborGrouting: groutingRate > 0 ? mosaicArea / groutingRate : 0,
-    laborFinishing: LABOR_FINISHING_HR,
+    // Utilities (machine-category, hours) and CNC labor (labor-category,
+    // minutes) both derive from the same machine run-time - an operator
+    // is occupied for as long as the machine is cutting.
+    utilities: runTimeMin / 60,
+    laborCnc: runTimeMin,
+    laborDesign: LABOR_DESIGN_MIN,
+    laborSanding: sandingRate > 0 ? (mosaicArea / sandingRate) * 60 : 0,
+    laborGlueing: glueingRate > 0 ? (mosaicArea / glueingRate) * 60 : 0,
+    laborGrouting: groutingRate > 0 ? (mosaicArea / groutingRate) * 60 : 0,
+    laborFinishing: LABOR_FINISHING_MIN,
   }
 }
