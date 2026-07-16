@@ -53,6 +53,33 @@ function buildGeometry( product )
   )
 }
 
+// The only unit pairs a quantity ever needs converting between when its
+// rate is quoted differently than its quantity is tracked (see
+// CostFactor.rateUnit) - just the two time units so far.
+const MINUTES_PER_UNIT = {min: 1, hr: 60}
+
+// Converts a factor's quantity (tracked in CostFactor.unit) into
+// whatever unit its ProfileRate.rate is quoted in (CostFactor.rateUnit,
+// falling back to unit itself when null - the common case), so
+// `quantity * rate` always multiplies like units. Only Labor factors
+// currently have a rateUnit that differs from their unit (minutes
+// tracked, but priced per hour - see the
+// 20260719000000-labor-rate-unit-hours.js migration); anything else is
+// a no-op.
+export function convertToRateUnit( quantity, factor )
+{
+  const rateUnit = factor.rateUnit || factor.unit
+  if( rateUnit === factor.unit )
+    return quantity
+
+  const fromMinutes = MINUTES_PER_UNIT[factor.unit]
+  const toMinutes = MINUTES_PER_UNIT[rateUnit]
+  if( !fromMinutes || !toMinutes )
+    return quantity
+
+  return quantity * (fromMinutes / toMinutes)
+}
+
 // A BOM line's per-unit cost: whichever supplier it explicitly names
 // (`line.supplierId`), or the cheapest available SupplierProduct.cost
 // for that material if it doesn't name one. `material.suppliers` is

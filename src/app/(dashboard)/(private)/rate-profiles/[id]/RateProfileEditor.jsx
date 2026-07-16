@@ -174,7 +174,7 @@ export default function RateProfileEditor( {profile} )
                               onChange={e => handleRateChange( r.costFactorId, e.target.value )}
                               InputProps={{
                                 startAdornment: '$',
-                                endAdornment: <span className='whitespace-nowrap'>/ {r.factor.unit}</span>,
+                                endAdornment: <span className='whitespace-nowrap'>/ {r.factor.rateUnit || r.factor.unit}</span>,
                               }}
                               sx={noSpinnerSx}
                               className='is-40'

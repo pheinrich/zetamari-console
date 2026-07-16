@@ -9,7 +9,7 @@ import ProfileRate from '@/db/models/ProfileRate'
 import Settings from '@/db/models/Settings'
 import sequelize from '@/db/sequelize'
 import { auth } from '@/lib/auth'
-import { computeDefaultQuantities, computeSupersededFactors } from '@/libs/costFactors'
+import { computeDefaultQuantities, computeSupersededFactors, convertToRateUnit } from '@/libs/costFactors'
 
 // Loads everything computeDefaultQuantities()/computeSupersededFactors()
 // need to derive geometry- and BOM-based defaults - the substrateInfo
@@ -106,6 +106,12 @@ export async function readProductCosts( productId )
     const computedEnabled = !superseded.has( factor.key )
     const effectiveEnabled = null != override?.enabledOverride ? override.enabledOverride : computedEnabled
 
+    // Rates are quoted per factor.rateUnit (defaulting to factor.unit),
+    // which for Labor factors is hours even though the quantity itself
+    // is tracked in minutes - convert before multiplying so the $
+    // figures come out right.
+    const rateQuantity = convertToRateUnit( effectiveQuantity, factor )
+
     return {
       factor: factor.toJSON(),
       computedQuantity,
@@ -116,8 +122,8 @@ export async function readProductCosts( productId )
       effectiveEnabled,
       wholesaleRate,
       retailRate,
-      wholesaleCost: effectiveQuantity * wholesaleRate,
-      retailCost: effectiveQuantity * retailRate,
+      wholesaleCost: rateQuantity * wholesaleRate,
+      retailCost: rateQuantity * retailRate,
     }
   } )
 

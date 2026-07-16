@@ -9,10 +9,15 @@ import sequelize from '@/db/sequelize'
 // effort), kept separate from BillOfMaterial/SupplierProduct's COGS
 // (what discrete purchased materials actually cost).
 //
-// `unit` is the physical unit a product's quantity for this factor is
-// tracked in ('sqin', 'in' for cut distance, 'hr') - ProfileRate.rate is
-// always $ per that unit. `category` ('material'/'machine'/'labor') is
-// just for grouping in the UI.
+// `unit` is the physical unit a product's *quantity* for this factor is
+// tracked in ('sqin', 'in' for cut distance, 'min'/'hr'). `rateUnit` is
+// the unit its ProfileRate.rate is quoted in - null means "same as
+// unit" (true for every factor except the six Labor ones, which track
+// quantity in minutes but are rated per hour - see the
+// 20260719000000-labor-rate-unit-hours.js migration for why). Cost
+// calculations convert a quantity from `unit` to `rateUnit` before
+// multiplying by rate - see db/actions/productCost.js. `category`
+// ('material'/'machine'/'labor') is just for grouping in the UI.
 const CostFactor = sequelize.define(
   'CostFactor',
   {
@@ -20,6 +25,7 @@ const CostFactor = sequelize.define(
     key: { type: DataTypes.STRING, unique: true, allowNull: false },
     label: { type: DataTypes.STRING, allowNull: false },
     unit: { type: DataTypes.STRING, allowNull: false },
+    rateUnit: { type: DataTypes.STRING },
     category: { type: DataTypes.STRING },
   },
   {
