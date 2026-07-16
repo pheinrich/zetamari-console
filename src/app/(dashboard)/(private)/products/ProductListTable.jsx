@@ -42,7 +42,7 @@ const DEFAULT_VIEW = {
   sorting: [],
   pagination: {pageIndex: 0, pageSize: 10},
   globalFilter: '',
-  filters: {type: '', sellable: '', status: ''},
+  filters: {type: '', sellable: '', status: '', supplier: ''},
 }
 
 const fuzzyFilter = (row, columnId, value, addMeta) => {
@@ -66,7 +66,7 @@ const DebouncedInput = ({ value: initialValue, onChange, debounce = 500, ...prop
 
 const columnHelper = createColumnHelper()
 
-export default function ProductListTable( {productData} )
+export default function ProductListTable( {productData, supplierData=[]} )
 {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
@@ -240,6 +240,7 @@ export default function ProductListTable( {productData} )
       <CardHeader title='Filters' className='pbe-4' />
       <ProductTableFilters
         productData={data}
+        supplierData={supplierData}
         setData={setFilteredData}
         filters={view.filters}
         onFiltersChange={filters => updateView( {filters} )}

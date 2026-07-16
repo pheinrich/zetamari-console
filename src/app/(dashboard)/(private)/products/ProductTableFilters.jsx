@@ -15,29 +15,32 @@ import { PRODUCT_TYPE_META } from './ProductTypeMeta'
 // its own state, so the selected values can be persisted (see
 // ProductListTable's useTableViewState) instead of resetting whenever
 // this component remounts.
-export default function ProductTableFilters( {productData, setData, filters, onFiltersChange} )
+export default function ProductTableFilters( {productData, supplierData=[], setData, filters, onFiltersChange} )
 {
-  const { type, sellable, status } = filters
+  const { type, sellable, status, supplier } = filters
 
   useEffect( () => {
+    const supplierId = supplier ? Number( supplier ) : null
+
     const filtered = productData?.filter( product => {
       if( type === '__assembled__' && product.type ) return false
       if( type && type !== '__assembled__' && product.type !== type ) return false
       if( sellable === 'yes' && !product.sellable ) return false
       if( sellable === 'no' && product.sellable ) return false
       if( status && product.status !== status ) return false
+      if( supplierId && !product.suppliers?.some( s => s.id === supplierId ) ) return false
 
       return true
     })
 
     setData( filtered ?? [] )
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [type, sellable, status, productData] )
+  }, [type, sellable, status, supplier, productData] )
 
   return (
     <CardContent>
       <Grid container spacing={6}>
-        <Grid size={{ xs: 12, sm: 4 }}>
+        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <FormControl fullWidth>
             <InputLabel id='type-select'>Type</InputLabel>
             <Select
@@ -56,7 +59,7 @@ export default function ProductTableFilters( {productData, setData, filters, onF
             </Select>
           </FormControl>
         </Grid>
-        <Grid size={{ xs: 12, sm: 4 }}>
+        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <FormControl fullWidth>
             <InputLabel id='sellable-select'>Sellable</InputLabel>
             <Select
@@ -73,7 +76,7 @@ export default function ProductTableFilters( {productData, setData, filters, onF
             </Select>
           </FormControl>
         </Grid>
-        <Grid size={{ xs: 12, sm: 4 }}>
+        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <FormControl fullWidth>
             <InputLabel id='status-select'>Status</InputLabel>
             <Select
@@ -87,6 +90,24 @@ export default function ProductTableFilters( {productData, setData, filters, onF
               <MenuItem value=''>All</MenuItem>
               <MenuItem value='visible'>Visible</MenuItem>
               <MenuItem value='hidden'>Hidden</MenuItem>
+            </Select>
+          </FormControl>
+        </Grid>
+        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+          <FormControl fullWidth>
+            <InputLabel id='supplier-select'>Supplier</InputLabel>
+            <Select
+              fullWidth
+              id='select-supplier'
+              value={supplier}
+              onChange={e => onFiltersChange( {...filters, supplier: e.target.value} )}
+              label='Supplier'
+              labelId='supplier-select'
+            >
+              <MenuItem value=''>All Suppliers</MenuItem>
+              {supplierData.map( s => (
+                <MenuItem key={s.id} value={String( s.id )}>{s.name}</MenuItem>
+              ) )}
             </Select>
           </FormControl>
         </Grid>

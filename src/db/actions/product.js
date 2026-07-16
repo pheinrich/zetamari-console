@@ -155,7 +155,13 @@ export async function readProducts()
     unauthorized()
 
   await sequelize.sync()
-  const products = await Product.findAll()
+  const products = await Product.findAll({
+    // Just enough to filter/label by in the list view (ProductTableFilters'
+    // Supplier select) - the full through-table cost/partNumber/url detail
+    // is only loaded on the product detail page (readProduct's eager
+    // include above).
+    include: [{ model: Supplier, as: 'suppliers', attributes: ['id', 'name'], through: { attributes: [] } }],
+  })
 
   // Attach each product's primary (lowest sortOrder) image, if any, as
   // `primaryImage` for list-view thumbnails. Done as a single follow-up
