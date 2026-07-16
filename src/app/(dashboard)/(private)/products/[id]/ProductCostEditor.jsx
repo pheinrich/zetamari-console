@@ -4,12 +4,18 @@ import { useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'react-toastify'
 
+import Checkbox from '@mui/material/Checkbox'
 import IconButton from '@mui/material/IconButton'
 import TextField from '@mui/material/TextField'
 import Tooltip from '@mui/material/Tooltip'
 import Typography from '@mui/material/Typography'
 
-import { setProductCostOverride, revertProductCostOverride } from '@/db/actions/productCost'
+import {
+  setProductCostOverride,
+  revertProductCostOverride,
+  setProductCostFactorEnabled,
+  revertProductCostFactorEnabled,
+} from '@/db/actions/productCost'
 import { formatCurrency } from '../productFormat'
 import tableStyles from '@core/styles/table.module.css'
 
@@ -58,6 +64,31 @@ export default function ProductCostEditor( {productId, costs} )
     })
   }
 
+  // Toggling back to whatever the computed default already was (no BOM
+  // line superseding this factor, or one that does) reverts the override
+  // outright rather than storing an explicit "true"/"false" that happens
+  // to match - keeps the sparse-override table honest about what's
+  // actually been manually decided.
+  function handleToggleEnabled( row, checked )
+  {
+    startTransition( async () => {
+      if( checked === row.computedEnabled )
+        await revertProductCostFactorEnabled( productId, row.factor.id )
+      else
+        await setProductCostFactorEnabled( productId, row.factor.id, checked )
+
+      router.refresh()
+    })
+  }
+
+  function handleRevertEnabled( costFactorId )
+  {
+    startTransition( async () => {
+      await revertProductCostFactorEnabled( productId, costFactorId )
+      router.refresh()
+    })
+  }
+
   const byCategory = {}
   for( const row of costs.rows )
   {
@@ -74,6 +105,7 @@ export default function ProductCostEditor( {productId, costs} )
             <table className={tableStyles.table}>
               <thead>
                 <tr>
+                  <th>Included</th>
                   <th>Factor</th>
                   <th>Quantity</th>
                   <th>Wholesale</th>
@@ -84,9 +116,41 @@ export default function ProductCostEditor( {productId, costs} )
               <tbody>
                 {byCategory[category].map( row => {
                   const isOverridden = null !== row.overrideQuantity
+                  const isEnabledOverridden = null !== row.enabledOverride
 
                   return (
                     <tr key={row.factor.id}>
+                      <td>
+                        <div className='flex items-center'>
+                          <Tooltip
+                            title={
+                              isEnabledOverridden
+                                ? `Manually ${row.effectiveEnabled ? 'included' : 'excluded'}`
+                                : row.computedEnabled
+                                  ? 'Included in cost totals'
+                                  : 'Excluded - superseded by a Bill of Materials line'
+                            }
+                          >
+                            <span>
+                              <Checkbox
+                                size='small'
+                                checked={row.effectiveEnabled}
+                                onChange={e => handleToggleEnabled( row, e.target.checked )}
+                                disabled={isPending}
+                              />
+                            </span>
+                          </Tooltip>
+                          {isEnabledOverridden && (
+                            <Tooltip title='Revert to the computed default'>
+                              <span>
+                                <IconButton size='small' disabled={isPending} onClick={() => handleRevertEnabled( row.factor.id )}>
+                                  <i className='ri-arrow-go-back-line' />
+                                </IconButton>
+                              </span>
+                            </Tooltip>
+                          )}
+                        </div>
+                      </td>
                       <td>{row.factor.label}</td>
                       <td>
                         <div className='flex flex-col gap-1'>

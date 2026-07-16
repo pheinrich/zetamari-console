@@ -14,6 +14,20 @@ import { build } from './mirror'
 const LABOR_DESIGN_HR = 0.5     // 30 minutes
 const LABOR_FINISHING_HR = 5 / 60  // 5 minutes
 
+// Which area-based material CostFactor a BOM component type stands in
+// for, once it's actually in the bill of materials - a mirror component
+// is glass, a bead/millefiori/tile component is tesserae, a substrate
+// component is substrate. Frame/grout/birdhouse/other/assembled (null
+// type) components don't correspond to any of the three estimated
+// factors, so they don't supersede anything.
+const TYPE_TO_FACTOR = {
+  mirror: 'glass',
+  bead: 'tesserae',
+  millefiori: 'tesserae',
+  tile: 'tesserae',
+  substrate: 'substrate',
+}
+
 // Rebuilds the same JSTS geometry the calculator itself uses (see
 // libs/mirror.js's build(), also called from SubstrateInfoView.jsx on the
 // product detail page) - null if this product has no substrateInfo (not
@@ -33,6 +47,45 @@ function buildGeometry( product )
     si.inside?.svgData,
     si.rabbet?.svgData,
   )
+}
+
+// A BOM line's per-unit cost: whichever supplier it explicitly names
+// (`line.supplierId`), or the cheapest available SupplierProduct.cost
+// for that material if it doesn't name one. `material.suppliers` is
+// expected to be eager-loaded with the join's `cost` attribute (see
+// productCost.js's loadProductForCosting) - each entry is a Supplier row
+// with its SupplierProduct join data nested under `.SupplierProduct`,
+// matching the same shape already used on the product detail page's
+// SupplierProductView.jsx.
+export function resolveSupplierCost( material, supplierId )
+{
+  const priced = (material?.suppliers ?? [])
+    .map( s => ({id: s.id, cost: s.SupplierProduct?.cost}) )
+    .filter( s => null != s.cost )
+
+  if( supplierId )
+    return priced.find( s => s.id === supplierId )?.cost ?? 0
+
+  return priced.length ? Math.min( ...priced.map( s => s.cost ) ) : 0
+}
+
+// Which area-based CostFactors are superseded by a real BOM line, and so
+// should default to excluded from this product's cost (still
+// overridable - see ProductCostOverride.enabledOverride). A factor is
+// superseded as soon as any BOM line's material has a type that maps to
+// it, regardless of how many such lines there are.
+export function computeSupersededFactors( product )
+{
+  const superseded = new Set()
+
+  for( const line of product?.bomLines ?? [] )
+  {
+    const factorKey = TYPE_TO_FACTOR[line.material?.type]
+    if( factorKey )
+      superseded.add( factorKey )
+  }
+
+  return superseded
 }
 
 // `settings` is the Settings row (see db/models/Settings.js) holding the
@@ -66,10 +119,19 @@ export function computeDefaultQuantities( product, settings )
   const glueingRate = settings?.glueingRateSqInPerHr || 0
   const groutingRate = settings?.groutingRateSqInPerHr || 0
 
+  // Already a dollar figure, not a physical quantity - see the "bom"
+  // CostFactor's unit ('$') and its rate profiles (seeded at 1, a
+  // pass-through) in the 20260717000000-add-bom-cost-factor.js migration.
+  const bomCost = (product?.bomLines ?? []).reduce(
+    (sum, line) => sum + (line.quantity || 0) * resolveSupplierCost( line.material, line.supplierId ),
+    0
+  )
+
   return {
     tesserae: mosaicArea,
     glass: glassArea,
     substrate: substrateArea,
+    bom: bomCost,
     machineWear: cutDistance,
     // Utilities and CNC labor both derive from the same machine run-time -
     // an operator is occupied for as long as the machine is cutting.

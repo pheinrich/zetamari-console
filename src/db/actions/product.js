@@ -117,7 +117,14 @@ export async function readProduct( id, eager )
         {
           model: BillOfMaterial,
           as: 'bomLines',
-          include: [{ model: Product, as: 'material' }],
+          include: [
+            {
+              model: Product,
+              as: 'material',
+              include: [{ model: Supplier, as: 'suppliers', through: {attributes: ['cost']} }],
+            },
+            { model: Supplier, as: 'supplier' },
+          ],
         },
         {
           model: BillOfMaterial,
@@ -336,6 +343,28 @@ export async function updateBomLine( id, quantity )
     notFound()
 
   await line.update( {quantity} )
+  return line.toJSON()
+}
+
+// Which of the material's suppliers this line's "bom" CostFactor cost
+// should use - null (the default) means "the cheapest one available,"
+// recomputed live rather than stored, so it tracks supplier price
+// changes automatically until someone picks a specific supplier here
+// (see libs/costFactors.js's resolveSupplierCost). Only meaningful, and
+// only exposed as a picker in BomEditor.jsx, once a material has more
+// than one supplier on file.
+export async function setBomLineSupplier( id, supplierId )
+{
+  const session = await auth()
+  if( !session )
+    unauthorized()
+
+  await sequelize.sync()
+  const line = await BillOfMaterial.findByPk( id )
+  if( !line )
+    notFound()
+
+  await line.update( {supplierId: supplierId || null} )
   return line.toJSON()
 }
 

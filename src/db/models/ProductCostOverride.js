@@ -3,21 +3,26 @@ import Product from '@/db/models/Product'
 import CostFactor from '@/db/models/CostFactor'
 import sequelize from '@/db/sequelize'
 
-// Product x CostFactor join, holding a manually-overridden quantity -
-// deliberately sparse. A row only exists where someone has overridden a
-// factor's computed default (mosaic surface area for tesserae/glass,
-// border length for machineWear, area/distance-based heuristics for
-// labor hours - all derived live from the product's own geometry/
-// attributes in application code, never cached). No row for a given
-// (product, factor) pair means "use the computed default." Reverting an
-// override is just deleting its row.
+// Product x CostFactor join, holding manual overrides of two independent
+// things - deliberately sparse in both. `quantityOverride` overrides the
+// factor's computed default quantity (mosaic surface area for tesserae/
+// glass, border length for machineWear, area/distance-based heuristics
+// for labor hours, BOM-line-cost sum for the "bom" factor - all derived
+// live in application code, never cached). `enabledOverride` overrides
+// whether the factor counts toward the product's cost at all (default:
+// true, except a factor superseded by a real BillOfMaterial line - e.g.
+// Glass once a mirror component is in the BOM - which computes false by
+// default; either can still be flipped back). A row exists whenever
+// either column is non-null; reverting one just nulls that column, and
+// the row itself is only deleted once both are null again.
 const ProductCostOverride = sequelize.define(
   'ProductCostOverride',
   {
     id: { type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
     productId: { type: DataTypes.INTEGER, allowNull: false, references: { model: Product, key: 'id' } },
     costFactorId: { type: DataTypes.INTEGER, allowNull: false, references: { model: CostFactor, key: 'id' } },
-    quantity: { type: DataTypes.FLOAT, allowNull: false },
+    quantityOverride: { type: DataTypes.FLOAT },
+    enabledOverride: { type: DataTypes.BOOLEAN },
   },
   {
     timestamps: false,
