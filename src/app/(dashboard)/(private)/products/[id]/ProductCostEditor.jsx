@@ -16,6 +16,15 @@ import tableStyles from '@core/styles/table.module.css'
 const CATEGORY_LABELS = {material: 'Material', machine: 'Machine', labor: 'Labor'}
 const CATEGORY_ORDER = ['material', 'machine', 'labor']
 
+// Quantities are typically entered with several digits after the
+// decimal point, where the native up/down spinner increments by a whole
+// step that's rarely the adjustment anyone wants - hidden below.
+const noSpinnerSx = {
+  '& input[type=number]': {MozAppearance: 'textfield'},
+  '& input[type=number]::-webkit-outer-spin-button': {WebkitAppearance: 'none', margin: 0},
+  '& input[type=number]::-webkit-inner-spin-button': {WebkitAppearance: 'none', margin: 0},
+}
+
 // Each factor's quantity is always shown as editable, pre-filled with the
 // effective value (override if one exists, otherwise the computed
 // default derived live from this product's geometry - see
@@ -89,6 +98,7 @@ export default function ProductCostEditor( {productId, costs} )
                               defaultValue={row.effectiveQuantity}
                               onBlur={e => handleCommit( row.factor.id, e.target.value )}
                               disabled={isPending}
+                              sx={noSpinnerSx}
                               className='is-28'
                             />
                             <Typography variant='body2' color='text.secondary'>{row.factor.unit}</Typography>

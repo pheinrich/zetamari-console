@@ -19,6 +19,16 @@ import { updateSettings } from '@/db/actions/settings'
 const optionalString = z.preprocess( (val) => (val === '' ? undefined : val), z.string().optional() )
 const optionalNumber = z.preprocess( (val) => (val === '' || val == null ? undefined : val), z.coerce.number().min( 0 ).optional() )
 
+// These process constants are typically entered with several digits
+// after the decimal point, where the native up/down spinner increments
+// by a whole step that's rarely the adjustment anyone wants - hidden on
+// every numeric field below.
+const noSpinnerSx = {
+  '& input[type=number]': {MozAppearance: 'textfield'},
+  '& input[type=number]::-webkit-outer-spin-button': {WebkitAppearance: 'none', margin: 0},
+  '& input[type=number]::-webkit-inner-spin-button': {WebkitAppearance: 'none', margin: 0},
+}
+
 const schema = z.object({
   companyName: optionalString,
   logoUrl: optionalString,
@@ -96,6 +106,7 @@ export default function SettingsForm( {initialData={}} )
                     defaultValue={initialData?.feedRateInPerMin ?? ''}
                     inputProps={{step: '0.01', min: '0'}}
                     InputProps={{endAdornment: <InputAdornment position='end'>in/min</InputAdornment>}}
+                    sx={noSpinnerSx}
                   />
                 </Grid>
                 <Grid size={{ xs: 12, sm: 4 }}>
@@ -107,6 +118,7 @@ export default function SettingsForm( {initialData={}} )
                     defaultValue={initialData?.powerDrawKwh ?? ''}
                     inputProps={{step: '0.01', min: '0'}}
                     InputProps={{endAdornment: <InputAdornment position='end'>kWh</InputAdornment>}}
+                    sx={noSpinnerSx}
                   />
                 </Grid>
                 <Grid size={{ xs: 12, sm: 4 }}>
@@ -118,6 +130,7 @@ export default function SettingsForm( {initialData={}} )
                     defaultValue={initialData?.electricityRatePerKwh ?? ''}
                     inputProps={{step: '0.0001', min: '0'}}
                     InputProps={{endAdornment: <InputAdornment position='end'>$/kWh</InputAdornment>}}
+                    sx={noSpinnerSx}
                   />
                 </Grid>
               </Grid>
@@ -142,6 +155,7 @@ export default function SettingsForm( {initialData={}} )
                     defaultValue={initialData?.sandingRateSqInPerHr ?? ''}
                     inputProps={{step: '0.0001', min: '0'}}
                     InputProps={{endAdornment: <InputAdornment position='end'>sq-in/hr</InputAdornment>}}
+                    sx={noSpinnerSx}
                   />
                 </Grid>
                 <Grid size={{ xs: 12, sm: 4 }}>
@@ -153,6 +167,7 @@ export default function SettingsForm( {initialData={}} )
                     defaultValue={initialData?.glueingRateSqInPerHr ?? ''}
                     inputProps={{step: '0.0001', min: '0'}}
                     InputProps={{endAdornment: <InputAdornment position='end'>sq-in/hr</InputAdornment>}}
+                    sx={noSpinnerSx}
                   />
                 </Grid>
                 <Grid size={{ xs: 12, sm: 4 }}>
@@ -164,6 +179,7 @@ export default function SettingsForm( {initialData={}} )
                     defaultValue={initialData?.groutingRateSqInPerHr ?? ''}
                     inputProps={{step: '0.0001', min: '0'}}
                     InputProps={{endAdornment: <InputAdornment position='end'>sq-in/hr</InputAdornment>}}
+                    sx={noSpinnerSx}
                   />
                 </Grid>
               </Grid>

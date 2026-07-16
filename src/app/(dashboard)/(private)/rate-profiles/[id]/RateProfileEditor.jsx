@@ -21,6 +21,15 @@ const KIND_LABELS = {wholesale: 'Wholesale', retail: 'Retail', custom: 'Custom'}
 const CATEGORY_LABELS = {material: 'Material', machine: 'Machine', labor: 'Labor'}
 const CATEGORY_ORDER = ['material', 'machine', 'labor']
 
+// Rates are typically entered with several digits after the decimal
+// point, where the native up/down spinner increments by a whole step
+// that's rarely the adjustment anyone wants - hidden below.
+const noSpinnerSx = {
+  '& input[type=number]': {MozAppearance: 'textfield'},
+  '& input[type=number]::-webkit-outer-spin-button': {WebkitAppearance: 'none', margin: 0},
+  '& input[type=number]::-webkit-inner-spin-button': {WebkitAppearance: 'none', margin: 0},
+}
+
 // Name and every factor's rate are edited together and saved in one call
 // - there's no separate read-only detail view for a rate profile, since
 // the rate table is the whole point of the page. `kind` is never
@@ -167,6 +176,7 @@ export default function RateProfileEditor( {profile} )
                                 startAdornment: '$',
                                 endAdornment: <span className='whitespace-nowrap'>/ {r.factor.unit}</span>,
                               }}
+                              sx={noSpinnerSx}
                               className='is-40'
                             />
                           </td>
