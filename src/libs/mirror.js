@@ -2,8 +2,8 @@ import AffineTransformation from 'jsts/org/locationtech/jts/geom/util/AffineTran
 import ArrayList from 'jsts/java/util/ArrayList'
 import BufferOp from 'jsts/org/locationtech/jts/operation/buffer/BufferOp'
 import BufferParameters from 'jsts/org/locationtech/jts/operation/buffer/BufferParameters'
-import ConvexHull from 'jsts/org/locationtech/jts/algorithm/ConvexHull'
 import Coordinate from 'jsts/org/locationtech/jts/geom/Coordinate'
+import DiscreteHausdorffDistance from 'jsts/org/locationtech/jts/algorithm/distance/DiscreteHausdorffDistance'
 import DistanceOp from 'jsts/org/locationtech/jts/operation/distance/DistanceOp'
 import GeometricShapeFactory from 'jsts/org/locationtech/jts/util/GeometricShapeFactory'
 import Geometry from 'jsts/org/locationtech/jts/geom/Geometry'
@@ -277,35 +277,19 @@ function getCorners( geometry, offset, maxAngle )
 
 function getMaxBorder( outside, inside )
 {
-  // doesn't work--just returns furthest point pair
-  const oHull = new ConvexHull( outside ).getConvexHull()
-  const iHull = new ConvexHull( inside ).getConvexHull()
+  const oBoundary = outside.getBoundary()
+  const iBoundary = inside.getBoundary()
+  const hausdorff = new DiscreteHausdorffDistance( iBoundary, oBoundary )
 
-  const oPts = oHull.getCoordinates()
-  const iPts = iHull.getCoordinates()
+  hausdorff.setDensifyFraction( 0.02 )
 
-  let maxDist = 0
-  let oBest = null, iBest = null
+  const maxDist = hausdorff.distance()
+  const [p, q] = hausdorff.getCoordinates()
 
-  for( let p of oPts )
-  {
-    for( let q of iPts )
-    {
-      let dist = p.distance( q )
-      if( dist > maxDist )
-      {
-        maxDist = dist
-        oBest = p
-        iBest = q
-      }
-    }
-  }
-
-  console.log( `Maximum: ${maxDist} = (${oBest.x}, ${oBest.y}) - (${iBest.x}, ${iBest.y})`)
   return {
     distance: maxDist,
-    outside: { x: oBest.x, y: oBest.y },
-    inside: { x: iBest.x, y: iBest.y }
+    outside: { x: p.x, y: p.y },
+    inside: { x: q.x, y: q.y }
   }
 }
 
@@ -318,7 +302,6 @@ function getMinBorder( outside, inside )
   let minDist = op.distance()
   let pts = op.nearestPoints()
 
-  console.log( `Minimum: ${minDist} = (${pts[0].x}, ${pts[0].y}) - (${pts[1].x}, ${pts[1].y})`)
   return {
     distance: minDist,
     outside: { x: pts[0].x, y: pts[0].y },
