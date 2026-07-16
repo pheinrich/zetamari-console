@@ -373,6 +373,7 @@ export function build( width, height, border, shapeType, outsideSVG, insideSVG, 
       data: getSVGData( gp )
     },
     border: {
+      fixed: !insideSVG ? border : null,
       max: getMaxBorder( op, ip ),
       min: getMinBorder( op, ip )
     }

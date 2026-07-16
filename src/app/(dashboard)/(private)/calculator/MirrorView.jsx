@@ -1,3 +1,4 @@
+import BorderSize from './BorderSize'
 import Dimensions from './Dimensions'
 
 // Renders the assembled mirror's SVG preview (frame/substrate, glass,
@@ -104,6 +105,13 @@ export default function MirrorView( {mirror, settings, imageRef, size = 500} )
           zoom={settings.zoom}
           isFlipped={settings.showBack}
           color='blue'
+          width={size}
+          height={size}
+        />}
+        { (settings.showDims & 4) === 4 && mirror.outside.dims && <BorderSize
+          fixed={mirror.border.fixed}
+          max={mirror.border.max.distance}
+          min={mirror.border.min.distance}
           width={size}
           height={size}
         />}

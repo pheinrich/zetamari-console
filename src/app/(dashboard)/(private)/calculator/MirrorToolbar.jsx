@@ -34,6 +34,14 @@ export default function MirrorToolbar( {settings, onSettingsChange, imageRef} )
             onChange={() => onSettingsChange( {...settings, showDims: settings.showDims ^ 2} )}
           />
         </Tooltip>
+        <Tooltip title={(settings.showDims & 4) === 4 ? 'Hide Border Size' : 'Show Border Size'}>
+          <Checkbox
+            checked={(settings.showDims & 4) === 4}
+            icon={<i className='ri-expand-width-fill' />}
+            checkedIcon={<i className='ri-expand-width-fill' />}
+            onChange={() => onSettingsChange( {...settings, showDims: settings.showDims ^ 4} )}
+          />
+        </Tooltip>
         <Tooltip title={settings.showBack ? 'Show Front' : 'Show Back'}>
           <Checkbox
             checked={settings.showBack}
