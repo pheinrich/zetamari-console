@@ -12,6 +12,7 @@ import Typography from '@mui/material/Typography'
 
 import { readProduct, readProducts } from '@/db/actions/product'
 import { readSuppliers } from '@/db/actions/supplier'
+import { readProductCosts } from '@/db/actions/productCost'
 import CustomAvatar from '@core/components/mui/Avatar'
 import classnames from 'classnames'
 
@@ -22,6 +23,7 @@ import MillefioriInfoView from './MillefioriInfoView'
 import MirrorInfoView from './MirrorInfoView'
 import SubstrateInfoView from './SubstrateInfoView'
 import TileInfoView from './TileInfoView'
+import ProductCostEditor from './ProductCostEditor'
 import SupplierProductView from '../SupplierProductView'
 import BomEditor from '../BomEditor'
 import ProductImagesCard from '../ProductImagesCard'
@@ -36,9 +38,10 @@ export default async function ProductPage( {params} )
   if( !product )
     return notFound()
 
-  const [allProducts, allSuppliers] = await Promise.all([
+  const [allProducts, allSuppliers, costs] = await Promise.all([
     readProducts(),
     readSuppliers(),
+    readProductCosts( product.id ),
   ])
 
   const meta = productTypeMeta( product.type )
@@ -121,6 +124,15 @@ export default async function ProductPage( {params} )
                       </Grid>
                     )}
                   </Grid>
+                </CardContent>
+              </Card>
+            </Grid>
+
+            <Grid size={{ xs: 12 }}>
+              <Card>
+                <CardHeader title='Cost Breakdown' subheader='Per-factor production cost estimate - separate from the price fields above' />
+                <CardContent>
+                  <ProductCostEditor productId={product.id} costs={costs} />
                 </CardContent>
               </Card>
             </Grid>

@@ -1,0 +1,176 @@
+'use client'
+
+import { z } from 'zod'
+import { toast } from 'react-toastify'
+
+import Grid from '@mui/material/Grid2'
+import Card from '@mui/material/Card'
+import CardHeader from '@mui/material/CardHeader'
+import CardContent from '@mui/material/CardContent'
+import Button from '@mui/material/Button'
+import Alert from '@mui/material/Alert'
+import InputAdornment from '@mui/material/InputAdornment'
+import TextField from '@mui/material/TextField'
+import Typography from '@mui/material/Typography'
+
+import { useFormSubmit } from '@/utils/formSubmitHook'
+import { updateSettings } from '@/db/actions/settings'
+
+const optionalString = z.preprocess( (val) => (val === '' ? undefined : val), z.string().optional() )
+const optionalNumber = z.preprocess( (val) => (val === '' || val == null ? undefined : val), z.coerce.number().min( 0 ).optional() )
+
+const schema = z.object({
+  companyName: optionalString,
+  logoUrl: optionalString,
+  feedRateInPerHr: optionalNumber,
+  powerDrawKwh: optionalNumber,
+  electricityRatePerKwh: optionalNumber,
+  sandingTimePerSqIn: optionalNumber,
+  glueingTimePerSqIn: optionalNumber,
+  groutingTimePerSqIn: optionalNumber,
+})
+
+// Singleton form - there's only ever one Settings row (see db/models/
+// Settings.js), so unlike SupplierForm/ProductForm there's no create/edit
+// branching, just a single always-update submit.
+export default function SettingsForm( {initialData={}} )
+{
+  const { handleSubmit, loading, errors } = useFormSubmit({
+    schema,
+    onSubmit: async ( data ) => {
+      await updateSettings( data )
+      toast.success( 'Settings saved' )
+    },
+  })
+
+  return (
+    <form onSubmit={handleSubmit}>
+      <Grid container spacing={6}>
+        <Grid size={{ xs: 12 }}>
+          <div className='flex flex-wrap sm:items-center justify-between max-sm:flex-col gap-6'>
+            <Typography variant='h4'>Settings</Typography>
+            <Button type='submit' variant='contained' disabled={loading}>
+              {loading ? 'Saving...' : 'Save Changes'}
+            </Button>
+          </div>
+        </Grid>
+
+        {errors && (
+          <Grid size={{ xs: 12 }}>
+            <Alert severity='error'>
+              <pre className='whitespace-pre-wrap font-sans m-0'>{JSON.stringify( errors, null, 2 )}</pre>
+            </Alert>
+          </Grid>
+        )}
+
+        <Grid size={{ xs: 12 }}>
+          <Card>
+            <CardHeader title='Branding' subheader='Shown on printed calculator reports' />
+            <CardContent>
+              <Grid container spacing={5}>
+                <Grid size={{ xs: 12, sm: 6 }}>
+                  <TextField fullWidth label='Company Name' name='companyName' defaultValue={initialData?.companyName || ''} />
+                </Grid>
+                <Grid size={{ xs: 12, sm: 6 }}>
+                  <TextField fullWidth label='Logo URL' name='logoUrl' defaultValue={initialData?.logoUrl || ''} />
+                </Grid>
+              </Grid>
+            </CardContent>
+          </Card>
+        </Grid>
+
+        <Grid size={{ xs: 12 }}>
+          <Card>
+            <CardHeader
+              title='Machine'
+              subheader='Converts a product’s cut distance into machine run-time, which feeds the Utilities and CNC Labor cost factors'
+            />
+            <CardContent>
+              <Grid container spacing={5}>
+                <Grid size={{ xs: 12, sm: 4 }}>
+                  <TextField
+                    fullWidth
+                    type='number'
+                    label='Feed Rate'
+                    name='feedRateInPerHr'
+                    defaultValue={initialData?.feedRateInPerHr ?? ''}
+                    inputProps={{step: '0.01', min: '0'}}
+                    InputProps={{endAdornment: <InputAdornment position='end'>in/hr</InputAdornment>}}
+                  />
+                </Grid>
+                <Grid size={{ xs: 12, sm: 4 }}>
+                  <TextField
+                    fullWidth
+                    type='number'
+                    label='Power Draw'
+                    name='powerDrawKwh'
+                    defaultValue={initialData?.powerDrawKwh ?? ''}
+                    inputProps={{step: '0.01', min: '0'}}
+                    InputProps={{endAdornment: <InputAdornment position='end'>kWh</InputAdornment>}}
+                  />
+                </Grid>
+                <Grid size={{ xs: 12, sm: 4 }}>
+                  <TextField
+                    fullWidth
+                    type='number'
+                    label='Electricity Rate'
+                    name='electricityRatePerKwh'
+                    defaultValue={initialData?.electricityRatePerKwh ?? ''}
+                    inputProps={{step: '0.0001', min: '0'}}
+                    InputProps={{endAdornment: <InputAdornment position='end'>$/kWh</InputAdornment>}}
+                  />
+                </Grid>
+              </Grid>
+            </CardContent>
+          </Card>
+        </Grid>
+
+        <Grid size={{ xs: 12 }}>
+          <Card>
+            <CardHeader
+              title='Labor Heuristics'
+              subheader='Seed the Sanding/Glueing/Grouting labor-hour defaults, scaled by a product’s mosaic surface area'
+            />
+            <CardContent>
+              <Grid container spacing={5}>
+                <Grid size={{ xs: 12, sm: 4 }}>
+                  <TextField
+                    fullWidth
+                    type='number'
+                    label='Sanding Time'
+                    name='sandingTimePerSqIn'
+                    defaultValue={initialData?.sandingTimePerSqIn ?? ''}
+                    inputProps={{step: '0.0001', min: '0'}}
+                    InputProps={{endAdornment: <InputAdornment position='end'>hr/sq-in</InputAdornment>}}
+                  />
+                </Grid>
+                <Grid size={{ xs: 12, sm: 4 }}>
+                  <TextField
+                    fullWidth
+                    type='number'
+                    label='Glueing Time'
+                    name='glueingTimePerSqIn'
+                    defaultValue={initialData?.glueingTimePerSqIn ?? ''}
+                    inputProps={{step: '0.0001', min: '0'}}
+                    InputProps={{endAdornment: <InputAdornment position='end'>hr/sq-in</InputAdornment>}}
+                  />
+                </Grid>
+                <Grid size={{ xs: 12, sm: 4 }}>
+                  <TextField
+                    fullWidth
+                    type='number'
+                    label='Grouting Time'
+                    name='groutingTimePerSqIn'
+                    defaultValue={initialData?.groutingTimePerSqIn ?? ''}
+                    inputProps={{step: '0.0001', min: '0'}}
+                    InputProps={{endAdornment: <InputAdornment position='end'>hr/sq-in</InputAdornment>}}
+                  />
+                </Grid>
+              </Grid>
+            </CardContent>
+          </Card>
+        </Grid>
+      </Grid>
+    </form>
+  )
+}
