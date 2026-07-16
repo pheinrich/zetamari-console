@@ -141,7 +141,7 @@ module.exports =
       'MirrorInfos',
       {
         productId: { type: Sequelize.DataTypes.INTEGER, primaryKey: true, references: { model: 'Products', key: 'id' }, onDelete: 'CASCADE', allowNull: false },
-        shape: { type: Sequelize.DataTypes.ENUM( 'chapel arch', 'circle', 'gothic arch', 'oval', 'rectangle', 'square', 'vesica picscis', 'other' ), defaultValue: 'circle' },
+        shape: { type: Sequelize.DataTypes.ENUM( 'chapel arch', 'circle', 'gothic arch', 'oval', 'rectangle', 'square', 'vesica piscis', 'other' ), defaultValue: 'circle' },
         width: { type: Sequelize.DataTypes.FLOAT, defaultValue: 6 },
         height: { type: Sequelize.DataTypes.FLOAT, defaultValue: 6 },
         thickness: { type: Sequelize.DataTypes.FLOAT, defaultValue: 0.125 },

@@ -6,7 +6,7 @@ const MirrorInfo = sequelize.define(
   'MirrorInfo',
   {
     productId: { type: DataTypes.INTEGER, primaryKey: true },
-    shape: { type: DataTypes.ENUM( 'chapel arch', 'circle', 'gothic arch', 'oval', 'rectangle', 'square', 'vesica picscis', 'other' ), defaultValue: 'circle' },
+    shape: { type: DataTypes.ENUM( 'chapel arch', 'circle', 'gothic arch', 'oval', 'rectangle', 'square', 'vesica piscis', 'other' ), defaultValue: 'circle' },
     width: { type: DataTypes.FLOAT, defaultValue: 6 },
     height: { type: DataTypes.FLOAT, defaultValue: 6 },
     thickness: { type: DataTypes.FLOAT, defaultValue: 0.125 },

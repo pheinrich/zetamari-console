@@ -22,7 +22,7 @@ const SEEDED_NAMES = {
   'Oval': 'oval',
   'Rectangle': 'rectangle',
   'Square': 'square',
-  'Vesica Piscis': 'vesica picscis',
+  'Vesica Piscis': 'vesica piscis',
 }
 
 module.exports =
@@ -33,7 +33,7 @@ module.exports =
       'Contours',
       'shapeType',
       {
-        type: Sequelize.DataTypes.ENUM( 'chapel arch', 'circle', 'gothic arch', 'oval', 'rectangle', 'square', 'vesica picscis' ),
+        type: Sequelize.DataTypes.ENUM( 'chapel arch', 'circle', 'gothic arch', 'oval', 'rectangle', 'square', 'vesica piscis' ),
         allowNull: true,
         unique: true,
       })

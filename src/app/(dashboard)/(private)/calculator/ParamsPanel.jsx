@@ -17,7 +17,7 @@ function constrainedHeight( width, shapeKey )
 {
   if( 'circle' === shapeKey || 'square' === shapeKey )
     return width
-  if( 'vesica picscis' === shapeKey )
+  if( 'vesica piscis' === shapeKey )
     return ROOT3 * width
 
   return undefined
@@ -27,7 +27,7 @@ function constrainedWidth( height, shapeKey )
 {
   if( 'circle' === shapeKey || 'square' === shapeKey )
     return height
-  if( 'vesica picscis' === shapeKey )
+  if( 'vesica piscis' === shapeKey )
     return height / ROOT3
 
   return undefined

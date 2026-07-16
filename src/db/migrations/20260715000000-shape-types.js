@@ -26,7 +26,7 @@ const PARAMETRIC_SHAPES = [
   { key: 'oval', name: 'Oval' },
   { key: 'rectangle', name: 'Rectangle' },
   { key: 'square', name: 'Square' },
-  { key: 'vesica picscis', name: 'Vesica Piscis' },
+  { key: 'vesica piscis', name: 'Vesica Piscis' },
 ]
 
 // The seeded custom contours (20250311021615-contours.js) all name each
@@ -121,7 +121,7 @@ module.exports =
   async down( queryInterface, Sequelize )
   {
     await queryInterface.addColumn( 'Contours', 'shapeType', {
-      type: Sequelize.DataTypes.ENUM( 'chapel arch', 'circle', 'gothic arch', 'oval', 'rectangle', 'square', 'vesica picscis' ),
+      type: Sequelize.DataTypes.ENUM( 'chapel arch', 'circle', 'gothic arch', 'oval', 'rectangle', 'square', 'vesica piscis' ),
       allowNull: true,
       unique: true,
     })

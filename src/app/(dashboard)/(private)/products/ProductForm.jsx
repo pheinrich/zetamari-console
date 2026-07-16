@@ -77,7 +77,7 @@ const schema = z.object({
   }).optional(),
 
   mirrorInfo: z.object({
-    shape: z.enum( ['chapel arch', 'circle', 'gothic arch', 'oval', 'rectangle', 'square', 'vesica picscis', 'other'] ).optional(),
+    shape: z.enum( ['chapel arch', 'circle', 'gothic arch', 'oval', 'rectangle', 'square', 'vesica piscis', 'other'] ).optional(),
     width: optionalPositiveNumber,
     height: optionalPositiveNumber,
     thickness: optionalPositiveNumber,
@@ -305,7 +305,7 @@ export default function ProductForm( {contourList, initialData={}} )
                                 <MenuItem value='oval'>Oval</MenuItem>
                                 <MenuItem value='rectangle'>Rectangle</MenuItem>
                                 <MenuItem value='square'>Square</MenuItem>
-                                <MenuItem value='vesica picscis'>Vesica Piscis</MenuItem>
+                                <MenuItem value='vesica piscis'>Vesica Piscis</MenuItem>
                                 <MenuItem value='other'>Other</MenuItem>
                               </Select>
                             </FormControl>
