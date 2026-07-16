@@ -2,7 +2,9 @@ import AffineTransformation from 'jsts/org/locationtech/jts/geom/util/AffineTran
 import ArrayList from 'jsts/java/util/ArrayList'
 import BufferOp from 'jsts/org/locationtech/jts/operation/buffer/BufferOp'
 import BufferParameters from 'jsts/org/locationtech/jts/operation/buffer/BufferParameters'
+import ConvexHull from 'jsts/org/locationtech/jts/algorithm/ConvexHull'
 import Coordinate from 'jsts/org/locationtech/jts/geom/Coordinate'
+import DistanceOp from 'jsts/org/locationtech/jts/operation/distance/DistanceOp'
 import GeometricShapeFactory from 'jsts/org/locationtech/jts/util/GeometricShapeFactory'
 import Geometry from 'jsts/org/locationtech/jts/geom/Geometry'
 import GeometryFactory from 'jsts/org/locationtech/jts/geom/GeometryFactory'
@@ -273,6 +275,57 @@ function getCorners( geometry, offset, maxAngle )
   return result
 }
 
+function getMaxBorder( outside, inside )
+{
+  // doesn't work--just returns furthest point pair
+  const oHull = new ConvexHull( outside ).getConvexHull()
+  const iHull = new ConvexHull( inside ).getConvexHull()
+
+  const oPts = oHull.getCoordinates()
+  const iPts = iHull.getCoordinates()
+
+  let maxDist = 0
+  let oBest = null, iBest = null
+
+  for( let p of oPts )
+  {
+    for( let q of iPts )
+    {
+      let dist = p.distance( q )
+      if( dist > maxDist )
+      {
+        maxDist = dist
+        oBest = p
+        iBest = q
+      }
+    }
+  }
+
+  console.log( `Maximum: ${maxDist} = (${oBest.x}, ${oBest.y}) - (${iBest.x}, ${iBest.y})`)
+  return {
+    distance: maxDist,
+    outside: { x: oBest.x, y: oBest.y },
+    inside: { x: iBest.x, y: iBest.y }
+  }
+}
+
+function getMinBorder( outside, inside )
+{
+  const b1 = outside.getBoundary()
+  const b2 = inside.getBoundary()
+
+  let op = new DistanceOp( b1, b2 )
+  let minDist = op.distance()
+  let pts = op.nearestPoints()
+
+  console.log( `Minimum: ${minDist} = (${pts[0].x}, ${pts[0].y}) - (${pts[1].x}, ${pts[1].y})`)
+  return {
+    distance: minDist,
+    outside: { x: pts[0].x, y: pts[0].y },
+    inside: { x: pts[1].x, y: pts[1].y }
+  }
+}
+
 export function build( width, height, border, shapeType, outsideSVG, insideSVG, rabbetSVG )
 {
   let op, ip, rp, gp
@@ -335,6 +388,10 @@ export function build( width, height, border, shapeType, outsideSVG, insideSVG, 
       dims: getDims( gp ),
       obb: getMinBoundRect( gp ),
       data: getSVGData( gp )
+    },
+    border: {
+      max: getMaxBorder( op, ip ),
+      min: getMinBorder( op, ip )
     }
   }
 }
