@@ -469,7 +469,7 @@ export default function ProductForm( {contourList, initialData={}, costs} )
                         <Typography variant='caption' color='text.secondary'>
                           Cost breakdown: {formatCurrency( costs.wholesaleTotal )}
                         </Typography>
-                        <Button size='small' onClick={() => setPriceWholesale( costs.wholesaleTotal.toFixed( 2 ) )}>
+                        <Button type='button' size='small' onClick={() => setPriceWholesale( costs.wholesaleTotal.toFixed( 2 ) )}>
                           Copy from Cost Breakdown
                         </Button>
                       </div>
@@ -488,7 +488,7 @@ export default function ProductForm( {contourList, initialData={}, costs} )
                         <Typography variant='caption' color='text.secondary'>
                           Cost breakdown: {formatCurrency( costs.retailTotal )}
                         </Typography>
-                        <Button size='small' onClick={() => setPriceRetail( costs.retailTotal.toFixed( 2 ) )}>
+                        <Button type='button' size='small' onClick={() => setPriceRetail( costs.retailTotal.toFixed( 2 ) )}>
                           Copy from Cost Breakdown
                         </Button>
                       </div>
