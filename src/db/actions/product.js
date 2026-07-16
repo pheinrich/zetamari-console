@@ -238,6 +238,25 @@ export async function toggleProductSellable( id, sellable )
   return product.toJSON()
 }
 
+// Toggle just the `status` flag, for the list page's inline switch - same
+// shape as toggleProductSellable above. Status only ever has the two
+// values this maps to/from, so the list UI treats it as a boolean
+// ("visible") rather than exposing the raw enum.
+export async function toggleProductStatus( id, visible )
+{
+  const session = await auth()
+  if( !session )
+    unauthorized()
+
+  await sequelize.sync()
+  const product = await Product.findByPk( id )
+  if( !product )
+    notFound()
+
+  await product.update( {status: visible ? 'visible' : 'hidden'} )
+  return product.toJSON()
+}
+
 export async function updateProduct( data )
 {
   const session = await auth()

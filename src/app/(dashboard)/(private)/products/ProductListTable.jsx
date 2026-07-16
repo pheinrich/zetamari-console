@@ -8,7 +8,6 @@ import { toast } from 'react-toastify'
 import Card from '@mui/material/Card'
 import CardHeader from '@mui/material/CardHeader'
 import Button from '@mui/material/Button'
-import Chip from '@mui/material/Chip'
 import Divider from '@mui/material/Divider'
 import IconButton from '@mui/material/IconButton'
 import Switch from '@mui/material/Switch'
@@ -31,7 +30,7 @@ import {
 import ProductTableFilters from './ProductTableFilters'
 import { productTypeMeta } from './ProductTypeMeta'
 import { formatCurrency } from './productFormat'
-import { deleteProduct, toggleProductSellable } from '@/db/actions/product'
+import { deleteProduct, toggleProductSellable, toggleProductStatus } from '@/db/actions/product'
 import { useTableViewState } from '@/hooks/useTableViewState'
 import CustomAvatar from '@core/components/mui/Avatar'
 import OptionMenu from '@core/components/option-menu'
@@ -94,6 +93,28 @@ export default function ProductListTable( {productData, supplierData=[]} )
       {
         setData( prev => prev.map( p => p.id === product.id ? {...p, sellable: product.sellable} : p ) )
         toast.error( 'Failed to update sellable status' )
+      }
+    })
+  }
+
+  function handleToggleStatus( product )
+  {
+    const nextVisible = product.status !== 'visible'
+    const next = nextVisible ? 'visible' : 'hidden'
+
+    // Optimistic update, same pattern as handleToggleSellable above.
+    setData( prev => prev.map( p => p.id === product.id ? {...p, status: next} : p ) )
+
+    startTransition( async () => {
+      try
+      {
+        await toggleProductStatus( product.id, nextVisible )
+        router.refresh()
+      }
+      catch( err )
+      {
+        setData( prev => prev.map( p => p.id === product.id ? {...p, status: product.status} : p ) )
+        toast.error( 'Failed to update status' )
       }
     })
   }
@@ -170,6 +191,17 @@ export default function ProductListTable( {productData, supplierData=[]} )
         ),
         enableSorting: false
       } ),
+      columnHelper.accessor( 'status', {
+        header: 'Visible',
+        cell: ({ row }) => (
+          <Switch
+            checked={row.original.status !== 'hidden'}
+            disabled={isPending}
+            onChange={() => handleToggleStatus( row.original )}
+          />
+        ),
+        enableSorting: false
+      } ),
       columnHelper.accessor( 'priceWholesale', {
         header: 'Wholesale',
         cell: ({ row }) => <Typography>{formatCurrency( row.original.priceWholesale )}</Typography>
@@ -177,17 +209,6 @@ export default function ProductListTable( {productData, supplierData=[]} )
       columnHelper.accessor( 'priceRetail', {
         header: 'Retail',
         cell: ({ row }) => <Typography>{formatCurrency( row.original.priceRetail )}</Typography>
-      } ),
-      columnHelper.accessor( 'status', {
-        header: 'Status',
-        cell: ({ row }) => (
-          <Chip
-            label={row.original.status === 'hidden' ? 'Hidden' : 'Visible'}
-            variant='tonal'
-            color={row.original.status === 'hidden' ? 'default' : 'success'}
-            size='small'
-          />
-        )
       } ),
       columnHelper.accessor( 'actions', {
         header: 'Actions',
@@ -200,7 +221,19 @@ export default function ProductListTable( {productData, supplierData=[]} )
               iconButtonProps={{ size: 'medium' }}
               iconClassName='text-textSecondary text-[22px]'
               options={[
-                { text: 'View', icon: 'ri-eye-line', href: `/products/${row.original.id}`, menuItemProps: {className: 'gap-2'} },
+                {
+                  text: 'View',
+                  icon: 'ri-eye-line',
+                  href: `/products/${row.original.id}`,
+                  // OptionMenu (@core/components/option-menu) forces the
+                  // MenuItem itself to className='p-0' whenever `href` is
+                  // set (it overwrites menuItemProps.className, so a
+                  // gap-2/padding class there is silently dropped) - the
+                  // spacing has to live on the inner Link wrapper instead,
+                  // via linkProps. Same fix as InvoiceListTable.jsx/
+                  // OrderListTable.jsx elsewhere in this app.
+                  linkProps: {className: 'flex items-center is-full gap-2 plb-2 pli-4'},
+                },
                 {
                   text: 'Delete',
                   icon: 'ri-delete-bin-7-line',
