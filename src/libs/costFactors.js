@@ -118,7 +118,10 @@ export function computeDefaultQuantities( product, settings )
   const mosaicArea = mirror ? (mirror.outside.dims.area - (mirror.inside?.dims?.area ?? 0)) : 0
   const glassArea = mirror?.inside?.dims?.area ?? 0
   const substrateArea = mirror?.outside?.obb?.area ?? 0
-  const cutDistance = mirror?.outside?.dims?.perimeter ?? 0
+
+  let cutDistance = 2*mirror?.outside?.dims?.perimeter ?? 0
+  cutDistance += 2*mirror?.inside?.dims?.perimeter ?? 0
+  cutDistance += mirror?.rabbet?.dims?.perimeter ?? 0
 
   const feedRate = settings?.feedRateInPerMin || 0
   const runTimeMin = feedRate > 0 ? cutDistance / feedRate : 0

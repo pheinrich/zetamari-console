@@ -139,8 +139,8 @@ export default function ProductCostEditor( {productId, costs} )
                             <TextField
                               type='number'
                               size='small'
-                              inputProps={{step: '0.0001', min: '0'}}
-                              defaultValue={row.effectiveQuantity}
+                              inputProps={{step: '0.001', min: '0'}}
+                              defaultValue={row.effectiveQuantity.toFixed( 3 )}
                               onBlur={e => handleCommit( row.factor.id, e.target.value )}
                               disabled={isPending}
                               sx={noSpinnerSx}
@@ -150,7 +150,7 @@ export default function ProductCostEditor( {productId, costs} )
                           </div>
                           {isOverridden && (
                             <Typography variant='caption' color='text.secondary'>
-                              computed: {row.computedQuantity.toFixed( 4 )}
+                              computed: {row.computedQuantity.toFixed( 3 )}
                             </Typography>
                           )}
                         </div>
