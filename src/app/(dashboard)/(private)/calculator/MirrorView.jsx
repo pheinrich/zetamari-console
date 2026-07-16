@@ -33,7 +33,7 @@ export default function MirrorView( {mirror, settings, imageRef, size = 500} )
   const subSVG = `${mirror.outside.data} ${mirror.inside.data}`
 
   return (
-    <div style={{border: '1px solid var(--mui-palette-divider)', padding: 0}}>
+    <div style={{border: '1px solid var(--mui-palette-divider)', padding: 0, width: size, maxWidth: '100%'}}>
       <div
         ref={imageRef}
         style={{
@@ -41,8 +41,8 @@ export default function MirrorView( {mirror, settings, imageRef, size = 500} )
           boxSizing: 'content-box',
           top: 0,
           left: 0,
-          width: size,
-          height: size
+          width: '100%',
+          aspectRatio: '1 / 1'
         }}
       >
         <svg
@@ -50,8 +50,8 @@ export default function MirrorView( {mirror, settings, imageRef, size = 500} )
           version='1.1'
           xmlns='http://www.w3.org/2000/svg'
           xmlnsXlink='http://www.w3.org/1999/xlink'
-          width={size}
-          height={size}
+          width='100%'
+          height='100%'
           viewBox={viewBox}
         >
           {/* This <g> element is necessary because the transform property is

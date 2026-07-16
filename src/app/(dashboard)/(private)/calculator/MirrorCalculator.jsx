@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import NextLink from 'next/link'
 
+import Box from '@mui/material/Box'
 import Button from '@mui/material/Button'
 import Card from '@mui/material/Card'
 import CardContent from '@mui/material/CardContent'
@@ -29,7 +30,8 @@ import { encodeEntry, encodeEntryList } from './urlCodec'
 import CopyFromMenu from './CopyFromMenu'
 import EditableLabel from './EditableLabel'
 import ParamsPanel from './ParamsPanel'
-import MirrorPanel from './MirrorPanel'
+import MirrorView from './MirrorView'
+import MirrorToolbar from './MirrorToolbar'
 import StatsSummary from './StatsSummary'
 import LightboxStrip from './LightboxStrip'
 import ComparisonTable from './ComparisonTable'
@@ -438,9 +440,38 @@ export default function MirrorCalculator( {initialState, contours, substrateProd
         {!mirror ? (
           <Typography>Loading...</Typography>
         ) : (
-          <Stack direction={{xs: 'column', lg: 'row'}} gap={6}>
-            <div>
-              <MirrorPanel mirror={mirror} settings={settings} onSettingsChange={handleSettingsChange} imageRef={imageRef} size={MAIN_PREVIEW_SIZE} />
+          // Switches to a 2-column layout at 'md' rather than 'lg', so the
+          // settings/stats column sits beside the preview on mid-size
+          // screens instead of dropping full-width below it. MirrorView is
+          // paired directly against the settings/stats column here (rather
+          // than the combined view+toolbar block) so Stack's default
+          // align-items='stretch' gives them matching heights at 'md'+ -
+          // StatsSummary then pushes itself to the bottom of that shared
+          // height (see its own marginTop:'auto'), landing its bottom edge
+          // on MirrorView's bottom edge specifically, not the toolbar's.
+          // The toolbar (+ pinned chip) render in their own row below,
+          // width-capped to match MirrorView so they don't stretch wider
+          // than the preview above them.
+          <Stack gap={6}>
+            <Stack direction={{xs: 'column', md: 'row'}} gap={6}>
+              <MirrorView mirror={mirror} settings={settings} imageRef={imageRef} size={MAIN_PREVIEW_SIZE} />
+              <Stack flex={1} minWidth={0} gap={6}>
+                {/* flex:1 fills whatever space is left above the Divider/
+                    StatsSummary once the column stretches to match
+                    MirrorView's height at 'md'+ (a no-op in column mode,
+                    where this Stack has no stretched height to grow into) -
+                    justifyContent:'center' then centers ParamsPanel within
+                    that space, between the top of MirrorView and the top
+                    of StatsSummary. */}
+                <Box sx={{flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center'}}>
+                  <ParamsPanel substrateInfo={substrateInfo} setSubstrateInfo={setSubstrateInfo} contours={contours} />
+                </Box>
+                <Divider />
+                <StatsSummary mirror={mirror} />
+              </Stack>
+            </Stack>
+            <div style={{width: MAIN_PREVIEW_SIZE, maxWidth: '100%'}}>
+              <MirrorToolbar settings={settings} onSettingsChange={handleSettingsChange} imageRef={imageRef} />
               {pinned && (
                 <Chip
                   className='mbs-2'
@@ -452,11 +483,6 @@ export default function MirrorCalculator( {initialState, contours, substrateProd
                 />
               )}
             </div>
-            <Stack flex={1} minWidth={0} gap={6}>
-              <ParamsPanel substrateInfo={substrateInfo} setSubstrateInfo={setSubstrateInfo} contours={contours} />
-              <Divider />
-              <StatsSummary mirror={mirror} />
-            </Stack>
           </Stack>
         )}
 

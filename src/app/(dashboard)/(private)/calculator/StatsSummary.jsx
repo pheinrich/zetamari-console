@@ -32,6 +32,14 @@ export default function StatsSummary( {mirror} )
   const {compute, format} = SECTIONS[tab]
   const stats = compute( mirror )
 
+  // Reserve row-space for the Pricing tab's row count (currently tied with
+  // Weight for the most rows) regardless of which tab is active, so the
+  // panel's height - and therefore where its top edge lands, right below
+  // MirrorCalculator's flex-grow/centered ParamsPanel - stays constant as
+  // the person switches tabs. Shorter tabs (Area) get invisible filler
+  // rows instead.
+  const fillerCount = Math.max( 0, computeCostStats( mirror ).rows.length - stats.rows.length )
+
   return (
     <Box>
       <Tabs value={tab} onChange={(evt, val) => setTab( val )}>
@@ -43,6 +51,11 @@ export default function StatsSummary( {mirror} )
             <TableRow key={row.label}>
               <TableCell>{row.label}</TableCell>
               <TableCell align='right'>{format( row.value )}</TableCell>
+            </TableRow>
+          ) )}
+          {Array.from( {length: fillerCount} ).map( (_, i) => (
+            <TableRow key={`filler-${i}`} style={{visibility: 'hidden'}}>
+              <TableCell colSpan={2}>&nbsp;</TableCell>
             </TableRow>
           ) )}
         </TableBody>
