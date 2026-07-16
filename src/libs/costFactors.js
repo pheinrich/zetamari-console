@@ -37,10 +37,15 @@ function buildGeometry( product )
 
 // `settings` is the Settings row (see db/models/Settings.js) holding the
 // shop's process constants - feed rate/power draw convert cut distance
-// into machine run-time, and the per-sq-in constants seed the sanding/
-// glueing/grouting heuristics. Any of these can be null/unset (not yet
-// configured), in which case the dependent quantities default to 0
-// rather than a misleading guess.
+// into machine run-time, and the sq-in/hr throughput constants seed the
+// sanding/glueing/grouting heuristics. Any of these can be null/unset
+// (not yet configured), in which case the dependent quantities default
+// to 0 rather than a misleading guess. All the labor/machine CostFactors
+// this feeds are in hours (see CostFactors.unit), regardless of the
+// units the shop enters these constants in - feedRateInPerMin is in/min,
+// so cutDistance/feedRate yields minutes and needs an extra /60; the
+// *RateSqInPerHr constants are a throughput (sq-in of coverage per hour,
+// bigger = faster), so time is area/rate rather than area*rate.
 export function computeDefaultQuantities( product, settings )
 {
   const mirror = buildGeometry( product )
@@ -54,12 +59,12 @@ export function computeDefaultQuantities( product, settings )
   const substrateArea = mirror?.outside?.obb?.area ?? 0
   const cutDistance = mirror?.outside?.dims?.perimeter ?? 0
 
-  const feedRate = settings?.feedRateInPerHr || 0
-  const runTimeHr = feedRate > 0 ? cutDistance / feedRate : 0
+  const feedRate = settings?.feedRateInPerMin || 0
+  const runTimeHr = feedRate > 0 ? (cutDistance / feedRate) / 60 : 0
 
-  const sandingRate = settings?.sandingTimePerSqIn || 0
-  const glueingRate = settings?.glueingTimePerSqIn || 0
-  const groutingRate = settings?.groutingTimePerSqIn || 0
+  const sandingRate = settings?.sandingRateSqInPerHr || 0
+  const glueingRate = settings?.glueingRateSqInPerHr || 0
+  const groutingRate = settings?.groutingRateSqInPerHr || 0
 
   return {
     tesserae: mosaicArea,
@@ -71,9 +76,9 @@ export function computeDefaultQuantities( product, settings )
     utilities: runTimeHr,
     laborCnc: runTimeHr,
     laborDesign: LABOR_DESIGN_HR,
-    laborSanding: mosaicArea * sandingRate,
-    laborGlueing: mosaicArea * glueingRate,
-    laborGrouting: mosaicArea * groutingRate,
+    laborSanding: sandingRate > 0 ? mosaicArea / sandingRate : 0,
+    laborGlueing: glueingRate > 0 ? mosaicArea / glueingRate : 0,
+    laborGrouting: groutingRate > 0 ? mosaicArea / groutingRate : 0,
     laborFinishing: LABOR_FINISHING_HR,
   }
 }

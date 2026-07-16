@@ -22,12 +22,12 @@ const optionalNumber = z.preprocess( (val) => (val === '' || val == null ? undef
 const schema = z.object({
   companyName: optionalString,
   logoUrl: optionalString,
-  feedRateInPerHr: optionalNumber,
+  feedRateInPerMin: optionalNumber,
   powerDrawKwh: optionalNumber,
   electricityRatePerKwh: optionalNumber,
-  sandingTimePerSqIn: optionalNumber,
-  glueingTimePerSqIn: optionalNumber,
-  groutingTimePerSqIn: optionalNumber,
+  sandingRateSqInPerHr: optionalNumber,
+  glueingRateSqInPerHr: optionalNumber,
+  groutingRateSqInPerHr: optionalNumber,
 })
 
 // Singleton form - there's only ever one Settings row (see db/models/
@@ -92,10 +92,10 @@ export default function SettingsForm( {initialData={}} )
                     fullWidth
                     type='number'
                     label='Feed Rate'
-                    name='feedRateInPerHr'
-                    defaultValue={initialData?.feedRateInPerHr ?? ''}
+                    name='feedRateInPerMin'
+                    defaultValue={initialData?.feedRateInPerMin ?? ''}
                     inputProps={{step: '0.01', min: '0'}}
-                    InputProps={{endAdornment: <InputAdornment position='end'>in/hr</InputAdornment>}}
+                    InputProps={{endAdornment: <InputAdornment position='end'>in/min</InputAdornment>}}
                   />
                 </Grid>
                 <Grid size={{ xs: 12, sm: 4 }}>
@@ -137,33 +137,33 @@ export default function SettingsForm( {initialData={}} )
                   <TextField
                     fullWidth
                     type='number'
-                    label='Sanding Time'
-                    name='sandingTimePerSqIn'
-                    defaultValue={initialData?.sandingTimePerSqIn ?? ''}
+                    label='Sanding Rate'
+                    name='sandingRateSqInPerHr'
+                    defaultValue={initialData?.sandingRateSqInPerHr ?? ''}
                     inputProps={{step: '0.0001', min: '0'}}
-                    InputProps={{endAdornment: <InputAdornment position='end'>hr/sq-in</InputAdornment>}}
+                    InputProps={{endAdornment: <InputAdornment position='end'>sq-in/hr</InputAdornment>}}
                   />
                 </Grid>
                 <Grid size={{ xs: 12, sm: 4 }}>
                   <TextField
                     fullWidth
                     type='number'
-                    label='Glueing Time'
-                    name='glueingTimePerSqIn'
-                    defaultValue={initialData?.glueingTimePerSqIn ?? ''}
+                    label='Glueing Rate'
+                    name='glueingRateSqInPerHr'
+                    defaultValue={initialData?.glueingRateSqInPerHr ?? ''}
                     inputProps={{step: '0.0001', min: '0'}}
-                    InputProps={{endAdornment: <InputAdornment position='end'>hr/sq-in</InputAdornment>}}
+                    InputProps={{endAdornment: <InputAdornment position='end'>sq-in/hr</InputAdornment>}}
                   />
                 </Grid>
                 <Grid size={{ xs: 12, sm: 4 }}>
                   <TextField
                     fullWidth
                     type='number'
-                    label='Grouting Time'
-                    name='groutingTimePerSqIn'
-                    defaultValue={initialData?.groutingTimePerSqIn ?? ''}
+                    label='Grouting Rate'
+                    name='groutingRateSqInPerHr'
+                    defaultValue={initialData?.groutingRateSqInPerHr ?? ''}
                     inputProps={{step: '0.0001', min: '0'}}
-                    InputProps={{endAdornment: <InputAdornment position='end'>hr/sq-in</InputAdornment>}}
+                    InputProps={{endAdornment: <InputAdornment position='end'>sq-in/hr</InputAdornment>}}
                   />
                 </Grid>
               </Grid>

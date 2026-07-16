@@ -10,15 +10,15 @@ import { auth } from '@/lib/auth'
 // calculator reports (see calculator/report/ReportOptionsPanel.jsx), plus
 // the shop process constants the cost-profile system's computed default
 // quantities are derived from (see libs/costFactors.js) - feed rate/power
-// draw/electricity rate and the sanding/glueing/grouting per-sq-in time
-// constants.
+// draw/electricity rate and the sanding/glueing/grouting sq-in/hr
+// throughput constants.
 const NUMERIC_FIELDS = [
-  'feedRateInPerHr',
+  'feedRateInPerMin',
   'powerDrawKwh',
   'electricityRatePerKwh',
-  'sandingTimePerSqIn',
-  'glueingTimePerSqIn',
-  'groutingTimePerSqIn',
+  'sandingRateSqInPerHr',
+  'glueingRateSqInPerHr',
+  'groutingRateSqInPerHr',
 ]
 
 export async function readSettings()

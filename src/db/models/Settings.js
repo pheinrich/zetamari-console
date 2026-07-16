@@ -7,24 +7,24 @@ import sequelize from '@/db/sequelize.js'
 // quantities are derived from (see the 20260716000000-cost-profiles.js
 // migration): feed rate and power draw convert a product's cut distance
 // into machine run-time (feeding both the utilities and CNC-labor cost
-// factors), and the per-sq-in time constants seed the sanding/glueing/
-// grouting labor-hour heuristics. These are shop facts, not pricing
-// policy, which is why they live here rather than on RateProfile. Always
-// read/written as the first (and only) row - see src/db/actions/
-// settings.js - rather than a true key-value store, since there's only
-// ever one of these.
+// factors), and the sq-in/hr throughput constants seed the sanding/
+// glueing/grouting labor-hour heuristics. These are shop facts, not
+// pricing policy, which is why they live here rather than on
+// RateProfile. Always read/written as the first (and only) row - see
+// src/db/actions/settings.js - rather than a true key-value store, since
+// there's only ever one of these.
 const Settings = sequelize.define(
   'Settings',
   {
     id: { type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
     companyName: { type: DataTypes.STRING },
     logoUrl: { type: DataTypes.STRING },
-    feedRateInPerHr: { type: DataTypes.FLOAT },
+    feedRateInPerMin: { type: DataTypes.FLOAT },
     powerDrawKwh: { type: DataTypes.FLOAT },
     electricityRatePerKwh: { type: DataTypes.FLOAT },
-    sandingTimePerSqIn: { type: DataTypes.FLOAT },
-    glueingTimePerSqIn: { type: DataTypes.FLOAT },
-    groutingTimePerSqIn: { type: DataTypes.FLOAT },
+    sandingRateSqInPerHr: { type: DataTypes.FLOAT },
+    glueingRateSqInPerHr: { type: DataTypes.FLOAT },
+    groutingRateSqInPerHr: { type: DataTypes.FLOAT },
   },
   {
     timestamps: false,
