@@ -81,14 +81,6 @@ export default function ProductCostEditor( {productId, costs} )
     })
   }
 
-  function handleRevertEnabled( costFactorId )
-  {
-    startTransition( async () => {
-      await revertProductCostFactorEnabled( productId, costFactorId )
-      router.refresh()
-    })
-  }
-
   const byCategory = {}
   for( const row of costs.rows )
   {
@@ -121,35 +113,24 @@ export default function ProductCostEditor( {productId, costs} )
                   return (
                     <tr key={row.factor.id}>
                       <td>
-                        <div className='flex items-center'>
-                          <Tooltip
-                            title={
-                              isEnabledOverridden
-                                ? `Manually ${row.effectiveEnabled ? 'included' : 'excluded'}`
-                                : row.computedEnabled
-                                  ? 'Included in cost totals'
-                                  : 'Excluded - superseded by a Bill of Materials line'
-                            }
-                          >
-                            <span>
-                              <Checkbox
-                                size='small'
-                                checked={row.effectiveEnabled}
-                                onChange={e => handleToggleEnabled( row, e.target.checked )}
-                                disabled={isPending}
-                              />
-                            </span>
-                          </Tooltip>
-                          {isEnabledOverridden && (
-                            <Tooltip title='Revert to the computed default'>
-                              <span>
-                                <IconButton size='small' disabled={isPending} onClick={() => handleRevertEnabled( row.factor.id )}>
-                                  <i className='ri-arrow-go-back-line' />
-                                </IconButton>
-                              </span>
-                            </Tooltip>
-                          )}
-                        </div>
+                        <Tooltip
+                          title={
+                            isEnabledOverridden
+                              ? `Manually ${row.effectiveEnabled ? 'included' : 'excluded'}`
+                              : row.computedEnabled
+                                ? 'Included in cost totals'
+                                : 'Excluded - superseded by a Bill of Materials line'
+                          }
+                        >
+                          <span>
+                            <Checkbox
+                              size='small'
+                              checked={row.effectiveEnabled}
+                              onChange={e => handleToggleEnabled( row, e.target.checked )}
+                              disabled={isPending}
+                            />
+                          </span>
+                        </Tooltip>
                       </td>
                       <td>{row.factor.label}</td>
                       <td>
