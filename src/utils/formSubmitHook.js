@@ -28,8 +28,19 @@ export function useFormSubmit( {schema, onSubmit} )
 
     try
     {
-      await onSubmit( parse.data )
-      setSuccess( true )
+      const result = await onSubmit( parse.data )
+
+      // Server actions in this app report failure by resolving with
+      // {error} rather than throwing (see e.g. product.js's
+      // createProduct/updateProduct) - checking only for a thrown
+      // exception let a failed save (a rolled-back transaction, a
+      // caught Sequelize validation error, etc.) silently report
+      // success: no error was ever shown, and the caller still
+      // redirected as though the write had gone through.
+      if( result?.error )
+        setErrors( {server: result.error} )
+      else
+        setSuccess( true )
     }
     catch( err )
     {

@@ -115,7 +115,7 @@ export default function ProductForm( {contourList, initialData={}, costs} )
   })
 
   if( success )
-    redirect( '/products' )
+    redirect( isEdit ? `/products/${initialData.id}` : '/products' )
 
   return (
     <form onSubmit={handleSubmit}>
