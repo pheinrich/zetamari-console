@@ -23,6 +23,7 @@ import Typography from '@mui/material/Typography'
 import { useFormSubmit } from '@/utils/formSubmitHook'
 import { createProduct, updateProduct } from '@/db/actions/product'
 import { PRODUCT_TYPE_META } from './ProductTypeMeta'
+import { formatCurrency } from './productFormat'
 import ProductImagesCard from './ProductImagesCard'
 
 const optionalPositiveNumber = z.preprocess(
@@ -102,10 +103,12 @@ const schema = z.object({
   }).optional(),
 })
 
-export default function ProductForm( {contourList, initialData={}} )
+export default function ProductForm( {contourList, initialData={}, costs} )
 {
   const isEdit = Boolean( initialData?.id )
   const [type, setType] = useState( initialData?.type || '' )
+  const [priceWholesale, setPriceWholesale] = useState( initialData?.priceWholesale || '' )
+  const [priceRetail, setPriceRetail] = useState( initialData?.priceRetail || '' )
   const { handleSubmit, loading, errors, success } = useFormSubmit({
     schema,
     onSubmit: isEdit ? updateProduct : createProduct
@@ -453,8 +456,44 @@ export default function ProductForm( {contourList, initialData={}} )
               <Card>
                 <CardHeader title='Pricing' />
                 <CardContent className='flex flex-col gap-5'>
-                  <TextField fullWidth label='Wholesale Price' name='priceWholesale' defaultValue={initialData?.priceWholesale || ''} />
-                  <TextField fullWidth label='Retail Price' name='priceRetail' defaultValue={initialData?.priceRetail || ''} />
+                  <div className='flex flex-col gap-1'>
+                    <TextField
+                      fullWidth
+                      label='Wholesale Price'
+                      name='priceWholesale'
+                      value={priceWholesale}
+                      onChange={e => setPriceWholesale( e.target.value )}
+                    />
+                    {costs && (
+                      <div className='flex items-center justify-between gap-2'>
+                        <Typography variant='caption' color='text.secondary'>
+                          Cost breakdown: {formatCurrency( costs.wholesaleTotal )}
+                        </Typography>
+                        <Button size='small' onClick={() => setPriceWholesale( costs.wholesaleTotal.toFixed( 2 ) )}>
+                          Copy from Cost Breakdown
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                  <div className='flex flex-col gap-1'>
+                    <TextField
+                      fullWidth
+                      label='Retail Price'
+                      name='priceRetail'
+                      value={priceRetail}
+                      onChange={e => setPriceRetail( e.target.value )}
+                    />
+                    {costs && (
+                      <div className='flex items-center justify-between gap-2'>
+                        <Typography variant='caption' color='text.secondary'>
+                          Cost breakdown: {formatCurrency( costs.retailTotal )}
+                        </Typography>
+                        <Button size='small' onClick={() => setPriceRetail( costs.retailTotal.toFixed( 2 ) )}>
+                          Copy from Cost Breakdown
+                        </Button>
+                      </div>
+                    )}
+                  </div>
                 </CardContent>
               </Card>
             </Grid>

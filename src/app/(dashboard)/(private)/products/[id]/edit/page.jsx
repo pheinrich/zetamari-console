@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation'
 import ProductForm from '../../ProductForm'
 import { readContours } from '@/db/actions/contour'
 import { readProduct } from '@/db/actions/product'
+import { readProductCosts } from '@/db/actions/productCost'
 
 export default async function EditProductPage( {params} )
 {
@@ -10,12 +11,16 @@ export default async function EditProductPage( {params} )
   if( !product )
     return notFound()
 
-  const contours = await readContours()
+  const [contours, costs] = await Promise.all([
+    readContours(),
+    readProductCosts( product.id ),
+  ])
 
   return (
     <ProductForm
       contourList={contours.map( (c) => ({id: c.id, name: c.name}) )}
       initialData={product}
+      costs={costs}
     />
   )
 }
