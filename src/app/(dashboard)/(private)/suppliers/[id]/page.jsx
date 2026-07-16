@@ -1,6 +1,5 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { ToastContainer } from 'react-toastify'
 
 import Grid from '@mui/material/Grid2'
 import Card from '@mui/material/Card'
@@ -23,7 +22,6 @@ export default async function SupplierPage( {params} )
 
   return (
     <>
-      <ToastContainer />
       <Grid container spacing={6}>
         <Grid size={{ xs: 12 }}>
           <Card>

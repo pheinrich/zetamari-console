@@ -1,5 +1,4 @@
 import Grid from '@mui/material/Grid2'
-import { ToastContainer } from 'react-toastify'
 import { readSuppliers } from '@/db/actions/supplier'
 import SuppliersListTable from './SuppliersListTable'
 
@@ -9,7 +8,6 @@ export default async function SuppliersPage()
 
   return (
     <>
-      <ToastContainer />
       <Grid container spacing={6}>
         <Grid size={{ xs: 12 }}>
           <SuppliersListTable supplierData={suppliers} />
