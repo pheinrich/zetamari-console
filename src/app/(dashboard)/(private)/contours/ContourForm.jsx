@@ -1,9 +1,9 @@
 'use client'
 
-import { redirect } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import { z } from 'zod'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
 import Grid from '@mui/material/Grid2'
 import Card from '@mui/material/Card'
@@ -50,6 +50,7 @@ const schema = z.object({
 
 export default function ContourForm( {initialData={}, shapeTypes=[]} )
 {
+  const router = useRouter()
   const isEdit = Boolean( initialData?.id )
   const [hasSvgData, setHasSvgData] = useState( Boolean( initialData?.svgData ) )
   const [shapeName, setShapeName] = useState( initialData?.shape?.name || '' )
@@ -65,8 +66,12 @@ export default function ContourForm( {initialData={}, shapeTypes=[]} )
   // below draws from.
   const parametricShapeTypes = shapeTypes.filter( s => s.key )
 
-  if( success )
-    redirect( '/contours' )
+  // See ProductForm.jsx for why this is a router.push() effect rather
+  // than a render-time redirect() call.
+  useEffect( () => {
+    if( success )
+      router.push( '/contours' )
+  }, [success, router] )
 
   function handleFormSubmit( e )
   {

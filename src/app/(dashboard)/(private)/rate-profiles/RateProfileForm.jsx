@@ -1,6 +1,7 @@
 'use client'
 
-import { redirect } from 'next/navigation'
+import { useRouter } from 'next/navigation'
+import { useEffect } from 'react'
 import { z } from 'zod'
 import NextLink from 'next/link'
 
@@ -28,13 +29,18 @@ const schema = z.object({
 // small.
 export default function RateProfileForm()
 {
+  const router = useRouter()
   const { handleSubmit, loading, errors, success } = useFormSubmit({
     schema,
     onSubmit: createRateProfile,
   })
 
-  if( success )
-    redirect( '/rate-profiles' )
+  // See ProductForm.jsx for why this is a router.push() effect rather
+  // than a render-time redirect() call.
+  useEffect( () => {
+    if( success )
+      router.push( '/rate-profiles' )
+  }, [success, router] )
 
   return (
     <form onSubmit={handleSubmit}>

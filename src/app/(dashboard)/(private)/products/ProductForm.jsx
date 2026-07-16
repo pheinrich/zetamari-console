@@ -1,7 +1,7 @@
 'use client'
 
-import { redirect } from 'next/navigation'
-import { useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { useEffect, useState } from 'react'
 import { z } from 'zod'
 import NextLink from 'next/link'
 
@@ -116,6 +116,7 @@ const schema = z.object({
 
 export default function ProductForm( {contourList, initialData={}, costs} )
 {
+  const router = useRouter()
   const isEdit = Boolean( initialData?.id )
   const [type, setType] = useState( initialData?.type || '' )
   const [priceWholesale, setPriceWholesale] = useState( initialData?.priceWholesale || '' )
@@ -125,8 +126,16 @@ export default function ProductForm( {contourList, initialData={}, costs} )
     onSubmit: isEdit ? updateProduct : createProduct
   })
 
-  if( success )
-    redirect( isEdit ? `/products/${initialData.id}` : '/products' )
+  // redirect() from next/navigation is meant for Server Components/Server
+  // Actions - calling it during a Client Component's render (as this used
+  // to) throws NEXT_REDIRECT mid-render, which left the client-side
+  // transition half-committed and showed up as a long white-screen hang
+  // right after a successful save. router.push() from an effect is the
+  // supported Client Component pattern.
+  useEffect( () => {
+    if( success )
+      router.push( isEdit ? `/products/${initialData.id}` : '/products' )
+  }, [success, isEdit, initialData?.id, router] )
 
   return (
     <form onSubmit={handleSubmit}>

@@ -1,6 +1,7 @@
 'use client'
 
-import { redirect } from 'next/navigation'
+import { useRouter } from 'next/navigation'
+import { useEffect } from 'react'
 import { z } from 'zod'
 import NextLink from 'next/link'
 
@@ -27,14 +28,19 @@ const schema = z.object({
 
 export default function UserForm( {initialData={}} )
 {
+  const router = useRouter()
   const isEdit = Boolean( initialData?.id )
   const { handleSubmit, loading, errors, success } = useFormSubmit({
     schema: isEdit ? schema : schema.extend( {password: z.string().min( 8, 'Password must be at least 8 characters' )} ),
     onSubmit: isEdit ? updateUser : createUser
   })
 
-  if( success )
-    redirect( '/users' )
+  // See ProductForm.jsx for why this is a router.push() effect rather
+  // than a render-time redirect() call.
+  useEffect( () => {
+    if( success )
+      router.push( '/users' )
+  }, [success, router] )
 
   return (
     <form onSubmit={handleSubmit}>
