@@ -31,6 +31,17 @@ const optionalPositiveNumber = z.preprocess(
   z.coerce.number().optional()
 )
 
+// Unlike optionalPositiveNumber, this is for ids referencing another
+// row (substrateInfo.insideId/rabbetId, from the "None" option in their
+// Selects) - without the '' -> undefined preprocessing, z.coerce.number()
+// turns '' into 0 rather than leaving it absent, which then fails the
+// SubstrateInfo.insideId/rabbetId foreign key constraint (there's no
+// Contour with id 0) instead of just leaving the column null.
+const optionalPositiveInt = z.preprocess(
+  (val) => (val === '' || val == null ? undefined : val),
+  z.coerce.number().int().optional()
+)
+
 const optionalType = z.preprocess(
   (val) => (val === '' || val == null ? undefined : val),
   z.enum( ['bead', 'birdhouse', 'frame', 'grout', 'millefiori', 'mirror', 'substrate', 'tile', 'other'] ).optional()
@@ -87,8 +98,8 @@ const schema = z.object({
 
   substrateInfo: z.object({
     outsideId: z.coerce.number().int(),
-    insideId: z.coerce.number().int().optional(),
-    rabbetId: z.coerce.number().int().optional(),
+    insideId: optionalPositiveInt,
+    rabbetId: optionalPositiveInt,
     width: optionalPositiveNumber,
     height: optionalPositiveNumber,
     thickness: optionalPositiveNumber,
