@@ -146,9 +146,20 @@ export function computeDefaultQuantities( product, settings )
   const glassArea = mirror?.glass?.obb?.area ?? 0
   const substrateArea = mirror?.outside?.obb?.area ?? 0
 
-  let cutDistance = 2*mirror?.outside?.dims?.perimeter ?? 0
-  cutDistance += 2*mirror?.inside?.dims?.perimeter ?? 0
-  cutDistance += mirror?.rabbet?.dims?.perimeter ?? 0
+  // Parenthesized so each `?? 0` fallback applies before the
+  // multiplication, not after - `2 * mirror?.outside?.dims?.perimeter ?? 0`
+  // (no parens) parses as `(2 * mirror?.outside?.dims?.perimeter) ?? 0`,
+  // and when `mirror` is null (any product without a substrateInfo to
+  // build geometry from - i.e. every type except 'substrate', including
+  // 'mirror'/glass-material products), `2 * undefined` is NaN, which
+  // `??` does *not* catch (it only replaces null/undefined). That NaN
+  // then poisoned machineWear/utilities/laborCnc below for every non-
+  // substrate product, and broke the Duplicate flow outright since its
+  // snapshot submits these as explicit quantityOverride values, which
+  // zod's z.coerce.number() rejects for NaN.
+  let cutDistance = 2 * (mirror?.outside?.dims?.perimeter ?? 0)
+  cutDistance += 2 * (mirror?.inside?.dims?.perimeter ?? 0)
+  cutDistance += (mirror?.rabbet?.dims?.perimeter ?? 0)
 
   const feedRate = settings?.feedRateInPerMin || 0
   const runTimeMin = feedRate > 0 ? cutDistance / feedRate : 0

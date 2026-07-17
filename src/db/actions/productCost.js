@@ -99,7 +99,14 @@ export async function readProductCosts( productId )
 
   const rows = factors.map( factor => {
     const override = overrideByFactorId[factor.id]
-    const computedQuantity = computed[factor.key] ?? 0
+    // `?? 0` alone doesn't catch NaN (only null/undefined) - guard
+    // explicitly so a bad geometry formula can't leak NaN into the
+    // effective quantity/cost figures below, which would otherwise
+    // silently show "NaN" in the breakdown and hard-fail zod validation
+    // wherever this gets submitted as a value (e.g. the Duplicate flow's
+    // costOverrides snapshot in ProductForm.jsx).
+    const rawComputedQuantity = computed[factor.key] ?? 0
+    const computedQuantity = Number.isFinite( rawComputedQuantity ) ? rawComputedQuantity : 0
     const effectiveQuantity = null != override?.quantityOverride ? override.quantityOverride : computedQuantity
     const wholesaleRate = wholesaleRateByFactorId[factor.id] ?? 0
     const retailRate = retailRateByFactorId[factor.id] ?? 0
