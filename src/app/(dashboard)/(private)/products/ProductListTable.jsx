@@ -235,6 +235,12 @@ export default function ProductListTable( {productData, supplierData=[]} )
                   linkProps: {className: 'flex items-center is-full gap-2 plb-2 pli-4'},
                 },
                 {
+                  text: 'Duplicate',
+                  icon: 'ri-file-copy-line',
+                  href: `/products/new?from=${row.original.id}`,
+                  linkProps: {className: 'flex items-center is-full gap-2 plb-2 pli-4'},
+                },
+                {
                   text: 'Delete',
                   icon: 'ri-delete-bin-7-line',
                   menuItemProps: {

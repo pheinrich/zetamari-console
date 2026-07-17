@@ -14,6 +14,7 @@ import Alert from '@mui/material/Alert'
 import Checkbox from '@mui/material/Checkbox'
 import FormControl from '@mui/material/FormControl'
 import FormControlLabel from '@mui/material/FormControlLabel'
+import IconButton from '@mui/material/IconButton'
 import InputLabel from '@mui/material/InputLabel'
 import MenuItem from '@mui/material/MenuItem'
 import Select from '@mui/material/Select'
@@ -25,6 +26,15 @@ import { createProduct, updateProduct } from '@/db/actions/product'
 import { PRODUCT_TYPE_META } from './ProductTypeMeta'
 import { formatCurrency } from './productFormat'
 import ProductImagesCard from './ProductImagesCard'
+import tableStyles from '@core/styles/table.module.css'
+
+// Same spinner-hiding treatment used on the Cost Breakdown/BOM editors -
+// quantities here are typically several digits past the decimal point.
+const noSpinnerSx = {
+  '& input[type=number]': {MozAppearance: 'textfield'},
+  '& input[type=number]::-webkit-outer-spin-button': {WebkitAppearance: 'none', margin: 0},
+  '& input[type=number]::-webkit-inner-spin-button': {WebkitAppearance: 'none', margin: 0},
+}
 
 const optionalPositiveNumber = z.preprocess(
   (val) => (val === '' || val == null ? undefined : val),
@@ -112,19 +122,66 @@ const schema = z.object({
     height: optionalPositiveNumber,
     thickness: optionalPositiveNumber,
   }).optional(),
+
+  // Only ever populated by the Duplicate flow (see duplicateCostRows/
+  // dupBomLines below) - a snapshot of another product's cost-breakdown
+  // Included checkboxes/quantities and bill-of-materials lines, carried
+  // over onto the new product by createProduct in the same transaction
+  // as its creation. Absent for a plain Create/Update submission.
+  costOverrides: z.array( z.object({
+    costFactorId: z.coerce.number().int(),
+    enabledOverride: z.preprocess( (val) => val === 'true' ? true : val === 'false' ? false : val, z.boolean() ),
+    quantityOverride: z.coerce.number(),
+  }) ).optional(),
+
+  bomLines: z.array( z.object({
+    materialProductId: z.coerce.number().int(),
+    quantity: z.coerce.number(),
+    supplierId: optionalPositiveInt,
+  }) ).optional(),
 })
 
-export default function ProductForm( {contourList, initialData={}, costs} )
+export default function ProductForm( {contourList, initialData={}, costs, duplicateCostRows, duplicateFromName} )
 {
   const router = useRouter()
   const isEdit = Boolean( initialData?.id )
+  const isDuplicate = !isEdit && duplicateCostRows?.length > 0
   const [type, setType] = useState( initialData?.type || '' )
   const [priceWholesale, setPriceWholesale] = useState( initialData?.priceWholesale || '' )
   const [priceRetail, setPriceRetail] = useState( initialData?.priceRetail || '' )
+  // Both only ever seeded once, from the Duplicate flow's snapshot (see
+  // products/new/page.jsx) - dupCostRows drives the Included checkboxes/
+  // costOverrides.* inputs below, dupBomLines the bill-of-materials
+  // lines/bomLines.* inputs. A plain create/edit never touches either.
+  const [dupCostRows, setDupCostRows] = useState( () => duplicateCostRows?.map( row => ({...row}) ) ?? [] )
+  const [dupBomLines, setDupBomLines] = useState( () => (isDuplicate ? (initialData?.bomLines || []).map( line => ({
+    materialProductId: line.materialProductId,
+    materialName: line.material?.name,
+    materialSku: line.material?.sku,
+    units: line.material?.units,
+    quantity: line.quantity,
+    supplierId: line.supplierId || '',
+    supplierName: line.supplier?.name,
+  }) ) : []) )
   const { handleSubmit, loading, errors, success } = useFormSubmit({
     schema,
     onSubmit: isEdit ? updateProduct : createProduct
   })
+
+  function handleToggleDupIncluded( costFactorId, checked )
+  {
+    setDupCostRows( prev => prev.map( row => row.costFactorId === costFactorId ? {...row, enabled: checked} : row ) )
+  }
+
+  function handleDupBomQuantityChange( index, value )
+  {
+    setDupBomLines( prev => prev.map( (line, i) => i === index ? {...line, quantity: value} : line ) )
+  }
+
+  function handleDupBomRemove( index )
+  {
+    setDupBomLines( prev => prev.filter( (_, i) => i !== index ) )
+  }
 
   // redirect() from next/navigation is meant for Server Components/Server
   // Actions - calling it during a Client Component's render (as this used
@@ -164,6 +221,14 @@ export default function ProductForm( {contourList, initialData={}, costs} )
           </Grid>
         )}
 
+        {isDuplicate && (
+          <Grid size={{ xs: 12 }}>
+            <Alert severity='info'>
+              Duplicating <strong>{duplicateFromName}</strong> - review the details below, then Create Product. Nothing is saved until you do.
+            </Alert>
+          </Grid>
+        )}
+
         <Grid size={{ xs: 12, md: 8 }}>
           <Grid container spacing={6}>
             <Grid size={{ xs: 12 }}>
@@ -197,6 +262,103 @@ export default function ProductForm( {contourList, initialData={}, costs} )
                 </CardContent>
               </Card>
             </Grid>
+
+            {isDuplicate && (
+              <Grid size={{ xs: 12 }}>
+                <Card>
+                  <CardHeader
+                    title='Cost Breakdown'
+                    subheader={`Copied from ${duplicateFromName} - toggle Included as needed`}
+                  />
+                  <CardContent>
+                    <div className='overflow-x-auto'>
+                      <table className={tableStyles.table}>
+                        <thead>
+                          <tr>
+                            <th>Included</th>
+                            <th>Factor</th>
+                            <th>Quantity</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {dupCostRows.map( (row, i) => (
+                            <tr key={row.costFactorId}>
+                              <td>
+                                <Checkbox
+                                  size='small'
+                                  checked={row.enabled}
+                                  onChange={e => handleToggleDupIncluded( row.costFactorId, e.target.checked )}
+                                />
+                                <input type='hidden' name={`costOverrides.${i}.costFactorId`} value={row.costFactorId} />
+                                <input type='hidden' name={`costOverrides.${i}.enabledOverride`} value={row.enabled ? 'true' : 'false'} />
+                                <input type='hidden' name={`costOverrides.${i}.quantityOverride`} value={row.quantity} />
+                              </td>
+                              <td>{row.label}</td>
+                              <td>{Number( row.quantity ).toFixed( 3 )} {row.unit}</td>
+                            </tr>
+                          ) )}
+                        </tbody>
+                      </table>
+                    </div>
+                  </CardContent>
+                </Card>
+              </Grid>
+            )}
+
+            {isDuplicate && dupBomLines.length > 0 && (
+              <Grid size={{ xs: 12 }}>
+                <Card>
+                  <CardHeader title='Bill of Materials' subheader={`Copied from ${duplicateFromName}`} />
+                  <CardContent>
+                    <div className='overflow-x-auto'>
+                      <table className={tableStyles.table}>
+                        <thead>
+                          <tr>
+                            <th>Material</th>
+                            <th>Quantity</th>
+                            <th>Supplier</th>
+                            <th></th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {dupBomLines.map( (line, i) => (
+                            <tr key={line.materialProductId}>
+                              <td>
+                                {line.materialName}
+                                <Typography variant='body2' color='text.secondary'>{line.materialSku}</Typography>
+                              </td>
+                              <td>
+                                <div className='flex items-center gap-2'>
+                                  <TextField
+                                    type='number'
+                                    size='small'
+                                    inputProps={{step: '0.0001', min: '0'}}
+                                    name={`bomLines.${i}.quantity`}
+                                    value={line.quantity}
+                                    onChange={e => handleDupBomQuantityChange( i, e.target.value )}
+                                    sx={noSpinnerSx}
+                                    className='is-24'
+                                  />
+                                  <Typography variant='body2'>{line.units}</Typography>
+                                </div>
+                                <input type='hidden' name={`bomLines.${i}.materialProductId`} value={line.materialProductId} />
+                                <input type='hidden' name={`bomLines.${i}.supplierId`} value={line.supplierId} />
+                              </td>
+                              <td>{line.supplierName || 'Cheapest (auto)'}</td>
+                              <td>
+                                <IconButton size='small' onClick={() => handleDupBomRemove( i )}>
+                                  <i className='ri-delete-bin-7-line' />
+                                </IconButton>
+                              </td>
+                            </tr>
+                          ) )}
+                        </tbody>
+                      </table>
+                    </div>
+                  </CardContent>
+                </Card>
+              </Grid>
+            )}
 
             {type && (
               <Grid size={{ xs: 12 }}>

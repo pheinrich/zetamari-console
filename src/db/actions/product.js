@@ -10,6 +10,7 @@ import Image from '@/db/models/Image'
 import MillefioriInfo from '@/db/models/MillefioriInfo'
 import MirrorInfo from '@/db/models/MirrorInfo'
 import Product from '@/db/models/Product'
+import ProductCostOverride from '@/db/models/ProductCostOverride'
 import ProductImage from '@/db/models/ProductImage'
 import SubstrateInfo from '@/db/models/SubstrateInfo'
 import Supplier from '@/db/models/Supplier'
@@ -51,6 +52,34 @@ export async function createProduct( data )
 
       if( data.type )
         await setProductInfo( {...data, id: product.id}, t )
+
+      // Only ever populated by the "Duplicate" flow (ProductForm.jsx's
+      // duplicateCostRows/dupBomLines) - a snapshot of another product's
+      // cost-breakdown Included checkboxes/quantities and bill-of-
+      // materials lines, carried over onto this brand-new product in the
+      // same transaction as its creation. Everything else about a plain
+      // Create Product submission leaves these undefined.
+      if( data.costOverrides?.length )
+        await ProductCostOverride.bulkCreate(
+          data.costOverrides.map( o => ({
+            productId: product.id,
+            costFactorId: o.costFactorId,
+            quantityOverride: o.quantityOverride,
+            enabledOverride: o.enabledOverride,
+          }) ),
+          {transaction: t}
+        )
+
+      if( data.bomLines?.length )
+        await BillOfMaterial.bulkCreate(
+          data.bomLines.map( l => ({
+            parentProductId: product.id,
+            materialProductId: l.materialProductId,
+            quantity: l.quantity,
+            supplierId: l.supplierId || null,
+          }) ),
+          {transaction: t}
+        )
 
       return product
     })

@@ -38,6 +38,9 @@ export default function ProductDetailActions( {product} )
       <Button variant='outlined' color='secondary' component={Link} href={`/products/${product.id}/edit`}>
         Edit
       </Button>
+      <Button variant='outlined' color='secondary' component={Link} href={`/products/new?from=${product.id}`}>
+        Duplicate
+      </Button>
       <Button variant='outlined' color='error' disabled={isPending} onClick={handleDelete}>
         {isPending ? 'Deleting...' : 'Delete'}
       </Button>
