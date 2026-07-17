@@ -17,7 +17,7 @@ import Typography from '@mui/material/Typography'
 import { updateRateProfile, deleteRateProfile } from '@/db/actions/rateProfile'
 import tableStyles from '@core/styles/table.module.css'
 
-const KIND_LABELS = {wholesale: 'Wholesale', retail: 'Retail', custom: 'Custom'}
+const KIND_LABELS = {wholesale: 'Wholesale', retail: 'Retail', cogs: 'COGS', custom: 'Custom'}
 const CATEGORY_LABELS = {material: 'Material', machine: 'Machine', labor: 'Labor'}
 const CATEGORY_ORDER = ['material', 'machine', 'labor']
 

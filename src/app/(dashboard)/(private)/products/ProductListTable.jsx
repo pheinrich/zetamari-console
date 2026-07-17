@@ -202,6 +202,12 @@ export default function ProductListTable( {productData, supplierData=[]} )
         ),
         enableSorting: false
       } ),
+      columnHelper.accessor( 'cogsCost', {
+        header: 'Cost',
+        cell: ({ row }) => (
+          <Typography color='text.secondary'>{formatCurrency( row.original.cogsCost )}</Typography>
+        )
+      } ),
       columnHelper.accessor( 'priceWholesale', {
         header: 'Wholesale',
         cell: ({ row }) => <Typography>{formatCurrency( row.original.priceWholesale )}</Typography>

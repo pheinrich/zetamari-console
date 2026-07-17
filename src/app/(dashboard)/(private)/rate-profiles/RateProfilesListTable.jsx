@@ -16,8 +16,8 @@ import Typography from '@mui/material/Typography'
 import { deleteRateProfile } from '@/db/actions/rateProfile'
 import tableStyles from '@core/styles/table.module.css'
 
-const KIND_LABELS = {wholesale: 'Wholesale', retail: 'Retail', custom: 'Custom'}
-const KIND_COLORS = {wholesale: 'primary', retail: 'primary', custom: 'secondary'}
+const KIND_LABELS = {wholesale: 'Wholesale', retail: 'Retail', cogs: 'COGS', custom: 'Custom'}
+const KIND_COLORS = {wholesale: 'primary', retail: 'primary', cogs: 'warning', custom: 'secondary'}
 
 // Simple, unpaginated table - unlike Products/Contours/Suppliers/Users,
 // the number of rate profiles is expected to stay small (the two system

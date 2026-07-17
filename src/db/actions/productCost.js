@@ -11,35 +11,73 @@ import sequelize from '@/db/sequelize'
 import { auth } from '@/lib/auth'
 import { computeDefaultQuantities, computeSupersededFactors, convertToRateUnit } from '@/libs/costFactors'
 
-// Loads everything computeDefaultQuantities()/computeSupersededFactors()
-// need to derive geometry- and BOM-based defaults - the substrateInfo
-// branch of readProduct's eager include (product.js) for geometry, plus
-// bomLines with each material's type (to know which area-based factor,
-// if any, it supersedes) and supplier prices (to cost the "bom" factor).
+// What computeDefaultQuantities()/computeSupersededFactors() need to
+// derive geometry- and BOM-based defaults - the substrateInfo branch of
+// readProduct's eager include (product.js) for geometry, plus bomLines
+// with each material's type (to know which area-based factor, if any, it
+// supersedes) and supplier prices (to cost the "bom" factor). Shared by
+// loadProductForCosting (one product) and readProductsCogsCosts (every
+// product at once, for the list page's Cost column).
+const COSTING_INCLUDE = [
+  {
+    association: 'substrateInfo',
+    include: [
+      {association: 'outside', include: [{association: 'shape'}]},
+      {association: 'inside', include: [{association: 'shape'}]},
+      {association: 'rabbet', include: [{association: 'shape'}]},
+    ],
+  },
+  {
+    association: 'bomLines',
+    include: [{
+      association: 'material',
+      include: [{association: 'suppliers', through: {attributes: ['cost']}}],
+    }],
+  },
+]
+
 // Re-fetched here rather than shared with readProduct so this action
 // stays independently callable (e.g. from router.refresh() in
 // ProductCostEditor without round-tripping through the product page).
 async function loadProductForCosting( id )
 {
-  return Product.findByPk( id, {
-    include: [
-      {
-        association: 'substrateInfo',
-        include: [
-          {association: 'outside', include: [{association: 'shape'}]},
-          {association: 'inside', include: [{association: 'shape'}]},
-          {association: 'rabbet', include: [{association: 'shape'}]},
-        ],
-      },
-      {
-        association: 'bomLines',
-        include: [{
-          association: 'material',
-          include: [{association: 'suppliers', through: {attributes: ['cost']}}],
-        }],
-      },
-    ],
-  })
+  return Product.findByPk( id, {include: COSTING_INCLUDE} )
+}
+
+// The same per-factor effective-quantity/effective-enabled math
+// readProductCosts() uses to build wholesaleTotal/retailTotal below,
+// factored out so readProductsCogsCosts() can reuse it without pulling in
+// readProductCosts()'s full per-row breakdown shape (which is built for
+// the product detail page's table, not a single number). `factors` is
+// every CostFactor; `overrideByFactorId` is this one product's overrides
+// keyed by costFactorId; `rateByFactorId` is one RateProfile's rates
+// keyed the same way.
+function sumEffectiveCost( productJson, settingsJson, factors, overrideByFactorId, rateByFactorId )
+{
+  const computed = computeDefaultQuantities( productJson, settingsJson )
+  const superseded = computeSupersededFactors( productJson )
+
+  let total = 0
+  for( const factor of factors )
+  {
+    const override = overrideByFactorId[factor.id]
+
+    // `?? 0` alone doesn't catch NaN (only null/undefined) - see the
+    // same guard in readProductCosts() below.
+    const rawComputedQuantity = computed[factor.key] ?? 0
+    const computedQuantity = Number.isFinite( rawComputedQuantity ) ? rawComputedQuantity : 0
+    const effectiveQuantity = null != override?.quantityOverride ? override.quantityOverride : computedQuantity
+    const computedEnabled = !superseded.has( factor.key )
+    const effectiveEnabled = null != override?.enabledOverride ? override.enabledOverride : computedEnabled
+
+    if( !effectiveEnabled )
+      continue
+
+    const rate = rateByFactorId[factor.id] ?? 0
+    total += convertToRateUnit( effectiveQuantity, factor ) * rate
+  }
+
+  return total
 }
 
 // Every product implicitly prices under the standard Wholesale/Retail
@@ -141,6 +179,54 @@ export async function readProductCosts( productId )
     wholesaleTotal: rows.filter( r => r.effectiveEnabled ).reduce( (sum, r) => sum + r.wholesaleCost, 0 ),
     retailTotal: rows.filter( r => r.effectiveEnabled ).reduce( (sum, r) => sum + r.retailCost, 0 ),
   }
+}
+
+// Every product's COGS ("Cost of Goods Sold") total, for the Products
+// list page's Cost column - the standard 'cogs' RateProfile (see the
+// 20260721000000-add-cogs-rate-profile.js migration) is a single fixed
+// profile, not something a product opts into per-tier like Wholesale/
+// Retail, so there's no per-product profile resolution needed here.
+//
+// Deliberately batched rather than calling readProductCosts() once per
+// product: that function alone runs ~5 queries (including a multi-table
+// eager load) *per call*, which would make a list of even a few dozen
+// products run into the hundreds of queries. Here, Settings/CostFactors/
+// the COGS profile's rates are each fetched once, every product's
+// costing inputs and every ProductCostOverride row are fetched in one
+// query apiece, and the per-product $ math (sumEffectiveCost) runs
+// entirely in JS from there - a constant number of queries no matter how
+// many products exist.
+export async function readProductsCogsCosts()
+{
+  const session = await auth()
+  if( !session )
+    unauthorized()
+
+  await sequelize.sync()
+
+  const [settings, factors, cogsProfile, overrides, products] = await Promise.all([
+    Settings.findOne(),
+    CostFactor.findAll(),
+    RateProfile.findOne( {where: {kind: 'cogs'}, include: [{model: ProfileRate, as: 'rates'}]} ),
+    ProductCostOverride.findAll(),
+    Product.findAll( {include: COSTING_INCLUDE} ),
+  ])
+
+  const rateByFactorId = Object.fromEntries( (cogsProfile?.rates || []).map( r => [r.costFactorId, r.rate] ) )
+  const settingsJson = settings?.toJSON()
+
+  const overridesByProductId = {}
+  for( const override of overrides )
+    (overridesByProductId[override.productId] ??= {})[override.costFactorId] = override
+
+  const totals = {}
+  for( const product of products )
+  {
+    const overrideByFactorId = overridesByProductId[product.id] || {}
+    totals[product.id] = sumEffectiveCost( product.toJSON(), settingsJson, factors, overrideByFactorId, rateByFactorId )
+  }
+
+  return totals
 }
 
 // A row is only kept around while at least one of the two overridable
