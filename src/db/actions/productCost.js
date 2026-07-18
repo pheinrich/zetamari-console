@@ -4,8 +4,6 @@ import { notFound, unauthorized } from 'next/navigation'
 import Product from '@/db/models/Product'
 import CostFactor from '@/db/models/CostFactor'
 import ProductCostOverride from '@/db/models/ProductCostOverride'
-import RateProfile from '@/db/models/RateProfile'
-import ProfileRate from '@/db/models/ProfileRate'
 import Settings from '@/db/models/Settings'
 import sequelize from '@/db/sequelize'
 import { auth } from '@/lib/auth'
@@ -45,14 +43,14 @@ async function loadProductForCosting( id )
 }
 
 // The same per-factor effective-quantity/effective-enabled math
-// readProductCosts() uses to build wholesaleTotal/retailTotal below,
-// factored out so readProductsCogsCosts() can reuse it without pulling in
+// readProductCosts() uses to build its rows below, factored out so
+// readProductsCogsCosts() can reuse it without pulling in
 // readProductCosts()'s full per-row breakdown shape (which is built for
 // the product detail page's table, not a single number). `factors` is
-// every CostFactor; `overrideByFactorId` is this one product's overrides
-// keyed by costFactorId; `rateByFactorId` is one RateProfile's rates
-// keyed the same way.
-function sumEffectiveCost( productJson, settingsJson, factors, overrideByFactorId, rateByFactorId )
+// every CostFactor (each carrying its own $/unit `rate` - see
+// CostFactor.js); `overrideByFactorId` is this one product's overrides
+// keyed by costFactorId.
+function sumEffectiveCost( productJson, settingsJson, factors, overrideByFactorId )
 {
   const computed = computeDefaultQuantities( productJson, settingsJson )
   const superseded = computeSupersededFactors( productJson )
@@ -73,35 +71,20 @@ function sumEffectiveCost( productJson, settingsJson, factors, overrideByFactorI
     if( !effectiveEnabled )
       continue
 
-    const rate = rateByFactorId[factor.id] ?? 0
-    total += convertToRateUnit( effectiveQuantity, factor ) * rate
+    total += convertToRateUnit( effectiveQuantity, factor ) * (factor.rate ?? 0)
   }
 
   return total
 }
 
-// Every product implicitly prices under the standard Wholesale/Retail
-// profiles unless it names a custom one - see Product.wholesaleRateProfileId/
-// retailRateProfileId.
-async function resolveEffectiveProfileId( product, kind )
-{
-  const explicitId = 'wholesale' === kind ? product.wholesaleRateProfileId : product.retailRateProfileId
-  if( explicitId )
-    return explicitId
-
-  const standard = await RateProfile.findOne( {where: {kind}} )
-  return standard?.id
-}
-
 // Combines, per cost factor: the computed default quantity (from the
 // product's live geometry/BOM), any manual quantity/enabled overrides,
-// and the $ cost under both the wholesale and retail tiers the product
-// actually prices under (its own custom profile if named, otherwise the
-// standard one) - everything ProductCostEditor needs to render its
-// table and totals in one round trip. Rows for a factor superseded by a
-// real BOM line (or manually unchecked) still carry their full computed
-// $ figures, so the estimate stays visible for comparison - only the
-// totals exclude them.
+// and the $ cost at COGS plus the Wholesale/Retail figures derived from
+// it via Settings.wholesaleMultiplier/retailMultiplier - everything
+// ProductCostEditor needs to render its table and totals in one round
+// trip. Rows for a factor superseded by a real BOM line (or manually
+// unchecked) still carry their full computed $ figures, so the estimate
+// stays visible for comparison - only the totals exclude them.
 export async function readProductCosts( productId )
 {
   const session = await auth()
@@ -114,22 +97,15 @@ export async function readProductCosts( productId )
   if( !product )
     notFound()
 
-  const [settings, factors, overrides, wholesaleProfileId, retailProfileId] = await Promise.all([
+  const [settings, factors, overrides] = await Promise.all([
     Settings.findOne(),
     CostFactor.findAll( {order: [['id', 'ASC']]} ),
     ProductCostOverride.findAll( {where: {productId}} ),
-    resolveEffectiveProfileId( product, 'wholesale' ),
-    resolveEffectiveProfileId( product, 'retail' ),
   ])
 
-  const [wholesaleProfile, retailProfile] = await Promise.all([
-    wholesaleProfileId ? RateProfile.findByPk( wholesaleProfileId, {include: [{model: ProfileRate, as: 'rates'}]} ) : null,
-    retailProfileId ? RateProfile.findByPk( retailProfileId, {include: [{model: ProfileRate, as: 'rates'}]} ) : null,
-  ])
-
-  const wholesaleRateByFactorId = Object.fromEntries( (wholesaleProfile?.rates || []).map( r => [r.costFactorId, r.rate] ) )
-  const retailRateByFactorId = Object.fromEntries( (retailProfile?.rates || []).map( r => [r.costFactorId, r.rate] ) )
   const overrideByFactorId = Object.fromEntries( overrides.map( o => [o.costFactorId, o] ) )
+  const wholesaleMultiplier = settings?.wholesaleMultiplier ?? 1
+  const retailMultiplier = settings?.retailMultiplier ?? 1
 
   const productJson = product.toJSON()
   const computed = computeDefaultQuantities( productJson, settings?.toJSON() )
@@ -146,8 +122,6 @@ export async function readProductCosts( productId )
     const rawComputedQuantity = computed[factor.key] ?? 0
     const computedQuantity = Number.isFinite( rawComputedQuantity ) ? rawComputedQuantity : 0
     const effectiveQuantity = null != override?.quantityOverride ? override.quantityOverride : computedQuantity
-    const wholesaleRate = wholesaleRateByFactorId[factor.id] ?? 0
-    const retailRate = retailRateByFactorId[factor.id] ?? 0
     const computedEnabled = !superseded.has( factor.key )
     const effectiveEnabled = null != override?.enabledOverride ? override.enabledOverride : computedEnabled
 
@@ -156,6 +130,7 @@ export async function readProductCosts( productId )
     // is tracked in minutes - convert before multiplying so the $
     // figures come out right.
     const rateQuantity = convertToRateUnit( effectiveQuantity, factor )
+    const cogsCost = rateQuantity * (factor.rate ?? 0)
 
     return {
       factor: factor.toJSON(),
@@ -165,37 +140,37 @@ export async function readProductCosts( productId )
       computedEnabled,
       enabledOverride: override?.enabledOverride ?? null,
       effectiveEnabled,
-      wholesaleRate,
-      retailRate,
-      wholesaleCost: rateQuantity * wholesaleRate,
-      retailCost: rateQuantity * retailRate,
+      cogsRate: factor.rate ?? 0,
+      cogsCost,
+      wholesaleCost: cogsCost * wholesaleMultiplier,
+      retailCost: cogsCost * retailMultiplier,
     }
   } )
 
   return {
     rows,
-    wholesaleProfileName: wholesaleProfile?.name ?? null,
-    retailProfileName: retailProfile?.name ?? null,
+    wholesaleMultiplier,
+    retailMultiplier,
+    cogsTotal: rows.filter( r => r.effectiveEnabled ).reduce( (sum, r) => sum + r.cogsCost, 0 ),
     wholesaleTotal: rows.filter( r => r.effectiveEnabled ).reduce( (sum, r) => sum + r.wholesaleCost, 0 ),
     retailTotal: rows.filter( r => r.effectiveEnabled ).reduce( (sum, r) => sum + r.retailCost, 0 ),
   }
 }
 
 // Every product's COGS ("Cost of Goods Sold") total, for the Products
-// list page's Cost column - the standard 'cogs' RateProfile (see the
-// 20260721000000-add-cogs-rate-profile.js migration) is a single fixed
-// profile, not something a product opts into per-tier like Wholesale/
-// Retail, so there's no per-product profile resolution needed here.
+// list page's Cost column - CostFactor.rate is the one shop-wide $/unit
+// rate per factor now (see the 20260722000000-simplify-cost-profiles.js
+// migration), so there's no per-product/per-tier profile resolution
+// needed here at all.
 //
 // Deliberately batched rather than calling readProductCosts() once per
-// product: that function alone runs ~5 queries (including a multi-table
-// eager load) *per call*, which would make a list of even a few dozen
-// products run into the hundreds of queries. Here, Settings/CostFactors/
-// the COGS profile's rates are each fetched once, every product's
-// costing inputs and every ProductCostOverride row are fetched in one
-// query apiece, and the per-product $ math (sumEffectiveCost) runs
-// entirely in JS from there - a constant number of queries no matter how
-// many products exist.
+// product: that function alone runs several queries (including a multi-
+// table eager load) *per call*, which would make a list of even a few
+// dozen products run into the hundreds of queries. Here, Settings/
+// CostFactors are each fetched once, every product's costing inputs and
+// every ProductCostOverride row are fetched in one query apiece, and the
+// per-product $ math (sumEffectiveCost) runs entirely in JS from there -
+// a constant number of queries no matter how many products exist.
 export async function readProductsCogsCosts()
 {
   const session = await auth()
@@ -204,15 +179,13 @@ export async function readProductsCogsCosts()
 
   await sequelize.sync()
 
-  const [settings, factors, cogsProfile, overrides, products] = await Promise.all([
+  const [settings, factors, overrides, products] = await Promise.all([
     Settings.findOne(),
     CostFactor.findAll(),
-    RateProfile.findOne( {where: {kind: 'cogs'}, include: [{model: ProfileRate, as: 'rates'}]} ),
     ProductCostOverride.findAll(),
     Product.findAll( {include: COSTING_INCLUDE} ),
   ])
 
-  const rateByFactorId = Object.fromEntries( (cogsProfile?.rates || []).map( r => [r.costFactorId, r.rate] ) )
   const settingsJson = settings?.toJSON()
 
   const overridesByProductId = {}
@@ -223,7 +196,7 @@ export async function readProductsCogsCosts()
   for( const product of products )
   {
     const overrideByFactorId = overridesByProductId[product.id] || {}
-    totals[product.id] = sumEffectiveCost( product.toJSON(), settingsJson, factors, overrideByFactorId, rateByFactorId )
+    totals[product.id] = sumEffectiveCost( product.toJSON(), settingsJson, factors, overrideByFactorId )
   }
 
   return totals

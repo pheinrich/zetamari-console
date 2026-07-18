@@ -59,7 +59,7 @@ function buildGeometry( product )
 const MINUTES_PER_UNIT = {min: 1, hr: 60}
 
 // Converts a factor's quantity (tracked in CostFactor.unit) into
-// whatever unit its ProfileRate.rate is quoted in (CostFactor.rateUnit,
+// whatever unit its CostFactor.rate is quoted in (CostFactor.rateUnit,
 // falling back to unit itself when null - the common case), so
 // `quantity * rate` always multiplies like units. Only Labor factors
 // currently have a rateUnit that differs from their unit (minutes

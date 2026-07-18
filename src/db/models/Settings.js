@@ -9,10 +9,17 @@ import sequelize from '@/db/sequelize.js'
 // into machine run-time (feeding both the utilities and CNC-labor cost
 // factors), and the sq-in/hr throughput constants seed the sanding/
 // glueing/grouting labor-hour heuristics. These are shop facts, not
-// pricing policy, which is why they live here rather than on
-// RateProfile. Always read/written as the first (and only) row - see
+// pricing policy, which is why they live here rather than on CostFactor.
+// Always read/written as the first (and only) row - see
 // src/db/actions/settings.js - rather than a true key-value store, since
 // there's only ever one of these.
+//
+// wholesaleMultiplier/retailMultiplier scale a product's COGS cost total
+// (CostFactor.rate x its effective quantities, summed - see
+// db/actions/productCost.js) into its Wholesale/Retail cost-breakdown
+// figures. Added by the 20260722000000-simplify-cost-profiles.js
+// migration, replacing the old RateProfile/ProfileRate system's separate
+// per-factor rates for each pricing tier.
 const Settings = sequelize.define(
   'Settings',
   {
@@ -25,6 +32,8 @@ const Settings = sequelize.define(
     sandingRateSqInPerHr: { type: DataTypes.FLOAT },
     glueingRateSqInPerHr: { type: DataTypes.FLOAT },
     groutingRateSqInPerHr: { type: DataTypes.FLOAT },
+    wholesaleMultiplier: { type: DataTypes.FLOAT, allowNull: false, defaultValue: 1 },
+    retailMultiplier: { type: DataTypes.FLOAT, allowNull: false, defaultValue: 1 },
   },
   {
     timestamps: false,

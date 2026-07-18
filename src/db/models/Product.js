@@ -1,6 +1,5 @@
 import { DataTypes } from 'sequelize'
 import sequelize from '@/db/sequelize.js'
-import RateProfile from '@/db/models/RateProfile'
 
 // Unified Product/Material table. A row can be a purchasable end item
 // (sellable: true), a raw material consumed by other products' bills of
@@ -27,18 +26,9 @@ const Product = sequelize.define(
     // profile system below, which is only a cost-breakdown reference tool.
     priceWholesale: { type: DataTypes.DECIMAL( 8, 2 ) },
     priceRetail: { type: DataTypes.DECIMAL( 8, 2 ) },
-    // Opts this product into a custom RateProfile (see RateProfile.js) for
-    // one or both pricing tiers, instead of the standard Wholesale/Retail
-    // profile. Null (the common case) means "use the standard profile of
-    // that kind."
-    wholesaleRateProfileId: { type: DataTypes.INTEGER, allowNull: true, references: { model: RateProfile, key: 'id' } },
-    retailRateProfileId: { type: DataTypes.INTEGER, allowNull: true, references: { model: RateProfile, key: 'id' } },
   },
   {
     timestamps: false,
   })
-
-Product.belongsTo( RateProfile, { as: 'wholesaleRateProfile', foreignKey: 'wholesaleRateProfileId' } )
-Product.belongsTo( RateProfile, { as: 'retailRateProfile', foreignKey: 'retailRateProfileId' } )
 
 export default Product

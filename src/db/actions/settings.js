@@ -1,5 +1,6 @@
 'use server'
 
+import CostFactor from '@/db/models/CostFactor'
 import Settings from '@/db/models/Settings'
 import sequelize from '@/db/sequelize'
 import { auth } from '@/lib/auth'
@@ -7,11 +8,13 @@ import { auth } from '@/lib/auth'
 // Settings is a singleton table - readSettings/updateSettings always
 // operate on the first (and only) row, creating it on first write if it
 // doesn't exist yet. Backs the company name/logo used on printed
-// calculator reports (see calculator/report/ReportOptionsPanel.jsx), plus
-// the shop process constants the cost-profile system's computed default
+// calculator reports (see calculator/report/ReportOptionsPanel.jsx), the
+// shop process constants the cost-profile system's computed default
 // quantities are derived from (see libs/costFactors.js) - feed rate/power
 // draw/electricity rate and the sanding/glueing/grouting sq-in/hr
-// throughput constants.
+// throughput constants - and wholesaleMultiplier/retailMultiplier, which
+// scale a product's COGS cost total into its Wholesale/Retail figures
+// (see db/actions/productCost.js).
 const NUMERIC_FIELDS = [
   'feedRateInPerMin',
   'powerDrawKwh',
@@ -19,6 +22,8 @@ const NUMERIC_FIELDS = [
   'sandingRateSqInPerHr',
   'glueingRateSqInPerHr',
   'groutingRateSqInPerHr',
+  'wholesaleMultiplier',
+  'retailMultiplier',
 ]
 
 export async function readSettings()
@@ -32,6 +37,12 @@ export async function readSettings()
 
   return settings?.toJSON() ?? {companyName: '', logoUrl: ''}
 }
+
+// Unlike the other NUMERIC_FIELDS (which are nullable - "not yet
+// configured" is a meaningful, distinct state from 0), the multiplier
+// columns are `allowNull: false` with a default of 1 (see Settings.js) -
+// a blank multiplier field falls back to 1 ("no markup"), not null.
+const MULTIPLIER_FIELDS = new Set( ['wholesaleMultiplier', 'retailMultiplier'] )
 
 export async function updateSettings( data )
 {
@@ -52,9 +63,48 @@ export async function updateSettings( data )
   // {companyName, logoUrl} without wiping out the process constants.
   for( const field of NUMERIC_FIELDS )
     if( field in data )
-      update[field] = (null == data[field] || '' === data[field]) ? null : Number( data[field] )
+    {
+      const blank = null == data[field] || '' === data[field]
+      update[field] = blank ? (MULTIPLIER_FIELDS.has( field ) ? 1 : null) : Number( data[field] )
+    }
 
   await settings.update( update )
 
   return settings.toJSON()
+}
+
+// --- Cost factor rates ---------------------------------------------------
+//
+// CostFactor.rate is the one $/unit COGS rate per factor, shop-wide -
+// folded in here (rather than kept as a separate RateProfile/ProfileRate
+// system) since it's the same kind of shop-wide constant as the process
+// constants above, not per-product data. See the 20260722000000-simplify-
+// cost-profiles.js migration and libs/costFactors.js.
+
+export async function readCostFactors()
+{
+  const session = await auth()
+  if( !session )
+    throw new Error( 'Unauthorized', {cause: 401} )
+
+  await sequelize.sync()
+  const factors = await CostFactor.findAll( {order: [['id', 'ASC']]} )
+  return factors.map( f => f.toJSON() )
+}
+
+// `rates` is an array of {id, rate} - every factor's rate is saved in one
+// call, matching how the rest of this page submits its whole form at
+// once rather than one field at a time.
+export async function updateCostFactorRates( rates )
+{
+  const session = await auth()
+  if( !session )
+    throw new Error( 'Unauthorized', {cause: 401} )
+
+  await sequelize.sync()
+
+  for( const {id, rate} of rates || [] )
+    await CostFactor.update( {rate: rate || 0}, {where: {id}} )
+
+  return {success: true}
 }

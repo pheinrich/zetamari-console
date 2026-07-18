@@ -11,13 +11,20 @@ import sequelize from '@/db/sequelize'
 //
 // `unit` is the physical unit a product's *quantity* for this factor is
 // tracked in ('sqin', 'in' for cut distance, 'min'/'hr'). `rateUnit` is
-// the unit its ProfileRate.rate is quoted in - null means "same as
-// unit" (true for every factor except the six Labor ones, which track
-// quantity in minutes but are rated per hour - see the
-// 20260719000000-labor-rate-unit-hours.js migration for why). Cost
-// calculations convert a quantity from `unit` to `rateUnit` before
-// multiplying by rate - see db/actions/productCost.js. `category`
-// ('material'/'machine'/'labor') is just for grouping in the UI.
+// the unit `rate` is quoted in - null means "same as unit" (true for
+// every factor except the six Labor ones, which track quantity in
+// minutes but are rated per hour - see the 20260719000000-labor-rate-
+// unit-hours.js migration for why). Cost calculations convert a quantity
+// from `unit` to `rateUnit` before multiplying by rate - see
+// db/actions/productCost.js. `category` ('material'/'machine'/'labor')
+// is just for grouping in the UI.
+//
+// `rate` is the one $/unit COGS rate for this factor, shop-wide - see the
+// 20260722000000-simplify-cost-profiles.js migration, which folded the
+// old per-profile RateProfile/ProfileRate system down to this single
+// column (editable from the Settings page, alongside the process
+// constants) plus Settings.wholesaleMultiplier/retailMultiplier for
+// deriving Wholesale/Retail cost-breakdown figures from it.
 const CostFactor = sequelize.define(
   'CostFactor',
   {
@@ -27,6 +34,7 @@ const CostFactor = sequelize.define(
     unit: { type: DataTypes.STRING, allowNull: false },
     rateUnit: { type: DataTypes.STRING },
     category: { type: DataTypes.STRING },
+    rate: { type: DataTypes.FLOAT, allowNull: false, defaultValue: 0 },
   },
   {
     timestamps: false,

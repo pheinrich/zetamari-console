@@ -100,6 +100,7 @@ export default function ProductCostEditor( {productId, costs} )
                   <th>Included</th>
                   <th>Factor</th>
                   <th>Quantity</th>
+                  <th>Cost</th>
                   <th>Wholesale</th>
                   <th>Retail</th>
                   <th></th>
@@ -155,6 +156,7 @@ export default function ProductCostEditor( {productId, costs} )
                           )}
                         </div>
                       </td>
+                      <td>{formatCurrency( row.cogsCost )}</td>
                       <td>{formatCurrency( row.wholesaleCost )}</td>
                       <td>{formatCurrency( row.retailCost )}</td>
                       <td>
@@ -179,10 +181,13 @@ export default function ProductCostEditor( {productId, costs} )
 
       <div className='flex flex-wrap justify-end gap-6'>
         <Typography variant='body2' color='text.secondary'>
-          Wholesale ({costs.wholesaleProfileName || 'Wholesale'}): <strong>{formatCurrency( costs.wholesaleTotal )}</strong>
+          COGS: <strong>{formatCurrency( costs.cogsTotal )}</strong>
         </Typography>
         <Typography variant='body2' color='text.secondary'>
-          Retail ({costs.retailProfileName || 'Retail'}): <strong>{formatCurrency( costs.retailTotal )}</strong>
+          Wholesale ({costs.wholesaleMultiplier}x): <strong>{formatCurrency( costs.wholesaleTotal )}</strong>
+        </Typography>
+        <Typography variant='body2' color='text.secondary'>
+          Retail ({costs.retailMultiplier}x): <strong>{formatCurrency( costs.retailTotal )}</strong>
         </Typography>
       </div>
     </div>

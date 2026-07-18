@@ -52,11 +52,6 @@ const horizontalMenuData = () => [
         href: '/suppliers'
       },
       {
-        label: 'rateProfiles',
-        icon: 'ri-price-tag-3-line',
-        href: '/rate-profiles'
-      },
-      {
         label: 'users',
         icon: 'ri-team-line',
         href: '/users'
