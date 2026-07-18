@@ -454,7 +454,13 @@ export default function MirrorCalculator( {initialState, contours, substrateProd
           // than the preview above them.
           <Stack gap={6}>
             <Stack direction={{xs: 'column', md: 'row'}} gap={6}>
-              <MirrorView mirror={mirror} settings={settings} imageRef={imageRef} size={MAIN_PREVIEW_SIZE} />
+              <MirrorView
+                mirror={mirror}
+                settings={settings}
+                onSettingsChange={handleSettingsChange}
+                imageRef={imageRef}
+                size={MAIN_PREVIEW_SIZE}
+              />
               <Stack flex={1} minWidth={0} gap={6}>
                 {/* flex:1 fills whatever space is left above the Divider/
                     StatsSummary once the column stretches to match

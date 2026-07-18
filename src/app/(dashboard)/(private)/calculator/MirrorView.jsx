@@ -1,5 +1,16 @@
+'use client'
+
+import { useEffect, useRef } from 'react'
+
 import BorderSize from './BorderSize'
 import Dimensions from './Dimensions'
+
+// How much settings.zoom (0-100, same range as MirrorToolbar's Slider)
+// moves per wheel "tick". A fixed step rather than scaling off
+// e.deltaY directly - deltaY's magnitude varies wildly between a mouse
+// wheel and a trackpad, so scaling off it makes the zoom speed
+// inconsistent across input devices.
+const WHEEL_ZOOM_STEP = 2
 
 // Renders the assembled mirror's SVG preview (frame/substrate, glass,
 // rabbet) plus optional dimension callouts. Ported from the old console
@@ -22,8 +33,50 @@ function Path( {fill, color, stroke, data, transform} )
   )
 }
 
-export default function MirrorView( {mirror, settings, imageRef, size = 500} )
+export default function MirrorView( {mirror, settings, onSettingsChange, imageRef, size = 500} )
 {
+  // Separate from imageRef (which SnapshotDialog reads for PNG export) -
+  // this one's just for attaching the wheel listener below, on the same
+  // outer element regardless of what imageRef happens to be pointed at
+  // by a given caller (some pass a real ref, some a dummy one - see
+  // WorkingPanelReport.jsx).
+  const containerRef = useRef( null )
+
+  // Wheel-to-zoom is opt-in via onSettingsChange - callers that only
+  // ever render a static preview (report pages, lightbox thumbnails)
+  // don't pass it, so this just never attaches anything for them.
+  //
+  // Added as a native, non-passive listener via a ref rather than
+  // React's onWheel prop: React registers wheel handlers as passive by
+  // default (matching the browser's own scroll-performance default),
+  // which silently ignores preventDefault() - without it, scrolling to
+  // zoom the preview would also scroll the whole page underneath it.
+  useEffect( () => {
+    const el = containerRef.current
+    if( !el || !onSettingsChange )
+      return undefined
+
+    function handleWheel( e )
+    {
+      e.preventDefault()
+
+      const current = typeof settings.zoom === 'number' ? settings.zoom : 65
+      const direction = e.deltaY < 0 ? 1 : -1
+      const next = Math.min( 100, Math.max( 0, current + direction * WHEEL_ZOOM_STEP ) )
+
+      if( next !== current )
+        onSettingsChange( {...settings, zoom: next} )
+    }
+
+    el.addEventListener( 'wheel', handleWheel, {passive: false} )
+    return () => el.removeEventListener( 'wheel', handleWheel )
+    // `mirror` is included even though the handler doesn't read it -
+    // containerRef.current is null while the "Loading..." branch below
+    // is rendered (no element for the ref to attach to yet), so the
+    // effect needs to re-run once mirror actually resolves, not just
+    // when settings/onSettingsChange happen to change.
+  }, [settings, onSettingsChange, mirror] )
+
   if( !(mirror && mirror.outside) )
     return <div>Loading...</div>
 
@@ -33,7 +86,7 @@ export default function MirrorView( {mirror, settings, imageRef, size = 500} )
   const subSVG = `${mirror.outside.data} ${mirror.inside.data}`
 
   return (
-    <div style={{border: '1px solid var(--mui-palette-divider)', padding: 0, width: size, maxWidth: '100%'}}>
+    <div ref={containerRef} style={{border: '1px solid var(--mui-palette-divider)', padding: 0, width: size, maxWidth: '100%'}}>
       <div
         ref={imageRef}
         style={{
