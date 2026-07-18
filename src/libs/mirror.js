@@ -315,7 +315,20 @@ export function build( width, height, border, shapeType, outsideSVG, insideSVG, 
   let outsideDims, insideDims
 
   if( !outsideSVG )
+  {
     op = buildFromType( shapeType, width, height )
+    // buildFromType()'s switch has no default case - it only handles
+    // the 7 shapes it can draw parametrically (see PARAMETRIC_SHAPES in
+    // the 20260715000000-shape-types.js migration) and silently returns
+    // undefined for anything else, including a custom/svgData-only
+    // shape family (shapeType null) whose outside Contour just hasn't
+    // had its svgData filled in yet. Throwing here with the actual key
+    // turns that into an immediately diagnosable error instead of a
+    // bare "Cannot read properties of undefined (reading
+    // 'getCoordinates')" three calls later in getDims().
+    if( !op )
+      throw new Error( `mirror.build(): no parametric geometry for shapeType '${shapeType}' - either it's not one of the 7 buildFromType() shapes, or this is a custom shape whose outside Contour is missing svgData` )
+  }
   else
     op = buildFromSVGData( outsideSVG )
   outsideDims = getDims( op )

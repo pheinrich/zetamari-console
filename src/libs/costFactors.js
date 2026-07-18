@@ -35,22 +35,38 @@ const TYPE_TO_FACTOR = {
 // Rebuilds the same JSTS geometry the calculator itself uses (see
 // libs/mirror.js's build(), also called from SubstrateInfoView.jsx on the
 // product detail page) - null if this product has no substrateInfo (not
-// a mirror/complex-shape product) to build from.
+// a mirror/complex-shape product) to build from, or if build() can't
+// actually construct geometry for this substrateInfo (e.g. its outside
+// Contour is a custom shape family that's missing svgData - see build()'s
+// own error message). Falling back to null rather than letting that
+// propagate keeps this one product's incomplete shape data from taking
+// down every quantity below (mosaic area, cut distance, etc. all just
+// default to 0, same as a product with no substrateInfo at all) - only
+// the geometry-derived numbers are affected, not e.g. its BOM-based
+// costs, which don't need a mirror at all.
 function buildGeometry( product )
 {
   const si = product?.substrateInfo
   if( !si )
     return null
 
-  return build(
-    si.width,
-    si.height,
-    si.border,
-    si.outside?.shape?.key,
-    si.outside?.svgData,
-    si.inside?.svgData,
-    si.rabbet?.svgData,
-  )
+  try
+  {
+    return build(
+      si.width,
+      si.height,
+      si.border,
+      si.outside?.shape?.key,
+      si.outside?.svgData,
+      si.inside?.svgData,
+      si.rabbet?.svgData,
+    )
+  }
+  catch( err )
+  {
+    console.error( `buildGeometry: product ${product?.id} (substrateInfo ${si.id}) - ${err.message}` )
+    return null
+  }
 }
 
 // The only unit pairs a quantity ever needs converting between when its
