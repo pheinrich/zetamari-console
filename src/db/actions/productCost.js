@@ -196,7 +196,20 @@ export async function readProductsCogsCosts()
   for( const product of products )
   {
     const overrideByFactorId = overridesByProductId[product.id] || {}
-    totals[product.id] = sumEffectiveCost( product.toJSON(), settingsJson, factors, overrideByFactorId )
+    // One product with bad/incomplete geometry (a malformed svgData
+    // field, an unrecognized shape key, etc.) shouldn't take the whole
+    // list page down for every other product - log and fall back to
+    // null (rendered as "-" rather than a misleading $0) so the rest of
+    // the table still loads.
+    try
+    {
+      totals[product.id] = sumEffectiveCost( product.toJSON(), settingsJson, factors, overrideByFactorId )
+    }
+    catch( err )
+    {
+      console.error( `readProductsCogsCosts: failed to cost product ${product.id}`, err )
+      totals[product.id] = null
+    }
   }
 
   return totals

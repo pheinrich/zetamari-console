@@ -98,7 +98,7 @@ export function buildFromType( shapeType, width, height )
       geometry = gsf.createRectangle()
       break
 
-    case 'vesica picscis':
+    case 'vesica piscis':
       gsf.setSize( 2*width )
       gsf.setBase( new Coordinate( 0, -width * GA_ADJ ) )
       coords = gsf.createArc( 2*Math.PI/3, 2*Math.PI/3 ).getCoordinates()
