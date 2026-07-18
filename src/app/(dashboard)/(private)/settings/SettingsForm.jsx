@@ -20,6 +20,13 @@ import tableStyles from '@core/styles/table.module.css'
 const CATEGORY_LABELS = {material: 'Material', machine: 'Machine', labor: 'Labor'}
 const CATEGORY_ORDER = ['material', 'machine', 'labor']
 
+// The two rate-holder CostFactor rows added by the
+// 20260725000000-owner-assistant-labor.js migration (item 13) - unlike
+// every other Labor row, their Rate ($/hr) is what's actually used in
+// cost math (see db/actions/productCost.js's resolveLaborRates()), and
+// they don't have a Default % Owner of their own to edit.
+const LABOR_RATE_HOLDER_KEYS = new Set( ['laborOwner', 'laborAssistant'] )
+
 const optionalString = z.preprocess( (val) => (val === '' ? undefined : val), z.string().optional() )
 const optionalNumber = z.preprocess( (val) => (val === '' || val == null ? undefined : val), z.coerce.number().min( 0 ).optional() )
 
@@ -53,10 +60,12 @@ const schema = z.object({
   // {id, rate} per CostFactor, saved together with the rest of this form
   // in a single submit rather than a separate save action (this is the
   // "folded into Settings" replacement for the old per-profile Rate
-  // Profile Editor).
+  // Profile Editor). `defaultOwnerSharePercent` is only submitted for
+  // the six Labor stage rows (item 13) - see the table below.
   rates: z.array( z.object({
     id: z.coerce.number().int(),
     rate: z.coerce.number(),
+    defaultOwnerSharePercent: optionalNumber,
   }) ).optional(),
 })
 
@@ -222,7 +231,7 @@ export default function SettingsForm( {initialData={}, costFactors=[]} )
           <Card>
             <CardHeader
               title='Pricing'
-              subheader='Scale a product’s COGS cost total (Cost Factor Rates below x its effective quantities) into Wholesale/Retail cost-breakdown figures'
+              subheader='COGS = (Material + Machine cost) x Materials Markup + Assistant labor cost. Wholesale = COGS + Owner labor cost. Retail = Wholesale x Wholesale-to-Retail Multiplier.'
             />
             <CardContent>
               <Grid container spacing={5}>
@@ -230,11 +239,12 @@ export default function SettingsForm( {initialData={}, costFactors=[]} )
                   <TextField
                     fullWidth
                     type='number'
-                    label='Wholesale Multiplier'
+                    label='Materials Markup'
                     name='wholesaleMultiplier'
                     defaultValue={initialData?.wholesaleMultiplier ?? 1}
                     inputProps={{step: 'any', min: '0'}}
-                    InputProps={{endAdornment: <InputAdornment position='end'>x COGS</InputAdornment>}}
+                    InputProps={{endAdornment: <InputAdornment position='end'>x Material+Machine</InputAdornment>}}
+                    helperText='Applied to Material/Machine cost only - Labor is added at cost, not marked up here'
                     sx={noSpinnerSx}
                   />
                 </Grid>
@@ -242,11 +252,11 @@ export default function SettingsForm( {initialData={}, costFactors=[]} )
                   <TextField
                     fullWidth
                     type='number'
-                    label='Retail Multiplier'
+                    label='Wholesale-to-Retail Multiplier'
                     name='retailMultiplier'
                     defaultValue={initialData?.retailMultiplier ?? 1}
                     inputProps={{step: 'any', min: '0'}}
-                    InputProps={{endAdornment: <InputAdornment position='end'>x COGS</InputAdornment>}}
+                    InputProps={{endAdornment: <InputAdornment position='end'>x Wholesale</InputAdornment>}}
                     sx={noSpinnerSx}
                   />
                 </Grid>
@@ -318,7 +328,10 @@ export default function SettingsForm( {initialData={}, costFactors=[]} )
 
         <Grid size={{ xs: 12 }}>
           <Card>
-            <CardHeader title='Cost Factor Rates' subheader='The $ COGS rate charged per unit of each cost factor' />
+            <CardHeader
+              title='Cost Factor Rates'
+              subheader='The $ COGS rate charged per unit of each cost factor. Labor stages instead default to a % Owner split of their time, billed at the Owner Labor/Assistant Labor rates below (item 13)'
+            />
             <CardContent className='flex flex-col gap-6'>
               {CATEGORY_ORDER.filter( c => byCategory[c] ).map( category => (
                 <div key={category} className='flex flex-col gap-2'>
@@ -329,30 +342,57 @@ export default function SettingsForm( {initialData={}, costFactors=[]} )
                         <tr>
                           <th>Factor</th>
                           <th>Rate</th>
+                          {'labor' === category && <th>Default % Owner</th>}
                         </tr>
                       </thead>
                       <tbody>
-                        {byCategory[category].map( (factor, i) => {
+                        {byCategory[category].map( factor => {
                           const index = costFactors.indexOf( factor )
+                          const isRateHolder = LABOR_RATE_HOLDER_KEYS.has( factor.key )
+                          const isLaborStage = 'labor' === category && !isRateHolder
+
                           return (
                             <tr key={factor.id}>
                               <td>{factor.label}</td>
                               <td>
-                                <TextField
-                                  type='number'
-                                  size='small'
-                                  inputProps={{step: 'any', min: '0'}}
-                                  name={`rates.${index}.rate`}
-                                  defaultValue={factor.rate ?? 0}
-                                  InputProps={{
-                                    startAdornment: '$',
-                                    endAdornment: <span className='whitespace-nowrap'>/ {factor.rateUnit || factor.unit}</span>,
-                                  }}
-                                  sx={noSpinnerSx}
-                                  className='is-40'
-                                />
+                                {isLaborStage ? (
+                                  <>
+                                    <Typography color='text.secondary'>— (see % Owner)</Typography>
+                                    <input type='hidden' name={`rates.${index}.rate`} value={factor.rate ?? 0} />
+                                  </>
+                                ) : (
+                                  <TextField
+                                    type='number'
+                                    size='small'
+                                    inputProps={{step: 'any', min: '0'}}
+                                    name={`rates.${index}.rate`}
+                                    defaultValue={factor.rate ?? 0}
+                                    InputProps={{
+                                      startAdornment: '$',
+                                      endAdornment: <span className='whitespace-nowrap'>/ {factor.rateUnit || factor.unit}</span>,
+                                    }}
+                                    sx={noSpinnerSx}
+                                    className='is-40'
+                                  />
+                                )}
                                 <input type='hidden' name={`rates.${index}.id`} value={factor.id} />
                               </td>
+                              {'labor' === category && (
+                                <td>
+                                  {isLaborStage && (
+                                    <TextField
+                                      type='number'
+                                      size='small'
+                                      inputProps={{step: 'any', min: '0', max: '100'}}
+                                      name={`rates.${index}.defaultOwnerSharePercent`}
+                                      defaultValue={factor.defaultOwnerSharePercent ?? 100}
+                                      InputProps={{endAdornment: '%'}}
+                                      sx={noSpinnerSx}
+                                      className='is-28'
+                                    />
+                                  )}
+                                </td>
+                              )}
                             </tr>
                           )
                         } )}

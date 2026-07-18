@@ -14,12 +14,18 @@ import sequelize from '@/db/sequelize.js'
 // src/db/actions/settings.js - rather than a true key-value store, since
 // there's only ever one of these.
 //
-// wholesaleMultiplier/retailMultiplier scale a product's COGS cost total
-// (CostFactor.rate x its effective quantities, summed - see
-// db/actions/productCost.js) into its Wholesale/Retail cost-breakdown
-// figures. Added by the 20260722000000-simplify-cost-profiles.js
-// migration, replacing the old RateProfile/ProfileRate system's separate
-// per-factor rates for each pricing tier.
+// wholesaleMultiplier/retailMultiplier: added by the
+// 20260722000000-simplify-cost-profiles.js migration, replacing the old
+// RateProfile/ProfileRate system's separate per-factor rates for each
+// pricing tier. As of the 20260725000000-owner-assistant-labor.js
+// migration (item 13), their role changed - the column names are
+// unchanged (avoiding a disruptive rename), but their meaning is now:
+// wholesaleMultiplier is the shop's "materials markup" - applied to
+// Material+Machine cost only, not labor - and retailMultiplier now
+// scales Wholesale (not COGS) into Retail. See db/actions/productCost.js
+// for the exact formula: COGS = (materials + machine) x
+// wholesaleMultiplier + assistant labor cost; Wholesale = COGS + owner
+// labor cost; Retail = Wholesale x retailMultiplier.
 //
 // *WeightPerSqIn (added by 20260723030000-settings-weight-per-sqin.js)
 // are the shop-wide weight densities for the four area-based Material

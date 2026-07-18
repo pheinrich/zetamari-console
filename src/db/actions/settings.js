@@ -98,9 +98,16 @@ export async function readCostFactors()
   return factors.map( f => f.toJSON() )
 }
 
-// `rates` is an array of {id, rate} - every factor's rate is saved in one
-// call, matching how the rest of this page submits its whole form at
-// once rather than one field at a time.
+// `rates` is an array of {id, rate, defaultOwnerSharePercent} - every
+// factor's rate is saved in one call, matching how the rest of this page
+// submits its whole form at once rather than one field at a time.
+// `defaultOwnerSharePercent` (see CostFactor.js/the
+// 20260725000000-owner-assistant-labor.js migration) is only submitted
+// for the six Labor stage factors (SettingsForm.jsx doesn't render that
+// input for anything else, including the two laborOwner/laborAssistant
+// rate-holder rows) - left untouched here when absent, so a plain rate
+// edit on a Material/Machine factor doesn't need to carry a meaningless
+// null through for every row.
 export async function updateCostFactorRates( rates )
 {
   const session = await auth()
@@ -109,8 +116,14 @@ export async function updateCostFactorRates( rates )
 
   await sequelize.sync()
 
-  for( const {id, rate} of rates || [] )
-    await CostFactor.update( {rate: rate || 0}, {where: {id}} )
+  for( const {id, rate, defaultOwnerSharePercent} of rates || [] )
+  {
+    const update = {rate: rate || 0}
+    if( null != defaultOwnerSharePercent )
+      update.defaultOwnerSharePercent = defaultOwnerSharePercent
+
+    await CostFactor.update( update, {where: {id}} )
+  }
 
   return {success: true}
 }

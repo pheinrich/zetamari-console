@@ -15,6 +15,8 @@ import {
   revertProductCostOverride,
   setProductCostFactorEnabled,
   revertProductCostFactorEnabled,
+  setProductCostOwnerShare,
+  revertProductCostOwnerShare,
 } from '@/db/actions/productCost'
 import { formatCurrency } from '../productFormat'
 import tableStyles from '@core/styles/table.module.css'
@@ -64,6 +66,31 @@ export default function ProductCostEditor( {productId, costs} )
     })
   }
 
+  // Labor stage rows only (see row.factor.category === 'labor') - the %
+  // of this stage's time billed at the Owner Labor rate rather than
+  // Assistant Labor, overriding CostFactor.defaultOwnerSharePercent for
+  // just this product (item 13).
+  function handleCommitOwnerShare( costFactorId, value )
+  {
+    const percent = Number( value )
+    if( !Number.isFinite( percent ) || percent < 0 || percent > 100 )
+      return
+
+    startTransition( async () => {
+      await setProductCostOwnerShare( productId, costFactorId, percent )
+      router.refresh()
+    })
+  }
+
+  function handleRevertOwnerShare( costFactorId )
+  {
+    startTransition( async () => {
+      await revertProductCostOwnerShare( productId, costFactorId )
+      toast.success( 'Reverted to the default % Owner' )
+      router.refresh()
+    })
+  }
+
   // Toggling back to whatever the computed default already was (no BOM
   // line superseding this factor, or one that does) reverts the override
   // outright rather than storing an explicit "true"/"false" that happens
@@ -100,6 +127,7 @@ export default function ProductCostEditor( {productId, costs} )
                   <th>Included</th>
                   <th>Factor</th>
                   <th>Quantity</th>
+                  {'labor' === category && <th>% Owner</th>}
                   <th>Cost</th>
                   <th>Wholesale</th>
                   <th>Retail</th>
@@ -110,6 +138,7 @@ export default function ProductCostEditor( {productId, costs} )
                 {byCategory[category].map( row => {
                   const isOverridden = null !== row.overrideQuantity
                   const isEnabledOverridden = null !== row.enabledOverride
+                  const isOwnerShareOverridden = null !== row.overrideOwnerSharePercent
 
                   return (
                     <tr key={row.factor.id}>
@@ -172,6 +201,47 @@ export default function ProductCostEditor( {productId, costs} )
                           )}
                         </div>
                       </td>
+                      {'labor' === category && (
+                        <td>
+                          <div className='flex flex-col gap-1'>
+                            <div className='flex items-center gap-1'>
+                              {/* Same key-on-value remount trick as the
+                                  Quantity field above - see its comment. */}
+                              <TextField
+                                key={row.effectiveOwnerSharePercent}
+                                type='number'
+                                size='small'
+                                inputProps={{step: '1', min: '0', max: '100'}}
+                                defaultValue={row.effectiveOwnerSharePercent}
+                                onBlur={e => handleCommitOwnerShare( row.factor.id, e.target.value )}
+                                disabled={isPending}
+                                sx={noSpinnerSx}
+                                className='is-20'
+                              />
+                              <Typography variant='body2' color='text.secondary'>%</Typography>
+                              {isOwnerShareOverridden && (
+                                <Tooltip title='Revert to the default % Owner'>
+                                  <span>
+                                    <IconButton
+                                      size='small'
+                                      disabled={isPending}
+                                      onMouseDown={e => e.preventDefault()}
+                                      onClick={() => handleRevertOwnerShare( row.factor.id )}
+                                    >
+                                      <i className='ri-arrow-go-back-line' />
+                                    </IconButton>
+                                  </span>
+                                </Tooltip>
+                              )}
+                            </div>
+                            {isOwnerShareOverridden && (
+                              <Typography variant='caption' color='text.secondary'>
+                                default: {row.computedOwnerSharePercent}%
+                              </Typography>
+                            )}
+                          </div>
+                        </td>
+                      )}
                       <td>{formatCurrency( row.cogsCost )}</td>
                       <td>{formatCurrency( row.wholesaleCost )}</td>
                       <td>{formatCurrency( row.retailCost )}</td>
@@ -212,10 +282,16 @@ export default function ProductCostEditor( {productId, costs} )
 
       <div className='flex flex-wrap justify-end gap-6'>
         <Typography variant='body2' color='text.secondary'>
+          Assistant Labor: <strong>{formatCurrency( costs.assistantLaborCost )}</strong>
+        </Typography>
+        <Typography variant='body2' color='text.secondary'>
+          Owner Labor: <strong>{formatCurrency( costs.ownerLaborCost )}</strong>
+        </Typography>
+        <Typography variant='body2' color='text.secondary'>
           COGS: <strong>{formatCurrency( costs.cogsTotal )}</strong>
         </Typography>
         <Typography variant='body2' color='text.secondary'>
-          Wholesale ({costs.wholesaleMultiplier}x): <strong>{formatCurrency( costs.wholesaleTotal )}</strong>
+          Wholesale (COGS + Owner Labor): <strong>{formatCurrency( costs.wholesaleTotal )}</strong>
         </Typography>
         <Typography variant='body2' color='text.secondary'>
           Retail ({costs.retailMultiplier}x): <strong>{formatCurrency( costs.retailTotal )}</strong>

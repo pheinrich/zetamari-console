@@ -25,6 +25,18 @@ import sequelize from '@/db/sequelize'
 // column (editable from the Settings page, alongside the process
 // constants) plus Settings.wholesaleMultiplier/retailMultiplier for
 // deriving Wholesale/Retail cost-breakdown figures from it.
+//
+// The six Labor-category stage factors (Design/CNC/Sanding/Glueing/
+// Grouting/Finishing) are a special case as of the
+// 20260725000000-owner-assistant-labor.js migration: their `rate` is no
+// longer used. Instead, `defaultOwnerSharePercent` (0-100, meaningful
+// only for these six) is the shop-wide default share of a stage's time
+// billed at the 'laborOwner' rate rather than 'laborAssistant' - see
+// db/actions/productCost.js's computeLaborSplit(). `laborOwner`/
+// `laborAssistant` are themselves two more CostFactor rows (so their
+// $/hr rate reuses this same Settings table), but they don't carry a
+// `defaultOwnerSharePercent` and never appear as their own row in a
+// product's cost breakdown - they're looked up by key purely for `rate`.
 const CostFactor = sequelize.define(
   'CostFactor',
   {
@@ -35,6 +47,7 @@ const CostFactor = sequelize.define(
     rateUnit: { type: DataTypes.STRING },
     category: { type: DataTypes.STRING },
     rate: { type: DataTypes.FLOAT, allowNull: false, defaultValue: 0 },
+    defaultOwnerSharePercent: { type: DataTypes.FLOAT },
   },
   {
     timestamps: false,

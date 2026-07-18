@@ -51,6 +51,78 @@ const MATERIAL_WEIGHT_FIELD = {
   woodenBase: 'woodenBaseWeightPerSqIn',
 }
 
+// The two CostFactor rows added by the 20260725000000-owner-assistant-
+// labor.js migration (item 13) - see CostFactor.js's doc comment. They
+// hold a shop-wide $/hr rate each (edited via the same Settings page
+// table as every other factor), but unlike every other factor, they
+// have no computed quantity of their own and never appear as their own
+// row in a product's cost breakdown - see computeLaborSplit() below,
+// which is the only place they're read (by key, for their `rate`).
+const LABOR_RATE_KEYS = { owner: 'laborOwner', assistant: 'laborAssistant' }
+
+function resolveLaborRates( factors )
+{
+  return {
+    ownerRate: factors.find( f => f.key === LABOR_RATE_KEYS.owner )?.rate ?? 0,
+    assistantRate: factors.find( f => f.key === LABOR_RATE_KEYS.assistant )?.rate ?? 0,
+  }
+}
+
+// Per-stage Owner/Assistant cost split for every Labor stage factor
+// (Design/CNC/Sanding/Glueing/Grouting/Finishing - `laborStageFactors`
+// is every 'labor' category CostFactor except the two rate-holders
+// above). Each stage's own computed/overridable *time* is entirely
+// unchanged from before item 13 (see libs/costFactors.js's
+// computeDefaultQuantities() - still geometry/flat-rate derived, still
+// overridable via ProductCostOverride.quantityOverride/enabledOverride);
+// what's new is `effectiveOwnerSharePercent` (0-100), which decides how
+// much of that stage's time bills at `ownerRate` versus `assistantRate` -
+// CostFactor.defaultOwnerSharePercent shop-wide, overridable per-product
+// per-stage via ProductCostOverride.ownerShareOverride.
+//
+// Every row is computed in full regardless of effectiveEnabled (same
+// convention as the Material/Machine rows in readProductCosts() below -
+// a superseded/disabled factor still shows its own $ figures, only the
+// *totals* exclude it), which is why `ownerTotal`/`assistantTotal` are
+// filtered here rather than the per-row values being zeroed.
+function computeLaborSplit( productJson, settingsJson, laborStageFactors, overrideByFactorId, ownerRate, assistantRate )
+{
+  const computed = computeDefaultQuantities( productJson, settingsJson )
+
+  const rows = laborStageFactors.map( factor => {
+    const override = overrideByFactorId[factor.id]
+
+    const rawComputedQuantity = computed[factor.key] ?? 0
+    const computedQuantity = Number.isFinite( rawComputedQuantity ) ? rawComputedQuantity : 0
+    const effectiveQuantity = null != override?.quantityOverride ? override.quantityOverride : computedQuantity
+    const effectiveEnabled = null != override?.enabledOverride ? override.enabledOverride : true
+
+    const computedOwnerSharePercent = factor.defaultOwnerSharePercent ?? 100
+    const effectiveOwnerSharePercent = null != override?.ownerShareOverride ? override.ownerShareOverride : computedOwnerSharePercent
+
+    const hours = convertToRateUnit( effectiveQuantity, factor )
+    const ownerCost = hours * (effectiveOwnerSharePercent / 100) * ownerRate
+    const assistantCost = hours * (1 - effectiveOwnerSharePercent / 100) * assistantRate
+
+    return {
+      factor,
+      override,
+      computedQuantity,
+      effectiveQuantity,
+      effectiveEnabled,
+      computedOwnerSharePercent,
+      effectiveOwnerSharePercent,
+      ownerCost,
+      assistantCost,
+    }
+  } )
+
+  const ownerTotal = rows.filter( r => r.effectiveEnabled ).reduce( (sum, r) => sum + r.ownerCost, 0 )
+  const assistantTotal = rows.filter( r => r.effectiveEnabled ).reduce( (sum, r) => sum + r.assistantCost, 0 )
+
+  return { ownerTotal, assistantTotal, rows }
+}
+
 // Re-fetched here rather than shared with readProduct so this action
 // stays independently callable (e.g. from router.refresh() in
 // ProductCostEditor without round-tripping through the product page).
@@ -59,22 +131,30 @@ async function loadProductForCosting( id )
   return Product.findByPk( id, {include: COSTING_INCLUDE} )
 }
 
-// The same per-factor effective-quantity/effective-enabled math
-// readProductCosts() uses to build its rows below, factored out so
+// The product's COGS total, per item 13's formula:
+//   COGS = (Material + Machine cost) x materialsMarkup + assistant labor cost
+// `factors` is every CostFactor; `overrideByFactorId` is this one
+// product's overrides keyed by costFactorId. Factored out so
 // readProductsCogsCosts() can reuse it without pulling in
 // readProductCosts()'s full per-row breakdown shape (which is built for
-// the product detail page's table, not a single number). `factors` is
-// every CostFactor (each carrying its own $/unit `rate` - see
-// CostFactor.js); `overrideByFactorId` is this one product's overrides
-// keyed by costFactorId.
+// the product detail page's table, not a single number).
+//
+// Labor is deliberately excluded from the Material+Machine loop below -
+// see computeLaborSplit() - since it's the assistant-only portion that
+// counts toward COGS (owner labor only enters at the Wholesale step -
+// see readProductCosts()).
 function sumEffectiveCost( productJson, settingsJson, factors, overrideByFactorId )
 {
   const computed = computeDefaultQuantities( productJson, settingsJson )
   const superseded = computeSupersededFactors( productJson )
+  const materialsMarkup = settingsJson?.wholesaleMultiplier ?? 1
 
-  let total = 0
+  let materialMachineCost = 0
   for( const factor of factors )
   {
+    if( 'material' !== factor.category && 'machine' !== factor.category )
+      continue
+
     const override = overrideByFactorId[factor.id]
 
     // `?? 0` alone doesn't catch NaN (only null/undefined) - see the
@@ -88,10 +168,14 @@ function sumEffectiveCost( productJson, settingsJson, factors, overrideByFactorI
     if( !effectiveEnabled )
       continue
 
-    total += convertToRateUnit( effectiveQuantity, factor ) * (factor.rate ?? 0)
+    materialMachineCost += convertToRateUnit( effectiveQuantity, factor ) * (factor.rate ?? 0)
   }
 
-  return total
+  const laborStageFactors = factors.filter( f => 'labor' === f.category && !Object.values( LABOR_RATE_KEYS ).includes( f.key ) )
+  const { ownerRate, assistantRate } = resolveLaborRates( factors )
+  const { assistantTotal } = computeLaborSplit( productJson, settingsJson, laborStageFactors, overrideByFactorId, ownerRate, assistantRate )
+
+  return materialMachineCost * materialsMarkup + assistantTotal
 }
 
 // Same effective-quantity/effective-enabled math as sumEffectiveCost()
@@ -167,13 +251,34 @@ export async function readProductWeight( productId )
 }
 
 // Combines, per cost factor: the computed default quantity (from the
-// product's live geometry/BOM), any manual quantity/enabled overrides,
-// and the $ cost at COGS plus the Wholesale/Retail figures derived from
-// it via Settings.wholesaleMultiplier/retailMultiplier - everything
-// ProductCostEditor needs to render its table and totals in one round
-// trip. Rows for a factor superseded by a real BOM line (or manually
-// unchecked) still carry their full computed $ figures, so the estimate
-// stays visible for comparison - only the totals exclude them.
+// product's live geometry/BOM), any manual overrides, and the $ cost at
+// COGS/Wholesale/Retail - everything ProductCostEditor needs to render
+// its table and totals in one round trip. Rows for a factor superseded
+// by a real BOM line (or manually unchecked) still carry their full
+// computed $ figures, so the estimate stays visible for comparison -
+// only the totals exclude them.
+//
+// As of item 13 (20260725000000-owner-assistant-labor.js), Material and
+// Machine rows are priced one way and Labor stage rows another - see
+// Settings.js's doc comment for the full formula. In short:
+//   - Material/Machine row: cogsCost = quantity x rate x materialsMarkup
+//     (the markup is baked into "cogsCost" itself, per the shop's own
+//     definition of COGS); wholesaleCost is the same figure (materials
+//     don't get marked up again between COGS and Wholesale); retailCost
+//     = wholesaleCost x retailMultiplier.
+//   - Labor stage row: cogsCost = its Assistant-attributed cost only
+//     (Owner labor isn't part of COGS); wholesaleCost = Assistant +
+//     Owner cost combined (Owner labor is what turns COGS into
+//     Wholesale); retailCost = wholesaleCost x retailMultiplier.
+// Summing cogsCost/wholesaleCost/retailCost across every enabled row
+// therefore reproduces exactly: COGS = (materials+machine) x
+// materialsMarkup + assistant labor; Wholesale = COGS + owner labor;
+// Retail = Wholesale x retailMultiplier.
+//
+// The two rate-holder factors ('laborOwner'/'laborAssistant' - see
+// CostFactor.js) never appear in `rows` - they have no quantity of
+// their own and are only consulted (via resolveLaborRates()) for their
+// $/hr rate.
 export async function readProductCosts( productId )
 {
   const session = await auth()
@@ -193,14 +298,21 @@ export async function readProductCosts( productId )
   ])
 
   const overrideByFactorId = Object.fromEntries( overrides.map( o => [o.costFactorId, o] ) )
-  const wholesaleMultiplier = settings?.wholesaleMultiplier ?? 1
+  // Field names unchanged from before item 13 (see Settings.js) - only
+  // what they multiply against has changed.
+  const materialsMarkup = settings?.wholesaleMultiplier ?? 1
   const retailMultiplier = settings?.retailMultiplier ?? 1
 
   const productJson = product.toJSON()
-  const computed = computeDefaultQuantities( productJson, settings?.toJSON() )
+  const settingsJson = settings?.toJSON()
+  const computed = computeDefaultQuantities( productJson, settingsJson )
   const superseded = computeSupersededFactors( productJson )
 
-  const rows = factors.map( factor => {
+  const materialMachineFactors = factors.filter( f => 'material' === f.category || 'machine' === f.category )
+  const laborStageFactors = factors.filter( f => 'labor' === f.category && !Object.values( LABOR_RATE_KEYS ).includes( f.key ) )
+  const { ownerRate, assistantRate } = resolveLaborRates( factors )
+
+  const materialMachineRows = materialMachineFactors.map( factor => {
     const override = overrideByFactorId[factor.id]
     // `?? 0` alone doesn't catch NaN (only null/undefined) - guard
     // explicitly so a bad geometry formula can't leak NaN into the
@@ -214,12 +326,8 @@ export async function readProductCosts( productId )
     const computedEnabled = !superseded.has( factor.key )
     const effectiveEnabled = null != override?.enabledOverride ? override.enabledOverride : computedEnabled
 
-    // Rates are quoted per factor.rateUnit (defaulting to factor.unit),
-    // which for Labor factors is hours even though the quantity itself
-    // is tracked in minutes - convert before multiplying so the $
-    // figures come out right.
     const rateQuantity = convertToRateUnit( effectiveQuantity, factor )
-    const cogsCost = rateQuantity * (factor.rate ?? 0)
+    const cogsCost = rateQuantity * (factor.rate ?? 0) * materialsMarkup
 
     return {
       factor: factor.toJSON(),
@@ -231,18 +339,47 @@ export async function readProductCosts( productId )
       effectiveEnabled,
       cogsRate: factor.rate ?? 0,
       cogsCost,
-      wholesaleCost: cogsCost * wholesaleMultiplier,
+      wholesaleCost: cogsCost,
       retailCost: cogsCost * retailMultiplier,
     }
   } )
 
+  const { rows: laborRowsRaw } = computeLaborSplit( productJson, settingsJson, laborStageFactors, overrideByFactorId, ownerRate, assistantRate )
+
+  const laborRows = laborRowsRaw.map( r => {
+    const cogsCost = r.assistantCost
+    const wholesaleCost = r.assistantCost + r.ownerCost
+
+    return {
+      factor: r.factor.toJSON(),
+      computedQuantity: r.computedQuantity,
+      overrideQuantity: r.override?.quantityOverride ?? null,
+      effectiveQuantity: r.effectiveQuantity,
+      computedEnabled: true,
+      enabledOverride: r.override?.enabledOverride ?? null,
+      effectiveEnabled: r.effectiveEnabled,
+      computedOwnerSharePercent: r.computedOwnerSharePercent,
+      overrideOwnerSharePercent: r.override?.ownerShareOverride ?? null,
+      effectiveOwnerSharePercent: r.effectiveOwnerSharePercent,
+      cogsRate: null,
+      cogsCost,
+      wholesaleCost,
+      retailCost: wholesaleCost * retailMultiplier,
+    }
+  } )
+
+  const rows = [...materialMachineRows, ...laborRows]
+  const enabledRows = rows.filter( r => r.effectiveEnabled )
+
   return {
     rows,
-    wholesaleMultiplier,
+    wholesaleMultiplier: materialsMarkup,
     retailMultiplier,
-    cogsTotal: rows.filter( r => r.effectiveEnabled ).reduce( (sum, r) => sum + r.cogsCost, 0 ),
-    wholesaleTotal: rows.filter( r => r.effectiveEnabled ).reduce( (sum, r) => sum + r.wholesaleCost, 0 ),
-    retailTotal: rows.filter( r => r.effectiveEnabled ).reduce( (sum, r) => sum + r.retailCost, 0 ),
+    ownerLaborCost: laborRows.filter( r => r.effectiveEnabled ).reduce( (sum, r) => sum + (r.wholesaleCost - r.cogsCost), 0 ),
+    assistantLaborCost: laborRows.filter( r => r.effectiveEnabled ).reduce( (sum, r) => sum + r.cogsCost, 0 ),
+    cogsTotal: enabledRows.reduce( (sum, r) => sum + r.cogsCost, 0 ),
+    wholesaleTotal: enabledRows.reduce( (sum, r) => sum + r.wholesaleCost, 0 ),
+    retailTotal: enabledRows.reduce( (sum, r) => sum + r.retailCost, 0 ),
   }
 }
 
@@ -304,11 +441,11 @@ export async function readProductsCogsCosts()
   return totals
 }
 
-// A row is only kept around while at least one of the two overridable
+// A row is only kept around while at least one of the three overridable
 // fields is actually set - see ProductCostOverride.js.
 async function deleteIfEmpty( override )
 {
-  if( null == override.quantityOverride && null == override.enabledOverride )
+  if( null == override.quantityOverride && null == override.enabledOverride && null == override.ownerShareOverride )
     await override.destroy()
 }
 
@@ -377,6 +514,45 @@ export async function revertProductCostFactorEnabled( productId, costFactorId )
     return {success: true}
 
   await override.update( {enabledOverride: null} )
+  await deleteIfEmpty( override )
+
+  return {success: true}
+}
+
+// The third overridable field (see ProductCostOverride.js) - only
+// meaningful for a Labor stage factor (Design/CNC/Sanding/Glueing/
+// Grouting/Finishing), overriding CostFactor.defaultOwnerSharePercent
+// for this one product. `percent` is 0-100.
+export async function setProductCostOwnerShare( productId, costFactorId, percent )
+{
+  const session = await auth()
+  if( !session )
+    unauthorized()
+
+  await sequelize.sync()
+
+  const [override] = await ProductCostOverride.findOrCreate({
+    where: {productId, costFactorId},
+    defaults: {ownerShareOverride: percent},
+  })
+  await override.update( {ownerShareOverride: percent} )
+
+  return {success: true}
+}
+
+export async function revertProductCostOwnerShare( productId, costFactorId )
+{
+  const session = await auth()
+  if( !session )
+    unauthorized()
+
+  await sequelize.sync()
+
+  const override = await ProductCostOverride.findOne( {where: {productId, costFactorId}} )
+  if( !override )
+    return {success: true}
+
+  await override.update( {ownerShareOverride: null} )
   await deleteIfEmpty( override )
 
   return {success: true}
