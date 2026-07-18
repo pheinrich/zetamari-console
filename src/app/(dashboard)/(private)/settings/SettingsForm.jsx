@@ -131,7 +131,7 @@ export default function SettingsForm( {initialData={}, costFactors=[]} )
                     label='Feed Rate'
                     name='feedRateInPerMin'
                     defaultValue={initialData?.feedRateInPerMin ?? ''}
-                    inputProps={{step: '0.01', min: '0'}}
+                    inputProps={{step: 'any', min: '0'}}
                     InputProps={{endAdornment: <InputAdornment position='end'>in/min</InputAdornment>}}
                     sx={noSpinnerSx}
                   />
@@ -143,7 +143,7 @@ export default function SettingsForm( {initialData={}, costFactors=[]} )
                     label='Power Draw'
                     name='powerDrawKwh'
                     defaultValue={initialData?.powerDrawKwh ?? ''}
-                    inputProps={{step: '0.01', min: '0'}}
+                    inputProps={{step: 'any', min: '0'}}
                     InputProps={{endAdornment: <InputAdornment position='end'>kWh</InputAdornment>}}
                     sx={noSpinnerSx}
                   />
@@ -155,7 +155,7 @@ export default function SettingsForm( {initialData={}, costFactors=[]} )
                     label='Electricity Rate'
                     name='electricityRatePerKwh'
                     defaultValue={initialData?.electricityRatePerKwh ?? ''}
-                    inputProps={{step: '0.0001', min: '0'}}
+                    inputProps={{step: 'any', min: '0'}}
                     InputProps={{endAdornment: <InputAdornment position='end'>$/kWh</InputAdornment>}}
                     sx={noSpinnerSx}
                   />
@@ -180,7 +180,7 @@ export default function SettingsForm( {initialData={}, costFactors=[]} )
                     label='Sanding Rate'
                     name='sandingRateSqInPerHr'
                     defaultValue={initialData?.sandingRateSqInPerHr ?? ''}
-                    inputProps={{step: '0.0001', min: '0'}}
+                    inputProps={{step: 'any', min: '0'}}
                     InputProps={{endAdornment: <InputAdornment position='end'>sq-in/hr</InputAdornment>}}
                     sx={noSpinnerSx}
                   />
@@ -192,7 +192,7 @@ export default function SettingsForm( {initialData={}, costFactors=[]} )
                     label='Glueing Rate'
                     name='glueingRateSqInPerHr'
                     defaultValue={initialData?.glueingRateSqInPerHr ?? ''}
-                    inputProps={{step: '0.0001', min: '0'}}
+                    inputProps={{step: 'any', min: '0'}}
                     InputProps={{endAdornment: <InputAdornment position='end'>sq-in/hr</InputAdornment>}}
                     sx={noSpinnerSx}
                   />
@@ -204,7 +204,7 @@ export default function SettingsForm( {initialData={}, costFactors=[]} )
                     label='Grouting Rate'
                     name='groutingRateSqInPerHr'
                     defaultValue={initialData?.groutingRateSqInPerHr ?? ''}
-                    inputProps={{step: '0.0001', min: '0'}}
+                    inputProps={{step: 'any', min: '0'}}
                     InputProps={{endAdornment: <InputAdornment position='end'>sq-in/hr</InputAdornment>}}
                     sx={noSpinnerSx}
                   />
@@ -229,7 +229,7 @@ export default function SettingsForm( {initialData={}, costFactors=[]} )
                     label='Wholesale Multiplier'
                     name='wholesaleMultiplier'
                     defaultValue={initialData?.wholesaleMultiplier ?? 1}
-                    inputProps={{step: '0.01', min: '0'}}
+                    inputProps={{step: 'any', min: '0'}}
                     InputProps={{endAdornment: <InputAdornment position='end'>x COGS</InputAdornment>}}
                     sx={noSpinnerSx}
                   />
@@ -241,7 +241,7 @@ export default function SettingsForm( {initialData={}, costFactors=[]} )
                     label='Retail Multiplier'
                     name='retailMultiplier'
                     defaultValue={initialData?.retailMultiplier ?? 1}
-                    inputProps={{step: '0.01', min: '0'}}
+                    inputProps={{step: 'any', min: '0'}}
                     InputProps={{endAdornment: <InputAdornment position='end'>x COGS</InputAdornment>}}
                     sx={noSpinnerSx}
                   />
@@ -276,7 +276,7 @@ export default function SettingsForm( {initialData={}, costFactors=[]} )
                                 <TextField
                                   type='number'
                                   size='small'
-                                  inputProps={{step: '0.0001', min: '0'}}
+                                  inputProps={{step: 'any', min: '0'}}
                                   name={`rates.${index}.rate`}
                                   defaultValue={factor.rate ?? 0}
                                   InputProps={{
