@@ -124,9 +124,14 @@ export default function ProductCostEditor( {productId, costs} )
                           }
                         >
                           <span>
+                            {/* Same onMouseDown guard as the Revert button
+                                below - prevents a still-focused Quantity
+                                field from blur-committing its value in a
+                                race against this toggle. */}
                             <Checkbox
                               size='small'
                               checked={row.effectiveEnabled}
+                              onMouseDown={e => e.preventDefault()}
                               onChange={e => handleToggleEnabled( row, e.target.checked )}
                               disabled={isPending}
                             />
@@ -163,7 +168,22 @@ export default function ProductCostEditor( {productId, costs} )
                         {isOverridden && (
                           <Tooltip title='Revert to the computed value'>
                             <span>
-                              <IconButton size='small' disabled={isPending} onClick={() => handleRevert( row.factor.id )}>
+                              {/* onMouseDown preventDefault keeps focus on the
+                                  Quantity field instead of shifting it here -
+                                  without that, clicking Revert right after
+                                  clicking into the (unchanged) Quantity field
+                                  fires the field's onBlur first, which
+                                  re-commits that same value as a fresh
+                                  override in a separate request that races
+                                  the revert below. Whichever finishes last
+                                  wins, so the override could silently come
+                                  right back even though Revert "worked". */}
+                              <IconButton
+                                size='small'
+                                disabled={isPending}
+                                onMouseDown={e => e.preventDefault()}
+                                onClick={() => handleRevert( row.factor.id )}
+                              >
                                 <i className='ri-arrow-go-back-line' />
                               </IconButton>
                             </span>
