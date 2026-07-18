@@ -52,8 +52,8 @@ function familyNameFor( shapeName )
 // back to the product's own name if dimensions are somehow missing.
 function dimensionLabel( product )
 {
-  const w = product.substrateInfo?.width
-  const h = product.substrateInfo?.height
+  const w = product.woodenBaseInfo?.width
+  const h = product.woodenBaseInfo?.height
   return (w && h) ? `${Number( w )}"x${Number( h )}"` : product.name
 }
 
@@ -62,11 +62,11 @@ function dimensionLabel( product )
 // this menu, and string sort would put '10"x10"' before '7"x7"'.
 function byDimensions( a, b )
 {
-  const wa = Number( a.substrateInfo?.width ) || 0
-  const wb = Number( b.substrateInfo?.width ) || 0
+  const wa = Number( a.woodenBaseInfo?.width ) || 0
+  const wb = Number( b.woodenBaseInfo?.width ) || 0
   if( wa !== wb )
     return wa - wb
-  return (Number( a.substrateInfo?.height ) || 0) - (Number( b.substrateInfo?.height ) || 0)
+  return (Number( a.woodenBaseInfo?.height ) || 0) - (Number( b.woodenBaseInfo?.height ) || 0)
 }
 
 // One entry per distinct outside-contour shape (see Contour.js's `shape`
@@ -78,7 +78,7 @@ function groupByShape( substrateProducts )
 
   for( const product of substrateProducts )
   {
-    const shape = product.substrateInfo?.outside?.shape
+    const shape = product.woodenBaseInfo?.outside?.shape
     const name = shape?.name || 'Other'
 
     if( !byName.has( name ) )
@@ -180,7 +180,7 @@ export default function CopyFromMenu( {substrateProducts, onSelect} )
 
   function pick( product )
   {
-    const shapeName = product.substrateInfo?.outside?.shape?.name || 'Shape'
+    const shapeName = product.woodenBaseInfo?.outside?.shape?.name || 'Shape'
     onSelect( product, `${dimensionLabel( product )} ${familyNameFor( shapeName )}` )
     close()
   }

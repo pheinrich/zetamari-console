@@ -10,15 +10,18 @@ import { auth } from '@/lib/auth'
 import { computeDefaultQuantities, computeSupersededFactors, convertToRateUnit } from '@/libs/costFactors'
 
 // What computeDefaultQuantities()/computeSupersededFactors() need to
-// derive geometry- and BOM-based defaults - the substrateInfo branch of
+// derive geometry- and BOM-based defaults - the woodenBaseInfo branch of
 // readProduct's eager include (product.js) for geometry, plus bomLines
 // with each material's type (to know which area-based factor, if any, it
-// supersedes) and supplier prices (to cost the "bom" factor). Shared by
-// loadProductForCosting (one product) and readProductsCogsCosts (every
-// product at once, for the list page's Cost column).
+// supersedes) and supplier prices (to cost the "bom" factor), plus each
+// material's own `weight` (for computeProductWeight()'s BOM-weight sum
+// below - readProduct's own eager include doesn't need this, only
+// costing does). Shared by loadProductForCosting (one product) and
+// readProductsCogsCosts (every product at once, for the list page's Cost
+// column).
 const COSTING_INCLUDE = [
   {
-    association: 'substrateInfo',
+    association: 'woodenBaseInfo',
     include: [
       {association: 'outside', include: [{association: 'shape'}]},
       {association: 'inside', include: [{association: 'shape'}]},
@@ -33,6 +36,20 @@ const COSTING_INCLUDE = [
     }],
   },
 ]
+
+// Which Settings weight-per-sqin constant a Material CostFactor's
+// computed area converts to weight with - see the
+// 20260723030000-settings-weight-per-sqin.js migration. Only the four
+// area-based Material factors have a physical weight to speak of; 'bom'
+// is a $ pass-through (its BOM lines' own weight is summed separately -
+// see sumEffectiveWeight() below), and Machine/Labor factors aren't
+// materials at all.
+const MATERIAL_WEIGHT_FIELD = {
+  tesserae: 'tesseraeWeightPerSqIn',
+  mirrorGlass: 'mirrorGlassWeightPerSqIn',
+  grout: 'groutWeightPerSqIn',
+  woodenBase: 'woodenBaseWeightPerSqIn',
+}
 
 // Re-fetched here rather than shared with readProduct so this action
 // stays independently callable (e.g. from router.refresh() in
@@ -75,6 +92,78 @@ function sumEffectiveCost( productJson, settingsJson, factors, overrideByFactorI
   }
 
   return total
+}
+
+// Same effective-quantity/effective-enabled math as sumEffectiveCost()
+// above, but summing weight instead of $ - only over the four area-based
+// Material factors MATERIAL_WEIGHT_FIELD knows a weight-per-sqin
+// constant for (everything else contributes nothing here), plus each BOM
+// line's own quantity x material.weight, unconditionally. BOM lines
+// aren't gated by a factor's enabled/superseded state the way their $
+// cost is: a superseded factor (e.g. mirrorGlass once a real glass BOM
+// line exists) is excluded here for the same reason it's excluded from
+// cogsTotal - counting both the BOM line's own weight *and* the
+// generic area-based estimate would double the same physical material's
+// weight.
+function sumEffectiveWeight( productJson, settingsJson, factors, overrideByFactorId )
+{
+  const computed = computeDefaultQuantities( productJson, settingsJson )
+  const superseded = computeSupersededFactors( productJson )
+
+  let total = 0
+  for( const factor of factors )
+  {
+    const weightField = MATERIAL_WEIGHT_FIELD[factor.key]
+    if( !weightField )
+      continue
+
+    const override = overrideByFactorId[factor.id]
+    const rawComputedQuantity = computed[factor.key] ?? 0
+    const computedQuantity = Number.isFinite( rawComputedQuantity ) ? rawComputedQuantity : 0
+    const effectiveQuantity = null != override?.quantityOverride ? override.quantityOverride : computedQuantity
+    const computedEnabled = !superseded.has( factor.key )
+    const effectiveEnabled = null != override?.enabledOverride ? override.enabledOverride : computedEnabled
+
+    if( !effectiveEnabled )
+      continue
+
+    total += effectiveQuantity * (settingsJson?.[weightField] ?? 0)
+  }
+
+  for( const line of productJson?.bomLines ?? [] )
+    total += (line.quantity || 0) * (line.material?.weight ?? 0)
+
+  return total
+}
+
+// The computed material weight for a product - BOM lines' own weight
+// plus its area-based Material factors' weight (see sumEffectiveWeight()
+// above) - for ProductForm.jsx's "Compute Weight" button to fill
+// Product.weight from. Deliberately not written back automatically:
+// weight stays an independent, manually-entered figure (like
+// priceWholesale/priceRetail), so a later BOM/geometry change doesn't
+// silently drift a value someone may have already overridden by hand.
+export async function readProductWeight( productId )
+{
+  const session = await auth()
+  if( !session )
+    unauthorized()
+
+  await sequelize.sync()
+
+  const product = await loadProductForCosting( productId )
+  if( !product )
+    notFound()
+
+  const [settings, factors, overrides] = await Promise.all([
+    Settings.findOne(),
+    CostFactor.findAll(),
+    ProductCostOverride.findAll( {where: {productId}} ),
+  ])
+
+  const overrideByFactorId = Object.fromEntries( overrides.map( o => [o.costFactorId, o] ) )
+
+  return sumEffectiveWeight( product.toJSON(), settings?.toJSON(), factors, overrideByFactorId )
 }
 
 // Combines, per cost factor: the computed default quantity (from the

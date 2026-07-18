@@ -9,7 +9,7 @@ module.exports =
     // fined with a defaultValue, NULL will be inserted (for that column) into
     // all the rows that don't.
     return queryInterface.bulkInsert(
-      'SubstrateInfos',
+      'WoodenBaseInfos',
       [
         { productId: 1, outsideId: 1, width: 24, height: 36, border: 3.5 },
         { productId: 2, outsideId: 8, insideId: 9, rabbetId: 10, width: 45, height: 32, border: 1 },
@@ -76,6 +76,6 @@ module.exports =
 
   async down( queryInterface, Sequelize )
   {
-    return queryInterface.bulkDelete( 'SubstrateInfos', null, {} )
+    return queryInterface.bulkDelete( 'WoodenBaseInfos', null, {} )
   }
 }

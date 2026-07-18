@@ -20,6 +20,14 @@ import sequelize from '@/db/sequelize.js'
 // figures. Added by the 20260722000000-simplify-cost-profiles.js
 // migration, replacing the old RateProfile/ProfileRate system's separate
 // per-factor rates for each pricing tier.
+//
+// *WeightPerSqIn (added by 20260723030000-settings-weight-per-sqin.js)
+// are the shop-wide weight densities for the four area-based Material
+// CostFactors (tesserae/mirrorGlass/grout/woodenBase) - productCost.js's
+// computeProductWeight() multiplies each factor's already-computed area
+// by its matching constant here to get that factor's weight
+// contribution, the same way CostFactor.rate turns that area into a $
+// contribution.
 const Settings = sequelize.define(
   'Settings',
   {
@@ -34,6 +42,10 @@ const Settings = sequelize.define(
     groutingRateSqInPerHr: { type: DataTypes.FLOAT },
     wholesaleMultiplier: { type: DataTypes.FLOAT, allowNull: false, defaultValue: 1 },
     retailMultiplier: { type: DataTypes.FLOAT, allowNull: false, defaultValue: 1 },
+    tesseraeWeightPerSqIn: { type: DataTypes.FLOAT },
+    mirrorGlassWeightPerSqIn: { type: DataTypes.FLOAT },
+    groutWeightPerSqIn: { type: DataTypes.FLOAT },
+    woodenBaseWeightPerSqIn: { type: DataTypes.FLOAT },
   },
   {
     timestamps: false,

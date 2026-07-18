@@ -4,15 +4,16 @@ import { notFound, unauthorized } from 'next/navigation'
 import { Sequelize } from 'sequelize'
 import BeadInfo from '@/db/models/BeadInfo'
 import BillOfMaterial from '@/db/models/BillOfMaterial'
+import BirdhouseBaseInfo from '@/db/models/BirdhouseBaseInfo'
 import Contour from '@/db/models/Contour'
-import FrameInfo from '@/db/models/FrameInfo'
+import PictureFrameInfo from '@/db/models/PictureFrameInfo'
 import Image from '@/db/models/Image'
 import MillefioriInfo from '@/db/models/MillefioriInfo'
-import MirrorInfo from '@/db/models/MirrorInfo'
+import MirrorGlassInfo from '@/db/models/MirrorGlassInfo'
 import Product from '@/db/models/Product'
 import ProductCostOverride from '@/db/models/ProductCostOverride'
 import ProductImage from '@/db/models/ProductImage'
-import SubstrateInfo from '@/db/models/SubstrateInfo'
+import WoodenBaseInfo from '@/db/models/WoodenBaseInfo'
 import Supplier from '@/db/models/Supplier'
 // Imported for its side effect: this is where Product<->Supplier
 // (belongsToMany, as 'suppliers'/'products') gets registered. Without it,
@@ -45,6 +46,7 @@ export async function createProduct( data )
         status: data.status || 'visible',
         units: data.units,
         weight: data.weight,
+        shippingWeight: data.shippingWeight,
         description: data.description,
         priceWholesale: data.priceWholesale || null,
         priceRetail: data.priceRetail || null,
@@ -130,8 +132,8 @@ export async function readProduct( id, eager )
           }
         },
         {
-          model: SubstrateInfo,
-          as: 'substrateInfo',
+          model: WoodenBaseInfo,
+          as: 'woodenBaseInfo',
           include: [
             { association: 'outside', include: [{association: 'shape'}] },
             { association: 'inside', include: [{association: 'shape'}] },
@@ -139,9 +141,10 @@ export async function readProduct( id, eager )
           ]
         },
         { model: BeadInfo, as: 'beadInfo' },
-        { model: FrameInfo, as: 'frameInfo' },
+        { model: BirdhouseBaseInfo, as: 'birdhouseBaseInfo' },
+        { model: PictureFrameInfo, as: 'pictureFrameInfo' },
         { model: MillefioriInfo, as: 'millefioriInfo' },
-        { model: MirrorInfo, as: 'mirrorInfo' },
+        { model: MirrorGlassInfo, as: 'mirrorGlassInfo' },
         { model: TileInfo, as: 'tileInfo' },
         {
           model: BillOfMaterial,
@@ -218,13 +221,14 @@ export async function readProducts()
   })
 }
 
-// Substrate products (type: 'substrate'), with their SubstrateInfo and
-// outside/inside/rabbet Contours (each with its shape family - see
+// Wooden base products (type: 'wooden base'; renamed from 'substrate' -
+// see 20260723000000-rename-product-types.js), with their WoodenBaseInfo
+// and outside/inside/rabbet Contours (each with its shape family - see
 // Contour.js's `shape` association) eagerly loaded - used by the mirror
-// calculator's "load an existing substrate" picker, which needs the
+// calculator's "load an existing wooden base" picker, which needs the
 // dimensions/contours/shape family up front rather than a per-row
 // follow-up fetch (the "Copy From..." menu groups by shape family).
-export async function readSubstrateProducts()
+export async function readWoodenBaseProducts()
 {
   const session = await auth()
   if( !session )
@@ -232,11 +236,11 @@ export async function readSubstrateProducts()
 
   await sequelize.sync()
   const products = await Product.findAll({
-    where: {type: 'substrate'},
+    where: {type: 'wooden base'},
     include: [
       {
-        model: SubstrateInfo,
-        as: 'substrateInfo',
+        model: WoodenBaseInfo,
+        as: 'woodenBaseInfo',
         include: [
           { association: 'outside', include: [{association: 'shape'}] },
           { association: 'inside', include: [{association: 'shape'}] },
@@ -309,6 +313,7 @@ export async function updateProduct( data )
         status: data.status || 'visible',
         units: data.units,
         weight: data.weight,
+        shippingWeight: data.shippingWeight,
         description: data.description,
         priceWholesale: data.priceWholesale || null,
         priceRetail: data.priceRetail || null,
@@ -535,16 +540,16 @@ async function setProductInfo( data, t )
       }, {transaction: t})
       break
 
-    case 'frame':
-      await FrameInfo.create({
+    case 'picture frame':
+      await PictureFrameInfo.create({
         productId: data.id,
-        width: data.frameInfo.width,
-        height: data.frameInfo.height,
-        thickness: data.frameInfo.thickness,
-        channel: data.frameInfo.channel,
-        border: data.frameInfo.border,
-        photoWidth: data.frameInfo.photoWidth,
-        photoHeight: data.frameInfo.photoHeight,
+        width: data.pictureFrameInfo.width,
+        height: data.pictureFrameInfo.height,
+        thickness: data.pictureFrameInfo.thickness,
+        channel: data.pictureFrameInfo.channel,
+        border: data.pictureFrameInfo.border,
+        photoWidth: data.pictureFrameInfo.photoWidth,
+        photoHeight: data.pictureFrameInfo.photoHeight,
       }, {transaction: t})
       break
 
@@ -559,27 +564,27 @@ async function setProductInfo( data, t )
       }, {transaction: t})
       break
 
-    case 'mirror':
-      await MirrorInfo.create({
+    case 'mirror glass':
+      await MirrorGlassInfo.create({
         productId: data.id,
-        shape: data.mirrorInfo.shape,
-        width: data.mirrorInfo.width,
-        height: data.mirrorInfo.height,
-        thickness: data.mirrorInfo.thickness,
-        bevel: data.mirrorInfo.bevel,
+        shape: data.mirrorGlassInfo.shape,
+        width: data.mirrorGlassInfo.width,
+        height: data.mirrorGlassInfo.height,
+        thickness: data.mirrorGlassInfo.thickness,
+        bevel: data.mirrorGlassInfo.bevel,
       }, {transaction: t})
       break
 
-    case 'substrate':
-      await SubstrateInfo.create({
+    case 'wooden base':
+      await WoodenBaseInfo.create({
         productId: data.id,
-        outsideId: data.substrateInfo.outsideId,
-        insideId: data.substrateInfo.insideId,
-        rabbetId: data.substrateInfo.rabbetId,
-        width: data.substrateInfo.width,
-        height: data.substrateInfo.height,
-        thickness: data.substrateInfo.thickness,
-        border: data.substrateInfo.border,
+        outsideId: data.woodenBaseInfo.outsideId,
+        insideId: data.woodenBaseInfo.insideId,
+        rabbetId: data.woodenBaseInfo.rabbetId,
+        width: data.woodenBaseInfo.width,
+        height: data.woodenBaseInfo.height,
+        thickness: data.woodenBaseInfo.thickness,
+        border: data.woodenBaseInfo.border,
       }, {transaction: t})
       break
 
@@ -593,7 +598,16 @@ async function setProductInfo( data, t )
       }, {transaction: t})
       break
 
-    // 'birdhouse', 'grout', and 'other' have no type-specific Info table.
+    case 'birdhouse base':
+      await BirdhouseBaseInfo.create({
+        productId: data.id,
+        width: data.birdhouseBaseInfo?.width,
+        height: data.birdhouseBaseInfo?.height,
+        depth: data.birdhouseBaseInfo?.depth,
+      }, {transaction: t})
+      break
+
+    // 'grout', 'kit', and 'other' have no type-specific Info table.
   }
 }
 
@@ -601,10 +615,11 @@ async function clearProductInfo( productId, t )
 {
   await Promise.all([
     BeadInfo.destroy({ where: {productId}, transaction: t }),
-    FrameInfo.destroy({ where: {productId}, transaction: t }),
+    BirdhouseBaseInfo.destroy({ where: {productId}, transaction: t }),
+    PictureFrameInfo.destroy({ where: {productId}, transaction: t }),
     MillefioriInfo.destroy({ where: {productId}, transaction: t }),
-    MirrorInfo.destroy({ where: {productId}, transaction: t }),
-    SubstrateInfo.destroy({ where: {productId}, transaction: t }),
+    MirrorGlassInfo.destroy({ where: {productId}, transaction: t }),
+    WoodenBaseInfo.destroy({ where: {productId}, transaction: t }),
     TileInfo.destroy({ where: {productId}, transaction: t }),
   ])
 }

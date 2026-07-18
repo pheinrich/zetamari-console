@@ -14,15 +14,15 @@
 // (each gallery entry resolves its own geometry independently).
 export function resolveSubstrateInfo( overrides, product, contours )
 {
-  if( product?.substrateInfo )
+  if( product?.woodenBaseInfo )
   {
     return {
-      outsideId: product.substrateInfo.outsideId,
-      insideId: product.substrateInfo.insideId ?? undefined,
-      rabbetId: product.substrateInfo.rabbetId ?? undefined,
-      width: overrides.width ?? product.substrateInfo.width,
-      height: overrides.height ?? product.substrateInfo.height,
-      border: overrides.border ?? product.substrateInfo.border,
+      outsideId: product.woodenBaseInfo.outsideId,
+      insideId: product.woodenBaseInfo.insideId ?? undefined,
+      rabbetId: product.woodenBaseInfo.rabbetId ?? undefined,
+      width: overrides.width ?? product.woodenBaseInfo.width,
+      height: overrides.height ?? product.woodenBaseInfo.height,
+      border: overrides.border ?? product.woodenBaseInfo.border,
     }
   }
 

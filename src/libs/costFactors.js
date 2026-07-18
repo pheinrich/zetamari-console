@@ -2,8 +2,8 @@
 // geometry/attributes rather than a cached value - see the
 // ProductCostOverride model for why (an override is the only thing
 // persisted; the computed default is always freshly derived so it never
-// goes stale). Only products with a substrateInfo (the "complex shape"
-// mirror case - see SubstrateInfo.js) have any geometry to derive area/
+// goes stale). Only products with a woodenBaseInfo (the "complex shape"
+// mirror case - see WoodenBaseInfo.js) have any geometry to derive area/
 // cut-distance from; everything else defaults to 0 and relies entirely on
 // overrides.
 import { build } from './mirror'
@@ -19,34 +19,35 @@ const LABOR_DESIGN_MIN = 30
 const LABOR_FINISHING_MIN = 5
 
 // Which area-based material CostFactor a BOM component type stands in
-// for, once it's actually in the bill of materials - a mirror component
-// is glass, a bead/millefiori/tile component is tesserae, a substrate
-// component is substrate. Frame/grout/birdhouse/other/assembled (null
-// type) components don't correspond to any of the three estimated
-// factors, so they don't supersede anything.
+// for, once it's actually in the bill of materials - a mirror glass
+// component is mirrorGlass, a bead/millefiori/tile component is
+// tesserae, a wooden base component is woodenBase. Picture frame/grout/
+// birdhouse base/kit/other/assembled (null type) components don't
+// correspond to any of the three estimated factors, so they don't
+// supersede anything.
 const TYPE_TO_FACTOR = {
-  mirror: 'glass',
+  'mirror glass': 'mirrorGlass',
   bead: 'tesserae',
   millefiori: 'tesserae',
   tile: 'tesserae',
-  substrate: 'substrate',
+  'wooden base': 'woodenBase',
 }
 
 // Rebuilds the same JSTS geometry the calculator itself uses (see
-// libs/mirror.js's build(), also called from SubstrateInfoView.jsx on the
-// product detail page) - null if this product has no substrateInfo (not
-// a mirror/complex-shape product) to build from, or if build() can't
-// actually construct geometry for this substrateInfo (e.g. its outside
-// Contour is a custom shape family that's missing svgData - see build()'s
-// own error message). Falling back to null rather than letting that
-// propagate keeps this one product's incomplete shape data from taking
-// down every quantity below (mosaic area, cut distance, etc. all just
-// default to 0, same as a product with no substrateInfo at all) - only
-// the geometry-derived numbers are affected, not e.g. its BOM-based
+// libs/mirror.js's build(), also called from WoodenBaseInfoView.jsx on
+// the product detail page) - null if this product has no woodenBaseInfo
+// (not a mirror/complex-shape product) to build from, or if build()
+// can't actually construct geometry for this woodenBaseInfo (e.g. its
+// outside Contour is a custom shape family that's missing svgData - see
+// build()'s own error message). Falling back to null rather than letting
+// that propagate keeps this one product's incomplete shape data from
+// taking down every quantity below (mosaic area, cut distance, etc. all
+// just default to 0, same as a product with no woodenBaseInfo at all) -
+// only the geometry-derived numbers are affected, not e.g. its BOM-based
 // costs, which don't need a mirror at all.
 function buildGeometry( product )
 {
-  const si = product?.substrateInfo
+  const si = product?.woodenBaseInfo
   if( !si )
     return null
 
@@ -64,7 +65,7 @@ function buildGeometry( product )
   }
   catch( err )
   {
-    console.error( `buildGeometry: product ${product?.id} (substrateInfo ${si.id}) - ${err.message}` )
+    console.error( `buildGeometry: product ${product?.id} (woodenBaseInfo ${si.id}) - ${err.message}` )
     return null
   }
 }
@@ -155,22 +156,25 @@ export function computeDefaultQuantities( product, settings )
   const mirror = buildGeometry( product )
 
   // Mosaic surface (outside minus inside), matching calculatorStats.js's
-  // computeAreaStats() totalArea - the same "how much tesserae/glass
-  // actually covers this piece" figure already shown on the calculator's
-  // Pricing tab.
+  // computeAreaStats() totalArea - the same "how much tesserae/mirror
+  // glass actually covers this piece" figure already shown on the
+  // calculator's Pricing tab. Grout's default quantity rides along on
+  // the same figure - grout fills the joints across that same mosaic
+  // surface, and (like tesserae/glueing/grouting-labor before it) this
+  // is an area-based estimate, not a precise joint-area calculation.
   const mosaicArea = mirror ? (mirror.outside.dims.area - (mirror.inside?.dims?.area ?? 0)) : 0
-  const glassArea = mirror?.glass?.obb?.area ?? 0
-  const substrateArea = mirror?.outside?.obb?.area ?? 0
+  const mirrorGlassArea = mirror?.glass?.obb?.area ?? 0
+  const woodenBaseArea = mirror?.outside?.obb?.area ?? 0
 
   // Parenthesized so each `?? 0` fallback applies before the
   // multiplication, not after - `2 * mirror?.outside?.dims?.perimeter ?? 0`
   // (no parens) parses as `(2 * mirror?.outside?.dims?.perimeter) ?? 0`,
-  // and when `mirror` is null (any product without a substrateInfo to
-  // build geometry from - i.e. every type except 'substrate', including
-  // 'mirror'/glass-material products), `2 * undefined` is NaN, which
+  // and when `mirror` is null (any product without a woodenBaseInfo to
+  // build geometry from - i.e. every type except 'wooden base', including
+  // 'mirror glass' products), `2 * undefined` is NaN, which
   // `??` does *not* catch (it only replaces null/undefined). That NaN
   // then poisoned machineWear/utilities/laborCnc below for every non-
-  // substrate product, and broke the Duplicate flow outright since its
+  // wooden-base product, and broke the Duplicate flow outright since its
   // snapshot submits these as explicit quantityOverride values, which
   // zod's z.coerce.number() rejects for NaN.
   let cutDistance = 2 * (mirror?.outside?.dims?.perimeter ?? 0)
@@ -194,8 +198,9 @@ export function computeDefaultQuantities( product, settings )
 
   return {
     tesserae: mosaicArea,
-    glass: glassArea,
-    substrate: substrateArea,
+    mirrorGlass: mirrorGlassArea,
+    woodenBase: woodenBaseArea,
+    grout: mosaicArea,
     bom: bomCost,
     machineWear: cutDistance,
     // Utilities (machine-category, hours) and CNC labor (labor-category,

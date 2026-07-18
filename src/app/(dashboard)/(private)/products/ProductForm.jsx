@@ -42,10 +42,10 @@ const optionalPositiveNumber = z.preprocess(
 )
 
 // Unlike optionalPositiveNumber, this is for ids referencing another
-// row (substrateInfo.insideId/rabbetId, from the "None" option in their
+// row (woodenBaseInfo.insideId/rabbetId, from the "None" option in their
 // Selects) - without the '' -> undefined preprocessing, z.coerce.number()
 // turns '' into 0 rather than leaving it absent, which then fails the
-// SubstrateInfo.insideId/rabbetId foreign key constraint (there's no
+// WoodenBaseInfo.insideId/rabbetId foreign key constraint (there's no
 // Contour with id 0) instead of just leaving the column null.
 const optionalPositiveInt = z.preprocess(
   (val) => (val === '' || val == null ? undefined : val),
@@ -54,7 +54,7 @@ const optionalPositiveInt = z.preprocess(
 
 const optionalType = z.preprocess(
   (val) => (val === '' || val == null ? undefined : val),
-  z.enum( ['bead', 'birdhouse', 'frame', 'grout', 'millefiori', 'mirror', 'substrate', 'tile', 'other'] ).optional()
+  z.enum( ['bead', 'birdhouse base', 'picture frame', 'grout', 'kit', 'millefiori', 'mirror glass', 'other', 'tile', 'wooden base'] ).optional()
 )
 
 const schema = z.object({
@@ -66,6 +66,7 @@ const schema = z.object({
   status: z.enum( ['visible', 'hidden'] ).optional(),
   units: z.string().optional(),
   weight: optionalPositiveNumber,
+  shippingWeight: optionalPositiveNumber,
   description: z.string().optional(),
   priceWholesale: optionalPositiveNumber,
   priceRetail: optionalPositiveNumber,
@@ -80,7 +81,7 @@ const schema = z.object({
     thickness: optionalPositiveNumber
   }).optional(),
 
-  frameInfo: z.object({
+  pictureFrameInfo: z.object({
     width: optionalPositiveNumber,
     height: optionalPositiveNumber,
     thickness: optionalPositiveNumber,
@@ -98,7 +99,7 @@ const schema = z.object({
     height: optionalPositiveNumber,
   }).optional(),
 
-  mirrorInfo: z.object({
+  mirrorGlassInfo: z.object({
     shape: z.enum( ['chapel arch', 'circle', 'gothic arch', 'oval', 'rectangle', 'square', 'vesica piscis', 'other'] ).optional(),
     width: optionalPositiveNumber,
     height: optionalPositiveNumber,
@@ -106,7 +107,7 @@ const schema = z.object({
     bevel: optionalPositiveNumber,
   }).optional(),
 
-  substrateInfo: z.object({
+  woodenBaseInfo: z.object({
     outsideId: z.coerce.number().int(),
     insideId: optionalPositiveInt,
     rabbetId: optionalPositiveInt,
@@ -121,6 +122,12 @@ const schema = z.object({
     width: optionalPositiveNumber,
     height: optionalPositiveNumber,
     thickness: optionalPositiveNumber,
+  }).optional(),
+
+  birdhouseBaseInfo: z.object({
+    width: optionalPositiveNumber,
+    height: optionalPositiveNumber,
+    depth: optionalPositiveNumber,
   }).optional(),
 
   // Only ever populated by the Duplicate flow (see duplicateCostRows/
@@ -141,7 +148,7 @@ const schema = z.object({
   }) ).optional(),
 })
 
-export default function ProductForm( {contourList, initialData={}, costs, duplicateCostRows, duplicateFromName} )
+export default function ProductForm( {contourList, initialData={}, costs, computedWeight, duplicateCostRows, duplicateFromName} )
 {
   const router = useRouter()
   const isEdit = Boolean( initialData?.id )
@@ -149,6 +156,14 @@ export default function ProductForm( {contourList, initialData={}, costs, duplic
   const [type, setType] = useState( initialData?.type || '' )
   const [priceWholesale, setPriceWholesale] = useState( initialData?.priceWholesale || '' )
   const [priceRetail, setPriceRetail] = useState( initialData?.priceRetail || '' )
+  // Controlled the same way priceWholesale/priceRetail are, for the same
+  // reason: `weight` stays an independent, manually-entered figure (see
+  // Product.js's comment), but computedWeight - the BOM-weight-sum-plus-
+  // material-cost-factor-weight figure from productCost.js's
+  // computeProductWeight() - gives a "Copy from Computed Weight" button
+  // something to fill it from, same as the cost breakdown does for the
+  // price fields below.
+  const [weight, setWeight] = useState( initialData?.weight || '' )
   // Both only ever seeded once, from the Duplicate flow's snapshot (see
   // products/new/page.jsx) - dupCostRows drives the Included checkboxes/
   // costOverrides.* inputs below, dupBomLines the bill-of-materials
@@ -246,7 +261,28 @@ export default function ProductForm( {contourList, initialData={}, costs, duplic
                       <TextField fullWidth label='Units' name='units' defaultValue={initialData?.units || 'each'} />
                     </Grid>
                     <Grid size={{ xs: 12, sm: 6 }}>
-                      <TextField fullWidth label='Weight' name='weight' defaultValue={initialData?.weight || ''} />
+                      <div className='flex flex-col gap-1'>
+                        <TextField fullWidth label='Weight' name='weight' value={weight} onChange={e => setWeight( e.target.value )} />
+                        {null != computedWeight && (
+                          <div className='flex items-center justify-between gap-2'>
+                            <Typography variant='caption' color='text.secondary'>
+                              Computed: {computedWeight.toFixed( 3 )}
+                            </Typography>
+                            <Button type='button' size='small' onClick={() => setWeight( computedWeight.toFixed( 3 ) )}>
+                              Copy from Computed Weight
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                    </Grid>
+                    <Grid size={{ xs: 12, sm: 6 }}>
+                      <TextField
+                        fullWidth
+                        label='Shipping Weight'
+                        name='shippingWeight'
+                        defaultValue={initialData?.shippingWeight || ''}
+                        helperText='Packaging included, if different from Weight above'
+                      />
                     </Grid>
                     <Grid size={{ xs: 12 }}>
                       <TextField
@@ -426,28 +462,28 @@ export default function ProductForm( {contourList, initialData={}, costs, duplic
                         </>
                       )}
 
-                      {type === 'frame' && (
+                      {type === 'picture frame' && (
                         <>
                           <Grid size={{ xs: 12, sm: 3 }}>
-                            <TextField fullWidth label='Width' name='frameInfo.width' defaultValue={initialData?.frameInfo?.width || ''} />
+                            <TextField fullWidth label='Width' name='pictureFrameInfo.width' defaultValue={initialData?.pictureFrameInfo?.width || ''} />
                           </Grid>
                           <Grid size={{ xs: 12, sm: 3 }}>
-                            <TextField fullWidth label='Height' name='frameInfo.height' defaultValue={initialData?.frameInfo?.height || ''} />
+                            <TextField fullWidth label='Height' name='pictureFrameInfo.height' defaultValue={initialData?.pictureFrameInfo?.height || ''} />
                           </Grid>
                           <Grid size={{ xs: 12, sm: 3 }}>
-                            <TextField fullWidth label='Thickness' name='frameInfo.thickness' defaultValue={initialData?.frameInfo?.thickness || ''} />
+                            <TextField fullWidth label='Thickness' name='pictureFrameInfo.thickness' defaultValue={initialData?.pictureFrameInfo?.thickness || ''} />
                           </Grid>
                           <Grid size={{ xs: 12, sm: 3 }}>
-                            <TextField fullWidth label='Channel' name='frameInfo.channel' defaultValue={initialData?.frameInfo?.channel} />
+                            <TextField fullWidth label='Channel' name='pictureFrameInfo.channel' defaultValue={initialData?.pictureFrameInfo?.channel} />
                           </Grid>
                           <Grid size={{ xs: 12, sm: 3 }}>
-                            <TextField fullWidth label='Border' name='frameInfo.border' defaultValue={initialData?.frameInfo?.border || '1'} />
+                            <TextField fullWidth label='Border' name='pictureFrameInfo.border' defaultValue={initialData?.pictureFrameInfo?.border || '1'} />
                           </Grid>
                           <Grid size={{ xs: 12, sm: 3 }}>
-                            <TextField fullWidth label='Photo Width' name='frameInfo.photoWidth' defaultValue={initialData?.frameInfo?.photoWidth || 4} />
+                            <TextField fullWidth label='Photo Width' name='pictureFrameInfo.photoWidth' defaultValue={initialData?.pictureFrameInfo?.photoWidth || 4} />
                           </Grid>
                           <Grid size={{ xs: 12, sm: 3 }}>
-                            <TextField fullWidth label='Photo Height' name='frameInfo.photoHeight' defaultValue={initialData?.frameInfo?.photoHeight || 6} />
+                            <TextField fullWidth label='Photo Height' name='pictureFrameInfo.photoHeight' defaultValue={initialData?.pictureFrameInfo?.photoHeight || 6} />
                           </Grid>
                         </>
                       )}
@@ -478,12 +514,12 @@ export default function ProductForm( {contourList, initialData={}, costs, duplic
                         </>
                       )}
 
-                      {type === 'mirror' && (
+                      {type === 'mirror glass' && (
                         <>
                           <Grid size={{ xs: 12, sm: 4 }}>
                             <FormControl fullWidth>
-                              <InputLabel id='mirrorInfo-shape'>Shape</InputLabel>
-                              <Select labelId='mirrorInfo-shape' label='Shape' name='mirrorInfo.shape' defaultValue={initialData?.mirrorInfo?.shape || 'circle'}>
+                              <InputLabel id='mirrorGlassInfo-shape'>Shape</InputLabel>
+                              <Select labelId='mirrorGlassInfo-shape' label='Shape' name='mirrorGlassInfo.shape' defaultValue={initialData?.mirrorGlassInfo?.shape || 'circle'}>
                                 <MenuItem value='chapel arch'>Chapel Arch</MenuItem>
                                 <MenuItem value='circle'>Circle</MenuItem>
                                 <MenuItem value='gothic arch'>Gothic Arch</MenuItem>
@@ -496,30 +532,30 @@ export default function ProductForm( {contourList, initialData={}, costs, duplic
                             </FormControl>
                           </Grid>
                           <Grid size={{ xs: 12, sm: 4 }}>
-                            <TextField fullWidth label='Width' name='mirrorInfo.width' defaultValue={initialData?.mirrorInfo?.width || ''} />
+                            <TextField fullWidth label='Width' name='mirrorGlassInfo.width' defaultValue={initialData?.mirrorGlassInfo?.width || ''} />
                           </Grid>
                           <Grid size={{ xs: 12, sm: 4 }}>
-                            <TextField fullWidth label='Height' name='mirrorInfo.height' defaultValue={initialData?.mirrorInfo?.height || ''} />
+                            <TextField fullWidth label='Height' name='mirrorGlassInfo.height' defaultValue={initialData?.mirrorGlassInfo?.height || ''} />
                           </Grid>
                           <Grid size={{ xs: 12, sm: 6 }}>
-                            <TextField fullWidth label='Thickness' name='mirrorInfo.thickness' defaultValue={initialData?.mirrorInfo?.thickness || ''} />
+                            <TextField fullWidth label='Thickness' name='mirrorGlassInfo.thickness' defaultValue={initialData?.mirrorGlassInfo?.thickness || ''} />
                           </Grid>
                           <Grid size={{ xs: 12, sm: 6 }}>
-                            <TextField fullWidth label='Bevel' name='mirrorInfo.bevel' defaultValue={initialData?.mirrorInfo?.bevel || 0} />
+                            <TextField fullWidth label='Bevel' name='mirrorGlassInfo.bevel' defaultValue={initialData?.mirrorGlassInfo?.bevel || 0} />
                           </Grid>
                         </>
                       )}
 
-                      {type === 'substrate' && (
+                      {type === 'wooden base' && (
                         <>
                           <Grid size={{ xs: 12, sm: 4 }}>
                             <FormControl fullWidth required>
-                              <InputLabel id='substrateInfo-outsideId'>Outside Contour</InputLabel>
+                              <InputLabel id='woodenBaseInfo-outsideId'>Outside Contour</InputLabel>
                               <Select
-                                labelId='substrateInfo-outsideId'
+                                labelId='woodenBaseInfo-outsideId'
                                 label='Outside Contour'
-                                name='substrateInfo.outsideId'
-                                defaultValue={initialData?.substrateInfo?.outsideId || ''}
+                                name='woodenBaseInfo.outsideId'
+                                defaultValue={initialData?.woodenBaseInfo?.outsideId || ''}
                               >
                                 {contourList.map( (contour) => (
                                   <MenuItem key={`oc-${contour.id}`} value={contour.id}>{contour.name}</MenuItem>
@@ -529,12 +565,12 @@ export default function ProductForm( {contourList, initialData={}, costs, duplic
                           </Grid>
                           <Grid size={{ xs: 12, sm: 4 }}>
                             <FormControl fullWidth>
-                              <InputLabel id='substrateInfo-insideId'>Inside Contour</InputLabel>
+                              <InputLabel id='woodenBaseInfo-insideId'>Inside Contour</InputLabel>
                               <Select
-                                labelId='substrateInfo-insideId'
+                                labelId='woodenBaseInfo-insideId'
                                 label='Inside Contour'
-                                name='substrateInfo.insideId'
-                                defaultValue={initialData?.substrateInfo?.insideId || ''}
+                                name='woodenBaseInfo.insideId'
+                                defaultValue={initialData?.woodenBaseInfo?.insideId || ''}
                               >
                                 <MenuItem value=''>None</MenuItem>
                                 {contourList.map( (contour) => (
@@ -545,12 +581,12 @@ export default function ProductForm( {contourList, initialData={}, costs, duplic
                           </Grid>
                           <Grid size={{ xs: 12, sm: 4 }}>
                             <FormControl fullWidth>
-                              <InputLabel id='substrateInfo-rabbetId'>Rabbet Contour</InputLabel>
+                              <InputLabel id='woodenBaseInfo-rabbetId'>Rabbet Contour</InputLabel>
                               <Select
-                                labelId='substrateInfo-rabbetId'
+                                labelId='woodenBaseInfo-rabbetId'
                                 label='Rabbet Contour'
-                                name='substrateInfo.rabbetId'
-                                defaultValue={initialData?.substrateInfo?.rabbetId || ''}
+                                name='woodenBaseInfo.rabbetId'
+                                defaultValue={initialData?.woodenBaseInfo?.rabbetId || ''}
                               >
                                 <MenuItem value=''>None</MenuItem>
                                 {contourList.map( (contour) => (
@@ -560,16 +596,30 @@ export default function ProductForm( {contourList, initialData={}, costs, duplic
                             </FormControl>
                           </Grid>
                           <Grid size={{ xs: 12, sm: 3 }}>
-                            <TextField fullWidth label='Width' name='substrateInfo.width' defaultValue={initialData?.substrateInfo?.width || ''} />
+                            <TextField fullWidth label='Width' name='woodenBaseInfo.width' defaultValue={initialData?.woodenBaseInfo?.width || ''} />
                           </Grid>
                           <Grid size={{ xs: 12, sm: 3 }}>
-                            <TextField fullWidth label='Height' name='substrateInfo.height' defaultValue={initialData?.substrateInfo?.height || ''} />
+                            <TextField fullWidth label='Height' name='woodenBaseInfo.height' defaultValue={initialData?.woodenBaseInfo?.height || ''} />
                           </Grid>
                           <Grid size={{ xs: 12, sm: 3 }}>
-                            <TextField fullWidth label='Thickness' name='substrateInfo.thickness' defaultValue={initialData?.substrateInfo?.thickness || '0.455'} />
+                            <TextField fullWidth label='Thickness' name='woodenBaseInfo.thickness' defaultValue={initialData?.woodenBaseInfo?.thickness || '0.455'} />
                           </Grid>
                           <Grid size={{ xs: 12, sm: 3 }}>
-                            <TextField fullWidth label='Border' name='substrateInfo.border' defaultValue={initialData?.substrateInfo?.border || '1'} />
+                            <TextField fullWidth label='Border' name='woodenBaseInfo.border' defaultValue={initialData?.woodenBaseInfo?.border || '1'} />
+                          </Grid>
+                        </>
+                      )}
+
+                      {type === 'birdhouse base' && (
+                        <>
+                          <Grid size={{ xs: 12, sm: 4 }}>
+                            <TextField fullWidth label='Width' name='birdhouseBaseInfo.width' defaultValue={initialData?.birdhouseBaseInfo?.width || ''} />
+                          </Grid>
+                          <Grid size={{ xs: 12, sm: 4 }}>
+                            <TextField fullWidth label='Height' name='birdhouseBaseInfo.height' defaultValue={initialData?.birdhouseBaseInfo?.height || ''} />
+                          </Grid>
+                          <Grid size={{ xs: 12, sm: 4 }}>
+                            <TextField fullWidth label='Depth' name='birdhouseBaseInfo.depth' defaultValue={initialData?.birdhouseBaseInfo?.depth || ''} />
                           </Grid>
                         </>
                       )}

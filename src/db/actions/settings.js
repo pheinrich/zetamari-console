@@ -12,9 +12,11 @@ import { auth } from '@/lib/auth'
 // shop process constants the cost-profile system's computed default
 // quantities are derived from (see libs/costFactors.js) - feed rate/power
 // draw/electricity rate and the sanding/glueing/grouting sq-in/hr
-// throughput constants - and wholesaleMultiplier/retailMultiplier, which
+// throughput constants - wholesaleMultiplier/retailMultiplier, which
 // scale a product's COGS cost total into its Wholesale/Retail figures
-// (see db/actions/productCost.js).
+// (see db/actions/productCost.js) - and the four *WeightPerSqIn
+// constants, which do the same for computeProductWeight()'s weight
+// figure instead of $.
 const NUMERIC_FIELDS = [
   'feedRateInPerMin',
   'powerDrawKwh',
@@ -24,6 +26,10 @@ const NUMERIC_FIELDS = [
   'groutingRateSqInPerHr',
   'wholesaleMultiplier',
   'retailMultiplier',
+  'tesseraeWeightPerSqIn',
+  'mirrorGlassWeightPerSqIn',
+  'groutWeightPerSqIn',
+  'woodenBaseWeightPerSqIn',
 ]
 
 export async function readSettings()

@@ -44,6 +44,10 @@ const schema = z.object({
   groutingRateSqInPerHr: optionalNumber,
   wholesaleMultiplier: optionalNumber,
   retailMultiplier: optionalNumber,
+  tesseraeWeightPerSqIn: optionalNumber,
+  mirrorGlassWeightPerSqIn: optionalNumber,
+  groutWeightPerSqIn: optionalNumber,
+  woodenBaseWeightPerSqIn: optionalNumber,
 
   // Only ever populated from the Cost Factor Rates table below - one
   // {id, rate} per CostFactor, saved together with the rest of this form
@@ -243,6 +247,67 @@ export default function SettingsForm( {initialData={}, costFactors=[]} )
                     defaultValue={initialData?.retailMultiplier ?? 1}
                     inputProps={{step: 'any', min: '0'}}
                     InputProps={{endAdornment: <InputAdornment position='end'>x COGS</InputAdornment>}}
+                    sx={noSpinnerSx}
+                  />
+                </Grid>
+              </Grid>
+            </CardContent>
+          </Card>
+        </Grid>
+
+        <Grid size={{ xs: 12 }}>
+          <Card>
+            <CardHeader
+              title='Material Weight'
+              subheader='Converts each area-based Material cost factor’s computed sq-in into a weight contribution - see Product weight’s “Copy from Computed Weight” button'
+            />
+            <CardContent>
+              <Grid container spacing={5}>
+                <Grid size={{ xs: 12, sm: 3 }}>
+                  <TextField
+                    fullWidth
+                    type='number'
+                    label='Tesserae'
+                    name='tesseraeWeightPerSqIn'
+                    defaultValue={initialData?.tesseraeWeightPerSqIn ?? ''}
+                    inputProps={{step: 'any', min: '0'}}
+                    InputProps={{endAdornment: <InputAdornment position='end'>/sq-in</InputAdornment>}}
+                    sx={noSpinnerSx}
+                  />
+                </Grid>
+                <Grid size={{ xs: 12, sm: 3 }}>
+                  <TextField
+                    fullWidth
+                    type='number'
+                    label='Mirror Glass'
+                    name='mirrorGlassWeightPerSqIn'
+                    defaultValue={initialData?.mirrorGlassWeightPerSqIn ?? ''}
+                    inputProps={{step: 'any', min: '0'}}
+                    InputProps={{endAdornment: <InputAdornment position='end'>/sq-in</InputAdornment>}}
+                    sx={noSpinnerSx}
+                  />
+                </Grid>
+                <Grid size={{ xs: 12, sm: 3 }}>
+                  <TextField
+                    fullWidth
+                    type='number'
+                    label='Grout'
+                    name='groutWeightPerSqIn'
+                    defaultValue={initialData?.groutWeightPerSqIn ?? ''}
+                    inputProps={{step: 'any', min: '0'}}
+                    InputProps={{endAdornment: <InputAdornment position='end'>/sq-in</InputAdornment>}}
+                    sx={noSpinnerSx}
+                  />
+                </Grid>
+                <Grid size={{ xs: 12, sm: 3 }}>
+                  <TextField
+                    fullWidth
+                    type='number'
+                    label='Wooden Base'
+                    name='woodenBaseWeightPerSqIn'
+                    defaultValue={initialData?.woodenBaseWeightPerSqIn ?? ''}
+                    inputProps={{step: 'any', min: '0'}}
+                    InputProps={{endAdornment: <InputAdornment position='end'>/sq-in</InputAdornment>}}
                     sx={noSpinnerSx}
                   />
                 </Grid>

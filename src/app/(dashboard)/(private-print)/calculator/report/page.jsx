@@ -1,5 +1,5 @@
 import { readContours } from '@/db/actions/contour'
-import { readSubstrateProducts } from '@/db/actions/product'
+import { readWoodenBaseProducts } from '@/db/actions/product'
 import { readSettings } from '@/db/actions/settings'
 
 import { decodeInitialState } from '@/app/(dashboard)/(private)/calculator/urlCodec'
@@ -20,7 +20,7 @@ export default async function CalculatorReportPage( {searchParams} )
 
   const [contours, substrateProducts, settings] = await Promise.all([
     readContours(),
-    readSubstrateProducts(),
+    readWoodenBaseProducts(),
     readSettings(),
   ])
 

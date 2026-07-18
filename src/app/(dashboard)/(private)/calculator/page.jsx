@@ -1,5 +1,5 @@
 import { readContours } from '@/db/actions/contour'
-import { readSubstrateProducts } from '@/db/actions/product'
+import { readWoodenBaseProducts } from '@/db/actions/product'
 
 import { decodeInitialState } from './urlCodec'
 import MirrorCalculator from './MirrorCalculator'
@@ -17,18 +17,22 @@ import MirrorCalculator from './MirrorCalculator'
 // and the only persistence action is "Save as New Product" (in the ⋮
 // menu), which forks the current values into a brand new Product.
 //
-// substrateProducts already carries every substrate product's full
-// SubstrateInfo (dimensions + outside/inside/rabbet contours), so no
+// substrateProducts already carries every wooden base product's full
+// WoodenBaseInfo (dimensions + outside/inside/rabbet contours), so no
 // separate per-product fetch is needed here - decodeInitialState uses
 // this same list (and contours) to resolve any of the legacy,
 // productId-keyed link formats into the current contour-id-based shape.
+// (Kept the `substrateProducts`/`substrateInfo` naming through the
+// calculator subsystem below - it's this feature's own working-geometry
+// vocabulary, not a direct reference to the renamed Product.type/model -
+// see the 20260723000000-rename-product-types.js migration.)
 export default async function CalculatorPage( {searchParams} )
 {
   const params = await searchParams
 
   const [contours, substrateProducts] = await Promise.all([
     readContours(),
-    readSubstrateProducts(),
+    readWoodenBaseProducts(),
   ])
 
   const initialState = decodeInitialState( params, contours, substrateProducts )

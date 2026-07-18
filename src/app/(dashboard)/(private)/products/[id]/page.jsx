@@ -17,10 +17,11 @@ import classnames from 'classnames'
 
 import ProductDetailActions from './ProductDetailActions'
 import BeadInfoView from './BeadInfoView'
-import FrameInfoView from './FrameInfoView'
+import BirdhouseBaseInfoView from './BirdhouseBaseInfoView'
+import PictureFrameInfoView from './PictureFrameInfoView'
 import MillefioriInfoView from './MillefioriInfoView'
-import MirrorInfoView from './MirrorInfoView'
-import SubstrateInfoView from './SubstrateInfoView'
+import MirrorGlassInfoView from './MirrorGlassInfoView'
+import WoodenBaseInfoView from './WoodenBaseInfoView'
 import TileInfoView from './TileInfoView'
 import ProductCostEditor from './ProductCostEditor'
 import SupplierProductView from '../SupplierProductView'
@@ -107,6 +108,10 @@ export default async function ProductPage( {params} )
                       <Typography>{product.weight ?? '—'}</Typography>
                     </Grid>
                     <Grid size={{ xs: 6, sm: 3 }}>
+                      <Typography variant='body2' color='text.secondary'>Shipping Weight</Typography>
+                      <Typography>{product.shippingWeight ?? '—'}</Typography>
+                    </Grid>
+                    <Grid size={{ xs: 6, sm: 3 }}>
                       <Typography variant='body2' color='text.secondary'>Wholesale Price</Typography>
                       <Typography>{formatCurrency( product.priceWholesale )}</Typography>
                     </Grid>
@@ -135,16 +140,17 @@ export default async function ProductPage( {params} )
               </Card>
             </Grid>
 
-            {(product.beadInfo || product.frameInfo || product.millefioriInfo || product.mirrorInfo || product.substrateInfo || product.tileInfo) && (
+            {(product.beadInfo || product.birdhouseBaseInfo || product.pictureFrameInfo || product.millefioriInfo || product.mirrorGlassInfo || product.woodenBaseInfo || product.tileInfo) && (
               <Grid size={{ xs: 12 }}>
                 <Card>
                   <CardHeader title={`${meta.label} Details`} />
                   <CardContent>
                     { product.beadInfo && <BeadInfoView beadInfo={product.beadInfo} /> }
-                    { product.frameInfo && <FrameInfoView frameInfo={product.frameInfo} /> }
+                    { product.birdhouseBaseInfo && <BirdhouseBaseInfoView birdhouseBaseInfo={product.birdhouseBaseInfo} /> }
+                    { product.pictureFrameInfo && <PictureFrameInfoView pictureFrameInfo={product.pictureFrameInfo} /> }
                     { product.millefioriInfo && <MillefioriInfoView millefioriInfo={product.millefioriInfo} /> }
-                    { product.mirrorInfo && <MirrorInfoView mirrorInfo={product.mirrorInfo} /> }
-                    { product.substrateInfo && <SubstrateInfoView productId={product.id} substrateInfo={product.substrateInfo} /> }
+                    { product.mirrorGlassInfo && <MirrorGlassInfoView mirrorGlassInfo={product.mirrorGlassInfo} /> }
+                    { product.woodenBaseInfo && <WoodenBaseInfoView productId={product.id} woodenBaseInfo={product.woodenBaseInfo} /> }
                     { product.tileInfo && <TileInfoView tileInfo={product.tileInfo} /> }
                   </CardContent>
                 </Card>

@@ -80,7 +80,10 @@ export default async function SupplierPage( {params} )
                 <div className='flex flex-col gap-3'>
                   {supplier.products.map( (product) => (
                     <div key={product.SupplierProduct.id} className='flex flex-wrap items-center justify-between gap-2'>
-                      <Link href={`/products/${product.id}`}>{product.name}</Link>
+                      <div className='flex flex-col'>
+                        <Link href={`/products/${product.id}`}>{product.name}</Link>
+                        <Typography variant='caption' color='text.secondary'>{product.sku}</Typography>
+                      </div>
                       <Typography color='text.secondary'>
                         {product.SupplierProduct.partNumber} · {formatCurrency( product.SupplierProduct.cost )}
                       </Typography>
