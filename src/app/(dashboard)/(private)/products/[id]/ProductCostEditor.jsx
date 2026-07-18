@@ -143,6 +143,17 @@ export default function ProductCostEditor( {productId, costs} )
                         <div className='flex flex-col gap-1'>
                           <div className='flex items-center gap-2'>
                             <TextField
+                              // Uncontrolled (defaultValue, not value) so
+                              // typing doesn't fight the user on every
+                              // keystroke - but that means React only ever
+                              // applies defaultValue once, on mount. Keying
+                              // on the value itself forces a remount (fresh
+                              // defaultValue) whenever the server's
+                              // effective quantity changes - e.g. after a
+                              // revert/commit round trip - instead of
+                              // leaving the old typed/committed text
+                              // displayed until a full page reload.
+                              key={row.effectiveQuantity}
                               type='number'
                               size='small'
                               inputProps={{step: '0.001', min: '0'}}
