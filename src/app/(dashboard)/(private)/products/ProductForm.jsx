@@ -105,6 +105,9 @@ const schema = z.object({
     height: optionalPositiveNumber,
     thickness: optionalPositiveNumber,
     bevel: optionalPositiveNumber,
+    // See MirrorGlassInfo.js - additive alongside `shape`, not yet a
+    // replacement for it, so both are optional here.
+    contourId: optionalPositiveInt,
   }).optional(),
 
   woodenBaseInfo: z.object({
@@ -542,6 +545,22 @@ export default function ProductForm( {contourList, initialData={}, costs, comput
                           </Grid>
                           <Grid size={{ xs: 12, sm: 6 }}>
                             <TextField fullWidth label='Bevel' name='mirrorGlassInfo.bevel' defaultValue={initialData?.mirrorGlassInfo?.bevel || 0} />
+                          </Grid>
+                          <Grid size={{ xs: 12, sm: 6 }}>
+                            <FormControl fullWidth>
+                              <InputLabel id='mirrorGlassInfo-contourId'>Contour (optional)</InputLabel>
+                              <Select
+                                labelId='mirrorGlassInfo-contourId'
+                                label='Contour (optional)'
+                                name='mirrorGlassInfo.contourId'
+                                defaultValue={initialData?.mirrorGlassInfo?.contourId || ''}
+                              >
+                                <MenuItem value=''>None (use Shape above)</MenuItem>
+                                {contourList.map( (contour) => (
+                                  <MenuItem key={`mgc-${contour.id}`} value={contour.id}>{contour.name}</MenuItem>
+                                ) )}
+                              </Select>
+                            </FormControl>
                           </Grid>
                         </>
                       )}

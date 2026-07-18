@@ -572,6 +572,7 @@ async function setProductInfo( data, t )
         height: data.mirrorGlassInfo.height,
         thickness: data.mirrorGlassInfo.thickness,
         bevel: data.mirrorGlassInfo.bevel,
+        contourId: data.mirrorGlassInfo.contourId,
       }, {transaction: t})
       break
 
