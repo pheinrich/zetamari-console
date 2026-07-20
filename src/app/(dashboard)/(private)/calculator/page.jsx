@@ -1,5 +1,6 @@
 import { readContours } from '@/db/actions/contour'
 import { readWoodenBaseProducts } from '@/db/actions/product'
+import { readShapeTypes } from '@/db/actions/shapeType'
 
 import { decodeInitialState } from './urlCodec'
 import MirrorCalculator from './MirrorCalculator'
@@ -10,12 +11,13 @@ import MirrorCalculator from './MirrorCalculator'
 // the pre-"Copy From" ?current=... format (which identified a shape by
 // productId rather than by contour ids + an editable label), the
 // single-panel /calculator?productId=N (e.g. a product's "Open in
-// Calculator" button), and the short-lived multi-panel /calculator?panels=.
+// Visualizer" button), and the short-lived multi-panel /calculator?panels=.
 // None of these tie the working panel to a product in an ongoing way -
-// the calculator is exploratory local state; "Copy From..." (in the
+// the Visualizer is exploratory local state; "Copy From..." (in the
 // working panel's header) only ever copies a product's values in once,
-// and the only persistence action is "Save as New Product" (in the ⋮
-// menu), which forks the current values into a brand new Product.
+// and the only persistence actions are "Save New Wooden Base..."/"Save
+// New Mirror Glass..." (in the ⋮ menu), which fork the current values
+// into a brand new Product of the corresponding type.
 //
 // substrateProducts already carries every wooden base product's full
 // WoodenBaseInfo (dimensions + outside/inside/rabbet contours), so no
@@ -30,9 +32,10 @@ export default async function CalculatorPage( {searchParams} )
 {
   const params = await searchParams
 
-  const [contours, substrateProducts] = await Promise.all([
+  const [contours, substrateProducts, shapeTypes] = await Promise.all([
     readContours(),
     readWoodenBaseProducts(),
+    readShapeTypes(),
   ])
 
   const initialState = decodeInitialState( params, contours, substrateProducts )
@@ -50,6 +53,7 @@ export default async function CalculatorPage( {searchParams} )
       initialState={initialState}
       contours={contours}
       substrateProducts={substrateProducts}
+      shapeTypes={shapeTypes}
     />
   )
 }

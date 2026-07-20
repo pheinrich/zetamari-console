@@ -86,7 +86,7 @@ const VerticalMenu = ({ scrollMenu }) => {
             settings
           </MenuItem>
           <MenuItem href='/calculator' icon={<i className='ri-ruler-2-line' />}>
-            mirror calculator
+            visualizer
           </MenuItem>
         </MenuSection>
         <SubMenu label='frontPages' icon={<i className='ri-file-copy-line' />}>

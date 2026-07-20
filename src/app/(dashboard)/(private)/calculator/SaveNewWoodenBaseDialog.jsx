@@ -31,12 +31,15 @@ const schema = z.object({
   }),
 })
 
-// Confirmation dialog for turning the calculator's currently displayed
-// shape/dimensions into a real, saved wooden base Product. Deliberately a
-// small standalone form (just name/sku) rather than the full ProductForm -
-// this is meant to be a quick "fork this into inventory" action, not a
-// replacement for editing the product afterward.
-export default function SaveAsProductDialog( {open, onClose, substrateInfo} )
+// Renamed from SaveAsProductDialog - see the "Save New Wooden Base.../
+// Save New Mirror Glass..." split in MirrorCalculator.jsx (the Visualizer
+// is used to create both product types, but the working panel only ever
+// tracks one contour + width/height/border, which maps directly onto
+// WoodenBaseInfo - see SaveNewMirrorGlassDialog.jsx for the other type).
+// Deliberately a small standalone form (just name/sku) rather than the
+// full ProductForm - this is meant to be a quick "fork this into
+// inventory" action, not a replacement for editing the product afterward.
+export default function SaveNewWoodenBaseDialog( {open, onClose, substrateInfo} )
 {
   const router = useRouter()
   const { handleSubmit, loading, errors, success } = useFormSubmit({
@@ -55,11 +58,11 @@ export default function SaveAsProductDialog( {open, onClose, substrateInfo} )
 
   return (
     <Dialog open={open} onClose={onClose} PaperProps={{component: 'form', onSubmit: handleSubmit}}>
-      <DialogTitle>Save as New Product</DialogTitle>
+      <DialogTitle>Save New Wooden Base</DialogTitle>
       <DialogContent>
         <DialogContentText className='mbe-4'>
-          This creates a new wooden base Product in your inventory using the shape, dimensions, and contours
-          currently shown in the calculator. This can&rsquo;t be undone automatically - you&rsquo;ll be able to edit
+          This creates a new Wooden Base Product in your inventory using the shape, dimensions, and contours
+          currently shown in the Visualizer. This can&rsquo;t be undone automatically - you&rsquo;ll be able to edit
           or delete the product afterward from the Products list.
         </DialogContentText>
 

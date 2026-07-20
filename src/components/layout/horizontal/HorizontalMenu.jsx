@@ -107,7 +107,7 @@ const HorizontalMenu = ({}) => {
             settings
           </MenuItem>
           <MenuItem href='/calculator' icon={<i className='ri-ruler-2-line' />}>
-            mirror calculator
+            visualizer
           </MenuItem>
         </SubMenu>
 

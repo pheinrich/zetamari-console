@@ -39,7 +39,7 @@ export default function WoodenBaseInfoView( {productId, woodenBaseInfo} )
           href={`/calculator?productId=${productId}`}
           startIcon={<i className='ri-ruler-2-line' />}
         >
-          Open in Calculator
+          Open in Visualizer
         </Button>
       </Grid>
     </Grid>

@@ -28,6 +28,7 @@ import { DEFAULT_SETTINGS } from './mirrorSettings'
 import { resolveSubstrateInfo } from './resolveSubstrateInfo'
 import { encodeEntry, encodeEntryList } from './urlCodec'
 import CopyFromMenu from './CopyFromMenu'
+import NewShapeMenu from './NewShapeMenu'
 import EditableLabel from './EditableLabel'
 import ParamsPanel from './ParamsPanel'
 import MirrorView from './MirrorView'
@@ -35,7 +36,8 @@ import MirrorToolbar from './MirrorToolbar'
 import StatsSummary from './StatsSummary'
 import LightboxStrip from './LightboxStrip'
 import ComparisonTable from './ComparisonTable'
-import SaveAsProductDialog from './SaveAsProductDialog'
+import SaveNewWoodenBaseDialog from './SaveNewWoodenBaseDialog'
+import SaveNewMirrorGlassDialog from './SaveNewMirrorGlassDialog'
 
 const MAIN_PREVIEW_SIZE = 460
 
@@ -64,7 +66,7 @@ function reportHref( pathname, params )
 // present - this component no longer resolves anything against a
 // product at mount time; "Copy From..." (below) is the only place a
 // product's stored values get pulled in, and only as a one-shot copy.
-export default function MirrorCalculator( {initialState, contours, substrateProducts} )
+export default function MirrorCalculator( {initialState, contours, substrateProducts, shapeTypes} )
 {
   const [substrateInfo, setSubstrateInfoState] = useState( () => ({
     outsideId: initialState.current.outsideId,
@@ -82,7 +84,8 @@ export default function MirrorCalculator( {initialState, contours, substrateProd
   const nextGalleryIdRef = useRef( initialState.gallery.length )
   const [selectedId, setSelectedId] = useState( null )
 
-  const [saveOpen, setSaveOpen] = useState( false )
+  const [saveWoodenBaseOpen, setSaveWoodenBaseOpen] = useState( false )
+  const [saveMirrorGlassOpen, setSaveMirrorGlassOpen] = useState( false )
   const [menuAnchor, setMenuAnchor] = useState( null )
 
   // Print reports render in an in-page Dialog with the report page
@@ -228,6 +231,53 @@ export default function MirrorCalculator( {initialState, contours, substrateProd
     setSelectedId( null )
   }
 
+  // NewShapeMenu's "New" dropdown - `shapeType` is a basic ShapeType row
+  // (Chapel Arch/Circle/Gothic Arch/Oval/Rectangle/Square/Vesica Piscis),
+  // or `null` for its "Blank Shape" item, which behaves exactly like the
+  // old plain New button (handleNew() above). Picking an actual shape
+  // seeds typical dimensions/border for it from the first Wooden Base
+  // product using that shape family (lowest id = "first"), so a brand
+  // new piece starts from realistic values instead of the generic 6x6/1
+  // blank default - falling back to that default (with that family's
+  // first Contour) if no Wooden Base product uses it yet. Only the
+  // outside contour/dimensions carry over, not inside/rabbet - this is
+  // "New," not "Copy From a specific product," so it starts without any
+  // cutout already assumed.
+  function handleNewShape( shapeType )
+  {
+    if( !shapeType )
+    {
+      handleNew()
+      return
+    }
+
+    const matchingProduct = substrateProducts
+      .filter( p => p.woodenBaseInfo?.outside?.shape?.key === shapeType.key )
+      .sort( (a, b) => a.id - b.id )[0]
+
+    const next = matchingProduct
+      ? {
+        outsideId: matchingProduct.woodenBaseInfo.outsideId,
+        insideId: undefined,
+        rabbetId: undefined,
+        width: matchingProduct.woodenBaseInfo.width,
+        height: matchingProduct.woodenBaseInfo.height,
+        border: matchingProduct.woodenBaseInfo.border,
+      }
+      : {
+        outsideId: contours.filter( c => c.shape?.key === shapeType.key ).sort( (a, b) => a.id - b.id )[0]?.id,
+        insideId: undefined,
+        rabbetId: undefined,
+        width: 6,
+        height: 6,
+        border: 1,
+      }
+
+    setSubstrateInfoState( next )
+    setLabel( '' )
+    setSelectedId( null )
+  }
+
   function handleAddToLightbox()
   {
     const id = `g-${nextGalleryIdRef.current}`
@@ -298,9 +348,15 @@ export default function MirrorCalculator( {initialState, contours, substrateProd
     setMenuAnchor( null )
   }
 
-  function handleSaveAsProduct()
+  function handleSaveNewWoodenBase()
   {
-    setSaveOpen( true )
+    setSaveWoodenBaseOpen( true )
+    setMenuAnchor( null )
+  }
+
+  function handleSaveNewMirrorGlass()
+  {
+    setSaveMirrorGlassOpen( true )
     setMenuAnchor( null )
   }
 
@@ -378,7 +434,7 @@ export default function MirrorCalculator( {initialState, contours, substrateProd
         <CardContent>
           <Typography>
             No contours exist yet. <NextLink href='/contours/new'>Create one</NextLink> (a basic circle/oval/
-            rectangle/etc is enough to get started) before using the calculator.
+            rectangle/etc is enough to get started) before using the Visualizer.
           </Typography>
         </CardContent>
       </Card>
@@ -391,14 +447,7 @@ export default function MirrorCalculator( {initialState, contours, substrateProd
         title={<EditableLabel value={label} onChange={setEntryLabel} />}
         action={
           <Stack direction='row' spacing={2}>
-            <Button
-              variant='outlined'
-              size='small'
-              onClick={handleNew}
-              startIcon={<i className='ri-add-line' />}
-            >
-              New
-            </Button>
+            <NewShapeMenu shapeTypes={shapeTypes} contours={contours} onSelect={handleNewShape} />
             <CopyFromMenu substrateProducts={substrateProducts} onSelect={handleCopyFrom} />
             <Button
               variant='outlined'
@@ -428,9 +477,13 @@ export default function MirrorCalculator( {initialState, contours, substrateProd
                 <ListItemIcon><i className='ri-printer-line' /></ListItemIcon>
                 <ListItemText>Print Report</ListItemText>
               </MenuItem>
-              <MenuItem onClick={handleSaveAsProduct} disabled={!mirror}>
+              <MenuItem onClick={handleSaveNewWoodenBase} disabled={!mirror}>
                 <ListItemIcon><i className='ri-save-line' /></ListItemIcon>
-                <ListItemText>Save as New Product</ListItemText>
+                <ListItemText>Save New Wooden Base...</ListItemText>
+              </MenuItem>
+              <MenuItem onClick={handleSaveNewMirrorGlass} disabled={!mirror}>
+                <ListItemIcon><i className='ri-save-line' /></ListItemIcon>
+                <ListItemText>Save New Mirror Glass...</ListItemText>
               </MenuItem>
             </Menu>
           </Stack>
@@ -542,7 +595,17 @@ export default function MirrorCalculator( {initialState, contours, substrateProd
         />
       </CardContent>
 
-      <SaveAsProductDialog open={saveOpen} onClose={() => setSaveOpen( false )} substrateInfo={substrateInfo} />
+      <SaveNewWoodenBaseDialog
+        open={saveWoodenBaseOpen}
+        onClose={() => setSaveWoodenBaseOpen( false )}
+        substrateInfo={substrateInfo}
+      />
+      <SaveNewMirrorGlassDialog
+        open={saveMirrorGlassOpen}
+        onClose={() => setSaveMirrorGlassOpen( false )}
+        substrateInfo={substrateInfo}
+        contours={contours}
+      />
 
       {/* Print reports render here, in an in-page iframe, rather than a
           separate tab/window - see the printReportUrl state comment above
