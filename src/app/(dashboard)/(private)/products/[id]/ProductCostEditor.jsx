@@ -291,7 +291,7 @@ export default function ProductCostEditor( {productId, costs} )
           COGS: <strong>{formatCurrency( costs.cogsTotal )}</strong>
         </Typography>
         <Typography variant='body2' color='text.secondary'>
-          Wholesale (COGS + Owner Labor): <strong>{formatCurrency( costs.wholesaleTotal )}</strong>
+          Wholesale (COGS x {costs.markupPercent}% + Owner Labor): <strong>{formatCurrency( costs.wholesaleTotal )}</strong>
         </Typography>
         <Typography variant='body2' color='text.secondary'>
           Retail ({costs.retailMultiplier}x): <strong>{formatCurrency( costs.retailTotal )}</strong>

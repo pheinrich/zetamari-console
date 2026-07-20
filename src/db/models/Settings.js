@@ -14,18 +14,20 @@ import sequelize from '@/db/sequelize.js'
 // src/db/actions/settings.js - rather than a true key-value store, since
 // there's only ever one of these.
 //
-// wholesaleMultiplier/retailMultiplier: added by the
-// 20260722000000-simplify-cost-profiles.js migration, replacing the old
-// RateProfile/ProfileRate system's separate per-factor rates for each
-// pricing tier. As of the 20260725000000-owner-assistant-labor.js
-// migration (item 13), their role changed - the column names are
-// unchanged (avoiding a disruptive rename), but their meaning is now:
-// wholesaleMultiplier is the shop's "materials markup" - applied to
-// Material+Machine cost only, not labor - and retailMultiplier now
-// scales Wholesale (not COGS) into Retail. See db/actions/productCost.js
-// for the exact formula: COGS = (materials + machine) x
-// wholesaleMultiplier + assistant labor cost; Wholesale = COGS + owner
-// labor cost; Retail = Wholesale x retailMultiplier.
+// retailMultiplier: added by the 20260722000000-simplify-cost-profiles.js
+// migration, replacing the old RateProfile/ProfileRate system's separate
+// per-factor rates for each pricing tier. Still a straight multiplier -
+// Wholesale x retailMultiplier = Retail - unchanged since.
+//
+// markupPercent (renamed from wholesaleMultiplier by the
+// 20260726000000-cogs-formula-v2.js migration, alongside item 13's
+// 20260725000000-owner-assistant-labor.js) is different in kind, not
+// just name: a percentage applied to the *entire* COGS figure rather
+// than a x1-style multiplier applied to part of it. See
+// db/actions/productCost.js for the exact formula: COGS = materials +
+// machine + assistant labor cost (no markup at all); Wholesale = COGS x
+// (1 + markupPercent/100) + owner labor cost; Retail = Wholesale x
+// retailMultiplier.
 //
 // *WeightPerSqIn (added by 20260723030000-settings-weight-per-sqin.js)
 // are the shop-wide weight densities for the four area-based Material
@@ -46,7 +48,7 @@ const Settings = sequelize.define(
     sandingRateSqInPerHr: { type: DataTypes.FLOAT },
     glueingRateSqInPerHr: { type: DataTypes.FLOAT },
     groutingRateSqInPerHr: { type: DataTypes.FLOAT },
-    wholesaleMultiplier: { type: DataTypes.FLOAT, allowNull: false, defaultValue: 1 },
+    markupPercent: { type: DataTypes.FLOAT, allowNull: false, defaultValue: 25 },
     retailMultiplier: { type: DataTypes.FLOAT, allowNull: false, defaultValue: 1 },
     tesseraeWeightPerSqIn: { type: DataTypes.FLOAT },
     mirrorGlassWeightPerSqIn: { type: DataTypes.FLOAT },

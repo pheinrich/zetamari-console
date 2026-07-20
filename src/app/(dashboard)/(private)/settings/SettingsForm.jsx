@@ -49,7 +49,7 @@ const schema = z.object({
   sandingRateSqInPerHr: optionalNumber,
   glueingRateSqInPerHr: optionalNumber,
   groutingRateSqInPerHr: optionalNumber,
-  wholesaleMultiplier: optionalNumber,
+  markupPercent: optionalNumber,
   retailMultiplier: optionalNumber,
   tesseraeWeightPerSqIn: optionalNumber,
   mirrorGlassWeightPerSqIn: optionalNumber,
@@ -231,7 +231,7 @@ export default function SettingsForm( {initialData={}, costFactors=[]} )
           <Card>
             <CardHeader
               title='Pricing'
-              subheader='COGS = (Material + Machine cost) x Materials Markup + Assistant labor cost. Wholesale = COGS + Owner labor cost. Retail = Wholesale x Wholesale-to-Retail Multiplier.'
+              subheader='COGS = Material + Machine + Assistant labor cost. Wholesale = COGS x (1 + Markup%) + Owner labor cost. Retail = Wholesale x Wholesale-to-Retail Multiplier.'
             />
             <CardContent>
               <Grid container spacing={5}>
@@ -239,12 +239,12 @@ export default function SettingsForm( {initialData={}, costFactors=[]} )
                   <TextField
                     fullWidth
                     type='number'
-                    label='Materials Markup'
-                    name='wholesaleMultiplier'
-                    defaultValue={initialData?.wholesaleMultiplier ?? 1}
+                    label='Markup'
+                    name='markupPercent'
+                    defaultValue={initialData?.markupPercent ?? 25}
                     inputProps={{step: 'any', min: '0'}}
-                    InputProps={{endAdornment: <InputAdornment position='end'>x Material+Machine</InputAdornment>}}
-                    helperText='Applied to Material/Machine cost only - Labor is added at cost, not marked up here'
+                    InputProps={{endAdornment: <InputAdornment position='end'>%</InputAdornment>}}
+                    helperText='Applied to the whole COGS figure (Material+Machine+Assistant labor) on the way to Wholesale'
                     sx={noSpinnerSx}
                   />
                 </Grid>

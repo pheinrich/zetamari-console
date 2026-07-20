@@ -12,11 +12,11 @@ import { auth } from '@/lib/auth'
 // shop process constants the cost-profile system's computed default
 // quantities are derived from (see libs/costFactors.js) - feed rate/power
 // draw/electricity rate and the sanding/glueing/grouting sq-in/hr
-// throughput constants - wholesaleMultiplier/retailMultiplier, which
-// scale a product's COGS cost total into its Wholesale/Retail figures
-// (see db/actions/productCost.js) - and the four *WeightPerSqIn
-// constants, which do the same for computeProductWeight()'s weight
-// figure instead of $.
+// throughput constants - markupPercent/retailMultiplier, which turn a
+// product's COGS cost total into its Wholesale/Retail figures (see
+// db/actions/productCost.js) - and the four *WeightPerSqIn constants,
+// which do the same for computeProductWeight()'s weight figure instead
+// of $.
 const NUMERIC_FIELDS = [
   'feedRateInPerMin',
   'powerDrawKwh',
@@ -24,7 +24,7 @@ const NUMERIC_FIELDS = [
   'sandingRateSqInPerHr',
   'glueingRateSqInPerHr',
   'groutingRateSqInPerHr',
-  'wholesaleMultiplier',
+  'markupPercent',
   'retailMultiplier',
   'tesseraeWeightPerSqIn',
   'mirrorGlassWeightPerSqIn',
@@ -45,10 +45,11 @@ export async function readSettings()
 }
 
 // Unlike the other NUMERIC_FIELDS (which are nullable - "not yet
-// configured" is a meaningful, distinct state from 0), the multiplier
-// columns are `allowNull: false` with a default of 1 (see Settings.js) -
-// a blank multiplier field falls back to 1 ("no markup"), not null.
-const MULTIPLIER_FIELDS = new Set( ['wholesaleMultiplier', 'retailMultiplier'] )
+// configured" is a meaningful, distinct state from 0), markupPercent/
+// retailMultiplier are `allowNull: false` (see Settings.js) - a blank
+// field falls back to its own default rather than null, per-field since
+// their defaults differ (25 vs 1).
+const BLANK_FALLBACK = { markupPercent: 25, retailMultiplier: 1 }
 
 export async function updateSettings( data )
 {
@@ -71,7 +72,7 @@ export async function updateSettings( data )
     if( field in data )
     {
       const blank = null == data[field] || '' === data[field]
-      update[field] = blank ? (MULTIPLIER_FIELDS.has( field ) ? 1 : null) : Number( data[field] )
+      update[field] = blank ? (field in BLANK_FALLBACK ? BLANK_FALLBACK[field] : null) : Number( data[field] )
     }
 
   await settings.update( update )

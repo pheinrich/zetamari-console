@@ -131,23 +131,22 @@ async function loadProductForCosting( id )
   return Product.findByPk( id, {include: COSTING_INCLUDE} )
 }
 
-// The product's COGS total, per item 13's formula:
-//   COGS = (Material + Machine cost) x materialsMarkup + assistant labor cost
+// The product's COGS total, per the (twice-revised) item 13 formula:
+//   COGS = Material + Machine cost + Assistant labor cost (no markup at all)
 // `factors` is every CostFactor; `overrideByFactorId` is this one
 // product's overrides keyed by costFactorId. Factored out so
 // readProductsCogsCosts() can reuse it without pulling in
 // readProductCosts()'s full per-row breakdown shape (which is built for
 // the product detail page's table, not a single number).
 //
-// Labor is deliberately excluded from the Material+Machine loop below -
-// see computeLaborSplit() - since it's the assistant-only portion that
-// counts toward COGS (owner labor only enters at the Wholesale step -
-// see readProductCosts()).
+// Labor is handled separately from the Material+Machine loop below - see
+// computeLaborSplit() - since Owner labor is NOT part of COGS (it only
+// enters at the Wholesale step - see readProductCosts()), only Assistant
+// labor is.
 function sumEffectiveCost( productJson, settingsJson, factors, overrideByFactorId )
 {
   const computed = computeDefaultQuantities( productJson, settingsJson )
   const superseded = computeSupersededFactors( productJson )
-  const materialsMarkup = settingsJson?.wholesaleMultiplier ?? 1
 
   let materialMachineCost = 0
   for( const factor of factors )
@@ -175,7 +174,7 @@ function sumEffectiveCost( productJson, settingsJson, factors, overrideByFactorI
   const { ownerRate, assistantRate } = resolveLaborRates( factors )
   const { assistantTotal } = computeLaborSplit( productJson, settingsJson, laborStageFactors, overrideByFactorId, ownerRate, assistantRate )
 
-  return materialMachineCost * materialsMarkup + assistantTotal
+  return materialMachineCost + assistantTotal
 }
 
 // Same effective-quantity/effective-enabled math as sumEffectiveCost()
@@ -258,21 +257,23 @@ export async function readProductWeight( productId )
 // computed $ figures, so the estimate stays visible for comparison -
 // only the totals exclude them.
 //
-// As of item 13 (20260725000000-owner-assistant-labor.js), Material and
-// Machine rows are priced one way and Labor stage rows another - see
-// Settings.js's doc comment for the full formula. In short:
-//   - Material/Machine row: cogsCost = quantity x rate x materialsMarkup
-//     (the markup is baked into "cogsCost" itself, per the shop's own
-//     definition of COGS); wholesaleCost is the same figure (materials
-//     don't get marked up again between COGS and Wholesale); retailCost
-//     = wholesaleCost x retailMultiplier.
+// As of item 13's second revision (20260726000000-cogs-formula-v2.js),
+// Material and Machine rows are priced one way and Labor stage rows
+// another - see Settings.js's doc comment for the full formula. In
+// short:
+//   - Material/Machine row: cogsCost = quantity x rate, at cost, no
+//     markup; wholesaleCost = cogsCost x (1 + markupPercent/100) (the
+//     markup step happens between COGS and Wholesale, not before);
+//     retailCost = wholesaleCost x retailMultiplier.
 //   - Labor stage row: cogsCost = its Assistant-attributed cost only
-//     (Owner labor isn't part of COGS); wholesaleCost = Assistant +
-//     Owner cost combined (Owner labor is what turns COGS into
-//     Wholesale); retailCost = wholesaleCost x retailMultiplier.
+//     (Owner labor isn't part of COGS); wholesaleCost = the Assistant
+//     portion marked up the same as everything else in COGS, plus the
+//     Owner portion added unmarked on top (Owner labor is what turns
+//     COGS into Wholesale, alongside the markup); retailCost =
+//     wholesaleCost x retailMultiplier.
 // Summing cogsCost/wholesaleCost/retailCost across every enabled row
-// therefore reproduces exactly: COGS = (materials+machine) x
-// materialsMarkup + assistant labor; Wholesale = COGS + owner labor;
+// therefore reproduces exactly: COGS = materials + machine + assistant
+// labor; Wholesale = COGS x (1 + markupPercent/100) + owner labor;
 // Retail = Wholesale x retailMultiplier.
 //
 // The two rate-holder factors ('laborOwner'/'laborAssistant' - see
@@ -298,9 +299,8 @@ export async function readProductCosts( productId )
   ])
 
   const overrideByFactorId = Object.fromEntries( overrides.map( o => [o.costFactorId, o] ) )
-  // Field names unchanged from before item 13 (see Settings.js) - only
-  // what they multiply against has changed.
-  const materialsMarkup = settings?.wholesaleMultiplier ?? 1
+  const markupPercent = settings?.markupPercent ?? 25
+  const markupFactor = 1 + markupPercent / 100
   const retailMultiplier = settings?.retailMultiplier ?? 1
 
   const productJson = product.toJSON()
@@ -327,7 +327,7 @@ export async function readProductCosts( productId )
     const effectiveEnabled = null != override?.enabledOverride ? override.enabledOverride : computedEnabled
 
     const rateQuantity = convertToRateUnit( effectiveQuantity, factor )
-    const cogsCost = rateQuantity * (factor.rate ?? 0) * materialsMarkup
+    const cogsCost = rateQuantity * (factor.rate ?? 0)
 
     return {
       factor: factor.toJSON(),
@@ -339,16 +339,19 @@ export async function readProductCosts( productId )
       effectiveEnabled,
       cogsRate: factor.rate ?? 0,
       cogsCost,
-      wholesaleCost: cogsCost,
-      retailCost: cogsCost * retailMultiplier,
+      wholesaleCost: cogsCost * markupFactor,
+      retailCost: cogsCost * markupFactor * retailMultiplier,
     }
   } )
 
   const { rows: laborRowsRaw } = computeLaborSplit( productJson, settingsJson, laborStageFactors, overrideByFactorId, ownerRate, assistantRate )
 
   const laborRows = laborRowsRaw.map( r => {
+    // Assistant labor is part of COGS, so its portion gets marked up the
+    // same as Material/Machine on the way to Wholesale; Owner labor
+    // isn't part of COGS at all, so it's added on top unmarked.
     const cogsCost = r.assistantCost
-    const wholesaleCost = r.assistantCost + r.ownerCost
+    const wholesaleCost = r.assistantCost * markupFactor + r.ownerCost
 
     return {
       factor: r.factor.toJSON(),
@@ -370,13 +373,14 @@ export async function readProductCosts( productId )
 
   const rows = [...materialMachineRows, ...laborRows]
   const enabledRows = rows.filter( r => r.effectiveEnabled )
+  const enabledLaborRowsRaw = laborRowsRaw.filter( r => r.effectiveEnabled )
 
   return {
     rows,
-    wholesaleMultiplier: materialsMarkup,
+    markupPercent,
     retailMultiplier,
-    ownerLaborCost: laborRows.filter( r => r.effectiveEnabled ).reduce( (sum, r) => sum + (r.wholesaleCost - r.cogsCost), 0 ),
-    assistantLaborCost: laborRows.filter( r => r.effectiveEnabled ).reduce( (sum, r) => sum + r.cogsCost, 0 ),
+    ownerLaborCost: enabledLaborRowsRaw.reduce( (sum, r) => sum + r.ownerCost, 0 ),
+    assistantLaborCost: enabledLaborRowsRaw.reduce( (sum, r) => sum + r.assistantCost, 0 ),
     cogsTotal: enabledRows.reduce( (sum, r) => sum + r.cogsCost, 0 ),
     wholesaleTotal: enabledRows.reduce( (sum, r) => sum + r.wholesaleCost, 0 ),
     retailTotal: enabledRows.reduce( (sum, r) => sum + r.retailCost, 0 ),
