@@ -12,7 +12,12 @@ const ROOT3 = Math.sqrt( 3 )
 // Shape keys (ShapeType.key - see @/db/models/ShapeType) whose outside
 // contour constrains height/width to a fixed aspect ratio (matches
 // buildFromType()'s geometry in @/libs/mirror - circles/squares are 1:1,
-// vesica piscis is 1:root(3)).
+// vesica piscis is 1:root(3)). Every other basic shape (chapel arch,
+// gothic arch, oval, rectangle) - and any custom svgData shape - has
+// independently adjustable width/height, so this set is also what
+// gates the explanatory caption below, not just the actual locking.
+const CONSTRAINED_SHAPE_KEYS = new Set( ['circle', 'square', 'vesica piscis'] )
+
 function constrainedHeight( width, shapeKey )
 {
   if( 'circle' === shapeKey || 'square' === shapeKey )
@@ -146,7 +151,7 @@ export default function ParamsPanel( {substrateInfo, setSubstrateInfo, contours}
         />
       </Stack>
 
-      {shapeKey && (
+      {CONSTRAINED_SHAPE_KEYS.has( shapeKey ) && (
         <Typography variant='caption' color='text.secondary'>
           {outsideContour.shape.name} constrains width/height to a fixed aspect ratio.
         </Typography>
