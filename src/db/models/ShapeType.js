@@ -1,5 +1,6 @@
 import { DataTypes } from 'sequelize'
 import sequelize from '@/db/sequelize'
+import Product from '@/db/models/Product'
 
 // Shape "families" a Contour can belong to - the grouping label the
 // calculator's "Copy From..." product picker (and anything else that
@@ -23,5 +24,16 @@ const ShapeType = sequelize.define(
   {
     timestamps: false,
   })
+
+// The Wooden Base product whose outside contour/dimensions/border seed a
+// brand-new shape when this family is picked from the Visualizer's "New"
+// dropdown (see NewShapeMenu.jsx and MirrorCalculator.jsx's
+// handleNewShape) - see the 20260727000000-shape-type-prototype.js
+// migration. Only meaningful for key-bearing (basic/parametric) shape
+// families, since only those appear in that dropdown, but nothing
+// enforces that at the schema level. Set/cleared via a "Set as
+// Prototype" button on the prototype product's own page
+// (WoodenBaseInfoView.jsx) - there's no dedicated ShapeType admin UI.
+ShapeType.belongsTo( Product, {as: 'prototypeWoodenBase', allowNull: true, defaultValue: null} )
 
 export default ShapeType

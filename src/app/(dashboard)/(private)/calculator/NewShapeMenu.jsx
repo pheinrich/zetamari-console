@@ -16,9 +16,12 @@ import Tooltip from '@mui/material/Tooltip'
 // alongside the original "Blank Shape" reset. Picking a shape family
 // seeds typical dimensions/border for it - see MirrorCalculator.jsx's
 // handleNewShape(), which resolves the actual outsideId/width/height/
-// border from the first Wooden Base product using that shape family
-// (falling back to that family's first Contour + generic 6x6/1 defaults
-// if no product uses it yet). `onSelect(shapeType)` receives the raw
+// border from that family's designated prototype Wooden Base product
+// (ShapeType.prototypeWoodenBaseId - see the "Set as Prototype" button
+// on WoodenBaseInfoView.jsx and the
+// 20260727000000-shape-type-prototype.js migration), falling back to
+// that family's first Contour + generic 6x6/1 defaults if no prototype
+// has been designated yet. `onSelect(shapeType)` receives the raw
 // ShapeType row, or `null` for "Blank Shape" - resolution happens in the
 // caller, same division of labor as CopyFromMenu's onSelect(product).
 export default function NewShapeMenu( {shapeTypes, contours, onSelect} )

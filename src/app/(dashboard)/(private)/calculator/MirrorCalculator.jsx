@@ -235,14 +235,17 @@ export default function MirrorCalculator( {initialState, contours, substrateProd
   // (Chapel Arch/Circle/Gothic Arch/Oval/Rectangle/Square/Vesica Piscis),
   // or `null` for its "Blank Shape" item, which behaves exactly like the
   // old plain New button (handleNew() above). Picking an actual shape
-  // seeds typical dimensions/border for it from the first Wooden Base
-  // product using that shape family (lowest id = "first"), so a brand
-  // new piece starts from realistic values instead of the generic 6x6/1
-  // blank default - falling back to that default (with that family's
-  // first Contour) if no Wooden Base product uses it yet. Only the
-  // outside contour/dimensions carry over, not inside/rabbet - this is
-  // "New," not "Copy From a specific product," so it starts without any
-  // cutout already assumed.
+  // seeds typical dimensions/border for it from that family's
+  // designated prototype Wooden Base product (shapeType.
+  // prototypeWoodenBaseId - see the "Set as Prototype" button on
+  // WoodenBaseInfoView.jsx and the
+  // 20260727000000-shape-type-prototype.js migration), so a brand new
+  // piece starts from realistic, shop-chosen values instead of the
+  // generic 6x6/1 blank default - falling back to that default (with
+  // that family's first Contour) if no prototype has been designated
+  // yet. Only the outside contour/dimensions carry over, not inside/
+  // rabbet - this is "New," not "Copy From a specific product," so it
+  // starts without any cutout already assumed.
   function handleNewShape( shapeType )
   {
     if( !shapeType )
@@ -251,18 +254,16 @@ export default function MirrorCalculator( {initialState, contours, substrateProd
       return
     }
 
-    const matchingProduct = substrateProducts
-      .filter( p => p.woodenBaseInfo?.outside?.shape?.key === shapeType.key )
-      .sort( (a, b) => a.id - b.id )[0]
+    const prototype = substrateProducts.find( p => p.id === shapeType.prototypeWoodenBaseId )
 
-    const next = matchingProduct
+    const next = prototype
       ? {
-        outsideId: matchingProduct.woodenBaseInfo.outsideId,
+        outsideId: prototype.woodenBaseInfo.outsideId,
         insideId: undefined,
         rabbetId: undefined,
-        width: matchingProduct.woodenBaseInfo.width,
-        height: matchingProduct.woodenBaseInfo.height,
-        border: matchingProduct.woodenBaseInfo.border,
+        width: prototype.woodenBaseInfo.width,
+        height: prototype.woodenBaseInfo.height,
+        border: prototype.woodenBaseInfo.border,
       }
       : {
         outsideId: contours.filter( c => c.shape?.key === shapeType.key ).sort( (a, b) => a.id - b.id )[0]?.id,
