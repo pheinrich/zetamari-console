@@ -118,6 +118,16 @@ const schema = z.object({
     height: optionalPositiveNumber,
     thickness: optionalPositiveNumber,
     border: optionalPositiveNumber,
+
+    // How many copies of this exact shape fit on one standard sheet of
+    // plywood - blank (the common case) means "not yet known", so the
+    // Sheet Breakage cost factor falls back to a live grid-packing
+    // estimate (see libs/costFactors.js); a real count, learned from
+    // actually nesting/cutting the shape, always wins over the estimate
+    // when entered here. optionalPositiveInt (not optionalPositiveNumber)
+    // for the same reason as insideId/rabbetId above - a blank field
+    // should leave the column null, not coerce to 0.
+    piecesPerSheet: optionalPositiveInt,
   }).optional(),
 
   tileInfo: z.object({
@@ -625,6 +635,15 @@ export default function ProductForm( {contourList, initialData={}, costs, comput
                           </Grid>
                           <Grid size={{ xs: 12, sm: 3 }}>
                             <TextField fullWidth label='Border' name='woodenBaseInfo.border' defaultValue={initialData?.woodenBaseInfo?.border || '1'} />
+                          </Grid>
+                          <Grid size={{ xs: 12, sm: 3 }}>
+                            <TextField
+                              fullWidth
+                              label='Pieces Per Sheet'
+                              name='woodenBaseInfo.piecesPerSheet'
+                              defaultValue={initialData?.woodenBaseInfo?.piecesPerSheet ?? ''}
+                              helperText='Blank = compute automatically'
+                            />
                           </Grid>
                         </>
                       )}

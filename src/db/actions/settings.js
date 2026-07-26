@@ -5,6 +5,7 @@ import Settings from '@/db/models/Settings'
 import sequelize from '@/db/sequelize'
 import { auth } from '@/lib/auth'
 import { bitCostPerHour, utilitiesCostPerHour } from '@/libs/machineRates'
+import { woodenBaseRatePerSqIn } from '@/libs/woodenBaseRates'
 
 // Settings is a singleton table - readSettings/updateSettings always
 // operate on the first (and only) row, creating it on first write if it
@@ -20,8 +21,11 @@ import { bitCostPerHour, utilitiesCostPerHour } from '@/libs/machineRates'
 // electricity constants (bitLifeSheetsPerBit/cuttingTimeMinPerSheet/
 // bitCostPerBit/powerDrawKw/electricityRatePerKwh), which feed the
 // Machine Wear and Utilities CostFactors' rates - see updateSettings()
-// below - and profilingKerfIn, which instead feeds costFactors.js's
-// sheet-nesting geometry directly (see db/models/Settings.js).
+// below - profilingKerfIn, which instead feeds costFactors.js's
+// sheet-nesting geometry directly (see db/models/Settings.js) - and
+// sheetCostPerSheet/sheetWidthIn/sheetHeightIn, which feed the Wooden
+// Base CostFactor's rate (see libs/woodenBaseRates.js) and the Sheet
+// Breakage CostFactor's formula.
 const NUMERIC_FIELDS = [
   'feedRateInPerMin',
   'powerDrawKw',
@@ -39,6 +43,9 @@ const NUMERIC_FIELDS = [
   'cuttingTimeMinPerSheet',
   'bitCostPerBit',
   'profilingKerfIn',
+  'sheetCostPerSheet',
+  'sheetWidthIn',
+  'sheetHeightIn',
 ]
 
 export async function readSettings()
@@ -55,10 +62,10 @@ export async function readSettings()
 
 // Unlike the other NUMERIC_FIELDS (which are nullable - "not yet
 // configured" is a meaningful, distinct state from 0), markupPercent/
-// retailMultiplier are `allowNull: false` (see Settings.js) - a blank
-// field falls back to its own default rather than null, per-field since
-// their defaults differ (25 vs 1).
-const BLANK_FALLBACK = { markupPercent: 25, retailMultiplier: 1 }
+// retailMultiplier and sheetWidthIn/sheetHeightIn are `allowNull: false`
+// (see Settings.js) - a blank field falls back to its own default rather
+// than null, per-field since their defaults differ.
+const BLANK_FALLBACK = { markupPercent: 25, retailMultiplier: 1, sheetWidthIn: 48.5, sheetHeightIn: 96.5 }
 
 export async function updateSettings( data )
 {
@@ -86,25 +93,29 @@ export async function updateSettings( data )
 
   await settings.update( update )
 
-  // Machine Wear's and Utilities' rates are no longer manually-entered
-  // $/unit figures (see the Cost Factor Rates table in SettingsForm.jsx,
-  // which now shows both rows as computed rather than editable) - they're
-  // derived from the Machine constants just saved above, same way every
-  // other computed quantity in this app is: recomputed fresh, not
-  // cached, whenever its inputs change. Each is left untouched (whatever
-  // it was before) if its own inputs aren't fully filled in yet - see
-  // bitCostPerHour()/utilitiesCostPerHour(), which return 0 in that case,
-  // and 0 isn't a meaningful "not yet configured" rate any more than it
-  // would be for a manually-entered one, so this only overwrites once
-  // there's an actual answer.
+  // Machine Wear's, Utilities', and Wooden Base's rates are no longer
+  // manually-entered $/unit figures (see the Cost Factor Rates table in
+  // SettingsForm.jsx, which now shows all three rows as computed rather
+  // than editable) - they're derived from the constants just saved
+  // above, same way every other computed quantity in this app is:
+  // recomputed fresh, not cached, whenever its inputs change. Each is
+  // left untouched (whatever it was before) if its own inputs aren't
+  // fully filled in yet - see bitCostPerHour()/utilitiesCostPerHour()/
+  // woodenBaseRatePerSqIn(), which return 0 in that case, and 0 isn't a
+  // meaningful "not yet configured" rate any more than it would be for a
+  // manually-entered one, so this only overwrites once there's an actual
+  // answer.
   const settingsJson = settings.toJSON()
   const machineWearRate = bitCostPerHour( settingsJson )
   const utilitiesRate = utilitiesCostPerHour( settingsJson )
+  const woodenBaseRate = woodenBaseRatePerSqIn( settingsJson )
 
   if( machineWearRate > 0 )
     await CostFactor.update( {rate: machineWearRate}, {where: {key: 'machineWear'}} )
   if( utilitiesRate > 0 )
     await CostFactor.update( {rate: utilitiesRate}, {where: {key: 'utilities'}} )
+  if( woodenBaseRate > 0 )
+    await CostFactor.update( {rate: woodenBaseRate}, {where: {key: 'woodenBase'}} )
 
   return settingsJson
 }
@@ -139,20 +150,21 @@ export async function readCostFactors()
 // edit on a Material/Machine factor doesn't need to carry a meaningless
 // null through for every row.
 //
-// Machine Wear/Utilities (see COMPUTED_RATE_KEYS) are excluded from the
-// `rate` write here, even though a {id, rate} entry for them is still
-// present in `rates` - SettingsForm.jsx renders their row as a hidden
-// input (same "keep the array dense, same as a Labor stage row" trick as
-// everywhere else in that table) carrying whatever `rate` this page most
-// recently loaded with, which is exactly the *stale, pre-save* value the
-// moment this same submit's updateSettings() call just finished deriving
-// and persisting a fresh one from the Machine settings above - applying
-// it here would silently stomp that fresh value right back to the old
-// one on every single save. (Found the hard way: Machine Wear's rate
-// stayed stuck at 0 no matter how many times Settings were saved, because
-// this function was resetting it back to 0 immediately after
-// updateSettings() correctly computed $6.30/hr.)
-const COMPUTED_RATE_KEYS = new Set( ['machineWear', 'utilities'] )
+// Machine Wear/Utilities/Wooden Base (see COMPUTED_RATE_KEYS) are
+// excluded from the `rate` write here, even though a {id, rate} entry for
+// them is still present in `rates` - SettingsForm.jsx renders their row
+// as a hidden input (same "keep the array dense, same as a Labor stage
+// row" trick as everywhere else in that table) carrying whatever `rate`
+// this page most recently loaded with, which is exactly the *stale,
+// pre-save* value the moment this same submit's updateSettings() call
+// just finished deriving and persisting a fresh one from the Machine/
+// Wooden Base Sheet settings above - applying it here would silently
+// stomp that fresh value right back to the old one on every single save.
+// (Found the hard way: Machine Wear's rate stayed stuck at 0 no matter
+// how many times Settings were saved, because this function was
+// resetting it back to 0 immediately after updateSettings() correctly
+// computed $6.30/hr.)
+const COMPUTED_RATE_KEYS = new Set( ['machineWear', 'utilities', 'woodenBase'] )
 
 export async function updateCostFactorRates( rates )
 {

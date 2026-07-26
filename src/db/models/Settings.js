@@ -69,6 +69,19 @@ import sequelize from '@/db/sequelize.js'
 // geometry function with no Settings access, also run client-side by the
 // live calculator) - costFactors.js applies the padding itself using the
 // raw width/height getMinBoundRect() exposes.
+//
+// sheetCostPerSheet/sheetWidthIn/sheetHeightIn (added by
+// 20260731000000-sheet-breakage-cost-factor.js) describe the shop's
+// standard sheet of plywood - what a full sheet costs, delivered, and
+// its usable dimensions (defaulting to 48.5"x96.5", a nominal 4'x8'
+// sheet minus unusable edge trim - a real default like markupPercent/
+// retailMultiplier, since it's a near-universal constant rather than a
+// shop-specific price). Together they derive the Wooden Base CostFactor's
+// $/sq-in rate (sheetCostPerSheet / (sheetWidthIn x sheetHeightIn) - see
+// libs/woodenBaseRates.js), replacing what used to be a manually-entered
+// figure, and feed the Sheet Breakage CostFactor's formula (see
+// libs/costFactors.js), which captures the extra cost a large piece
+// incurs from only a few copies fitting on one sheet.
 const Settings = sequelize.define(
   'Settings',
   {
@@ -91,6 +104,9 @@ const Settings = sequelize.define(
     cuttingTimeMinPerSheet: { type: DataTypes.FLOAT },
     bitCostPerBit: { type: DataTypes.FLOAT },
     profilingKerfIn: { type: DataTypes.FLOAT },
+    sheetCostPerSheet: { type: DataTypes.FLOAT },
+    sheetWidthIn: { type: DataTypes.FLOAT, allowNull: false, defaultValue: 48.5 },
+    sheetHeightIn: { type: DataTypes.FLOAT, allowNull: false, defaultValue: 96.5 },
   },
   {
     timestamps: false,

@@ -68,6 +68,10 @@ export default function WoodenBaseInfoView( {productId, woodenBaseInfo} )
       <Field label='Dimensions' value={`${woodenBaseInfo.width}" x ${woodenBaseInfo.height}"`} />
       <Field label='Thickness' value={`${woodenBaseInfo.thickness}"`} />
       <Field label='Border' value={woodenBaseInfo.border} />
+      <Field
+        label='Pieces Per Sheet'
+        value={woodenBaseInfo.piecesPerSheet > 0 ? woodenBaseInfo.piecesPerSheet : 'Computed automatically'}
+      />
       <Grid size={{ xs: 12 }}>
         <Stack direction='row' spacing={2} alignItems='center' flexWrap='wrap'>
           <Button

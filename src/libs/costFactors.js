@@ -7,6 +7,7 @@
 // cut-distance from; everything else defaults to 0 and relies entirely on
 // overrides.
 import { build } from './mirror'
+import { woodenBaseRatePerSqIn } from './woodenBaseRates'
 
 // Flat defaults for labor stages that don't correlate with geometry at
 // all - design and finishing time are roughly constant regardless of a
@@ -136,6 +137,29 @@ export function computeSupersededFactors( product )
   return superseded
 }
 
+// How many copies of a kerf-padded rectangular piece fit on one sheet of
+// plywood - a simple grid-packing estimate (no rotation/mixed-shape
+// nesting), tried both ways round (piece as-is, and piece rotated 90°)
+// since an oblong piece can pack differently depending on which
+// dimension runs along the sheet's length; whichever orientation fits
+// more wins, same as a real cutter would pick. Reproduces the worked
+// example from the 20260731000000-sheet-breakage-cost-factor.js
+// migration: a 30" circle blank, kerf-padded to 30.5"x30.5", against a
+// 48.5"x96.5" sheet - floor(48.5/30.5) x floor(96.5/30.5) = 1 x 3 = 3
+// either way (a square piece packs the same both ways round). Zero if
+// any input is missing/non-positive (no sheet configured, or a piece
+// that doesn't fit at all) rather than Infinity/NaN.
+function computeGridPiecesPerSheet( pieceWidth, pieceHeight, sheetWidth, sheetHeight )
+{
+  if( !(pieceWidth > 0) || !(pieceHeight > 0) || !(sheetWidth > 0) || !(sheetHeight > 0) )
+    return 0
+
+  const straight = Math.floor( sheetWidth / pieceWidth ) * Math.floor( sheetHeight / pieceHeight )
+  const rotated = Math.floor( sheetWidth / pieceHeight ) * Math.floor( sheetHeight / pieceWidth )
+
+  return Math.max( straight, rotated )
+}
+
 // `settings` is the Settings row (see db/models/Settings.js) holding the
 // shop's process constants - feed rate/power draw convert cut distance
 // into machine run-time, and the sq-in/hr throughput constants seed the
@@ -198,6 +222,35 @@ export function computeDefaultQuantities( product, settings )
   cutDistance += 2 * (mirror?.inside?.dims?.perimeter ?? 0)
   cutDistance += (mirror?.rabbet?.dims?.perimeter ?? 0)
 
+  // How many of this exact shape actually fit on one sheet - a human's
+  // real-world count (WoodenBaseInfo.piecesPerSheet, entered "through
+  // experience" when editing the product) always wins over the grid-
+  // packing estimate when it's a positive number; computed live
+  // otherwise. Feeds Sheet Breakage below - see computeGridPiecesPerSheet
+  // and the 20260731000000-sheet-breakage-cost-factor.js migration.
+  const sheetWidth = settings?.sheetWidthIn || 0
+  const sheetHeight = settings?.sheetHeightIn || 0
+  const overridePieces = Number( product?.woodenBaseInfo?.piecesPerSheet ) || 0
+
+  const piecesPerSheet = mirror
+    ? (overridePieces > 0 ? overridePieces : computeGridPiecesPerSheet( woodenBaseWidth, woodenBaseHeight, sheetWidth, sheetHeight ))
+    : 0
+
+  // The dollar amount a piece's *effective* per-sheet share costs above
+  // the simple per-sq-in estimate (woodenBaseArea x the same derived
+  // rate Wooden Base itself now uses - see libs/woodenBaseRates.js) -
+  // zero whenever a shape packs efficiently enough that its sq-in share
+  // already covers its portion of the sheet, or whenever there isn't
+  // enough configured (no sheet cost, or no piece count) to compute a
+  // meaningful figure. Already a dollar figure, not a physical quantity -
+  // same 'bom' pass-through convention (unit '$', rate 1) as bomCost
+  // below.
+  const sheetCost = settings?.sheetCostPerSheet || 0
+
+  const sheetBreakage = (piecesPerSheet > 0 && sheetCost > 0)
+    ? Math.max( 0, sheetCost / piecesPerSheet - woodenBaseArea * woodenBaseRatePerSqIn( settings ) )
+    : 0
+
   const feedRate = settings?.feedRateInPerMin || 0
   const runTimeMin = feedRate > 0 ? cutDistance / feedRate : 0
 
@@ -217,6 +270,7 @@ export function computeDefaultQuantities( product, settings )
     tesserae: mosaicArea,
     mirrorGlass: mirrorGlassArea,
     woodenBase: woodenBaseArea,
+    sheetBreakage: sheetBreakage,
     grout: mosaicArea,
     bom: bomCost,
     // Machine Wear (machine-category), Utilities (machine-category), and

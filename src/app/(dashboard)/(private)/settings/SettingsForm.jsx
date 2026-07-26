@@ -25,6 +25,7 @@ import {
   bitCostPerHour,
   utilitiesCostPerHour,
 } from '@/libs/machineRates'
+import { woodSheetAreaSqIn, woodenBaseRatePerSqIn } from '@/libs/woodenBaseRates'
 import tableStyles from '@core/styles/table.module.css'
 
 const CATEGORY_LABELS = {material: 'Material', machine: 'Machine', labor: 'Labor'}
@@ -37,19 +38,22 @@ const CATEGORY_ORDER = ['material', 'machine', 'labor']
 // they don't have a Default % Owner of their own to edit.
 const LABOR_RATE_HOLDER_KEYS = new Set( ['laborOwner', 'laborAssistant'] )
 
-// Machine Wear's and Utilities' rates are no longer manually-entered
-// $/unit figures - both are derived from fields in the Machine card
-// above (Bit Working Life/Cutting Time/Bit Cost for Machine Wear - see
-// the 20260728000000-bit-wear-cost-factor.js migration; Power Draw/
-// Electricity Rate for Utilities - see 20260729000000-power-draw-kw.js)
-// and kept in sync by db/actions/settings.js's updateSettings() on every
-// save, so these two rows are shown read-only in the Cost Factor Rates
-// table below, same treatment as a Labor stage row's "— (see % Owner)"
-// cell.
-const COMPUTED_RATE_KEYS = new Set( ['machineWear', 'utilities'] )
+// Machine Wear's, Utilities', and Wooden Base's rates are no longer
+// manually-entered $/unit figures - all three are derived from fields
+// elsewhere on this page (Bit Working Life/Cutting Time/Bit Cost for
+// Machine Wear - see the 20260728000000-bit-wear-cost-factor.js
+// migration; Power Draw/Electricity Rate for Utilities - see
+// 20260729000000-power-draw-kw.js; Sheet Cost/Width/Height for Wooden
+// Base - see 20260731000000-sheet-breakage-cost-factor.js) and kept in
+// sync by db/actions/settings.js's updateSettings() on every save, so
+// these three rows are shown read-only in the Cost Factor Rates table
+// below, same treatment as a Labor stage row's "— (see % Owner)" cell.
+const COMPUTED_RATE_KEYS = new Set( ['machineWear', 'utilities', 'woodenBase'] )
+
 const COMPUTED_RATE_CAPTIONS = {
   machineWear: 'Computed from Bit Cost ÷ Bit Working Life above',
   utilities: 'Computed from Power Draw × Electricity Rate above',
+  woodenBase: 'Computed from Sheet Cost ÷ Sheet Area above',
 }
 
 const optionalString = z.preprocess( (val) => (val === '' ? undefined : val), z.string().optional() )
@@ -93,6 +97,9 @@ const schema = z.object({
   cuttingTimeMinPerSheet: optionalNumber,
   bitCostPerBit: optionalNumber,
   profilingKerfIn: optionalNumber,
+  sheetCostPerSheet: optionalNumber,
+  sheetWidthIn: optionalNumber,
+  sheetHeightIn: optionalNumber,
 
   // Only ever populated from the Cost Factor Rates table below - one
   // {id, rate} per CostFactor, saved together with the rest of this form
@@ -377,6 +384,61 @@ export default function SettingsForm( {initialData={}, costFactors=[]} )
                     InputProps={{endAdornment: <InputAdornment position='end'>x Wholesale</InputAdornment>}}
                     sx={noSpinnerSx}
                   />
+                </Grid>
+              </Grid>
+            </CardContent>
+          </Card>
+        </Grid>
+
+        <Grid size={{ xs: 12 }}>
+          <Card>
+            <CardHeader
+              title='Wooden Base Sheet'
+              subheader='A full sheet’s cost and usable dimensions - derives Wooden Base’s $/sq-in rate below and feeds the Sheet Breakage cost factor, which captures the extra cost a large base incurs from only a few copies fitting on one sheet'
+            />
+            <CardContent className='flex flex-col gap-5'>
+              <Grid container spacing={5}>
+                <Grid size={{ xs: 12, sm: 4 }}>
+                  <TextField
+                    fullWidth
+                    type='number'
+                    label='Sheet Cost'
+                    name='sheetCostPerSheet'
+                    defaultValue={initialData?.sheetCostPerSheet ?? ''}
+                    inputProps={{step: 'any', min: '0'}}
+                    InputProps={{endAdornment: <InputAdornment position='end'>$/sheet</InputAdornment>}}
+                    sx={noSpinnerSx}
+                  />
+                </Grid>
+                <Grid size={{ xs: 12, sm: 4 }}>
+                  <TextField
+                    fullWidth
+                    type='number'
+                    label='Sheet Width'
+                    name='sheetWidthIn'
+                    defaultValue={initialData?.sheetWidthIn ?? 48.5}
+                    inputProps={{step: 'any', min: '0'}}
+                    InputProps={{endAdornment: <InputAdornment position='end'>in</InputAdornment>}}
+                    sx={noSpinnerSx}
+                  />
+                </Grid>
+                <Grid size={{ xs: 12, sm: 4 }}>
+                  <TextField
+                    fullWidth
+                    type='number'
+                    label='Sheet Height'
+                    name='sheetHeightIn'
+                    defaultValue={initialData?.sheetHeightIn ?? 96.5}
+                    inputProps={{step: 'any', min: '0'}}
+                    InputProps={{endAdornment: <InputAdornment position='end'>in</InputAdornment>}}
+                    sx={noSpinnerSx}
+                  />
+                </Grid>
+                <Grid size={{ xs: 12 }}>
+                  <Typography variant='body2' color='text.secondary'>
+                    Sheet area: {woodSheetAreaSqIn( initialData ).toFixed( 1 )} sq-in. Wooden Base rate: {formatDollars( woodenBaseRatePerSqIn( initialData ) )}/sq-in
+                    (Sheet Cost ÷ Sheet Area) - feeds Wooden Base and Sheet Breakage in Cost Factor Rates below. Recalculated when you save.
+                  </Typography>
                 </Grid>
               </Grid>
             </CardContent>
