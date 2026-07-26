@@ -9,12 +9,22 @@ import CardHeader from '@mui/material/CardHeader'
 import CardContent from '@mui/material/CardContent'
 import Button from '@mui/material/Button'
 import Alert from '@mui/material/Alert'
+import Divider from '@mui/material/Divider'
 import InputAdornment from '@mui/material/InputAdornment'
 import TextField from '@mui/material/TextField'
 import Typography from '@mui/material/Typography'
 
 import { useFormSubmit } from '@/utils/formSubmitHook'
 import { updateSettings, updateCostFactorRates } from '@/db/actions/settings'
+import {
+  bitLifeMinutes,
+  bitLifeInches,
+  bitCostPerSheet,
+  bitCostPerMinute,
+  bitCostPerInch,
+  bitCostPerHour,
+  utilitiesCostPerHour,
+} from '@/libs/machineRates'
 import tableStyles from '@core/styles/table.module.css'
 
 const CATEGORY_LABELS = {material: 'Material', machine: 'Machine', labor: 'Labor'}
@@ -27,8 +37,32 @@ const CATEGORY_ORDER = ['material', 'machine', 'labor']
 // they don't have a Default % Owner of their own to edit.
 const LABOR_RATE_HOLDER_KEYS = new Set( ['laborOwner', 'laborAssistant'] )
 
+// Machine Wear's and Utilities' rates are no longer manually-entered
+// $/unit figures - both are derived from fields in the Machine card
+// above (Bit Working Life/Cutting Time/Bit Cost for Machine Wear - see
+// the 20260728000000-bit-wear-cost-factor.js migration; Power Draw/
+// Electricity Rate for Utilities - see 20260729000000-power-draw-kw.js)
+// and kept in sync by db/actions/settings.js's updateSettings() on every
+// save, so these two rows are shown read-only in the Cost Factor Rates
+// table below, same treatment as a Labor stage row's "— (see % Owner)"
+// cell.
+const COMPUTED_RATE_KEYS = new Set( ['machineWear', 'utilities'] )
+const COMPUTED_RATE_CAPTIONS = {
+  machineWear: 'Computed from Bit Cost ÷ Bit Working Life above',
+  utilities: 'Computed from Power Draw × Electricity Rate above',
+}
+
 const optionalString = z.preprocess( (val) => (val === '' ? undefined : val), z.string().optional() )
 const optionalNumber = z.preprocess( (val) => (val === '' || val == null ? undefined : val), z.coerce.number().min( 0 ).optional() )
+
+// More decimal places than formatCurrency() (products/productFormat.js)
+// bothers with - that's built for whole-dollar retail/wholesale prices,
+// while a per-inch or per-minute bit cost is typically a small fraction
+// of a cent and would just round away to "$0.00" at 2 decimals.
+function formatDollars( amount )
+{
+  return `$${(amount || 0).toFixed( 4 )}`
+}
 
 // These process constants are typically entered with several digits
 // after the decimal point, where the native up/down spinner increments
@@ -44,7 +78,7 @@ const schema = z.object({
   companyName: optionalString,
   logoUrl: optionalString,
   feedRateInPerMin: optionalNumber,
-  powerDrawKwh: optionalNumber,
+  powerDrawKw: optionalNumber,
   electricityRatePerKwh: optionalNumber,
   sandingRateSqInPerHr: optionalNumber,
   glueingRateSqInPerHr: optionalNumber,
@@ -55,6 +89,9 @@ const schema = z.object({
   mirrorGlassWeightPerSqIn: optionalNumber,
   groutWeightPerSqIn: optionalNumber,
   woodenBaseWeightPerSqIn: optionalNumber,
+  bitLifeSheetsPerBit: optionalNumber,
+  cuttingTimeMinPerSheet: optionalNumber,
+  bitCostPerBit: optionalNumber,
 
   // Only ever populated from the Cost Factor Rates table below - one
   // {id, rate} per CostFactor, saved together with the rest of this form
@@ -133,9 +170,9 @@ export default function SettingsForm( {initialData={}, costFactors=[]} )
           <Card>
             <CardHeader
               title='Machine'
-              subheader='Converts a product’s cut distance into machine run-time, which feeds the Utilities and CNC Labor cost factors'
+              subheader='Converts a product’s cut distance into machine run-time, which feeds the Machine Wear, Utilities, and CNC Labor cost factors'
             />
-            <CardContent>
+            <CardContent className='flex flex-col gap-5'>
               <Grid container spacing={5}>
                 <Grid size={{ xs: 12, sm: 4 }}>
                   <TextField
@@ -154,10 +191,10 @@ export default function SettingsForm( {initialData={}, costFactors=[]} )
                     fullWidth
                     type='number'
                     label='Power Draw'
-                    name='powerDrawKwh'
-                    defaultValue={initialData?.powerDrawKwh ?? ''}
+                    name='powerDrawKw'
+                    defaultValue={initialData?.powerDrawKw ?? ''}
                     inputProps={{step: 'any', min: '0'}}
-                    InputProps={{endAdornment: <InputAdornment position='end'>kWh</InputAdornment>}}
+                    InputProps={{endAdornment: <InputAdornment position='end'>kW</InputAdornment>}}
                     sx={noSpinnerSx}
                   />
                 </Grid>
@@ -172,6 +209,61 @@ export default function SettingsForm( {initialData={}, costFactors=[]} )
                     InputProps={{endAdornment: <InputAdornment position='end'>$/kWh</InputAdornment>}}
                     sx={noSpinnerSx}
                   />
+                </Grid>
+                <Grid size={{ xs: 12 }}>
+                  <Typography variant='body2' color='text.secondary'>
+                    Utilities rate: {formatDollars( utilitiesCostPerHour( initialData ) )}/hr (Power Draw × Electricity Rate) - feeds
+                    Utilities below. Recalculated when you save.
+                  </Typography>
+                </Grid>
+              </Grid>
+
+              <Divider />
+
+              <Grid container spacing={5}>
+                <Grid size={{ xs: 12, sm: 4 }}>
+                  <TextField
+                    fullWidth
+                    type='number'
+                    label='Average Bit Working Life'
+                    name='bitLifeSheetsPerBit'
+                    defaultValue={initialData?.bitLifeSheetsPerBit ?? ''}
+                    inputProps={{step: 'any', min: '0'}}
+                    InputProps={{endAdornment: <InputAdornment position='end'>sheets/bit</InputAdornment>}}
+                    sx={noSpinnerSx}
+                  />
+                </Grid>
+                <Grid size={{ xs: 12, sm: 4 }}>
+                  <TextField
+                    fullWidth
+                    type='number'
+                    label='Average Cutting Time'
+                    name='cuttingTimeMinPerSheet'
+                    defaultValue={initialData?.cuttingTimeMinPerSheet ?? ''}
+                    inputProps={{step: 'any', min: '0'}}
+                    InputProps={{endAdornment: <InputAdornment position='end'>min/sheet</InputAdornment>}}
+                    sx={noSpinnerSx}
+                  />
+                </Grid>
+                <Grid size={{ xs: 12, sm: 4 }}>
+                  <TextField
+                    fullWidth
+                    type='number'
+                    label='Average Bit Cost'
+                    name='bitCostPerBit'
+                    defaultValue={initialData?.bitCostPerBit ?? ''}
+                    inputProps={{step: 'any', min: '0'}}
+                    InputProps={{endAdornment: <InputAdornment position='end'>$/bit</InputAdornment>}}
+                    sx={noSpinnerSx}
+                  />
+                </Grid>
+                <Grid size={{ xs: 12 }}>
+                  <Typography variant='body2' color='text.secondary'>
+                    Working life: {bitLifeMinutes( initialData ).toFixed( 1 )} min ({bitLifeInches( initialData ).toFixed( 1 )} in cut) per
+                    bit. Bit cost: {formatDollars( bitCostPerSheet( initialData ) )}/sheet, {formatDollars( bitCostPerMinute( initialData ) )}/min,
+                    {' '}{formatDollars( bitCostPerInch( initialData ) )}/in cut - feeds Machine Wear below
+                    at {formatDollars( bitCostPerHour( initialData ) )}/hr. Recalculated when you save.
+                  </Typography>
                 </Grid>
               </Grid>
             </CardContent>
@@ -350,6 +442,7 @@ export default function SettingsForm( {initialData={}, costFactors=[]} )
                           const index = costFactors.indexOf( factor )
                           const isRateHolder = LABOR_RATE_HOLDER_KEYS.has( factor.key )
                           const isLaborStage = 'labor' === category && !isRateHolder
+                          const isComputedRate = COMPUTED_RATE_KEYS.has( factor.key )
 
                           return (
                             <tr key={factor.id}>
@@ -358,6 +451,14 @@ export default function SettingsForm( {initialData={}, costFactors=[]} )
                                 {isLaborStage ? (
                                   <>
                                     <Typography color='text.secondary'>— (see % Owner)</Typography>
+                                    <input type='hidden' name={`rates.${index}.rate`} value={factor.rate ?? 0} />
+                                  </>
+                                ) : isComputedRate ? (
+                                  <>
+                                    <Typography>{formatDollars( factor.rate )} / {factor.rateUnit || factor.unit}</Typography>
+                                    <Typography variant='caption' color='text.secondary'>
+                                      {COMPUTED_RATE_CAPTIONS[factor.key]}
+                                    </Typography>
                                     <input type='hidden' name={`rates.${index}.rate`} value={factor.rate ?? 0} />
                                   </>
                                 ) : (

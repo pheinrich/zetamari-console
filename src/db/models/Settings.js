@@ -4,15 +4,23 @@ import sequelize from '@/db/sequelize.js'
 // A single-row table holding organization-wide preferences - company
 // name/logo used to brand printed calculator reports, plus the physical/
 // process constants the cost-profile system's computed default
-// quantities are derived from (see the 20260716000000-cost-profiles.js
-// migration): feed rate and power draw convert a product's cut distance
-// into machine run-time (feeding both the utilities and CNC-labor cost
-// factors), and the sq-in/hr throughput constants seed the sanding/
-// glueing/grouting labor-hour heuristics. These are shop facts, not
-// pricing policy, which is why they live here rather than on CostFactor.
-// Always read/written as the first (and only) row - see
-// src/db/actions/settings.js - rather than a true key-value store, since
-// there's only ever one of these.
+// quantities (and, as of item 14 below, some CostFactor rates) are
+// derived from (see the 20260716000000-cost-profiles.js migration): feed
+// rate converts a product's cut distance into machine run-time (feeding
+// the Machine Wear/Utilities/CNC-labor cost factors), and the sq-in/hr
+// throughput constants seed the sanding/glueing/grouting labor-hour
+// heuristics. These are shop facts, not pricing policy, which is why they
+// live here rather than on CostFactor. Always read/written as the first
+// (and only) row - see src/db/actions/settings.js - rather than a true
+// key-value store, since there's only ever one of these.
+//
+// powerDrawKw/electricityRatePerKwh: power draw is a rate (kW - how fast
+// the machine consumes energy while running), not an energy quantity, so
+// it's kW, not kWh - the "h" in the field's original name
+// (powerDrawKwh, renamed by 20260729000000-power-draw-kw.js) was a
+// mislabel, not a different unit needing conversion. Together with
+// electricityRatePerKwh ($/kWh), powerDrawKw x electricityRatePerKwh
+// gives $/hr - see the Utilities discussion below.
 //
 // retailMultiplier: added by the 20260722000000-simplify-cost-profiles.js
 // migration, replacing the old RateProfile/ProfileRate system's separate
@@ -36,6 +44,18 @@ import sequelize from '@/db/sequelize.js'
 // by its matching constant here to get that factor's weight
 // contribution, the same way CostFactor.rate turns that area into a $
 // contribution.
+//
+// bitLifeSheetsPerBit/cuttingTimeMinPerSheet/bitCostPerBit (added by
+// 20260728000000-bit-wear-cost-factor.js) are the shop's average bit-wear
+// figures - see libs/machineRates.js for the derived working-life/cost
+// math. Unlike the other process constants above, these don't feed a
+// computed *quantity* in costFactors.js - along with powerDrawKw/
+// electricityRatePerKwh, they feed the Machine Wear and Utilities
+// CostFactors' $/hr *rates* instead (see db/actions/settings.js's
+// updateSettings()) - Machine Wear's rate is a bit's cost spread over its
+// working life, Utilities' rate is what the machine's electricity costs
+// per hour of runtime; neither is tied to any one product's geometry the
+// way a *quantity* (how many hours *this* product takes to cut) is.
 const Settings = sequelize.define(
   'Settings',
   {
@@ -43,7 +63,7 @@ const Settings = sequelize.define(
     companyName: { type: DataTypes.STRING },
     logoUrl: { type: DataTypes.STRING },
     feedRateInPerMin: { type: DataTypes.FLOAT },
-    powerDrawKwh: { type: DataTypes.FLOAT },
+    powerDrawKw: { type: DataTypes.FLOAT },
     electricityRatePerKwh: { type: DataTypes.FLOAT },
     sandingRateSqInPerHr: { type: DataTypes.FLOAT },
     glueingRateSqInPerHr: { type: DataTypes.FLOAT },
@@ -54,6 +74,9 @@ const Settings = sequelize.define(
     mirrorGlassWeightPerSqIn: { type: DataTypes.FLOAT },
     groutWeightPerSqIn: { type: DataTypes.FLOAT },
     woodenBaseWeightPerSqIn: { type: DataTypes.FLOAT },
+    bitLifeSheetsPerBit: { type: DataTypes.FLOAT },
+    cuttingTimeMinPerSheet: { type: DataTypes.FLOAT },
+    bitCostPerBit: { type: DataTypes.FLOAT },
   },
   {
     timestamps: false,

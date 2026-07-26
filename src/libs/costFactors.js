@@ -142,15 +142,15 @@ export function computeSupersededFactors( product )
 // sanding/glueing/grouting heuristics. Any of these can be null/unset
 // (not yet configured), in which case the dependent quantities default
 // to 0 rather than a misleading guess. Machine-category CostFactors
-// (machineWear, utilities) are in their physical units (in, hr); Labor-
-// category ones are all in minutes (see CostFactors.unit and the
-// 20260718000000-labor-quantities-to-minutes.js migration), regardless
-// of the units the shop enters these constants in - feedRateInPerMin is
-// in/min, so cutDistance/feedRate yields minutes directly for
-// laborCnc, but utilities still wants hours so that's divided by 60; the
-// *RateSqInPerHr constants are a throughput (sq-in of coverage per hour,
-// bigger = faster), so hours is area/rate, and the labor quantities
-// multiply that back out to minutes.
+// (machineWear, utilities) are both tracked in minutes now, same as
+// Labor's laborCnc - all three are just "how long was the machine
+// cutting" (see the 20260728000000-bit-wear-cost-factor.js migration,
+// which moved Machine Wear off cut-distance-in-inches and Utilities off
+// hours, onto this shared runTimeMin) - converted to whatever each
+// factor's rate is actually quoted in (CostFactor.rateUnit) by
+// convertToRateUnit() below, not here. The *RateSqInPerHr constants are a
+// throughput (sq-in of coverage per hour, bigger = faster), so hours is
+// area/rate, and the labor quantities multiply that back out to minutes.
 export function computeDefaultQuantities( product, settings )
 {
   const mirror = buildGeometry( product )
@@ -202,11 +202,17 @@ export function computeDefaultQuantities( product, settings )
     woodenBase: woodenBaseArea,
     grout: mosaicArea,
     bom: bomCost,
-    machineWear: cutDistance,
-    // Utilities (machine-category, hours) and CNC labor (labor-category,
-    // minutes) both derive from the same machine run-time - an operator
-    // is occupied for as long as the machine is cutting.
-    utilities: runTimeMin / 60,
+    // Machine Wear (machine-category), Utilities (machine-category), and
+    // CNC labor (labor-category) all derive from the same machine
+    // run-time, in minutes - an operator is occupied, the machine is
+    // wearing its bit, and it's drawing power, for exactly as long as
+    // it's cutting. Machine Wear's rate ($/hr, from bitCostPerBit - see
+    // db/actions/settings.js) and Utilities' rate ($/hr, from
+    // powerDrawKw x electricityRatePerKwh) both get this same minutes
+    // figure converted back to hours by convertToRateUnit() before
+    // multiplying.
+    machineWear: runTimeMin,
+    utilities: runTimeMin,
     laborCnc: runTimeMin,
     laborDesign: LABOR_DESIGN_MIN,
     laborSanding: sandingRate > 0 ? (mosaicArea / sandingRate) * 60 : 0,
