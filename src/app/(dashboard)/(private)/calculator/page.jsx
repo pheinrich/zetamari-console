@@ -40,6 +40,27 @@ export default async function CalculatorPage( {searchParams} )
 
   const initialState = decodeInitialState( params, contours, substrateProducts )
 
+  // Whether this request actually named a shape (current/productId/panels)
+  // versus landing here bare - e.g. the sidebar/nav "visualizer" link,
+  // which is a plain /calculator href with no query string at all. Passed
+  // through so MirrorCalculator knows an explicit link should always win
+  // over the Redux snapshot's `current` - see visualizer.js and
+  // MirrorCalculator's `fromExplicitLink` handling.
+  const fromExplicitLink = Boolean( params?.current || params?.productId || params?.panels )
+
+  // Whether this request's format is actually *capable* of specifying a
+  // gallery. The legacy ?productId= link (e.g. a product's "Open in
+  // Visualizer" button) predates the lightbox entirely - decodeInitialState
+  // always resolves it to an empty gallery, not because the user asked for
+  // an empty lightbox, but because that URL shape has nowhere to put one.
+  // Treating that the same as a real explicit gallery (like ?current=...&
+  // gallery=...) would silently wipe out whatever prototypes were already
+  // saved in this tab every time someone opens a product this way - so
+  // only current/panels (both of which can genuinely carry gallery data)
+  // count as an explicit gallery; productId-only falls back to the Redux
+  // snapshot's gallery/pinned instead, same as a bare nav link would.
+  const galleryFromExplicitLink = Boolean( params?.current || params?.panels )
+
   return (
     // Keyed on the raw params so a genuinely different link (a fresh
     // ?current=...&gallery=..., or one of the legacy links, or browser
@@ -54,6 +75,8 @@ export default async function CalculatorPage( {searchParams} )
       contours={contours}
       substrateProducts={substrateProducts}
       shapeTypes={shapeTypes}
+      fromExplicitLink={fromExplicitLink}
+      galleryFromExplicitLink={galleryFromExplicitLink}
     />
   )
 }

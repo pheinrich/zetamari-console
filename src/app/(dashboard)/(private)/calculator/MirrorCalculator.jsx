@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react'
 import NextLink from 'next/link'
+import { useDispatch, useSelector } from 'react-redux'
 
 import Box from '@mui/material/Box'
 import Button from '@mui/material/Button'
@@ -23,6 +24,8 @@ import Tooltip from '@mui/material/Tooltip'
 import Typography from '@mui/material/Typography'
 
 import { build } from '@/libs/mirror'
+
+import { setVisualizerSnapshot } from '@/redux-store/slices/visualizer'
 
 import { DEFAULT_SETTINGS } from './mirrorSettings'
 import { resolveSubstrateInfo } from './resolveSubstrateInfo'
@@ -66,22 +69,50 @@ function reportHref( pathname, params )
 // present - this component no longer resolves anything against a
 // product at mount time; "Copy From..." (below) is the only place a
 // product's stored values get pulled in, and only as a one-shot copy.
-export default function MirrorCalculator( {initialState, contours, substrateProducts, shapeTypes} )
+//
+// `fromExplicitLink` (see page.jsx) is true whenever the URL actually
+// named a shape - a bookmark, a shared link, or a product's "Open in
+// Visualizer" button - in which case the working panel (`current`) always
+// comes from the URL rather than whatever was last open in this tab, read
+// from Redux (visualizer.js, sessionStorage-backed).
+//
+// `galleryFromExplicitLink` is the same idea applied to the lightbox
+// gallery specifically, but it's *not* simply equal to `fromExplicitLink`:
+// the legacy ?productId= link (the "Open in Visualizer" button) is
+// explicit about `current` but structurally can't carry a gallery at all,
+// so treating it as an explicit "empty gallery" would wipe out this tab's
+// saved prototypes every time someone opens a product that way. So
+// `current` and `gallery`/`pinned` are resolved independently: `current`
+// falls back to Redux only when there's no explicit link whatsoever (a
+// bare nav click), while `gallery`/`pinned` fall back to Redux whenever
+// the incoming link's format wasn't actually capable of specifying one
+// (bare nav *or* a bare ?productId= link) - see page.jsx for exactly which
+// link formats set each flag.
+export default function MirrorCalculator( {initialState, contours, substrateProducts, shapeTypes, fromExplicitLink, galleryFromExplicitLink} )
 {
-  const [substrateInfo, setSubstrateInfoState] = useState( () => ({
-    outsideId: initialState.current.outsideId,
-    insideId: initialState.current.insideId,
-    rabbetId: initialState.current.rabbetId,
-    width: initialState.current.width,
-    height: initialState.current.height,
-    border: initialState.current.border,
-  }) )
-  const [label, setLabel] = useState( initialState.current.label ?? '' )
-  const [settings, setSettings] = useState( initialState.current.settings ?? DEFAULT_SETTINGS )
-  const [pinned, setPinned] = useState( initialState.pinned ?? false )
+  const dispatch = useDispatch()
+  const storedSnapshot = useSelector( state => state.visualizerReducer.snapshot )
 
-  const [gallery, setGallery] = useState( () => initialState.gallery.map( (e, i) => ({...e, id: `g-${i}`}) ) )
-  const nextGalleryIdRef = useRef( initialState.gallery.length )
+  const startState = {
+    current: (fromExplicitLink || !storedSnapshot) ? initialState.current : storedSnapshot.current,
+    gallery: (galleryFromExplicitLink || !storedSnapshot) ? initialState.gallery : storedSnapshot.gallery,
+    pinned: (galleryFromExplicitLink || !storedSnapshot) ? initialState.pinned : storedSnapshot.pinned,
+  }
+
+  const [substrateInfo, setSubstrateInfoState] = useState( () => ({
+    outsideId: startState.current.outsideId,
+    insideId: startState.current.insideId,
+    rabbetId: startState.current.rabbetId,
+    width: startState.current.width,
+    height: startState.current.height,
+    border: startState.current.border,
+  }) )
+  const [label, setLabel] = useState( startState.current.label ?? '' )
+  const [settings, setSettings] = useState( startState.current.settings ?? DEFAULT_SETTINGS )
+  const [pinned, setPinned] = useState( startState.pinned ?? false )
+
+  const [gallery, setGallery] = useState( () => startState.gallery.map( (e, i) => ({...e, id: `g-${i}`}) ) )
+  const nextGalleryIdRef = useRef( startState.gallery.length )
   const [selectedId, setSelectedId] = useState( null )
 
   const [saveWoodenBaseOpen, setSaveWoodenBaseOpen] = useState( false )
@@ -390,7 +421,9 @@ export default function MirrorCalculator( {initialState, contours, substrateProd
   }, [substrateInfo, outsideContour, insideContour, rabbetContour] )
 
   // Keeps the working panel + gallery + pinned flag in sync with the URL
-  // for bookmarking/sharing. Uses the raw History API rather than
+  // (for bookmarking/sharing) and with Redux (for the "clicked away via
+  // the nav, and back" fallback - see the component doc comment above
+  // and visualizer.js). Uses the raw History API rather than
   // router.replace() deliberately - the latter would re-run this page's
   // Server Component and, since it's keyed on the search params (see
   // page.jsx), remount this whole component on every edit.
@@ -401,10 +434,20 @@ export default function MirrorCalculator( {initialState, contours, substrateProd
   // Calling replaceState() synchronously on every tick blew past the
   // browser's ~100-calls-per-10-seconds throttle ("Attempt to use
   // history.replaceState() more than 100 times per 10 seconds"). Waiting
-  // for a short pause in changes keeps the URL synced without calling
-  // replaceState() on every drag tick.
+  // for a short pause in changes keeps both the URL and the Redux
+  // snapshot synced without firing on every drag tick.
+  //
+  // pendingSyncRef holds the latest not-yet-fired sync so the true-unmount
+  // effect below can flush it immediately - otherwise navigating away
+  // within 300ms of the last edit (e.g. a quick dimension tweak followed
+  // right away by clicking another nav item) would cancel that pending
+  // write and silently lose it, since a plain clearTimeout() on unmount
+  // just drops it.
+  const pendingSyncRef = useRef( null )
+
   useEffect( () => {
-    const timeoutId = setTimeout( () => {
+    function sync()
+    {
       const url = new URL( window.location.href )
 
       url.searchParams.delete( 'productId' )
@@ -423,10 +466,33 @@ export default function MirrorCalculator( {initialState, contours, substrateProd
         url.searchParams.delete( 'pinned' )
 
       window.history.replaceState( null, '', url.toString() )
+
+      dispatch( setVisualizerSnapshot( {
+        current: {...substrateInfo, label, settings},
+        gallery: gallery.map( ({id, ...rest}) => rest ),
+        pinned,
+      } ) )
+    }
+
+    pendingSyncRef.current = sync
+    const timeoutId = setTimeout( () => {
+      sync()
+      pendingSyncRef.current = null
     }, 300 )
 
     return () => clearTimeout( timeoutId )
-  }, [substrateInfo, label, settings, gallery, pinned] )
+  }, [substrateInfo, label, settings, gallery, pinned, dispatch] )
+
+  // True-unmount-only flush (empty deps, so this cleanup never runs on a
+  // mere dependency change - only when the component actually goes away,
+  // e.g. navigating to another page) - see pendingSyncRef above.
+  useEffect( () => {
+    return () => {
+      if( pendingSyncRef.current )
+        pendingSyncRef.current()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [] )
 
   if( 0 === contours.length )
   {

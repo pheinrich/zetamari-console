@@ -11,6 +11,7 @@ import kanbanReducer from '@/redux-store/slices/kanban'
 import emailReducer from '@/redux-store/slices/email'
 import calculatorReducer from '@/redux-store/slices/calculator'
 import tableViewReducer from '@/redux-store/slices/tableView'
+import visualizerReducer from '@/redux-store/slices/visualizer'
 
 const rootReducer = combineReducers({
 /*  chatReducer,
@@ -18,13 +19,14 @@ const rootReducer = combineReducers({
   kanbanReducer,
   emailReducer,
 */  calculatorReducer,
-  tableViewReducer
+  tableViewReducer,
+  visualizerReducer
 })
 
 const persistConfig = {
   key: 'root',
   storage: storageSession,
-  whitelist: ['calculatorReducer', 'tableViewReducer'],
+  whitelist: ['calculatorReducer', 'tableViewReducer', 'visualizerReducer'],
 }
 const persistedReducer = persistReducer( persistConfig, rootReducer )
 
