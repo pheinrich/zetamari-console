@@ -16,11 +16,12 @@ import { bitCostPerHour, utilitiesCostPerHour } from '@/libs/machineRates'
 // markupPercent/retailMultiplier, which turn a product's COGS cost total
 // into its Wholesale/Retail figures (see db/actions/productCost.js) - the
 // four *WeightPerSqIn constants, which do the same for
-// computeProductWeight()'s weight figure instead of $ - and the bit-wear/
+// computeProductWeight()'s weight figure instead of $ - the bit-wear/
 // electricity constants (bitLifeSheetsPerBit/cuttingTimeMinPerSheet/
 // bitCostPerBit/powerDrawKw/electricityRatePerKwh), which feed the
 // Machine Wear and Utilities CostFactors' rates - see updateSettings()
-// below.
+// below - and profilingKerfIn, which instead feeds costFactors.js's
+// sheet-nesting geometry directly (see db/models/Settings.js).
 const NUMERIC_FIELDS = [
   'feedRateInPerMin',
   'powerDrawKw',
@@ -37,6 +38,7 @@ const NUMERIC_FIELDS = [
   'bitLifeSheetsPerBit',
   'cuttingTimeMinPerSheet',
   'bitCostPerBit',
+  'profilingKerfIn',
 ]
 
 export async function readSettings()

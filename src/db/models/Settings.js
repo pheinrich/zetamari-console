@@ -56,6 +56,19 @@ import sequelize from '@/db/sequelize.js'
 // working life, Utilities' rate is what the machine's electricity costs
 // per hour of runtime; neither is tied to any one product's geometry the
 // way a *quantity* (how many hours *this* product takes to cut) is.
+//
+// profilingKerfIn (added by 20260730000000-profiling-kerf.js) is the
+// CNC profiling bit's actual width (e.g. 0.25" for a 1/4" bit) - unlike
+// every field above, this doesn't feed a CostFactor rate at all, it
+// feeds costFactors.js's *geometry*: a piece's true footprint on a sheet
+// of plywood is its outside OBB (see libs/mirror.js's getMinBoundRect())
+// grown by 2x this value in each direction, since two adjacent pieces
+// can't share a single cut line - each one needs a full bit-width of
+// clearance on every side it borders another piece or the sheet edge.
+// Deliberately not baked into build()/getMinBoundRect() itself (a pure
+// geometry function with no Settings access, also run client-side by the
+// live calculator) - costFactors.js applies the padding itself using the
+// raw width/height getMinBoundRect() exposes.
 const Settings = sequelize.define(
   'Settings',
   {
@@ -77,6 +90,7 @@ const Settings = sequelize.define(
     bitLifeSheetsPerBit: { type: DataTypes.FLOAT },
     cuttingTimeMinPerSheet: { type: DataTypes.FLOAT },
     bitCostPerBit: { type: DataTypes.FLOAT },
+    profilingKerfIn: { type: DataTypes.FLOAT },
   },
   {
     timestamps: false,

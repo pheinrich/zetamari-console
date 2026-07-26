@@ -92,6 +92,7 @@ const schema = z.object({
   bitLifeSheetsPerBit: optionalNumber,
   cuttingTimeMinPerSheet: optionalNumber,
   bitCostPerBit: optionalNumber,
+  profilingKerfIn: optionalNumber,
 
   // Only ever populated from the Cost Factor Rates table below - one
   // {id, rate} per CostFactor, saved together with the rest of this form
@@ -263,6 +264,31 @@ export default function SettingsForm( {initialData={}, costFactors=[]} )
                     bit. Bit cost: {formatDollars( bitCostPerSheet( initialData ) )}/sheet, {formatDollars( bitCostPerMinute( initialData ) )}/min,
                     {' '}{formatDollars( bitCostPerInch( initialData ) )}/in cut - feeds Machine Wear below
                     at {formatDollars( bitCostPerHour( initialData ) )}/hr. Recalculated when you save.
+                  </Typography>
+                </Grid>
+              </Grid>
+
+              <Divider />
+
+              <Grid container spacing={5}>
+                <Grid size={{ xs: 12, sm: 4 }}>
+                  <TextField
+                    fullWidth
+                    type='number'
+                    label='Profiling Kerf'
+                    name='profilingKerfIn'
+                    defaultValue={initialData?.profilingKerfIn ?? ''}
+                    inputProps={{step: 'any', min: '0'}}
+                    InputProps={{endAdornment: <InputAdornment position='end'>in</InputAdornment>}}
+                    sx={noSpinnerSx}
+                  />
+                </Grid>
+                <Grid size={{ xs: 12, sm: 8 }}>
+                  <Typography variant='body2' color='text.secondary'>
+                    The CNC profiling bit’s actual width (e.g. 0.25″ for a 1/4″ bit). Two adjacent pieces on the
+                    same sheet of plywood can’t share a cut line, so a wooden base’s true footprint - for costing
+                    how many fit on a sheet - is its outside boundary grown by twice this value in each direction
+                    (a 1/4″ bit adds 1/2″ total per direction: 1/4″ of clearance on every side).
                   </Typography>
                 </Grid>
               </Grid>

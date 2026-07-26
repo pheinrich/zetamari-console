@@ -151,9 +151,19 @@ export function getDims( geometry )
   }
 }
 
+// Now also exposes `width`/`height` (the rectangle's two side lengths, in
+// addition to `area`) - the sheet-nesting cost factor (see costFactors.js)
+// needs actual dimensions, not just area, to work out how many copies fit
+// on a sheet. Deliberately still just the raw geometric OBB, with no
+// kerf/clearance padding applied here - that's a shop setting
+// (Settings.profilingKerfIn), not a geometry fact, and build() has no
+// Settings to read (it also runs client-side in the calculator, for live
+// interactivity - see MirrorCalculator.jsx); costFactors.js pads
+// `outside.obb.width`/`.height` itself before computing sheet-nesting
+// quantities, using the width/height exposed here.
 export function getMinBoundRect( geometry )
 {
-  let area = 0, coords = [], theta = 0
+  let area = 0, width = 0, height = 0, coords = [], theta = 0
 
   try
   {
@@ -172,11 +182,20 @@ export function getMinBoundRect( geometry )
       theta += 90
     while( 90 < theta )
       theta -= 90
+
+    // The rectangle's two side lengths, straight from adjacent corners -
+    // coords[0..3] are its 4 corners in order (coords[4] repeats coords[0]
+    // to close the ring), so 0->1 and 1->2 are its two distinct sides
+    // regardless of theta.
+    width = Math.hypot( coords[1].x - coords[0].x, coords[1].y - coords[0].y )
+    height = Math.hypot( coords[2].x - coords[1].x, coords[2].y - coords[1].y )
   }
   catch {}
 
   return {
     area: area,
+    width: width,
+    height: height,
     coords: [...coords],
     theta: theta
   }

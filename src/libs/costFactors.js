@@ -164,7 +164,24 @@ export function computeDefaultQuantities( product, settings )
   // is an area-based estimate, not a precise joint-area calculation.
   const mosaicArea = mirror ? (mirror.outside.dims.area - (mirror.inside?.dims?.area ?? 0)) : 0
   const mirrorGlassArea = mirror?.glass?.obb?.area ?? 0
-  const woodenBaseArea = mirror?.outside?.obb?.area ?? 0
+
+  // The wood OBB grown by twice the profiling bit's width in each
+  // direction (see Settings.profilingKerfIn) - two adjacent pieces on the
+  // same sheet of plywood can't share a single cut line, so a piece's
+  // true footprint (for costing how many fit on a sheet, not for the
+  // simple per-sq-in estimate this used to be the only input to) needs a
+  // full bit-width of clearance on every side. getMinBoundRect()
+  // (libs/mirror.js) exposes the OBB's raw, unpadded width/height for
+  // exactly this - build() itself has no Settings to read, and also runs
+  // client-side in the calculator for live interactivity, so the padding
+  // has to happen here instead. Guarded on `mirror` explicitly (like
+  // cutDistance below) since `undefined + 2*kerf` would otherwise be a
+  // non-zero number instead of the 0 a product with no geometry should
+  // get.
+  const kerf = settings?.profilingKerfIn || 0
+  const woodenBaseWidth = mirror ? (mirror.outside.obb.width + 2*kerf) : 0
+  const woodenBaseHeight = mirror ? (mirror.outside.obb.height + 2*kerf) : 0
+  const woodenBaseArea = woodenBaseWidth * woodenBaseHeight
 
   // Parenthesized so each `?? 0` fallback applies before the
   // multiplication, not after - `2 * mirror?.outside?.dims?.perimeter ?? 0`
