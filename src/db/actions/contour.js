@@ -1,9 +1,29 @@
 'use server'
 
+import { Op } from 'sequelize'
 import Contour from '@/db/models/Contour'
 import ShapeType from '@/db/models/ShapeType'
+import WoodenBaseInfo from '@/db/models/WoodenBaseInfo'
 import sequelize from '@/db/sequelize'
 import { auth } from '@/lib/auth'
+import { markProductsCostStale } from '@/db/actions/productCost'
+
+// A Contour's svgData/shape feeds geometry (libs/mirror.js's build(),
+// via libs/costFactors.js's buildGeometry()) for every wooden-base
+// product that references it as its outside/inside/rabbet contour -
+// editing it can change every one of those products' computed cost.
+// (MirrorGlassInfo also has an optional contourId, but nothing derives
+// geometry/cost from it yet - see MirrorGlassInfo.js - so it's not
+// included here.)
+async function markProductsUsingContourStale( contourId )
+{
+  const rows = await WoodenBaseInfo.findAll({
+    where: {[Op.or]: [{outsideId: contourId}, {insideId: contourId}, {rabbetId: contourId}]},
+    attributes: ['productId'],
+  })
+
+  await markProductsCostStale( rows.map( r => r.productId ) )
+}
 
 // Resolves the shapeTypeId to save: for a parametric ("no svgData")
 // contour, the form already submits an existing ShapeType's id directly
@@ -97,6 +117,8 @@ export async function updateContour( data )
     svgData: data.svgData || null,
     shapeTypeId,
   })
+  await markProductsUsingContourStale( data.id )
+
   return contour.toJSON()
 }
 

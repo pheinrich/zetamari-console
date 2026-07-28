@@ -23,6 +23,7 @@ import '@/db/models/SupplierProduct'
 import TileInfo from '@/db/models/TileInfo'
 import sequelize from '@/db/sequelize'
 import { auth } from '@/lib/auth'
+import { markProductsCostStale } from '@/db/actions/productCost'
 
 export async function createProduct( data )
 {
@@ -325,6 +326,12 @@ export async function updateProduct( data )
         await clearProductInfo( data.id, t )
     })
 
+    // Almost anything in this update could change this product's computed
+    // cost (its type-specific Info fields feed geometry, weight/pricing
+    // fields don't but there's no cheap way to tell in advance) - see
+    // productCost.js's "Cost cache invalidation" section.
+    await markProductsCostStale( [data.id] )
+
     return {success: true}
   }
   catch( error )
@@ -379,6 +386,9 @@ export async function addBomLine( parentProductId, materialProductId, quantity )
   try
   {
     const line = await BillOfMaterial.create( {parentProductId, materialProductId, quantity} )
+
+    await markProductsCostStale( [parentProductId] )
+
     return {success: true, id: line.id}
   }
   catch( error )
@@ -402,6 +412,8 @@ export async function updateBomLine( id, quantity )
     notFound()
 
   await line.update( {quantity} )
+  await markProductsCostStale( [line.parentProductId] )
+
   return line.toJSON()
 }
 
@@ -424,6 +436,8 @@ export async function setBomLineSupplier( id, supplierId )
     notFound()
 
   await line.update( {supplierId: supplierId || null} )
+  await markProductsCostStale( [line.parentProductId] )
+
   return line.toJSON()
 }
 
@@ -438,7 +452,11 @@ export async function removeBomLine( id )
   if( !line )
     notFound()
 
-  return await line.destroy()
+  const result = await line.destroy()
+
+  await markProductsCostStale( [line.parentProductId] )
+
+  return result
 }
 
 // --- Images --------------------------------------------------------------

@@ -2,11 +2,29 @@
 
 import { notFound, unauthorized } from 'next/navigation'
 import { Sequelize } from 'sequelize'
+import BillOfMaterial from '@/db/models/BillOfMaterial'
 import Product from '@/db/models/Product'
 import Supplier from '@/db/models/Supplier'
 import SupplierProduct from '@/db/models/SupplierProduct'
 import sequelize from '@/db/sequelize'
 import { auth } from '@/lib/auth'
+import { markProductsCostStale } from '@/db/actions/productCost'
+
+// A material's price feeds the "bom" CostFactor (libs/costFactors.js's
+// resolveSupplierCost()) for every product with a BOM line consuming
+// that material - whether that line names this supplier specifically, or
+// (the common case) just wants the cheapest available price, which this
+// change could itself alter. Either way, every parent product with a BOM
+// line for `materialProductId` needs its cache invalidated.
+async function markProductsUsingMaterialStale( materialProductId )
+{
+  const lines = await BillOfMaterial.findAll({
+    where: {materialProductId},
+    attributes: ['parentProductId'],
+  })
+
+  await markProductsCostStale( lines.map( l => l.parentProductId ) )
+}
 
 export async function createSupplier( data )
 {
@@ -128,8 +146,18 @@ export async function deleteSupplier( id )
   if( !supplier )
     notFound()
 
-  // Cascades to remove this supplier's pricing rows (SupplierProducts).
-  return await supplier.destroy()
+  // Fetched before destroy() cascades away this supplier's pricing rows
+  // (SupplierProducts) - every material it priced could have BOM lines
+  // pointing at it, so every one of those materials' cost needs
+  // invalidating (see markProductsUsingMaterialStale() above, which
+  // handles an array of material ids as readily as one).
+  const priceLinks = await SupplierProduct.findAll( {where: {supplierId: id}, attributes: ['productId']} )
+
+  const result = await supplier.destroy()
+
+  await markProductsUsingMaterialStale( priceLinks.map( l => l.productId ) )
+
+  return result
 }
 
 // --- Per-supplier product pricing --------------------------------------
@@ -145,6 +173,9 @@ export async function setSupplierProductPrice( supplierId, productId, partNumber
   try
   {
     const link = await SupplierProduct.create( {supplierId, productId, partNumber, cost, url} )
+
+    await markProductsUsingMaterialStale( productId )
+
     return {success: true, id: link.id}
   }
   catch( error )
@@ -171,6 +202,8 @@ export async function updateSupplierProductPrice( id, updates )
     notFound()
 
   await link.update( updates )
+  await markProductsUsingMaterialStale( link.productId )
+
   return link.toJSON()
 }
 
@@ -185,5 +218,9 @@ export async function removeSupplierProductPrice( id )
   if( !link )
     notFound()
 
-  return await link.destroy()
+  const result = await link.destroy()
+
+  await markProductsUsingMaterialStale( link.productId )
+
+  return result
 }

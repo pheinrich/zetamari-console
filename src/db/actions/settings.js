@@ -6,6 +6,7 @@ import sequelize from '@/db/sequelize'
 import { auth } from '@/lib/auth'
 import { bitCostPerHour, utilitiesCostPerHour } from '@/libs/machineRates'
 import { woodenBaseRatePerSqIn } from '@/libs/woodenBaseRates'
+import { markAllProductsCostStale } from '@/db/actions/productCost'
 
 // Settings is a singleton table - readSettings/updateSettings always
 // operate on the first (and only) row, creating it on first write if it
@@ -117,6 +118,16 @@ export async function updateSettings( data )
   if( woodenBaseRate > 0 )
     await CostFactor.update( {rate: woodenBaseRate}, {where: {key: 'woodenBase'}} )
 
+  // Every one of these process constants feeds computeDefaultQuantities()
+  // (libs/costFactors.js) for every product in the catalog - there's no
+  // cheap way to know in advance which products a given field actually
+  // moves the needle for, so a Settings save marks every product's cached
+  // COGS total stale (see productCost.js's "Cost cache invalidation"
+  // section) rather than trying to guess. Cheap (a single bulk flag
+  // flip) - the actual recompute only happens lazily, for whichever
+  // products are next read.
+  await markAllProductsCostStale()
+
   return settingsJson
 }
 
@@ -189,6 +200,15 @@ export async function updateCostFactorRates( rates )
 
     await CostFactor.update( update, {where: {id}} )
   }
+
+  // A rate change affects every product costed against that factor -
+  // effectively the whole catalog for the common Material/Machine
+  // factors - so mark everything stale, same as updateSettings() above
+  // (which already calls this too, on the same Settings-page submit -
+  // redundant in that common case, but this function is also callable on
+  // its own, and a rate-only change without any Settings field changing
+  // still needs to invalidate the cache).
+  await markAllProductsCostStale()
 
   return {success: true}
 }

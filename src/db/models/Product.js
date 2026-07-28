@@ -40,6 +40,25 @@ const Product = sequelize.define(
     // profile system below, which is only a cost-breakdown reference tool.
     priceWholesale: { type: DataTypes.DECIMAL( 8, 2 ) },
     priceRetail: { type: DataTypes.DECIMAL( 8, 2 ) },
+    // Cache of this product's last-computed COGS total (see
+    // db/actions/productCost.js's readProductsCogsCosts()), added by the
+    // 20260801000000-product-cogs-cache.js migration. The products list
+    // page used to recompute every product's cost live on every single
+    // page view - including, for wooden-base products, rebuilding their
+    // full JTS geometry from scratch - which scales with catalog size and
+    // was hitting Vercel's function timeout with a large catalog. Now,
+    // only rows with cogsCostCacheStale=true get recomputed on read (and
+    // then cached); everything else is served straight from
+    // cogsCostCache. Defaults to stale=true so every existing row is
+    // computed at least once. Anything that could change a product's
+    // cost - editing the product/its BOM/its cost overrides, or anything
+    // shop-wide like Settings/CostFactor rates/a Contour/a supplier price -
+    // marks the affected row(s) stale again (see markProductsCostStale()/
+    // markAllProductsCostStale() below and their call sites) rather than
+    // eagerly recomputing, so writes stay cheap and only reads ever pay
+    // the geometry-rebuild cost, and only for rows that actually need it.
+    cogsCostCache: { type: DataTypes.FLOAT },
+    cogsCostCacheStale: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: true },
   },
   {
     timestamps: false,
