@@ -401,6 +401,21 @@ export async function readProductCosts( productId )
 // every ProductCostOverride row are fetched in one query apiece, and the
 // per-product $ math (sumEffectiveCost) runs entirely in JS from there -
 // a constant number of queries no matter how many products exist.
+//
+// That last part is the catch: "constant number of queries" isn't the
+// same as "constant time" - sumEffectiveCost() calls computeDefaultQuantities()
+// (libs/costFactors.js), which rebuilds a wooden-base product's full JTS
+// geometry (libs/mirror.js's build(), including a minimum-bounding-
+// rectangle computation) synchronously, in this same request, for every
+// single product in the catalog, on every page view - CPU-bound work
+// that scales with product count and shape complexity, not I/O. Logged
+// here (SLOW_PRODUCT_MS below) so a Vercel Runtime Timeout on this page
+// (the products list currently blocks its whole response on this one
+// call) can be traced to either "too many products," "one pathologically
+// slow shape," or something else entirely, straight from the function
+// logs, without needing prod DB access to reproduce it locally.
+const SLOW_PRODUCT_MS = 100
+
 export async function readProductsCogsCosts()
 {
   const session = await auth()
@@ -409,6 +424,8 @@ export async function readProductsCogsCosts()
 
   await sequelize.sync()
 
+  const fetchStart = Date.now()
+
   const [settings, factors, overrides, products] = await Promise.all([
     Settings.findOne(),
     CostFactor.findAll(),
@@ -416,15 +433,22 @@ export async function readProductsCogsCosts()
     Product.findAll( {include: COSTING_INCLUDE} ),
   ])
 
+  console.log( `readProductsCogsCosts: fetched ${products.length} products (+ settings/factors/overrides) in ${Date.now() - fetchStart}ms` )
+
   const settingsJson = settings?.toJSON()
 
   const overridesByProductId = {}
   for( const override of overrides )
     (overridesByProductId[override.productId] ??= {})[override.costFactorId] = override
 
+  const computeStart = Date.now()
+  let slowestProductId = null
+  let slowestMs = 0
+
   const totals = {}
   for( const product of products )
   {
+    const productStart = Date.now()
     const overrideByFactorId = overridesByProductId[product.id] || {}
     // One product with bad/incomplete geometry (a malformed svgData
     // field, an unrecognized shape key, etc.) shouldn't take the whole
@@ -440,7 +464,23 @@ export async function readProductsCogsCosts()
       console.error( `readProductsCogsCosts: failed to cost product ${product.id}`, err )
       totals[product.id] = null
     }
+
+    const productMs = Date.now() - productStart
+
+    if( productMs > slowestMs )
+    {
+      slowestMs = productMs
+      slowestProductId = product.id
+    }
+
+    if( productMs > SLOW_PRODUCT_MS )
+      console.warn( `readProductsCogsCosts: product ${product.id} (${product.type || 'no type'}) took ${productMs}ms to cost` )
   }
+
+  console.log(
+    `readProductsCogsCosts: costed ${products.length} products in ${Date.now() - computeStart}ms total` +
+    (slowestProductId ? ` (slowest: product ${slowestProductId} at ${slowestMs}ms)` : '')
+  )
 
   return totals
 }
