@@ -1,6 +1,7 @@
 import { readContours } from '@/db/actions/contour'
 import { readWoodenBaseProducts } from '@/db/actions/product'
 import { readShapeTypes } from '@/db/actions/shapeType'
+import { readSettings, readCostFactors } from '@/db/actions/settings'
 
 import { decodeInitialState } from './urlCodec'
 import MirrorCalculator from './MirrorCalculator'
@@ -32,10 +33,17 @@ export default async function CalculatorPage( {searchParams} )
 {
   const params = await searchParams
 
-  const [contours, substrateProducts, shapeTypes] = await Promise.all([
+  // settings/costFactors feed the new configurationCost.js pipeline (see
+  // StatsSummary.jsx) - the same Settings/CostFactor data the real
+  // product-costing system reads, fetched once here (server-side, like
+  // everything else on this page) rather than per-render in the client
+  // component below.
+  const [contours, substrateProducts, shapeTypes, settings, costFactors] = await Promise.all([
     readContours(),
     readWoodenBaseProducts(),
     readShapeTypes(),
+    readSettings(),
+    readCostFactors(),
   ])
 
   const initialState = decodeInitialState( params, contours, substrateProducts )
@@ -75,6 +83,8 @@ export default async function CalculatorPage( {searchParams} )
       contours={contours}
       substrateProducts={substrateProducts}
       shapeTypes={shapeTypes}
+      shopSettings={settings}
+      costFactors={costFactors}
       fromExplicitLink={fromExplicitLink}
       galleryFromExplicitLink={galleryFromExplicitLink}
     />

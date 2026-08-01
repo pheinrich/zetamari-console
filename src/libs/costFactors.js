@@ -8,6 +8,7 @@
 // overrides.
 import { build } from './mirror'
 import { woodenBaseRatePerSqIn } from './woodenBaseRates'
+import { glassSheetRatePerSqIn } from './glassSheetRates'
 
 // Flat defaults for labor stages that don't correlate with geometry at
 // all - design and finishing time are roughly constant regardless of a
@@ -32,6 +33,23 @@ const TYPE_TO_FACTOR = {
   millefiori: 'tesserae',
   tile: 'tesserae',
   'wooden base': 'woodenBase',
+}
+
+// Which Settings weight-per-sqin constant a Material CostFactor's
+// computed area converts to weight with - see the
+// 20260723030000-settings-weight-per-sqin.js migration. Only the four
+// area-based Material factors have a physical weight to speak of; 'bom'
+// is a $ pass-through (its BOM lines' own weight is summed separately),
+// and Machine/Labor factors aren't materials at all. Shared between
+// db/actions/productCost.js's sumEffectiveWeight() (real, DB-backed
+// products) and the Visualizer's synthetic-product cost module (no DB
+// product at all) - both need the same mapping, so it lives here rather
+// than being duplicated.
+export const MATERIAL_WEIGHT_FIELD = {
+  tesserae: 'tesseraeWeightPerSqIn',
+  mirrorGlass: 'mirrorGlassWeightPerSqIn',
+  grout: 'groutWeightPerSqIn',
+  woodenBase: 'woodenBaseWeightPerSqIn',
 }
 
 // Rebuilds the same JSTS geometry the calculator itself uses (see
@@ -226,13 +244,14 @@ export function computeDefaultQuantities( product, settings )
   // real-world count (WoodenBaseInfo.piecesPerSheet, entered "through
   // experience" when editing the product) always wins over the grid-
   // packing estimate when it's a positive number; computed live
-  // otherwise. Feeds Sheet Breakage below - see computeGridPiecesPerSheet
-  // and the 20260731000000-sheet-breakage-cost-factor.js migration.
+  // otherwise. Feeds Sheet Breakage (Wood) below - see
+  // computeGridPiecesPerSheet and the 20260731000000-sheet-breakage-cost-
+  // factor.js migration.
   const sheetWidth = settings?.sheetWidthIn || 0
   const sheetHeight = settings?.sheetHeightIn || 0
   const overridePieces = Number( product?.woodenBaseInfo?.piecesPerSheet ) || 0
 
-  const piecesPerSheet = mirror
+  const piecesPerSheetWood = mirror
     ? (overridePieces > 0 ? overridePieces : computeGridPiecesPerSheet( woodenBaseWidth, woodenBaseHeight, sheetWidth, sheetHeight ))
     : 0
 
@@ -247,8 +266,36 @@ export function computeDefaultQuantities( product, settings )
   // below.
   const sheetCost = settings?.sheetCostPerSheet || 0
 
-  const sheetBreakage = (piecesPerSheet > 0 && sheetCost > 0)
-    ? Math.max( 0, sheetCost / piecesPerSheet - woodenBaseArea * woodenBaseRatePerSqIn( settings ) )
+  const sheetBreakageWood = (piecesPerSheetWood > 0 && sheetCost > 0)
+    ? Math.max( 0, sheetCost / piecesPerSheetWood - woodenBaseArea * woodenBaseRatePerSqIn( settings ) )
+    : 0
+
+  // Mirror glass is cut from sheet stock too - same "only a few copies
+  // actually fit on one sheet, so this piece's true share costs more than
+  // its simple per-sq-in estimate" penalty as the wood above, just against
+  // the shop's mirror glass sheet (Settings.glassSheet*) instead of its
+  // plywood sheet. Unlike the wood OBB, this isn't kerf-padded - kerf here
+  // specifically means the CNC profiling bit's width (Settings.
+  // profilingKerfIn), which doesn't apply to how glass is cut - see the
+  // 20260804000000-glass-sheet-breakage.js migration. The manual override
+  // (WoodenBaseInfo.glassPiecesPerSheet) lives on the wood shape's own
+  // info row, not a separate Mirror Glass product's, since this geometry
+  // is that shape's own glass cutout (`mirror.glass`) - see
+  // WoodenBaseInfo.js's doc comment.
+  const glassWidth = mirror?.glass?.obb?.width ?? 0
+  const glassHeight = mirror?.glass?.obb?.height ?? 0
+  const glassSheetWidth = settings?.glassSheetWidthIn || 0
+  const glassSheetHeight = settings?.glassSheetHeightIn || 0
+  const overrideGlassPieces = Number( product?.woodenBaseInfo?.glassPiecesPerSheet ) || 0
+
+  const piecesPerSheetGlass = mirror
+    ? (overrideGlassPieces > 0 ? overrideGlassPieces : computeGridPiecesPerSheet( glassWidth, glassHeight, glassSheetWidth, glassSheetHeight ))
+    : 0
+
+  const glassSheetCost = settings?.glassSheetCostPerSheet || 0
+
+  const sheetBreakageGlass = (piecesPerSheetGlass > 0 && glassSheetCost > 0)
+    ? Math.max( 0, glassSheetCost / piecesPerSheetGlass - mirrorGlassArea * glassSheetRatePerSqIn( settings ) )
     : 0
 
   const feedRate = settings?.feedRateInPerMin || 0
@@ -267,12 +314,32 @@ export function computeDefaultQuantities( product, settings )
   )
 
   return {
+    // Raw geometry/production figures alongside the per-CostFactor-key
+    // quantities below - not CostFactor keys themselves (no collision with
+    // any real `key` column - see CostFactor.js), so existing `computed[
+    // factor.key]` lookups (db/actions/productCost.js) are unaffected.
+    // Exposed for the Visualizer's Production metric-category (total
+    // machine time, cut distance - see calculator/configurationCost.js),
+    // which needs these before they're divided back up across Machine
+    // Wear/Utilities/CNC-labor's separate $ rates.
+    cutDistanceIn: cutDistance,
+    runTimeMin: runTimeMin,
+
+    // Also not CostFactor keys (see the comment above) - the actual piece
+    // count behind sheetBreakageWood/sheetBreakageGlass below, exposed for
+    // the Visualizer's Pricing tab, which shows this count (auto-grid or
+    // manual override, whichever is in effect) as those two rows'
+    // Quantity, distinct from the dollar figure their cost math uses.
+    piecesPerSheetWood: piecesPerSheetWood,
+    piecesPerSheetGlass: piecesPerSheetGlass,
     tesserae: mosaicArea,
     mirrorGlass: mirrorGlassArea,
     woodenBase: woodenBaseArea,
-    sheetBreakage: sheetBreakage,
+    sheetBreakageWood: sheetBreakageWood,
+    sheetBreakageGlass: sheetBreakageGlass,
     grout: mosaicArea,
     bom: bomCost,
+
     // Machine Wear (machine-category), Utilities (machine-category), and
     // CNC labor (labor-category) all derive from the same machine
     // run-time, in minutes - an operator is occupied, the machine is
@@ -287,6 +354,12 @@ export function computeDefaultQuantities( product, settings )
     laborCnc: runTimeMin,
     laborDesign: LABOR_DESIGN_MIN,
     laborSanding: sandingRate > 0 ? (mosaicArea / sandingRate) * 60 : 0,
+
+    // No general heuristic for "does this glass shape need hand-cutting" -
+    // defaults to 0 (none assumed) and relies entirely on a per-product
+    // override (ProductCostOverride.quantityOverride) when it applies. See
+    // the 20260802000000-labor-glass-cost-factor.js migration.
+    laborGlass: 0,
     laborGlueing: glueingRate > 0 ? (mosaicArea / glueingRate) * 60 : 0,
     laborGrouting: groutingRate > 0 ? (mosaicArea / groutingRate) * 60 : 0,
     laborFinishing: LABOR_FINISHING_MIN,

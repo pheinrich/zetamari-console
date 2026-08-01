@@ -47,6 +47,9 @@ const NUMERIC_FIELDS = [
   'sheetCostPerSheet',
   'sheetWidthIn',
   'sheetHeightIn',
+  'glassSheetCostPerSheet',
+  'glassSheetWidthIn',
+  'glassSheetHeightIn',
 ]
 
 export async function readSettings()

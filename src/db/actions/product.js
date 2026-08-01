@@ -605,6 +605,7 @@ async function setProductInfo( data, t )
         thickness: data.woodenBaseInfo.thickness,
         border: data.woodenBaseInfo.border,
         piecesPerSheet: data.woodenBaseInfo.piecesPerSheet,
+        glassPiecesPerSheet: data.woodenBaseInfo.glassPiecesPerSheet,
       }, {transaction: t})
       break
 

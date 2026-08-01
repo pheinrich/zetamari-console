@@ -26,6 +26,7 @@ import {
   utilitiesCostPerHour,
 } from '@/libs/machineRates'
 import { woodSheetAreaSqIn, woodenBaseRatePerSqIn } from '@/libs/woodenBaseRates'
+import { glassSheetAreaSqIn, glassSheetRatePerSqIn } from '@/libs/glassSheetRates'
 import tableStyles from '@core/styles/table.module.css'
 
 const CATEGORY_LABELS = {material: 'Material', machine: 'Machine', labor: 'Labor'}
@@ -100,6 +101,9 @@ const schema = z.object({
   sheetCostPerSheet: optionalNumber,
   sheetWidthIn: optionalNumber,
   sheetHeightIn: optionalNumber,
+  glassSheetCostPerSheet: optionalNumber,
+  glassSheetWidthIn: optionalNumber,
+  glassSheetHeightIn: optionalNumber,
 
   // Only ever populated from the Cost Factor Rates table below - one
   // {id, rate} per CostFactor, saved together with the rest of this form
@@ -394,7 +398,7 @@ export default function SettingsForm( {initialData={}, costFactors=[]} )
           <Card>
             <CardHeader
               title='Wooden Base Sheet'
-              subheader='A full sheet’s cost and usable dimensions - derives Wooden Base’s $/sq-in rate below and feeds the Sheet Breakage cost factor, which captures the extra cost a large base incurs from only a few copies fitting on one sheet'
+              subheader='A full sheet’s cost and usable dimensions - derives Wooden Base’s $/sq-in rate below and feeds the Sheet Breakage (Wood) cost factor, which captures the extra cost a large base incurs from only a few copies fitting on one sheet'
             />
             <CardContent className='flex flex-col gap-5'>
               <Grid container spacing={5}>
@@ -437,7 +441,62 @@ export default function SettingsForm( {initialData={}, costFactors=[]} )
                 <Grid size={{ xs: 12 }}>
                   <Typography variant='body2' color='text.secondary'>
                     Sheet area: {woodSheetAreaSqIn( initialData ).toFixed( 1 )} sq-in. Wooden Base rate: {formatDollars( woodenBaseRatePerSqIn( initialData ) )}/sq-in
-                    (Sheet Cost ÷ Sheet Area) - feeds Wooden Base and Sheet Breakage in Cost Factor Rates below. Recalculated when you save.
+                    (Sheet Cost ÷ Sheet Area) - feeds Wooden Base and Sheet Breakage (Wood) in Cost Factor Rates below. Recalculated when you save.
+                  </Typography>
+                </Grid>
+              </Grid>
+            </CardContent>
+          </Card>
+        </Grid>
+
+        <Grid size={{ xs: 12 }}>
+          <Card>
+            <CardHeader
+              title='Mirror Glass Sheet'
+              subheader='A full sheet’s cost and usable dimensions for the shop’s mirror glass stock - unlike the Wooden Base Sheet above, this doesn’t change Mirror Glass’s own $/sq-in rate (still manually entered below); it only feeds the Sheet Breakage (Glass) cost factor, which captures the extra cost a large glass piece incurs from only a few copies fitting on one sheet'
+            />
+            <CardContent className='flex flex-col gap-5'>
+              <Grid container spacing={5}>
+                <Grid size={{ xs: 12, sm: 4 }}>
+                  <TextField
+                    fullWidth
+                    type='number'
+                    label='Sheet Cost'
+                    name='glassSheetCostPerSheet'
+                    defaultValue={initialData?.glassSheetCostPerSheet ?? ''}
+                    inputProps={{step: 'any', min: '0'}}
+                    InputProps={{endAdornment: <InputAdornment position='end'>$/sheet</InputAdornment>}}
+                    sx={noSpinnerSx}
+                  />
+                </Grid>
+                <Grid size={{ xs: 12, sm: 4 }}>
+                  <TextField
+                    fullWidth
+                    type='number'
+                    label='Sheet Width'
+                    name='glassSheetWidthIn'
+                    defaultValue={initialData?.glassSheetWidthIn ?? ''}
+                    inputProps={{step: 'any', min: '0'}}
+                    InputProps={{endAdornment: <InputAdornment position='end'>in</InputAdornment>}}
+                    sx={noSpinnerSx}
+                  />
+                </Grid>
+                <Grid size={{ xs: 12, sm: 4 }}>
+                  <TextField
+                    fullWidth
+                    type='number'
+                    label='Sheet Height'
+                    name='glassSheetHeightIn'
+                    defaultValue={initialData?.glassSheetHeightIn ?? ''}
+                    inputProps={{step: 'any', min: '0'}}
+                    InputProps={{endAdornment: <InputAdornment position='end'>in</InputAdornment>}}
+                    sx={noSpinnerSx}
+                  />
+                </Grid>
+                <Grid size={{ xs: 12 }}>
+                  <Typography variant='body2' color='text.secondary'>
+                    Sheet area: {glassSheetAreaSqIn( initialData ).toFixed( 1 )} sq-in. Breakage reference rate: {formatDollars( glassSheetRatePerSqIn( initialData ) )}/sq-in
+                    (Sheet Cost ÷ Sheet Area) - feeds only Sheet Breakage (Glass) in Cost Factor Rates below. Recalculated when you save.
                   </Typography>
                 </Grid>
               </Grid>

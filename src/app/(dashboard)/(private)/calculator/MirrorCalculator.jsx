@@ -30,6 +30,7 @@ import { setVisualizerSnapshot } from '@/redux-store/slices/visualizer'
 import { DEFAULT_SETTINGS } from './mirrorSettings'
 import { resolveSubstrateInfo } from './resolveSubstrateInfo'
 import { encodeEntry, encodeEntryList } from './urlCodec'
+import { TABS } from './configurationCost'
 import CopyFromMenu from './CopyFromMenu'
 import NewShapeMenu from './NewShapeMenu'
 import EditableLabel from './EditableLabel'
@@ -41,6 +42,7 @@ import LightboxStrip from './LightboxStrip'
 import ComparisonTable from './ComparisonTable'
 import SaveNewWoodenBaseDialog from './SaveNewWoodenBaseDialog'
 import SaveNewMirrorGlassDialog from './SaveNewMirrorGlassDialog'
+import ViewSettingsDialog from './ViewSettingsDialog'
 
 const MAIN_PREVIEW_SIZE = 460
 
@@ -88,7 +90,7 @@ function reportHref( pathname, params )
 // the incoming link's format wasn't actually capable of specifying one
 // (bare nav *or* a bare ?productId= link) - see page.jsx for exactly which
 // link formats set each flag.
-export default function MirrorCalculator( {initialState, contours, substrateProducts, shapeTypes, fromExplicitLink, galleryFromExplicitLink} )
+export default function MirrorCalculator( {initialState, contours, substrateProducts, shapeTypes, shopSettings, costFactors, fromExplicitLink, galleryFromExplicitLink} )
 {
   const dispatch = useDispatch()
   const storedSnapshot = useSelector( state => state.visualizerReducer.snapshot )
@@ -117,7 +119,16 @@ export default function MirrorCalculator( {initialState, contours, substrateProd
 
   const [saveWoodenBaseOpen, setSaveWoodenBaseOpen] = useState( false )
   const [saveMirrorGlassOpen, setSaveMirrorGlassOpen] = useState( false )
+  const [viewSettingsOpen, setViewSettingsOpen] = useState( false )
   const [menuAnchor, setMenuAnchor] = useState( null )
+
+  // StatsSummary's tab/Pricing-column visibility - controlled from here
+  // rather than local to StatsSummary, since the 2026-08-03 revision
+  // merged its own standalone kebab menu into this pre-existing one (see
+  // the Menu below). Tab *order* stays local state inside StatsSummary
+  // itself (a drag gesture on the tab strip, not a menu control).
+  const [tabVisible, setTabVisible] = useState( () => Object.fromEntries( TABS.map( t => [t.key, true] ) ) )
+  const [pricingColumnVisible, setPricingColumnVisible] = useState( {cogs: true, wholesale: true, retail: true} )
 
   // Print reports render in an in-page Dialog with the report page
   // loaded into an iframe, rather than a separate tab/window. Safari has
@@ -529,11 +540,6 @@ export default function MirrorCalculator( {initialState, contours, substrateProd
               <i className='ri-more-2-fill' />
             </IconButton>
             <Menu anchorEl={menuAnchor} open={Boolean( menuAnchor )} onClose={() => setMenuAnchor( null )}>
-              <MenuItem onClick={handleTogglePinned}>
-                <ListItemIcon><i className={pinned ? 'ri-pushpin-2-fill' : 'ri-pushpin-2-line'} /></ListItemIcon>
-                <ListItemText>{pinned ? 'Unpin Settings' : 'Pin Settings'}</ListItemText>
-              </MenuItem>
-              <Divider />
               <MenuItem
                 onClick={() => {
                   setPrintReportUrl( reportHref( '/calculator/report', {current: encodeEntry( {...substrateInfo, label, settings} )} ) )
@@ -551,6 +557,16 @@ export default function MirrorCalculator( {initialState, contours, substrateProd
               <MenuItem onClick={handleSaveNewMirrorGlass} disabled={!mirror}>
                 <ListItemIcon><i className='ri-save-line' /></ListItemIcon>
                 <ListItemText>Save New Mirror Glass...</ListItemText>
+              </MenuItem>
+              <Divider />
+              <MenuItem
+                onClick={() => {
+                  setViewSettingsOpen( true )
+                  setMenuAnchor( null )
+                }}
+              >
+                <ListItemIcon><i className='ri-settings-3-line' /></ListItemIcon>
+                <ListItemText>View Settings...</ListItemText>
               </MenuItem>
             </Menu>
           </Stack>
@@ -593,7 +609,17 @@ export default function MirrorCalculator( {initialState, contours, substrateProd
                   <ParamsPanel substrateInfo={substrateInfo} setSubstrateInfo={setSubstrateInfo} contours={contours} />
                 </Box>
                 <Divider />
-                <StatsSummary mirror={mirror} />
+                <StatsSummary
+                  mirror={mirror}
+                  substrateInfo={substrateInfo}
+                  outsideContour={outsideContour}
+                  insideContour={insideContour}
+                  rabbetContour={rabbetContour}
+                  shopSettings={shopSettings}
+                  costFactors={costFactors}
+                  tabVisible={tabVisible}
+                  pricingColumnVisible={pricingColumnVisible}
+                />
               </Stack>
             </Stack>
             <div style={{width: MAIN_PREVIEW_SIZE, maxWidth: '100%'}}>
@@ -672,6 +698,16 @@ export default function MirrorCalculator( {initialState, contours, substrateProd
         onClose={() => setSaveMirrorGlassOpen( false )}
         substrateInfo={substrateInfo}
         contours={contours}
+      />
+      <ViewSettingsDialog
+        open={viewSettingsOpen}
+        onClose={() => setViewSettingsOpen( false )}
+        tabVisible={tabVisible}
+        onToggleTab={key => setTabVisible( prev => ({...prev, [key]: !prev[key]}) )}
+        pricingColumnVisible={pricingColumnVisible}
+        onTogglePricingColumn={key => setPricingColumnVisible( prev => ({...prev, [key]: !prev[key]}) )}
+        pinned={pinned}
+        onTogglePinned={handleTogglePinned}
       />
 
       {/* Print reports render here, in an in-page iframe, rather than a

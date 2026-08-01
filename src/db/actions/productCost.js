@@ -7,7 +7,7 @@ import ProductCostOverride from '@/db/models/ProductCostOverride'
 import Settings from '@/db/models/Settings'
 import sequelize from '@/db/sequelize'
 import { auth } from '@/lib/auth'
-import { computeDefaultQuantities, computeSupersededFactors, convertToRateUnit } from '@/libs/costFactors'
+import { computeDefaultQuantities, computeSupersededFactors, convertToRateUnit, MATERIAL_WEIGHT_FIELD } from '@/libs/costFactors'
 
 // What computeDefaultQuantities()/computeSupersededFactors() need to
 // derive geometry- and BOM-based defaults - the woodenBaseInfo branch of
@@ -36,20 +36,6 @@ const COSTING_INCLUDE = [
     }],
   },
 ]
-
-// Which Settings weight-per-sqin constant a Material CostFactor's
-// computed area converts to weight with - see the
-// 20260723030000-settings-weight-per-sqin.js migration. Only the four
-// area-based Material factors have a physical weight to speak of; 'bom'
-// is a $ pass-through (its BOM lines' own weight is summed separately -
-// see sumEffectiveWeight() below), and Machine/Labor factors aren't
-// materials at all.
-const MATERIAL_WEIGHT_FIELD = {
-  tesserae: 'tesseraeWeightPerSqIn',
-  mirrorGlass: 'mirrorGlassWeightPerSqIn',
-  grout: 'groutWeightPerSqIn',
-  woodenBase: 'woodenBaseWeightPerSqIn',
-}
 
 // The two CostFactor rows added by the 20260725000000-owner-assistant-
 // labor.js migration (item 13) - see CostFactor.js's doc comment. They

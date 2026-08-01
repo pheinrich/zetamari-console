@@ -15,6 +15,17 @@ import Contour from '@/db/models/Contour'
 // working unchanged while a product can optionally point at a real
 // Contour instead. Nothing derives geometry/cost from `contour` yet;
 // that's a follow-up once enough products have adopted it.
+//
+// Note: the Sheet Breakage (Glass) CostFactor's manual piece-count
+// override (see the 20260804000000-glass-sheet-breakage.js migration)
+// lives on WoodenBaseInfo (as `glassPiecesPerSheet`), NOT here - the
+// mirror-glass geometry that formula uses is the wood shape's own glass
+// cutout (`mirror.glass`, from the SAME woodenBaseInfo the wood's own
+// Sheet Breakage figure already derives from - see libs/costFactors.js),
+// not a separate real Mirror Glass product's own info row. A standalone
+// Mirror Glass product (this table, no woodenBaseInfo) doesn't get a
+// computed default quantity for anything geometry-based yet - see
+// buildGeometry()'s doc comment.
 const MirrorGlassInfo = sequelize.define(
   'MirrorGlassInfo',
   {

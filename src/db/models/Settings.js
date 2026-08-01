@@ -79,9 +79,20 @@ import sequelize from '@/db/sequelize.js'
 // shop-specific price). Together they derive the Wooden Base CostFactor's
 // $/sq-in rate (sheetCostPerSheet / (sheetWidthIn x sheetHeightIn) - see
 // libs/woodenBaseRates.js), replacing what used to be a manually-entered
-// figure, and feed the Sheet Breakage CostFactor's formula (see
+// figure, and feed the Sheet Breakage (Wood) CostFactor's formula (see
 // libs/costFactors.js), which captures the extra cost a large piece
 // incurs from only a few copies fitting on one sheet.
+//
+// glassSheetCostPerSheet/glassSheetWidthIn/glassSheetHeightIn (added by
+// 20260804000000-glass-sheet-breakage.js) are the same idea for mirror
+// glass sheet stock, feeding the Sheet Breakage (Glass) CostFactor - but
+// unlike the wood fields above, all three are nullable with no forced
+// default (glass sheet sizes vary a lot by supplier, unlike plywood's
+// near-universal 4'x8'), and none of them feed the 'mirrorGlass'
+// CostFactor's own rate the way the wood fields feed 'woodenBase''s -
+// Mirror Glass material pricing stays a manually-entered $/sq-in figure;
+// only the breakage surcharge is sheet-derived (see
+// libs/glassSheetRates.js).
 const Settings = sequelize.define(
   'Settings',
   {
@@ -107,6 +118,9 @@ const Settings = sequelize.define(
     sheetCostPerSheet: { type: DataTypes.FLOAT },
     sheetWidthIn: { type: DataTypes.FLOAT, allowNull: false, defaultValue: 48.5 },
     sheetHeightIn: { type: DataTypes.FLOAT, allowNull: false, defaultValue: 96.5 },
+    glassSheetCostPerSheet: { type: DataTypes.FLOAT },
+    glassSheetWidthIn: { type: DataTypes.FLOAT },
+    glassSheetHeightIn: { type: DataTypes.FLOAT },
   },
   {
     timestamps: false,
