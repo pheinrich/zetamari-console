@@ -44,8 +44,19 @@ const DEFAULT_VIEW = {
   filters: {type: '', sellable: '', status: '', supplier: ''},
 }
 
+// The 'name' column is the only text column meaningfully searched (see
+// its cell renderer below - it already displays the SKU as a subtitle
+// under the name), so it's the one place worth special-casing: rank
+// against "name sku" together rather than just row.getValue('name'), so
+// the search box matches a SKU the person can see right there, not just
+// the name above it. Every other column keeps the default single-value
+// behavior.
 const fuzzyFilter = (row, columnId, value, addMeta) => {
-  const itemRank = rankItem( row.getValue( columnId ), value )
+  const target = 'name' === columnId
+    ? `${row.original.name ?? ''} ${row.original.sku ?? ''}`
+    : row.getValue( columnId )
+
+  const itemRank = rankItem( target, value )
   addMeta( {itemRank} )
   return itemRank.passed
 }
