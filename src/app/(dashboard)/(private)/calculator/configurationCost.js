@@ -35,7 +35,7 @@ function isRateHolderKey( key )
 // Per the 2026-08-03 revision, Tesserae's preset is materials-only (no
 // labor at all) - TESSERAE_MATERIAL_FACTORS/TESSERAE_LABOR_FACTORS are
 // split so Kit can pick up the materials without the labor (Kit's own
-// preset deliberately excludes Glueing/Grouting labor - the person still
+// preset deliberately excludes Gluing/Grouting labor - the person still
 // wants those two toggled off by default even for a Kit), while Finished
 // Mirror - the complete real, assembled product - still includes them:
 // it's built directly off the raw factor lists below rather than off
@@ -49,7 +49,7 @@ function isRateHolderKey( key )
 const WOODEN_BASE_FACTORS = ['woodenBase', 'sheetBreakageWood', 'machineWear', 'utilities', 'laborCnc', 'laborSanding']
 const MIRROR_GLASS_FACTORS = ['mirrorGlass', 'sheetBreakageGlass', 'laborGlass']
 const TESSERAE_MATERIAL_FACTORS = ['tesserae', 'grout']
-const TESSERAE_LABOR_FACTORS = ['laborGlueing', 'laborGrouting']
+const TESSERAE_LABOR_FACTORS = ['laborGluing', 'laborGrouting']
 const SUBSTRATE_FACTORS = [...WOODEN_BASE_FACTORS, ...MIRROR_GLASS_FACTORS]
 const KIT_FACTORS = [...SUBSTRATE_FACTORS, ...TESSERAE_MATERIAL_FACTORS, 'laborPicking']
 const FINISHED_MIRROR_FACTORS = [...SUBSTRATE_FACTORS, ...TESSERAE_MATERIAL_FACTORS, ...TESSERAE_LABOR_FACTORS, 'laborFinishing', 'bom']

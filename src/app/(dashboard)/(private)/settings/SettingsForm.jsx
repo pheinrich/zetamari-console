@@ -86,7 +86,7 @@ const schema = z.object({
   powerDrawKw: optionalNumber,
   electricityRatePerKwh: optionalNumber,
   sandingRateSqInPerHr: optionalNumber,
-  glueingRateSqInPerHr: optionalNumber,
+  gluingRateSqInPerHr: optionalNumber,
   groutingRateSqInPerHr: optionalNumber,
   pickingRateSqInPerHr: optionalNumber,
   markupPercent: optionalNumber,
@@ -312,7 +312,7 @@ export default function SettingsForm( {initialData={}, costFactors=[]} )
           <Card>
             <CardHeader
               title='Labor Heuristics'
-              subheader='Seed the Sanding/Glueing/Grouting/Picking labor-hour defaults, scaled by a product’s mosaic surface area'
+              subheader='Seed the Sanding/Gluing/Grouting/Picking labor-hour defaults, scaled by a product’s mosaic surface area'
             />
             <CardContent>
               <Grid container spacing={5}>
@@ -332,9 +332,9 @@ export default function SettingsForm( {initialData={}, costFactors=[]} )
                   <TextField
                     fullWidth
                     type='number'
-                    label='Glueing Rate'
-                    name='glueingRateSqInPerHr'
-                    defaultValue={initialData?.glueingRateSqInPerHr ?? ''}
+                    label='Gluing Rate'
+                    name='gluingRateSqInPerHr'
+                    defaultValue={initialData?.gluingRateSqInPerHr ?? ''}
                     inputProps={{step: 'any', min: '0'}}
                     InputProps={{endAdornment: <InputAdornment position='end'>sq-in/hr</InputAdornment>}}
                     sx={noSpinnerSx}

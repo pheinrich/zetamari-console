@@ -23,7 +23,7 @@
  * quantity to a flat 0), Picking time IS estimated from geometry - a new
  * Settings.pickingRateSqInPerHr constant (added here, Labor Heuristics
  * card in SettingsForm.jsx) scales a product's mosaic surface area into
- * minutes, same shape as the existing Sanding/Glueing/Grouting rates -
+ * minutes, same shape as the existing Sanding/Gluing/Grouting rates -
  * see libs/costFactors.js's computeDefaultQuantities(). Unlike those
  * three (which are nullable and default to 0 minutes until a shop
  * configures them), Picking gets a real, non-null default (300 sq-in/hr)

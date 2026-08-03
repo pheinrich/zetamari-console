@@ -8,7 +8,7 @@ import sequelize from '@/db/sequelize.js'
 // derived from (see the 20260716000000-cost-profiles.js migration): feed
 // rate converts a product's cut distance into machine run-time (feeding
 // the Machine Wear/Utilities/CNC-labor cost factors), and the sq-in/hr
-// throughput constants seed the sanding/glueing/grouting labor-hour
+// throughput constants seed the sanding/gluing/grouting labor-hour
 // heuristics. These are shop facts, not pricing policy, which is why they
 // live here rather than on CostFactor. Always read/written as the first
 // (and only) row - see src/db/actions/settings.js - rather than a true
@@ -95,13 +95,17 @@ import sequelize from '@/db/sequelize.js'
 // libs/glassSheetRates.js).
 //
 // pickingRateSqInPerHr (added by 20260805000000-labor-picking-cost-
-// factor.js) is the same sq-in/hr-throughput idea as sanding/glueing/
+// factor.js) is the same sq-in/hr-throughput idea as sanding/gluing/
 // grouting above, feeding the new "Picking" Labor CostFactor
 // (laborPicking) - but unlike those three (nullable, defaulting to 0
 // minutes until a shop configures them), this one gets a real, non-null
 // default (300) baked in at the column level, same "universal enough to
 // ship a sane default" treatment as markupPercent/retailMultiplier/
 // sheetWidthIn/sheetHeightIn above.
+//
+// gluingRateSqInPerHr was originally spelled glueingRateSqInPerHr - a
+// straight spelling fix, no behavior change - see the
+// 20260806000000-fix-glueing-spelling.js migration.
 const Settings = sequelize.define(
   'Settings',
   {
@@ -112,7 +116,7 @@ const Settings = sequelize.define(
     powerDrawKw: { type: DataTypes.FLOAT },
     electricityRatePerKwh: { type: DataTypes.FLOAT },
     sandingRateSqInPerHr: { type: DataTypes.FLOAT },
-    glueingRateSqInPerHr: { type: DataTypes.FLOAT },
+    gluingRateSqInPerHr: { type: DataTypes.FLOAT },
     groutingRateSqInPerHr: { type: DataTypes.FLOAT },
     markupPercent: { type: DataTypes.FLOAT, allowNull: false, defaultValue: 25 },
     retailMultiplier: { type: DataTypes.FLOAT, allowNull: false, defaultValue: 1 },

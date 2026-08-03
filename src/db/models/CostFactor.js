@@ -3,7 +3,7 @@ import sequelize from '@/db/sequelize'
 
 // Lookup table of the calculator's configurable pricing inputs - material-
 // by-area (tesserae/glass/substrate), machine time (wear/utilities), and
-// the labor stages (design/CNC/sanding/glueing/grouting/finishing). See
+// the labor stages (design/CNC/sanding/gluing/grouting/finishing). See
 // the 20260716000000-cost-profiles.js migration for the full rationale;
 // in short, this is pricing policy (what to charge per unit of production
 // effort), kept separate from BillOfMaterial/SupplierProduct's COGS
@@ -26,7 +26,7 @@ import sequelize from '@/db/sequelize'
 // constants) plus Settings.wholesaleMultiplier/retailMultiplier for
 // deriving Wholesale/Retail cost-breakdown figures from it.
 //
-// The six Labor-category stage factors (Design/CNC/Sanding/Glueing/
+// The six Labor-category stage factors (Design/CNC/Sanding/Gluing/
 // Grouting/Finishing) are a special case as of the
 // 20260725000000-owner-assistant-labor.js migration: their `rate` is no
 // longer used. Instead, `defaultOwnerSharePercent` (0-100, meaningful

@@ -181,7 +181,7 @@ function computeGridPiecesPerSheet( pieceWidth, pieceHeight, sheetWidth, sheetHe
 // `settings` is the Settings row (see db/models/Settings.js) holding the
 // shop's process constants - feed rate/power draw convert cut distance
 // into machine run-time, and the sq-in/hr throughput constants seed the
-// sanding/glueing/grouting heuristics. Any of these can be null/unset
+// sanding/gluing/grouting heuristics. Any of these can be null/unset
 // (not yet configured), in which case the dependent quantities default
 // to 0 rather than a misleading guess. Machine-category CostFactors
 // (machineWear, utilities) are both tracked in minutes now, same as
@@ -202,7 +202,7 @@ export function computeDefaultQuantities( product, settings )
   // glass actually covers this piece" figure already shown on the
   // calculator's Pricing tab. Grout's default quantity rides along on
   // the same figure - grout fills the joints across that same mosaic
-  // surface, and (like tesserae/glueing/grouting-labor before it) this
+  // surface, and (like tesserae/gluing/grouting-labor before it) this
   // is an area-based estimate, not a precise joint-area calculation.
   const mosaicArea = mirror ? (mirror.outside.dims.area - (mirror.inside?.dims?.area ?? 0)) : 0
   const mirrorGlassArea = mirror?.glass?.obb?.area ?? 0
@@ -302,7 +302,7 @@ export function computeDefaultQuantities( product, settings )
   const runTimeMin = feedRate > 0 ? cutDistance / feedRate : 0
 
   const sandingRate = settings?.sandingRateSqInPerHr || 0
-  const glueingRate = settings?.glueingRateSqInPerHr || 0
+  const gluingRate = settings?.gluingRateSqInPerHr || 0
   const groutingRate = settings?.groutingRateSqInPerHr || 0
 
   // Unlike the three above (nullable, defaulting to 0 minutes until a
@@ -366,11 +366,11 @@ export function computeDefaultQuantities( product, settings )
     // override (ProductCostOverride.quantityOverride) when it applies. See
     // the 20260802000000-labor-glass-cost-factor.js migration.
     laborGlass: 0,
-    laborGlueing: glueingRate > 0 ? (mosaicArea / glueingRate) * 60 : 0,
+    laborGluing: gluingRate > 0 ? (mosaicArea / gluingRate) * 60 : 0,
     laborGrouting: groutingRate > 0 ? (mosaicArea / groutingRate) * 60 : 0,
 
     // Sorting/selecting tesserae pieces before they're glued down - same
-    // mosaic-area-times-throughput-rate shape as Sanding/Glueing/Grouting
+    // mosaic-area-times-throughput-rate shape as Sanding/Gluing/Grouting
     // above. See the 20260805000000-labor-picking-cost-factor.js
     // migration.
     laborPicking: pickingRate > 0 ? (mosaicArea / pickingRate) * 60 : 0,

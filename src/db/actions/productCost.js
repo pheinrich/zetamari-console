@@ -55,7 +55,7 @@ function resolveLaborRates( factors )
 }
 
 // Per-stage Owner/Assistant cost split for every Labor stage factor
-// (Design/CNC/Sanding/Glueing/Grouting/Finishing - `laborStageFactors`
+// (Design/CNC/Sanding/Gluing/Grouting/Finishing - `laborStageFactors`
 // is every 'labor' category CostFactor except the two rate-holders
 // above). Each stage's own computed/overridable *time* is entirely
 // unchanged from before item 13 (see libs/costFactors.js's
@@ -616,7 +616,7 @@ export async function revertProductCostFactorEnabled( productId, costFactorId )
 }
 
 // The third overridable field (see ProductCostOverride.js) - only
-// meaningful for a Labor stage factor (Design/CNC/Sanding/Glueing/
+// meaningful for a Labor stage factor (Design/CNC/Sanding/Gluing/
 // Grouting/Finishing), overriding CostFactor.defaultOwnerSharePercent
 // for this one product. `percent` is 0-100.
 export async function setProductCostOwnerShare( productId, costFactorId, percent )

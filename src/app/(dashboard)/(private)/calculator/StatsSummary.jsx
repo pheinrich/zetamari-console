@@ -118,7 +118,7 @@ const PRICING_ROWS = [
   { section: 'Labor', key: 'laborDesign', label: 'Design' },
   { section: 'Labor', key: 'laborCnc', label: 'CNC' },
   { section: 'Labor', key: 'laborSanding', label: 'Sanding' },
-  { section: 'Labor', key: 'laborGlueing', label: 'Glueing' },
+  { section: 'Labor', key: 'laborGluing', label: 'Gluing' },
   { section: 'Labor', key: 'laborGrouting', label: 'Grouting' },
   { section: 'Labor', key: 'laborGlass', label: 'Glass Cutting' },
   { section: 'Labor', key: 'laborPicking', label: 'Picking' },

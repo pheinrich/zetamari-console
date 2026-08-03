@@ -14,7 +14,7 @@ import { markAllProductsCostStale } from '@/db/actions/productCost'
 // calculator reports (see calculator/report/ReportOptionsPanel.jsx), the
 // shop process constants the cost-profile system's computed default
 // quantities are derived from (see libs/costFactors.js) - feed rate and
-// the sanding/glueing/grouting sq-in/hr throughput constants -
+// the sanding/gluing/grouting sq-in/hr throughput constants -
 // markupPercent/retailMultiplier, which turn a product's COGS cost total
 // into its Wholesale/Retail figures (see db/actions/productCost.js) - the
 // four *WeightPerSqIn constants, which do the same for
@@ -32,7 +32,7 @@ const NUMERIC_FIELDS = [
   'powerDrawKw',
   'electricityRatePerKwh',
   'sandingRateSqInPerHr',
-  'glueingRateSqInPerHr',
+  'gluingRateSqInPerHr',
   'groutingRateSqInPerHr',
   'markupPercent',
   'retailMultiplier',
