@@ -88,6 +88,7 @@ const schema = z.object({
   sandingRateSqInPerHr: optionalNumber,
   glueingRateSqInPerHr: optionalNumber,
   groutingRateSqInPerHr: optionalNumber,
+  pickingRateSqInPerHr: optionalNumber,
   markupPercent: optionalNumber,
   retailMultiplier: optionalNumber,
   tesseraeWeightPerSqIn: optionalNumber,
@@ -311,11 +312,11 @@ export default function SettingsForm( {initialData={}, costFactors=[]} )
           <Card>
             <CardHeader
               title='Labor Heuristics'
-              subheader='Seed the Sanding/Glueing/Grouting labor-hour defaults, scaled by a product’s mosaic surface area'
+              subheader='Seed the Sanding/Glueing/Grouting/Picking labor-hour defaults, scaled by a product’s mosaic surface area'
             />
             <CardContent>
               <Grid container spacing={5}>
-                <Grid size={{ xs: 12, sm: 4 }}>
+                <Grid size={{ xs: 12, sm: 3 }}>
                   <TextField
                     fullWidth
                     type='number'
@@ -327,7 +328,7 @@ export default function SettingsForm( {initialData={}, costFactors=[]} )
                     sx={noSpinnerSx}
                   />
                 </Grid>
-                <Grid size={{ xs: 12, sm: 4 }}>
+                <Grid size={{ xs: 12, sm: 3 }}>
                   <TextField
                     fullWidth
                     type='number'
@@ -339,13 +340,25 @@ export default function SettingsForm( {initialData={}, costFactors=[]} )
                     sx={noSpinnerSx}
                   />
                 </Grid>
-                <Grid size={{ xs: 12, sm: 4 }}>
+                <Grid size={{ xs: 12, sm: 3 }}>
                   <TextField
                     fullWidth
                     type='number'
                     label='Grouting Rate'
                     name='groutingRateSqInPerHr'
                     defaultValue={initialData?.groutingRateSqInPerHr ?? ''}
+                    inputProps={{step: 'any', min: '0'}}
+                    InputProps={{endAdornment: <InputAdornment position='end'>sq-in/hr</InputAdornment>}}
+                    sx={noSpinnerSx}
+                  />
+                </Grid>
+                <Grid size={{ xs: 12, sm: 3 }}>
+                  <TextField
+                    fullWidth
+                    type='number'
+                    label='Picking Rate'
+                    name='pickingRateSqInPerHr'
+                    defaultValue={initialData?.pickingRateSqInPerHr ?? 300}
                     inputProps={{step: 'any', min: '0'}}
                     InputProps={{endAdornment: <InputAdornment position='end'>sq-in/hr</InputAdornment>}}
                     sx={noSpinnerSx}

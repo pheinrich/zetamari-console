@@ -41,12 +41,17 @@ function isRateHolderKey( key )
 // it's built directly off the raw factor lists below rather than off
 // KIT_FACTORS, so a future change to Kit's own preset doesn't silently
 // also change what "Finished Mirror" defaults to.
+//
+// laborPicking (per the 2026-08-05 discussion) is deliberately only added
+// to KIT_FACTORS itself, not any of the raw building-block lists above it
+// (nor FINISHED_MIRROR_FACTORS) - Kit is the only preset meant to default
+// it "on."
 const WOODEN_BASE_FACTORS = ['woodenBase', 'sheetBreakageWood', 'machineWear', 'utilities', 'laborCnc', 'laborSanding']
 const MIRROR_GLASS_FACTORS = ['mirrorGlass', 'sheetBreakageGlass', 'laborGlass']
 const TESSERAE_MATERIAL_FACTORS = ['tesserae', 'grout']
 const TESSERAE_LABOR_FACTORS = ['laborGlueing', 'laborGrouting']
 const SUBSTRATE_FACTORS = [...WOODEN_BASE_FACTORS, ...MIRROR_GLASS_FACTORS]
-const KIT_FACTORS = [...SUBSTRATE_FACTORS, ...TESSERAE_MATERIAL_FACTORS]
+const KIT_FACTORS = [...SUBSTRATE_FACTORS, ...TESSERAE_MATERIAL_FACTORS, 'laborPicking']
 const FINISHED_MIRROR_FACTORS = [...SUBSTRATE_FACTORS, ...TESSERAE_MATERIAL_FACTORS, ...TESSERAE_LABOR_FACTORS, 'laborFinishing', 'bom']
 
 // Ordered for display in the Pricing tab's "Include" preset dropdown - the

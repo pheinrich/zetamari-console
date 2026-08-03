@@ -305,6 +305,12 @@ export function computeDefaultQuantities( product, settings )
   const glueingRate = settings?.glueingRateSqInPerHr || 0
   const groutingRate = settings?.groutingRateSqInPerHr || 0
 
+  // Unlike the three above (nullable, defaulting to 0 minutes until a
+  // shop configures them), pickingRateSqInPerHr is `allowNull: false`
+  // with a real default (300 - see db/models/Settings.js), so a shop that
+  // never touches Settings still gets a non-zero Picking estimate here.
+  const pickingRate = settings?.pickingRateSqInPerHr || 0
+
   // Already a dollar figure, not a physical quantity - see the "bom"
   // CostFactor's unit ('$') and its rate profiles (seeded at 1, a
   // pass-through) in the 20260717000000-add-bom-cost-factor.js migration.
@@ -362,6 +368,12 @@ export function computeDefaultQuantities( product, settings )
     laborGlass: 0,
     laborGlueing: glueingRate > 0 ? (mosaicArea / glueingRate) * 60 : 0,
     laborGrouting: groutingRate > 0 ? (mosaicArea / groutingRate) * 60 : 0,
+
+    // Sorting/selecting tesserae pieces before they're glued down - same
+    // mosaic-area-times-throughput-rate shape as Sanding/Glueing/Grouting
+    // above. See the 20260805000000-labor-picking-cost-factor.js
+    // migration.
+    laborPicking: pickingRate > 0 ? (mosaicArea / pickingRate) * 60 : 0,
     laborFinishing: LABOR_FINISHING_MIN,
   }
 }

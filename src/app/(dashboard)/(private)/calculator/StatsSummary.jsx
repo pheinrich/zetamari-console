@@ -121,6 +121,7 @@ const PRICING_ROWS = [
   { section: 'Labor', key: 'laborGlueing', label: 'Glueing' },
   { section: 'Labor', key: 'laborGrouting', label: 'Grouting' },
   { section: 'Labor', key: 'laborGlass', label: 'Glass Cutting' },
+  { section: 'Labor', key: 'laborPicking', label: 'Picking' },
   { section: 'Labor', key: 'laborFinishing', label: 'Finishing' },
 ]
 
@@ -356,6 +357,7 @@ function PricingTable( {
               onChange={evt => onPresetChange( evt.target.value )}
               sx={{
                 fontSize: '0.8125rem',
+
                 // The theme's MuiSelect override (@core/theme/overrides/
                 // select.jsx) absolutely-positions the dropdown arrow
                 // (right: '1rem', ~1.375rem wide for a 'small' input - see
