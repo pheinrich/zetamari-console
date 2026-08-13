@@ -2,6 +2,22 @@
 // top of MirrorView's shape preview. Ported from the old console app
 // nearly verbatim - this is pure SVG math, no framework dependency to
 // update.
+//
+// `width`/`height` (the numeric props, defaulting to 500) only size this
+// SVG's *coordinate system* via viewBox - the SVG element's own rendered
+// box is `width='100%' height='100%'` of its absolutely-positioned parent
+// (matching MirrorView.jsx's own shape <svg>, which became responsive in
+// the 2026-07-16 "make the preview responsive" revision), so this overlay
+// stays pixel-aligned with the shape underneath it - both fixed-size
+// (desktop) and shrunk to fit a narrow/mobile viewport (MirrorView's
+// outer box caps at max-width:100%). Using the numeric props as the
+// SVG's literal width/height attributes instead (as this used to) ties
+// its rendered size to whatever `size` MirrorView was called with,
+// regardless of how large the container it's actually inside ends up
+// being - it doesn't rescale on a narrow viewport, and even at the
+// "normal" size it overshoots by a couple pixels (MirrorView's outer box
+// has a 1px border, eating 2px of the shape's own actual rendered
+// content-box that this fixed-size overlay didn't account for).
 const OFFSET = 35   // Display distance from polygon
 const PADDING = 10  // Extra spacing
 
@@ -83,8 +99,8 @@ export default function Dimensions( {labelAnchor, dims, origin, zoom, isFlipped,
       version='1.1'
       xmlns='http://www.w3.org/2000/svg'
       xmlnsXlink='http://www.w3.org/1999/xlink'
-      width={width}
-      height={height}
+      width='100%'
+      height='100%'
       viewBox={`0 0 ${width} ${height}`}
     >
       <defs>

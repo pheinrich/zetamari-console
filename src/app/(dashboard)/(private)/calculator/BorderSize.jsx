@@ -1,3 +1,7 @@
+// `width`/`height` (the numeric props, defaulting to 500) only size this
+// SVG's *coordinate system* via viewBox, not its own rendered box - see
+// Dimensions.jsx's doc comment for the full rationale (same overlay-on-
+// top-of-MirrorView pattern, same fix).
 export default function BorderSize( {fixed, max, min, width = 500, height = 500} )
 {
  return (
@@ -6,8 +10,8 @@ export default function BorderSize( {fixed, max, min, width = 500, height = 500}
       version='1.1'
       xmlns='http://www.w3.org/2000/svg'
       xmlnsXlink='http://www.w3.org/1999/xlink'
-      width={width}
-      height={height}
+      width='100%'
+      height='100%'
       viewBox={`0 0 ${width} ${height}`}
     >
       { fixed !== null && <>
