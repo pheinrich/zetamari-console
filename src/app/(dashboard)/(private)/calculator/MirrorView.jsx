@@ -142,8 +142,19 @@ export default function MirrorView( {mirror, settings, onSettingsChange, imageRe
         { /* mirror.outside/inside/glass.dims can be undefined for a degenerate
              shape (e.g. a border wide enough to buffer the inside contour
              down to nothing) - skip the overlay rather than crash. */ }
+        { /* labelAnchor always references mirror.outside.dims (the fixed
+             outer footprint), never the specific `dims` a given overlay is
+             measuring - that's what keeps the two overlays' callouts
+             predictably split apart (outside's along one pair of edges,
+             inside's along the other) rather than following whichever
+             shape happens to be smaller. Its x controls which side (left/
+             right) the HEIGHT arrow+label lands on; its y controls which
+             side (top/bottom) the WIDTH arrow+label lands on - see
+             Dimensions.jsx's offset.x/offset.y. Outside's width callout is
+             pinned to the top (y: outside top) and inside's to the bottom
+             (y: outside bottom) so they don't collide with each other. */ }
         { (settings.showDims & 1) === 1 && mirror.outside.dims && <Dimensions
-          labelAnchor={{x: mirror.outside.dims.left.x, y: mirror.outside.dims.bottom.y}}
+          labelAnchor={{x: mirror.outside.dims.left.x, y: mirror.outside.dims.top.y}}
           dims={mirror.outside.dims}
           origin={center}
           zoom={settings.zoom}
@@ -152,7 +163,7 @@ export default function MirrorView( {mirror, settings, onSettingsChange, imageRe
           height={size}
         />}
         { (settings.showDims & 2) === 2 && mirror.outside.dims && (settings.showBack && settings.showGlass ? mirror.glass.dims : mirror.inside.dims) && <Dimensions
-          labelAnchor={{x: mirror.outside.dims.right.x, y: mirror.outside.dims.top.y}}
+          labelAnchor={{x: mirror.outside.dims.right.x, y: mirror.outside.dims.bottom.y}}
           dims={settings.showBack && settings.showGlass ? mirror.glass.dims : mirror.inside.dims}
           origin={center}
           zoom={settings.zoom}
