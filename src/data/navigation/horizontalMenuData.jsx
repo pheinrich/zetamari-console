@@ -64,6 +64,27 @@ const horizontalMenuData = () => [
     ]
   },
   {
+    label: 'customers',
+    icon: 'ri-user-line',
+    children: [
+      {
+        label: 'customers',
+        icon: 'ri-user-line',
+        href: '/customers'
+      },
+      {
+        label: 'live classes',
+        icon: 'ri-graduation-cap-line',
+        href: '/live-classes'
+      },
+      {
+        label: 'events',
+        icon: 'ri-calendar-event-line',
+        href: '/events'
+      }
+    ]
+  },
+  {
     label: 'apps',
     icon: 'ri-mail-open-line',
     children: [

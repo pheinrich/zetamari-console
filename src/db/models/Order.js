@@ -1,6 +1,7 @@
 import { DataTypes } from 'sequelize'
 import sequelize from '@/db/sequelize.js'
 import User from '@/db/models/User'
+import Customer from '@/db/models/Customer'
 
 const Order = sequelize.define(
   'Order',
@@ -16,5 +17,11 @@ const Order = sequelize.define(
 
 User.hasMany( Order )
 Order.belongsTo( User )
+
+// Nullable - see the 20260807050000-orders-customer.js migration. Lets
+// the Customer detail page (Visualizer/products' sibling under the new
+// customer/contact/student master list) show a customer's order history.
+Customer.hasMany( Order )
+Order.belongsTo( Customer )
 
 export default Order

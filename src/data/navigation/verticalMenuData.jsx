@@ -63,6 +63,27 @@ const verticalMenuData = () => [
     ]
   },
   {
+    label: 'customers',
+    isSection: true,
+    children: [
+      {
+        label: 'customers',
+        icon: 'ri-user-line',
+        href: '/customers'
+      },
+      {
+        label: 'live classes',
+        icon: 'ri-graduation-cap-line',
+        href: '/live-classes'
+      },
+      {
+        label: 'events',
+        icon: 'ri-calendar-event-line',
+        href: '/events'
+      }
+    ]
+  },
+  {
     label: 'frontPages',
     icon: 'ri-file-copy-line',
     children: [
