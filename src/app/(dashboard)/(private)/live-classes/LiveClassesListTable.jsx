@@ -29,6 +29,7 @@ import {
 
 import { deleteLiveClass } from '@/db/actions/liveClass'
 import { useTableViewState } from '@/hooks/useTableViewState'
+import { multiFieldFuzzyFilter } from '@/utils/multiFieldFuzzyFilter'
 import { formatCurrency } from '../products/productFormat'
 import LiveClassTableFilters from './LiveClassTableFilters'
 import CustomAvatar from '@core/components/mui/Avatar'
@@ -42,23 +43,25 @@ const DEFAULT_VIEW = {
 }
 
 // The 'name' column is the one meaningfully free-text searched - rank
-// against name + location (name/address/type) + notes together, same
-// "special-case the one display column + explicitly opt other columns
-// out of global filtering" approach as customers/CustomersListTable.jsx,
-// since e.g. "zoom" or "Portland" should find a class by its location
-// even though neither appears in the class name itself.
+// name + location (name/address/type) + notes as separate fields (see
+// multiFieldFuzzyFilter's own doc comment for why not to concatenate them
+// into one blob first, as this used to - it let a query's letters match
+// merely by appearing scattered in order across the whole combined
+// string), same "special-case the one display column + explicitly opt
+// other columns out of global filtering" approach as
+// customers/CustomersListTable.jsx, since e.g. "zoom" or "Portland"
+// should find a class by its location even though neither appears in the
+// class name itself.
 const fuzzyFilter = (row, columnId, value, addMeta) => {
   const c = row.original
 
-  const target = 'name' === columnId
-    ? [
+  const itemRank = 'name' === columnId
+    ? multiFieldFuzzyFilter( [
       c.name, c.locationName, c.locationAddress,
       'online' === c.locationType ? 'online zoom virtual' : 'in person',
       c.notes,
-    ].filter( Boolean ).join( ' ' )
-    : row.getValue( columnId )
-
-  const itemRank = rankItem( target, value )
+    ], value )
+    : rankItem( row.getValue( columnId ), value )
 
   addMeta( {itemRank} )
 

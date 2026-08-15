@@ -31,6 +31,7 @@ import CustomerTableFilters from './CustomerTableFilters'
 import { customerDisplayName } from './customerFormat'
 import { deleteCustomer } from '@/db/actions/customer'
 import { useTableViewState } from '@/hooks/useTableViewState'
+import { multiFieldFuzzyFilter } from '@/utils/multiFieldFuzzyFilter'
 import CustomAvatar from '@core/components/mui/Avatar'
 import tableStyles from '@core/styles/table.module.css'
 
@@ -42,11 +43,13 @@ const DEFAULT_VIEW = {
 }
 
 // The 'name' column is the one meaningfully free-text searched - rank
-// against name + email + phone + company + address together (same
-// "special-case the one display column" approach as
-// products/ProductListTable.jsx's SKU search), since a person is just as
-// likely to be looked up by email, phone, company, or city as by name
-// here. All other columns explicitly opt out of global filtering below
+// name + email + phone + company + address as separate fields (see
+// multiFieldFuzzyFilter's own doc comment for why NOT to concatenate them
+// into one blob first - that let a query like "Katrak" match 88 unrelated
+// customers by finding its letters scattered across a combined name+
+// email+phone+address string), since a person is just as likely to be
+// looked up by email, phone, company, or city as by name here. All other
+// columns explicitly opt out of global filtering below
 // (enableGlobalFilter: false) so TanStack's default
 // getColumnCanGlobalFilter heuristic - which only inspects the FIRST
 // row's value and silently drops a column from matching entirely if that
@@ -55,14 +58,12 @@ const DEFAULT_VIEW = {
 const fuzzyFilter = (row, columnId, value, addMeta) => {
   const c = row.original
 
-  const target = 'name' === columnId
-    ? [
+  const itemRank = 'name' === columnId
+    ? multiFieldFuzzyFilter( [
       customerDisplayName( c ), c.email, c.phone, c.company,
       c.street1, c.street2, c.city, c.state, c.postalCode, c.country,
-    ].filter( Boolean ).join( ' ' )
-    : row.getValue( columnId )
-
-  const itemRank = rankItem( target, value )
+    ], value )
+    : rankItem( row.getValue( columnId ), value )
 
   addMeta( {itemRank} )
 
