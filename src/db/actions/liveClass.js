@@ -163,13 +163,15 @@ export async function addLiveClassAttendee( liveClassId, data )
   {
     let firstName = data.firstName || null
     let lastName = data.lastName || null
+    let email = data.email || null
 
-    if( data.customerId && (!firstName || !lastName) )
+    if( data.customerId && (!firstName || !lastName || !email) )
     {
       const customer = await Customer.findByPk( data.customerId )
 
       firstName = firstName || customer?.firstName || null
       lastName = lastName || customer?.lastName || null
+      email = email || customer?.email || null
     }
 
     const attendee = await LiveClassAttendee.create( {
@@ -177,6 +179,7 @@ export async function addLiveClassAttendee( liveClassId, data )
       customerId: data.customerId || null,
       firstName,
       lastName,
+      email,
       status: data.status || 'enrolled',
       discountPercent: null != data.discountPercent && '' !== data.discountPercent ? Number( data.discountPercent ) : null,
       upgradeNotes: data.upgradeNotes || null,

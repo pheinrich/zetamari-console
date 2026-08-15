@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useTransition } from 'react'
+import { useEffect, useMemo, useState, useTransition } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { toast } from 'react-toastify'
@@ -30,6 +30,7 @@ import {
 import { deleteLiveClass } from '@/db/actions/liveClass'
 import { useTableViewState } from '@/hooks/useTableViewState'
 import { formatCurrency } from '../products/productFormat'
+import LiveClassTableFilters from './LiveClassTableFilters'
 import CustomAvatar from '@core/components/mui/Avatar'
 import tableStyles from '@core/styles/table.module.css'
 
@@ -37,10 +38,27 @@ const DEFAULT_VIEW = {
   sorting: [{id: 'startDate', desc: true}],
   pagination: {pageIndex: 0, pageSize: 10},
   globalFilter: '',
+  filters: {location: '', attendees: ''},
 }
 
+// The 'name' column is the one meaningfully free-text searched - rank
+// against name + location (name/address/type) + notes together, same
+// "special-case the one display column + explicitly opt other columns
+// out of global filtering" approach as customers/CustomersListTable.jsx,
+// since e.g. "zoom" or "Portland" should find a class by its location
+// even though neither appears in the class name itself.
 const fuzzyFilter = (row, columnId, value, addMeta) => {
-  const itemRank = rankItem( row.getValue( columnId ), value )
+  const c = row.original
+
+  const target = 'name' === columnId
+    ? [
+      c.name, c.locationName, c.locationAddress,
+      'online' === c.locationType ? 'online zoom virtual' : 'in person',
+      c.notes,
+    ].filter( Boolean ).join( ' ' )
+    : row.getValue( columnId )
+
+  const itemRank = rankItem( target, value )
 
   addMeta( {itemRank} )
 
@@ -53,7 +71,10 @@ export default function LiveClassesListTable( {liveClassData} )
 {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
+  const [filteredData, setFilteredData] = useState( liveClassData )
   const { view, updateView, onSortingChange, onPaginationChange } = useTableViewState( 'liveClasses', DEFAULT_VIEW )
+
+  useEffect( () => { setFilteredData( liveClassData ) }, [liveClassData] )
 
   function handleDelete( liveClass )
   {
@@ -90,27 +111,32 @@ export default function LiveClassesListTable( {liveClassData} )
               {row.original.locationName && <Typography variant='body2'>{row.original.locationName}</Typography>}
             </div>
           </div>
-        )
+        ),
+        enableGlobalFilter: true
       } ),
       columnHelper.accessor( 'locationType', {
         header: 'Location',
         cell: ({ row }) => (
           <Chip label={row.original.locationType === 'online' ? 'Online' : 'In Person'} variant='tonal' size='small' />
-        )
+        ),
+        enableGlobalFilter: false
       } ),
       columnHelper.accessor( 'startDate', {
         header: 'Start Date',
-        cell: ({ row }) => <Typography>{row.original.startDate || '—'}</Typography>
+        cell: ({ row }) => <Typography>{row.original.startDate || '—'}</Typography>,
+        enableGlobalFilter: false
       } ),
       columnHelper.accessor( 'cost', {
         header: 'Cost',
-        cell: ({ row }) => <Typography>{formatCurrency( row.original.cost )}</Typography>
+        cell: ({ row }) => <Typography>{formatCurrency( row.original.cost )}</Typography>,
+        enableGlobalFilter: false
       } ),
       columnHelper.accessor( 'attendeeCount', {
         header: 'Attendees',
         cell: ({ row }) => (
           <Chip label={row.original.attendeeCount} variant='tonal' color={row.original.attendeeCount ? 'primary' : 'secondary'} size='small' />
-        )
+        ),
+        enableGlobalFilter: false
       } ),
       columnHelper.accessor( 'actions', {
         header: 'Actions',
@@ -124,7 +150,8 @@ export default function LiveClassesListTable( {liveClassData} )
             </IconButton>
           </div>
         ),
-        enableSorting: false
+        enableSorting: false,
+        enableGlobalFilter: false
       } ),
     ],
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -132,7 +159,7 @@ export default function LiveClassesListTable( {liveClassData} )
   )
 
   const table = useReactTable({
-    data: liveClassData,
+    data: filteredData,
     columns,
     filterFns: { fuzzy: fuzzyFilter },
     state: { sorting: view.sorting, pagination: view.pagination, globalFilter: view.globalFilter },
@@ -148,7 +175,13 @@ export default function LiveClassesListTable( {liveClassData} )
 
   return (
     <Card>
-      <CardHeader title='Live Classes' className='pbe-4' />
+      <CardHeader title='Filters' className='pbe-4' />
+      <LiveClassTableFilters
+        liveClassData={liveClassData}
+        setData={setFilteredData}
+        filters={view.filters}
+        onFiltersChange={filters => updateView( {filters} )}
+      />
       <Divider />
       <div className='flex justify-between flex-col items-start sm:flex-row sm:items-center gap-y-4 p-5'>
         <TextField

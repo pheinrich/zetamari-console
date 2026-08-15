@@ -9,11 +9,11 @@
 //   a formula-driven split of "Full Name", but ~380 rows have a "Full
 //   Name" that's actually a business/gallery name (e.g. "Artique") with a
 //   real contact person's name in First/Last - those are kept as
-//   firstName/lastName for the contact, with the business name preserved
-//   as a "Company: ..." line in notes, since Customer has no dedicated
-//   company field. A handful of those are actually just accent/spelling
-//   variants of the same person's name (compared case/accent-insensitively
-//   to avoid flagging false positives), not real companies.
+//   firstName/lastName for the contact, with the business name stored in
+//   the dedicated company field. A handful of those are actually just
+//   accent/spelling variants of the same person's name (compared
+//   case/accent-insensitively to avoid flagging false positives), not
+//   real companies.
 // - Address: Bill* columns are used as the primary address, falling back
 //   to Ship* field-by-field where Bill* is blank - there's only one
 //   address on Customer, not separate billing/shipping addresses.
@@ -22,6 +22,12 @@
 //   blank stays null (unspecified, not defaulted to retail) and the 8
 //   "Consignment" rows (not a value our enum supports) get a note instead
 //   so that classification isn't silently dropped.
+// - acceptsEmailMarketing is tri-state (see the Customer model's doc
+//   comment and 20260815000000-customer-company-and-marketing.js): the
+//   sheet's "Email Mktg" column has explicit TRUE/FALSE values plus a
+//   large blank contingent, mapped here to true/false/omitted
+//   (-> null/"unknown") respectively - blank means "never asked", not an
+//   opt-out.
 // - notes: also carries forward anything else that doesn't have a
 //   column of its own - the original Note text, "Addl Contact", and a
 //   one-line "Imported record: ..." summary of the source sheet's Order
@@ -72,7 +78,8 @@ module.exports =
   {
     "id": 6,
     "email": "deenaclancy@me.com",
-    "createdOn": "2019-03-16"
+    "createdOn": "2019-03-16",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 7,
@@ -83,7 +90,8 @@ module.exports =
   {
     "id": 8,
     "email": "dogum@comcast.net",
-    "createdOn": "2019-04-18"
+    "createdOn": "2019-04-18",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 9,
@@ -136,7 +144,8 @@ module.exports =
   {
     "id": 17,
     "email": "jessjonring@gmail.com",
-    "createdOn": "2019-09-23"
+    "createdOn": "2019-09-23",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 18,
@@ -303,7 +312,8 @@ module.exports =
   {
     "id": 45,
     "email": "susie3360@gmail.com",
-    "createdOn": "2025-03-04"
+    "createdOn": "2025-03-04",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 46,
@@ -339,6 +349,7 @@ module.exports =
     "id": 51,
     "firstName": "Scott",
     "lastName": "Dolphin",
+    "company": "15 Steps",
     "email": "admin@breatheithaca.com",
     "phone": "(607) 272-4902",
     "street1": "171 E State St",
@@ -347,7 +358,7 @@ module.exports =
     "postalCode": "14850",
     "country": "US",
     "createdOn": "2013-05-27",
-    "notes": "Formerly '15 Steps'; new owners as of 1/21 (was Bettsie Park), Also Home Cooking Ithaca\nCompany: 15 Steps",
+    "notes": "Formerly '15 Steps'; new owners as of 1/21 (was Bettsie Park), Also Home Cooking Ithaca",
     "type": "wholesale",
     "website": "https://www.fifteensteps.com/"
   },
@@ -355,6 +366,7 @@ module.exports =
     "id": 52,
     "firstName": "Jacqueline",
     "lastName": "Ertischek",
+    "company": "2 Friends Gallery",
     "email": "2friendsgallery@gmail.com",
     "phone": "(907) 277-0404",
     "street1": "341 E Benson Blvd",
@@ -363,7 +375,6 @@ module.exports =
     "postalCode": "99503",
     "country": "US",
     "createdOn": "2011-12-16",
-    "notes": "Company: 2 Friends Gallery",
     "type": "wholesale",
     "website": "https://www.2friendsgallery.com/"
   },
@@ -371,6 +382,7 @@ module.exports =
     "id": 53,
     "firstName": "Michelle",
     "lastName": "Guida",
+    "company": "5 Senses, The",
     "email": "the5senseswc@gmail.com",
     "phone": "(610) 719-0170",
     "street1": "133 W Market St",
@@ -379,7 +391,7 @@ module.exports =
     "postalCode": "19382",
     "country": "US",
     "createdOn": "2019-02-18",
-    "notes": "New owner? (was Karen Cavin)\nCompany: 5 Senses, The",
+    "notes": "New owner? (was Karen Cavin)",
     "type": "wholesale",
     "website": "https://the5senses.com/"
   },
@@ -387,6 +399,7 @@ module.exports =
     "id": 54,
     "firstName": "Ana",
     "lastName": "Leyland",
+    "company": "A Mano Galleries",
     "email": "amanog@verizon.net",
     "phone": "(609) 397-0063",
     "street1": "42 N Union St",
@@ -395,14 +408,15 @@ module.exports =
     "postalCode": "8530",
     "country": "US",
     "createdOn": "2011-01-25",
-    "notes": "Company: A Mano Galleries",
     "type": "wholesale",
-    "website": "https://www.amanogalleries.com/"
+    "website": "https://www.amanogalleries.com/",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 55,
     "firstName": "Monazza",
     "lastName": "Chaudhry",
+    "company": "A&O Peninsula Pharmacy",
     "email": "aopeninsularx@yahoo.com",
     "phone": "(650) 692-6569",
     "street1": "1828 El Camino Real #104",
@@ -411,7 +425,6 @@ module.exports =
     "postalCode": "94010",
     "country": "US",
     "createdOn": "2015-06-15",
-    "notes": "Company: A&O Peninsula Pharmacy",
     "type": "wholesale",
     "website": "https://www.aopeninsularx.com/"
   },
@@ -419,6 +432,7 @@ module.exports =
     "id": 56,
     "firstName": "Christine",
     "lastName": "Elliott",
+    "company": "A+g Design Resources",
     "email": "christine@agdesignresources.com",
     "phone": "(219) 334-1282",
     "street1": "1161 Breuckman Dr Unit B",
@@ -427,7 +441,6 @@ module.exports =
     "postalCode": "46307",
     "country": "US",
     "createdOn": "2022-07-28",
-    "notes": "Company: A+g Design Resources",
     "website": "http://www.agdesignresources.com/"
   },
   {
@@ -442,7 +455,8 @@ module.exports =
     "postalCode": "60657",
     "country": "US",
     "createdOn": "2022-12-04",
-    "notes": "Imported record: 1 order(s), $78.65 total spent."
+    "notes": "Imported record: 1 order(s), $78.65 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 58,
@@ -477,6 +491,7 @@ module.exports =
     "id": 61,
     "firstName": "Maxine",
     "lastName": "Alcott",
+    "company": "Abloom",
     "email": "maxine@abloomhr.net",
     "phone": "(303) 470-1700",
     "street1": "9325 Dorchester St Ste F-122",
@@ -485,7 +500,6 @@ module.exports =
     "postalCode": "80129",
     "country": "US",
     "createdOn": "2016-03-15",
-    "notes": "Company: Abloom",
     "type": "wholesale",
     "website": "https://www.abloomhighlandsranch.com/"
   },
@@ -493,6 +507,7 @@ module.exports =
     "id": 62,
     "firstName": "Kathy",
     "lastName": "Holcomb",
+    "company": "Absolute Gallery and Custom Framing",
     "phone": "(517) 482-8845",
     "street1": "307 E Cesar E Chavez Ave",
     "city": "Lansing",
@@ -500,7 +515,6 @@ module.exports =
     "postalCode": "48906",
     "country": "US",
     "createdOn": "2019-10-17",
-    "notes": "Company: Absolute Gallery and Custom Framing",
     "type": "wholesale",
     "website": "https://absolutegallery.com/"
   },
@@ -508,6 +522,7 @@ module.exports =
     "id": 63,
     "firstName": "Debra",
     "lastName": "Halahurich",
+    "company": "Absolutely Outer Banks",
     "phone": "(252) 255-1606",
     "street1": "3708 N Croatan Hwy Ste 4",
     "city": "Kitty Hawk",
@@ -515,7 +530,6 @@ module.exports =
     "postalCode": "27949-9259",
     "country": "US",
     "createdOn": "2019-10-27",
-    "notes": "Company: Absolutely Outer Banks",
     "type": "wholesale",
     "website": "http://absolutelyouterbanks.com/"
   },
@@ -531,10 +545,10 @@ module.exports =
     "id": 65,
     "firstName": "Agnes",
     "lastName": "Govern",
+    "company": "Agnes and Mary",
     "email": "agnesandmary@comcast.net",
     "phone": "(206) 941-4339",
-    "createdOn": "2010-05-27",
-    "notes": "Company: Agnes and Mary"
+    "createdOn": "2010-05-27"
   },
   {
     "id": 66,
@@ -585,6 +599,7 @@ module.exports =
     "id": 70,
     "firstName": "Mary",
     "lastName": "Johnson",
+    "company": "Aladdin's Art Gallery",
     "phone": "(606) 325-2597",
     "street1": "728 13th St",
     "city": "Ashland",
@@ -592,7 +607,6 @@ module.exports =
     "postalCode": "41101",
     "country": "US",
     "createdOn": "2022-02-04",
-    "notes": "Company: Aladdin's Art Gallery",
     "type": "wholesale",
     "website": "https://www.aladdinsart.com/"
   },
@@ -619,7 +633,8 @@ module.exports =
     "postalCode": "30047",
     "country": "US",
     "createdOn": "2021-12-01",
-    "notes": "Imported record: 1 order(s), legacy user ID 66831017."
+    "notes": "Imported record: 1 order(s), legacy user ID 66831017.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 73,
@@ -647,7 +662,8 @@ module.exports =
     "firstName": "Alex",
     "lastName": "Nelson",
     "email": "info@zetamari.com",
-    "createdOn": "2025-06-24"
+    "createdOn": "2025-06-24",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 76,
@@ -661,7 +677,8 @@ module.exports =
     "postalCode": "95032",
     "country": "US",
     "createdOn": "2020-12-21",
-    "notes": "Imported record: 1 order(s), $199.00 total spent."
+    "notes": "Imported record: 1 order(s), $199.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 77,
@@ -682,14 +699,14 @@ module.exports =
     "id": 78,
     "firstName": "Alice",
     "lastName": "Nimmo-James",
+    "company": "Alice Nimmo",
     "email": "nimmo.james@gmail.com",
     "street1": "Rural Route #2",
     "city": "Camrose",
     "state": "AB",
     "postalCode": "T4V 2N1",
     "country": "CA",
-    "createdOn": "2014-02-05",
-    "notes": "Company: Alice Nimmo"
+    "createdOn": "2014-02-05"
   },
   {
     "id": 79,
@@ -703,7 +720,8 @@ module.exports =
     "postalCode": "97138",
     "country": "US",
     "createdOn": "2019-05-02",
-    "notes": "Imported record: 1 order(s), $260.00 total spent."
+    "notes": "Imported record: 1 order(s), $260.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 80,
@@ -717,7 +735,8 @@ module.exports =
     "postalCode": "48334",
     "country": "US",
     "createdOn": "2022-05-22",
-    "notes": "Imported record: 1 order(s), $60.28 total spent."
+    "notes": "Imported record: 1 order(s), $60.28 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 81,
@@ -756,7 +775,8 @@ module.exports =
     "postalCode": "93551",
     "country": "US",
     "createdOn": "2023-10-15",
-    "notes": "Imported record: 1 order(s), $274.92 total spent."
+    "notes": "Imported record: 1 order(s), $274.92 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 84,
@@ -797,7 +817,8 @@ module.exports =
     "postalCode": "83619",
     "country": "US",
     "createdOn": "2024-12-18",
-    "notes": "Imported record: 1 order(s), $40.85 total spent."
+    "notes": "Imported record: 1 order(s), $40.85 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 87,
@@ -811,7 +832,8 @@ module.exports =
     "postalCode": "19103",
     "country": "US",
     "createdOn": "2020-04-07",
-    "notes": "Imported record: 2 order(s), $293.00 total spent."
+    "notes": "Imported record: 2 order(s), $293.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 88,
@@ -839,7 +861,8 @@ module.exports =
     "postalCode": "98563",
     "country": "US",
     "createdOn": "2018-09-26",
-    "notes": "Imported record: 2 order(s), $255.00 total spent."
+    "notes": "Imported record: 2 order(s), $255.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 90,
@@ -864,6 +887,7 @@ module.exports =
     "id": 92,
     "firstName": "Frank",
     "lastName": "Polizzi",
+    "company": "Altamira",
     "email": "altamira541@yahoo.com",
     "phone": "(631) 277-0680",
     "street1": "541 Main St",
@@ -872,7 +896,6 @@ module.exports =
     "postalCode": "11751",
     "country": "US",
     "createdOn": "2016-03-01",
-    "notes": "Company: Altamira",
     "type": "wholesale",
     "website": "http://www.altamira-gallery.com/"
   },
@@ -896,7 +919,8 @@ module.exports =
     "postalCode": "98367",
     "country": "US",
     "createdOn": "2024-01-25",
-    "notes": "Imported record: 1 order(s), $218.31 total spent."
+    "notes": "Imported record: 1 order(s), $218.31 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 95,
@@ -993,6 +1017,7 @@ module.exports =
     "id": 103,
     "firstName": "Robbie",
     "lastName": "Dein",
+    "company": "American Crafts by Robbie Dein",
     "email": "robbie@americancraftsbyrobbiedein.com",
     "phone": "(808) 250-3564",
     "street1": "158 E State St",
@@ -1001,13 +1026,14 @@ module.exports =
     "postalCode": "14850",
     "country": "US",
     "createdOn": "2022-02-10",
-    "notes": "Combine shipping with Inv. 10083\nCompany: American Crafts by Robbie Dein",
+    "notes": "Combine shipping with Inv. 10083",
     "type": "wholesale"
   },
   {
     "id": 104,
     "firstName": "Dawnmarie",
     "lastName": "Zimmerman",
+    "company": "American Mosaics (SAMA)",
     "email": "dawnmarie@americanmosaics.org",
     "phone": "(724) 259-7555",
     "street1": "PO Box 624",
@@ -1016,7 +1042,6 @@ module.exports =
     "postalCode": "15658-0624",
     "country": "US",
     "createdOn": "2019-04-29",
-    "notes": "Company: American Mosaics (SAMA)",
     "type": "wholesale",
     "website": "https://americanmosaics.org/"
   },
@@ -1024,6 +1049,7 @@ module.exports =
     "id": 105,
     "firstName": "Teri",
     "lastName": "Favro",
+    "company": "Amethyst Moon",
     "phone": "(619) 464-6666",
     "street1": "8329 La Mesa Blvd",
     "city": "San Diego",
@@ -1031,7 +1057,6 @@ module.exports =
     "postalCode": "91942",
     "country": "US",
     "createdOn": "2020-05-22",
-    "notes": "Company: Amethyst Moon",
     "type": "wholesale",
     "website": "https://shopamethystmoon.com/"
   },
@@ -1039,6 +1064,7 @@ module.exports =
     "id": 106,
     "firstName": "Amy",
     "lastName": "Neuburger",
+    "company": "Amy & Jim Neuburger",
     "email": "amy@planetinternet.us",
     "phone": "(206) 501-9705",
     "street1": "306 W Prospect St",
@@ -1046,15 +1072,15 @@ module.exports =
     "state": "WA",
     "postalCode": "98119",
     "country": "US",
-    "createdOn": "2010-05-27",
-    "notes": "Company: Amy & Jim Neuburger"
+    "createdOn": "2010-05-27"
   },
   {
     "id": 107,
     "firstName": "Amy",
     "lastName": "Ace",
     "email": "amyace@wi.rr.com",
-    "createdOn": "2021-10-18"
+    "createdOn": "2021-10-18",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 108,
@@ -1112,7 +1138,8 @@ module.exports =
     "postalCode": "76502",
     "country": "US",
     "createdOn": "2025-10-30",
-    "notes": "Imported record: 1 order(s), $19.15 total spent."
+    "notes": "Imported record: 1 order(s), $19.15 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 113,
@@ -1140,7 +1167,8 @@ module.exports =
     "postalCode": "62704",
     "country": "US",
     "createdOn": "2021-07-09",
-    "notes": "Imported record: 1 order(s), $26.30 total spent."
+    "notes": "Imported record: 1 order(s), $26.30 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 115,
@@ -1154,7 +1182,8 @@ module.exports =
     "postalCode": "60060",
     "country": "US",
     "createdOn": "2020-08-13",
-    "notes": "Imported record: 1 order(s), $89.30 total spent."
+    "notes": "Imported record: 1 order(s), $89.30 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 116,
@@ -1194,7 +1223,8 @@ module.exports =
     "postalCode": "3037",
     "country": "US",
     "createdOn": "2021-03-01",
-    "notes": "Imported record: 1 order(s), $26.30 total spent."
+    "notes": "Imported record: 1 order(s), $26.30 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 119,
@@ -1268,7 +1298,8 @@ module.exports =
     "postalCode": "98402",
     "country": "US",
     "createdOn": "2017-10-04",
-    "notes": "Apron\nImported record: 5 order(s), $848.09 total spent."
+    "notes": "Apron\nImported record: 5 order(s), $848.09 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 126,
@@ -1282,7 +1313,8 @@ module.exports =
     "postalCode": "54904",
     "country": "US",
     "createdOn": "2019-01-27",
-    "notes": "Imported record: 2 order(s), $498.80 total spent."
+    "notes": "Imported record: 2 order(s), $498.80 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 127,
@@ -1332,7 +1364,8 @@ module.exports =
     "postalCode": "95046",
     "country": "US",
     "createdOn": "2021-08-24",
-    "notes": "Imported record: 1 order(s), $94.00 total spent."
+    "notes": "Imported record: 1 order(s), $94.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 131,
@@ -1481,7 +1514,8 @@ module.exports =
     "postalCode": "98012",
     "country": "US",
     "createdOn": "2017-02-13",
-    "notes": "Imported record: 1 order(s), $100.00 total spent."
+    "notes": "Imported record: 1 order(s), $100.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 144,
@@ -1495,7 +1529,8 @@ module.exports =
     "postalCode": "85259",
     "country": "US",
     "createdOn": "2020-03-30",
-    "notes": "Imported record: 1 order(s), $255.00 total spent."
+    "notes": "Imported record: 1 order(s), $255.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 145,
@@ -1587,7 +1622,8 @@ module.exports =
     "postalCode": "98020-2656",
     "country": "US",
     "createdOn": "2019-04-03",
-    "notes": "Imported record: 2 order(s), $260.00 total spent."
+    "notes": "Imported record: 2 order(s), $260.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 153,
@@ -1640,7 +1676,8 @@ module.exports =
     "postalCode": "96001",
     "country": "US",
     "createdOn": "2021-02-07",
-    "notes": "Imported record: 1 order(s), $77.60 total spent."
+    "notes": "Imported record: 1 order(s), $77.60 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 157,
@@ -1691,7 +1728,8 @@ module.exports =
     "firstName": "Anita",
     "lastName": "Damron",
     "email": "mail@anitadamron.com",
-    "createdOn": "2025-02-21"
+    "createdOn": "2025-02-21",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 162,
@@ -1728,7 +1766,8 @@ module.exports =
     "postalCode": "97461",
     "country": "US",
     "createdOn": "2020-06-03",
-    "notes": "Imported record: 1 order(s), $115.00 total spent."
+    "notes": "Imported record: 1 order(s), $115.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 166,
@@ -1847,7 +1886,8 @@ module.exports =
     "postalCode": "22315",
     "country": "US",
     "createdOn": "2019-10-14",
-    "notes": "Imported record: 1 order(s), $100.00 total spent."
+    "notes": "Imported record: 1 order(s), $100.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 176,
@@ -1861,14 +1901,16 @@ module.exports =
     "postalCode": "75489",
     "country": "US",
     "createdOn": "2020-03-05",
-    "notes": "Imported record: 2 order(s), $125.00 total spent."
+    "notes": "Imported record: 2 order(s), $125.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 177,
     "firstName": "Annastasia",
     "lastName": "Kariuki",
     "email": "annastasia@jmkjanitorialservices.com",
-    "createdOn": "2025-05-26"
+    "createdOn": "2025-05-26",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 178,
@@ -1897,7 +1939,8 @@ module.exports =
     "postalCode": "27376",
     "country": "US",
     "createdOn": "2024-11-03",
-    "notes": "Imported record: 1 order(s), $179.92 total spent."
+    "notes": "Imported record: 1 order(s), $179.92 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 180,
@@ -1923,7 +1966,8 @@ module.exports =
     "postalCode": "33914",
     "country": "US",
     "createdOn": "2021-02-08",
-    "notes": "Imported record: 1 order(s), $46.00 total spent."
+    "notes": "Imported record: 1 order(s), $46.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 183,
@@ -1981,7 +2025,8 @@ module.exports =
     "postalCode": "99835",
     "country": "US",
     "createdOn": "2021-10-18",
-    "notes": "Imported record: 1 order(s), $56.30 total spent."
+    "notes": "Imported record: 1 order(s), $56.30 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 187,
@@ -1995,7 +2040,8 @@ module.exports =
     "postalCode": "34986",
     "country": "US",
     "createdOn": "2020-03-31",
-    "notes": "Imported record: 1 order(s), $59.00 total spent."
+    "notes": "Imported record: 1 order(s), $59.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 188,
@@ -2042,7 +2088,8 @@ module.exports =
     "postalCode": "20112",
     "country": "US",
     "createdOn": "2021-01-30",
-    "notes": "Imported record: 1 order(s), $48.30 total spent."
+    "notes": "Imported record: 1 order(s), $48.30 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 192,
@@ -2054,6 +2101,7 @@ module.exports =
     "id": 193,
     "firstName": "Colleen",
     "lastName": "Goldrich",
+    "company": "Annie Kaill's",
     "email": "colleen@anniekaills.com",
     "phone": "(907) 586-2880",
     "street1": "124 Seward St",
@@ -2062,7 +2110,6 @@ module.exports =
     "postalCode": "99801",
     "country": "US",
     "createdOn": "2014-11-14",
-    "notes": "Company: Annie Kaill's",
     "type": "wholesale",
     "website": "https://www.anniekaills.com/"
   },
@@ -2085,14 +2132,14 @@ module.exports =
     "id": 195,
     "firstName": "Aniceta",
     "lastName": "Tyrrell",
+    "company": "Annie Tyrrell",
     "phone": "(360) 698-6066",
     "street1": "4174 Canoe Trl NE",
     "city": "Bremerton",
     "state": "WA",
     "postalCode": "98311",
     "country": "US",
-    "createdOn": "2019-07-11",
-    "notes": "Company: Annie Tyrrell"
+    "createdOn": "2019-07-11"
   },
   {
     "id": 196,
@@ -2136,7 +2183,8 @@ module.exports =
     "postalCode": "87107-3137",
     "country": "US",
     "createdOn": "2021-02-15",
-    "notes": "Imported record: 1 order(s), $88.00 total spent."
+    "notes": "Imported record: 1 order(s), $88.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 200,
@@ -2149,7 +2197,8 @@ module.exports =
     "postalCode": "79924",
     "country": "US",
     "createdOn": "2021-05-04",
-    "notes": "Imported record: 1 order(s), $18.30 total spent."
+    "notes": "Imported record: 1 order(s), $18.30 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 201,
@@ -2184,6 +2233,7 @@ module.exports =
     "id": 203,
     "firstName": "Niki",
     "lastName": "Kinkade",
+    "company": "Art Center of the Bluegrass",
     "email": "niki@artcenterky.org",
     "phone": "(859) 236-4054",
     "street1": "401 W Main St",
@@ -2192,13 +2242,13 @@ module.exports =
     "postalCode": "40422",
     "country": "US",
     "createdOn": "2023-08-24",
-    "notes": "Company: Art Center of the Bluegrass",
     "type": "wholesale"
   },
   {
     "id": 204,
     "firstName": "Carla",
     "lastName": "Nierman",
+    "company": "ArtCenter Manatee",
     "email": "carla@artcentermanatee.org",
     "phone": "(941) 746-2862",
     "street1": "209 9th St W",
@@ -2207,13 +2257,13 @@ module.exports =
     "postalCode": "34205",
     "country": "US",
     "createdOn": "2022-08-03",
-    "notes": "Company: ArtCenter Manatee",
     "website": "https://artcentermanatee.org/"
   },
   {
     "id": 205,
     "firstName": "Sharyn",
     "lastName": "Winer",
+    "company": "Artcraft Collection",
     "email": "sw6780@verizon.net",
     "phone": "(410) 880-4863",
     "street1": "8600 Foundry St Ste 2074",
@@ -2222,7 +2272,7 @@ module.exports =
     "postalCode": "20763",
     "country": "US",
     "createdOn": "2020-01-17",
-    "notes": "AJ Properties(301) 604-6518 / Sharyn Winer (sw6780@verizon.net)(410) 551-9116 / Genny (genny@ajprop.net)\nCompany: Artcraft Collection",
+    "notes": "AJ Properties(301) 604-6518 / Sharyn Winer (sw6780@verizon.net)(410) 551-9116 / Genny (genny@ajprop.net)",
     "type": "wholesale",
     "website": "https://www.artcraftonline.com/"
   },
@@ -2230,6 +2280,7 @@ module.exports =
     "id": 206,
     "firstName": "Ann",
     "lastName": "Kaplan",
+    "company": "Artifacts Gallery",
     "email": "info@artifactsindy.com",
     "phone": "(800) 304-3161",
     "street1": "6327 Guilford Ave",
@@ -2238,13 +2289,13 @@ module.exports =
     "postalCode": "46220",
     "country": "US",
     "createdOn": "2011-11-04",
-    "notes": "Company: Artifacts Gallery",
     "type": "wholesale",
     "website": "http://artifactsindy.com/"
   },
   {
     "id": 207,
     "firstName": "Mike",
+    "company": "Artique",
     "email": "artiqueinfo@gmail.com",
     "phone": "(859) 272-8802",
     "street1": "3555 Nicholasville Rd #921",
@@ -2253,7 +2304,7 @@ module.exports =
     "postalCode": "40503",
     "country": "US",
     "createdOn": "2013-09-17",
-    "notes": "Janice at (859) 272-8802Jamie is manager to call about invoices\nCompany: Artique",
+    "notes": "Janice at (859) 272-8802Jamie is manager to call about invoices",
     "type": "wholesale",
     "website": "https://www.artiquegallery.com/"
   },
@@ -2261,6 +2312,7 @@ module.exports =
     "id": 208,
     "firstName": "Domenic & Joanne",
     "lastName": "Graziano",
+    "company": "Artisan Marketplace",
     "email": "joanne@flowersbydg.com",
     "phone": "(267) 989-1481",
     "street1": "PO Box 1257",
@@ -2269,7 +2321,6 @@ module.exports =
     "postalCode": "18966",
     "country": "US",
     "createdOn": "2012-07-30",
-    "notes": "Company: Artisan Marketplace",
     "type": "wholesale",
     "website": "https://www.localartisanmarket.com/"
   },
@@ -2277,6 +2328,7 @@ module.exports =
     "id": 209,
     "firstName": "Cynthia",
     "lastName": "Logan",
+    "company": "Artisan's Marketplace, An (CT)",
     "email": "artisansmct@comcast.net",
     "phone": "(860) 747-4121",
     "street1": "120 E St",
@@ -2285,7 +2337,7 @@ module.exports =
     "postalCode": "6062",
     "country": "US",
     "createdOn": "2010-05-27",
-    "notes": "Former owner? Martha Couture\nCompany: Artisan's Marketplace, An (CT)",
+    "notes": "Former owner? Martha Couture",
     "type": "wholesale",
     "website": "https://artisansmarketplacect.com/"
   },
@@ -2293,6 +2345,7 @@ module.exports =
     "id": 210,
     "firstName": "Helen",
     "lastName": "Cuff",
+    "company": "Artisans Gallery",
     "email": "artisansgallery@comcast.net",
     "phone": "(215) 794-3112",
     "street1": "PO Box 133",
@@ -2301,7 +2354,6 @@ module.exports =
     "postalCode": "18931",
     "country": "US",
     "createdOn": "2013-01-25",
-    "notes": "Company: Artisans Gallery",
     "type": "wholesale",
     "website": "http://artisansgallery.com/"
   },
@@ -2309,6 +2361,7 @@ module.exports =
     "id": 211,
     "firstName": "Cindy",
     "lastName": "Krause",
+    "company": "Artisans Sarasota",
     "email": "artisans.sarasota@gmail.com",
     "phone": "(941) 388-0082",
     "street1": "301 John Ringling Blvd",
@@ -2317,7 +2370,6 @@ module.exports =
     "postalCode": "34236",
     "country": "US",
     "createdOn": "2014-02-28",
-    "notes": "Company: Artisans Sarasota",
     "type": "wholesale",
     "website": "https://artsihome.com/"
   },
@@ -2325,6 +2377,7 @@ module.exports =
     "id": 212,
     "firstName": "Elizabeth",
     "lastName": "Stevenson",
+    "company": "Artisans Way",
     "phone": "(978) 369-4400",
     "street1": "18 Walden St",
     "city": "Concord",
@@ -2332,7 +2385,6 @@ module.exports =
     "postalCode": "1742",
     "country": "US",
     "createdOn": "2023-06-23",
-    "notes": "Company: Artisans Way",
     "type": "wholesale",
     "website": "http://www.artisansway.net/"
   },
@@ -2340,6 +2392,7 @@ module.exports =
     "id": 213,
     "firstName": "Shannon",
     "lastName": "Price",
+    "company": "Artisans, The",
     "email": "theartisansofmclean@gmail.com",
     "phone": "(703) 506-0158",
     "street1": "1368 Chain Bridge Rd",
@@ -2348,7 +2401,7 @@ module.exports =
     "postalCode": "22101",
     "country": "US",
     "createdOn": "2011-08-14",
-    "notes": "Amy: Office Manager for Payment\nCompany: Artisans, The",
+    "notes": "Amy: Office Manager for Payment",
     "type": "wholesale",
     "website": "https://www.theartisans.biz/"
   },
@@ -2356,6 +2409,7 @@ module.exports =
     "id": 214,
     "firstName": "Gregg",
     "lastName": "Dibiaso",
+    "company": "Artitudes",
     "email": "artitudes@conversent.net",
     "phone": "(617) 244-9220",
     "street1": "PO Box 650201",
@@ -2364,7 +2418,6 @@ module.exports =
     "postalCode": "2465",
     "country": "US",
     "createdOn": "2010-05-27",
-    "notes": "Company: Artitudes",
     "type": "wholesale",
     "website": "https://www.artitudesgallery.com/"
   },
@@ -2372,6 +2425,7 @@ module.exports =
     "id": 215,
     "firstName": "Amy",
     "lastName": "Hoffmann",
+    "company": "Arts and Artisans",
     "email": "amy@artsartisans.com",
     "phone": "(312) 855-9220",
     "street1": "70 E Lake St Ste 106",
@@ -2380,7 +2434,6 @@ module.exports =
     "postalCode": "60601",
     "country": "US",
     "createdOn": "2010-05-27",
-    "notes": "Company: Arts and Artisans",
     "type": "wholesale",
     "website": "https://artsartisans.com/"
   },
@@ -2388,6 +2441,7 @@ module.exports =
     "id": 216,
     "firstName": "Rita",
     "lastName": "Marino",
+    "company": "Arts Plus Gallery",
     "email": "artsplusgallery@aol.com",
     "phone": "(856) 854-5500",
     "street1": "704 Haddon Ave Ste A",
@@ -2396,7 +2450,7 @@ module.exports =
     "postalCode": "8108",
     "country": "US",
     "createdOn": "2010-05-27",
-    "notes": "UPS Shipping number: 72WW84\nCompany: Arts Plus Gallery",
+    "notes": "UPS Shipping number: 72WW84",
     "type": "wholesale",
     "website": "https://www.artsplusgallery.com/"
   },
@@ -2404,6 +2458,7 @@ module.exports =
     "id": 217,
     "firstName": "Iris",
     "lastName": "Vail",
+    "company": "Artworks",
     "email": "artworks@mtaonline.net",
     "phone": "(907) 694-5956",
     "street1": "11421 Old Glenn Hwy",
@@ -2412,7 +2467,6 @@ module.exports =
     "postalCode": "99577",
     "country": "US",
     "createdOn": "2010-05-27",
-    "notes": "Company: Artworks",
     "type": "wholesale",
     "website": "https://www.facebook.com/artworkseagleriver/"
   },
@@ -2420,6 +2474,7 @@ module.exports =
     "id": 218,
     "firstName": "Tom",
     "lastName": "Robinson",
+    "company": "Artworks (Austin)",
     "email": "tom@artworksaustin.com",
     "phone": "(512) 472-1550",
     "street1": "1214 W 6th St Ste 105",
@@ -2428,7 +2483,6 @@ module.exports =
     "postalCode": "78703",
     "country": "US",
     "createdOn": "2015-06-23",
-    "notes": "Company: Artworks (Austin)",
     "type": "wholesale",
     "website": "http://artworksaustin.com/"
   },
@@ -2436,6 +2490,7 @@ module.exports =
     "id": 219,
     "firstName": "Debbie",
     "lastName": "Zuckerman",
+    "company": "Artworks Gallery",
     "email": "dzuckey@gmail.com",
     "phone": "(269) 637-7789",
     "street1": "263 Broadway St",
@@ -2444,13 +2499,13 @@ module.exports =
     "postalCode": "49090",
     "country": "US",
     "createdOn": "2010-05-27",
-    "notes": "Company: Artworks Gallery",
     "type": "wholesale"
   },
   {
     "id": 220,
     "firstName": "Patti",
     "lastName": "Larrabee",
+    "company": "Artworks Park City",
     "email": "larrabeebruce@comcast.net",
     "phone": "(453) 649-4462",
     "street1": "461 Main St",
@@ -2459,7 +2514,6 @@ module.exports =
     "postalCode": "84060",
     "country": "US",
     "createdOn": "2018-05-10",
-    "notes": "Company: Artworks Park City",
     "type": "wholesale",
     "website": "http://artworkspc.com/"
   },
@@ -2499,7 +2553,8 @@ module.exports =
     "postalCode": "98103",
     "country": "US",
     "createdOn": "2018-03-08",
-    "notes": "Imported record: 2 order(s), $375.00 total spent."
+    "notes": "Imported record: 2 order(s), $375.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 225,
@@ -2525,7 +2580,8 @@ module.exports =
     "postalCode": "20878",
     "country": "US",
     "createdOn": "2020-06-20",
-    "notes": "Imported record: 1 order(s), $93.00 total spent."
+    "notes": "Imported record: 1 order(s), $93.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 227,
@@ -2546,15 +2602,17 @@ module.exports =
     "id": 228,
     "firstName": "Heather",
     "lastName": "Kruger",
+    "company": "Austin School of Mosaic Art",
     "email": "hekruger@gmail.com",
     "createdOn": "2019-09-23",
-    "notes": "PERMANENTLY CLOSED Refer to Austin Mosaic Guild instead (https://amg.clubexpress.com)\nCompany: Austin School of Mosaic Art",
+    "notes": "PERMANENTLY CLOSED Refer to Austin Mosaic Guild instead (https://amg.clubexpress.com)",
     "website": "http://austinmosaicschool.com"
   },
   {
     "id": 229,
     "firstName": "John & Mavis",
     "lastName": "Terry",
+    "company": "Avalon Gallery",
     "email": "avalon_gallery@bellsouth.net",
     "phone": "(561) 272-9155",
     "street1": "425 E Atlantic Ave",
@@ -2563,7 +2621,6 @@ module.exports =
     "postalCode": "33483",
     "country": "US",
     "createdOn": "2020-12-28",
-    "notes": "Company: Avalon Gallery",
     "type": "wholesale",
     "website": "http://www.avalononatlantic.com/"
   },
@@ -2593,7 +2650,8 @@ module.exports =
     "postalCode": "98837",
     "country": "US",
     "createdOn": "2025-07-01",
-    "notes": "Imported record: 1 order(s), $115.94 total spent."
+    "notes": "Imported record: 1 order(s), $115.94 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 232,
@@ -2622,7 +2680,8 @@ module.exports =
     "postalCode": "59846-9667",
     "country": "US",
     "createdOn": "2024-12-16",
-    "notes": "Imported record: 1 order(s), $262.50 total spent."
+    "notes": "Imported record: 1 order(s), $262.50 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 235,
@@ -2649,7 +2708,8 @@ module.exports =
     "postalCode": "99645",
     "country": "US",
     "createdOn": "2019-02-24",
-    "notes": "Additional contact: glassartbybarb@gmail.com\nImported record: 1 order(s), $117.50 total spent."
+    "notes": "Additional contact: glassartbybarb@gmail.com\nImported record: 1 order(s), $117.50 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 237,
@@ -2663,7 +2723,8 @@ module.exports =
     "postalCode": "98028",
     "country": "US",
     "createdOn": "2021-10-05",
-    "notes": "Imported record: 1 order(s), $86.13 total spent."
+    "notes": "Imported record: 1 order(s), $86.13 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 238,
@@ -2697,7 +2758,8 @@ module.exports =
     "postalCode": "85326",
     "country": "US",
     "createdOn": "2021-05-26",
-    "notes": "Imported record: 1 order(s), $34.30 total spent."
+    "notes": "Imported record: 1 order(s), $34.30 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 241,
@@ -2711,7 +2773,8 @@ module.exports =
     "postalCode": "19335",
     "country": "US",
     "createdOn": "2021-02-03",
-    "notes": "Imported record: 1 order(s), $46.00 total spent."
+    "notes": "Imported record: 1 order(s), $46.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 242,
@@ -2728,6 +2791,7 @@ module.exports =
     "id": 243,
     "firstName": "Barbara",
     "lastName": "Olson",
+    "company": "Barbara J Olson",
     "email": "bj.olson_44@yahoo.com",
     "phone": "(425) 297-3225",
     "street1": "16869 Wales St SE",
@@ -2736,7 +2800,8 @@ module.exports =
     "postalCode": "98272",
     "country": "US",
     "createdOn": "2019-04-11",
-    "notes": "Company: Barbara J Olson\nImported record: 3 order(s), $703.06 total spent."
+    "notes": "Imported record: 3 order(s), $703.06 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 244,
@@ -2750,7 +2815,8 @@ module.exports =
     "postalCode": "93105",
     "country": "US",
     "createdOn": "2018-09-10",
-    "notes": "Imported record: 3 order(s), $318.00 total spent."
+    "notes": "Imported record: 3 order(s), $318.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 245,
@@ -2812,7 +2878,8 @@ module.exports =
     "postalCode": "98563",
     "country": "US",
     "createdOn": "2017-10-04",
-    "notes": "Additional contact: ablickiss80@comcast.net\nImported record: 5 order(s), $654.00 total spent."
+    "notes": "Additional contact: ablickiss80@comcast.net\nImported record: 5 order(s), $654.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 250,
@@ -2825,7 +2892,8 @@ module.exports =
     "firstName": "Barbara",
     "lastName": "McKibbin",
     "email": "mckibbinb@gmail.com",
-    "createdOn": "2020-05-20"
+    "createdOn": "2020-05-20",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 252,
@@ -2839,7 +2907,8 @@ module.exports =
     "postalCode": "98020",
     "country": "US",
     "createdOn": "2020-09-12",
-    "notes": "Imported record: 2 order(s), $167.81 total spent."
+    "notes": "Imported record: 2 order(s), $167.81 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 253,
@@ -2912,7 +2981,8 @@ module.exports =
     "postalCode": "95519",
     "country": "US",
     "createdOn": "2018-09-23",
-    "notes": "Imported record: 1 order(s), $89.00 total spent."
+    "notes": "Imported record: 1 order(s), $89.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 259,
@@ -2931,19 +3001,20 @@ module.exports =
     "id": 260,
     "firstName": "Gretchen",
     "lastName": "Plank",
+    "company": "Barry Harmon & Gretchen Plank",
     "email": "gretchenplank@yahoo.com",
     "street1": "1524 35th Ave",
     "city": "Seattle",
     "state": "WA",
     "postalCode": "98122",
     "country": "US",
-    "createdOn": "2010-05-27",
-    "notes": "Company: Barry Harmon & Gretchen Plank"
+    "createdOn": "2010-05-27"
   },
   {
     "id": 261,
     "firstName": "Cyndi",
     "lastName": "Millns",
+    "company": "Bayside Gallery",
     "email": "cyndi@baysidegallery.net",
     "phone": "(231) 271-4975",
     "street1": "204 N Saint Joseph St",
@@ -2951,8 +3022,7 @@ module.exports =
     "state": "MI",
     "postalCode": "49682",
     "country": "US",
-    "createdOn": "2022-06-26",
-    "notes": "Company: Bayside Gallery"
+    "createdOn": "2022-06-26"
   },
   {
     "id": 262,
@@ -2996,6 +3066,7 @@ module.exports =
     "id": 266,
     "firstName": "Lupe",
     "lastName": "Plank",
+    "company": "Bella Luz",
     "email": "bellaluz@cox.net",
     "phone": "(316) 440-2590",
     "street1": "300 N Mead #105",
@@ -3004,7 +3075,6 @@ module.exports =
     "postalCode": "67202",
     "country": "US",
     "createdOn": "2010-05-27",
-    "notes": "Company: Bella Luz",
     "type": "wholesale",
     "website": "https://www.facebook.com/bellaluzgifts/"
   },
@@ -3012,6 +3082,7 @@ module.exports =
     "id": 267,
     "firstName": "Matt",
     "lastName": "Chambers",
+    "company": "Bellagio Everyday",
     "phone": "(828) 277-8100",
     "street1": "40 Biltmore Ave",
     "street2": "c/o New Morning Gallery",
@@ -3020,7 +3091,6 @@ module.exports =
     "postalCode": "28801",
     "country": "US",
     "createdOn": "2012-04-10",
-    "notes": "Company: Bellagio Everyday",
     "type": "wholesale",
     "website": "https://www.bellagioarttowear.com/"
   },
@@ -3048,7 +3118,8 @@ module.exports =
     "postalCode": "97391",
     "country": "US",
     "createdOn": "2021-06-09",
-    "notes": "Imported record: 1 order(s), $88.00 total spent."
+    "notes": "Imported record: 1 order(s), $88.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 270,
@@ -3123,6 +3194,7 @@ module.exports =
     "id": 275,
     "firstName": "Elizabeth",
     "lastName": "Nilson",
+    "company": "Betsy Nilson",
     "email": "bknilson@outlook.com",
     "phone": "(206) 228-8085",
     "street1": "18505 37th Ave NE",
@@ -3131,7 +3203,8 @@ module.exports =
     "postalCode": "98155",
     "country": "US",
     "createdOn": "2019-05-16",
-    "notes": "Company: Betsy Nilson\nAdditional contact: bknilson1@hotmail.com\nImported record: 1 order(s), $125.00 total spent."
+    "notes": "Additional contact: bknilson1@hotmail.com\nImported record: 1 order(s), $125.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 276,
@@ -3170,7 +3243,8 @@ module.exports =
     "postalCode": "98199",
     "country": "US",
     "createdOn": "2017-10-07",
-    "notes": "Additional contact: bette-magnolia@comcast.net\nImported record: 2 order(s), $255.00 total spent."
+    "notes": "Additional contact: bette-magnolia@comcast.net\nImported record: 2 order(s), $255.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 279,
@@ -3274,7 +3348,8 @@ module.exports =
     "postalCode": "44012",
     "country": "US",
     "createdOn": "2025-08-17",
-    "notes": "Imported record: 1 order(s), $75.28 total spent."
+    "notes": "Imported record: 1 order(s), $75.28 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 288,
@@ -3288,7 +3363,8 @@ module.exports =
     "postalCode": "23181",
     "country": "US",
     "createdOn": "2020-02-10",
-    "notes": "Imported record: 1 order(s), $42.50 total spent."
+    "notes": "Imported record: 1 order(s), $42.50 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 289,
@@ -3301,7 +3377,8 @@ module.exports =
     "postalCode": "33704",
     "country": "US",
     "createdOn": "2020-03-27",
-    "notes": "Imported record: 1 order(s), $170.00 total spent."
+    "notes": "Imported record: 1 order(s), $170.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 290,
@@ -3329,7 +3406,8 @@ module.exports =
     "firstName": "Blanche",
     "lastName": "Rumsey",
     "email": "blanche.rumsey@useproakira.com",
-    "createdOn": "2025-03-14"
+    "createdOn": "2025-03-14",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 293,
@@ -3344,6 +3422,7 @@ module.exports =
     "id": 294,
     "firstName": "Julie",
     "lastName": "Winter-Havel",
+    "company": "Blue Iris, The",
     "email": "blueiris@iowatelecom.net",
     "phone": "(641) 394-4158",
     "street1": "110 W Main St",
@@ -3352,7 +3431,6 @@ module.exports =
     "postalCode": "50659",
     "country": "US",
     "createdOn": "2010-05-27",
-    "notes": "Company: Blue Iris, The",
     "type": "wholesale",
     "website": "https://www.flowerstheblueiris.com/"
   },
@@ -3360,6 +3438,7 @@ module.exports =
     "id": 295,
     "firstName": "Cathie",
     "lastName": "Walz",
+    "company": "Blue Marble, The",
     "email": "bluemarblegifts@aol.com",
     "phone": "(413) 253-0328",
     "street1": "150 Main St",
@@ -3368,7 +3447,6 @@ module.exports =
     "postalCode": "1060",
     "country": "US",
     "createdOn": "2014-10-03",
-    "notes": "Company: Blue Marble, The",
     "type": "wholesale",
     "website": "http://thebluemarble.biz/"
   },
@@ -3376,6 +3454,7 @@ module.exports =
     "id": 296,
     "firstName": "Sandra",
     "lastName": "Peruzzi",
+    "company": "Blue Moon Gift Shops",
     "email": "speruzzi48@hotmail.com",
     "phone": "(910) 799-5793",
     "street1": "203 Racine Dr",
@@ -3384,7 +3463,6 @@ module.exports =
     "postalCode": "28403",
     "country": "US",
     "createdOn": "2013-10-14",
-    "notes": "Company: Blue Moon Gift Shops",
     "type": "wholesale",
     "website": "https://bluemoongiftshops.com/"
   },
@@ -3468,7 +3546,8 @@ module.exports =
     "postalCode": "93420-4917",
     "country": "US",
     "createdOn": "2020-11-30",
-    "notes": "Imported record: 3 order(s), $600.90 total spent."
+    "notes": "Imported record: 3 order(s), $600.90 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 303,
@@ -3497,7 +3576,8 @@ module.exports =
     "postalCode": "64468",
     "country": "US",
     "createdOn": "2021-01-30",
-    "notes": "Imported record: 1 order(s), $23.30 total spent."
+    "notes": "Imported record: 1 order(s), $23.30 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 305,
@@ -3518,6 +3598,7 @@ module.exports =
     "id": 306,
     "firstName": "Suzanne",
     "lastName": "Lauzier",
+    "company": "Brahms Mount",
     "email": "freeportstore@brahmsmount.com",
     "phone": "(206) 869-4025",
     "street1": "15 Main St",
@@ -3526,7 +3607,6 @@ module.exports =
     "postalCode": "4032",
     "country": "US",
     "createdOn": "2015-06-01",
-    "notes": "Company: Brahms Mount",
     "type": "wholesale",
     "website": "http://www.brahmsmount.com/"
   },
@@ -3542,7 +3622,8 @@ module.exports =
     "postalCode": "98034",
     "country": "US",
     "createdOn": "2025-12-29",
-    "notes": "Imported record: 1 order(s), $314.35 total spent."
+    "notes": "Imported record: 1 order(s), $314.35 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 308,
@@ -3563,6 +3644,7 @@ module.exports =
     "id": 309,
     "firstName": "Nik",
     "lastName": "Olhausen",
+    "company": "Breach the Moon Gallery",
     "email": "btmg@oregoncoastgalleries.com",
     "phone": "(541) 265-9698",
     "street1": "434 SW Bay Blvd",
@@ -3571,7 +3653,6 @@ module.exports =
     "postalCode": "97365",
     "country": "US",
     "createdOn": "2025-10-14",
-    "notes": "Company: Breach the Moon Gallery",
     "type": "wholesale",
     "website": "https://oregoncoastgalleries.net/breach-the-moon-gallery/"
   },
@@ -3618,7 +3699,8 @@ module.exports =
     "postalCode": "10522",
     "country": "US",
     "createdOn": "2019-12-28",
-    "notes": "Imported record: 1 order(s), $438.00 total spent."
+    "notes": "Imported record: 1 order(s), $438.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 313,
@@ -3645,6 +3727,7 @@ module.exports =
     "id": 315,
     "firstName": "Claire",
     "lastName": "Johnston",
+    "company": "Brewery Pottery (Johnston Gallery)",
     "email": "potters@johnstongallery.com",
     "phone": "(608) 987-3669",
     "street1": "276 Shake Rag St",
@@ -3653,7 +3736,6 @@ module.exports =
     "postalCode": "53565",
     "country": "US",
     "createdOn": "2014-07-14",
-    "notes": "Company: Brewery Pottery (Johnston Gallery)",
     "type": "wholesale",
     "website": "http://johnstongallery.com"
   },
@@ -3672,7 +3754,8 @@ module.exports =
     "firstName": "Brian",
     "lastName": "Chalmers",
     "email": "tbchalmers@hotmail.com",
-    "createdOn": "2024-12-26"
+    "createdOn": "2024-12-26",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 318,
@@ -3700,7 +3783,8 @@ module.exports =
     "postalCode": "98103-6227",
     "country": "US",
     "createdOn": "2025-12-30",
-    "notes": "Imported record: 1 order(s), $579.33 total spent."
+    "notes": "Imported record: 1 order(s), $579.33 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 320,
@@ -3760,7 +3844,8 @@ module.exports =
     "firstName": "Bronne",
     "lastName": "Wilson",
     "email": "bronnew@gmail.com",
-    "createdOn": "2023-01-01"
+    "createdOn": "2023-01-01",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 325,
@@ -3776,6 +3861,7 @@ module.exports =
   {
     "id": 326,
     "firstName": "Julie",
+    "company": "Buffalo Collection",
     "email": "julie@scenicmesa.com",
     "phone": "(970) 872-6031",
     "street1": "122 E Bridge St",
@@ -3785,7 +3871,6 @@ module.exports =
     "postalCode": "81419",
     "country": "US",
     "createdOn": "2012-02-02",
-    "notes": "Company: Buffalo Collection",
     "type": "wholesale",
     "website": "https://www.buffalocollection.com/"
   },
@@ -3793,6 +3878,7 @@ module.exports =
     "id": 327,
     "firstName": "Kay",
     "lastName": "Kuenning",
+    "company": "Buffalo Creek Designs",
     "email": "buffalo-creek@msn.com",
     "phone": "(402) 420-2620",
     "street1": "701 P St",
@@ -3801,13 +3887,13 @@ module.exports =
     "postalCode": "68508",
     "country": "US",
     "createdOn": "2010-05-27",
-    "notes": "Company: Buffalo Creek Designs",
     "type": "wholesale"
   },
   {
     "id": 328,
     "firstName": "Karen",
     "lastName": "Rohach",
+    "company": "By the Bay",
     "email": "info@bythebaygallery.com",
     "phone": "(805) 772-5563",
     "street1": "895 Embarcadero",
@@ -3816,7 +3902,6 @@ module.exports =
     "postalCode": "93442",
     "country": "US",
     "createdOn": "2013-02-25",
-    "notes": "Company: By the Bay",
     "type": "wholesale",
     "website": "http://www.bythebaygallery.com"
   },
@@ -3832,12 +3917,14 @@ module.exports =
     "postalCode": "27615",
     "country": "US",
     "createdOn": "2017-06-01",
-    "notes": "Imported record: 1 order(s), $120.00 total spent."
+    "notes": "Imported record: 1 order(s), $120.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 330,
     "firstName": "C",
     "lastName": "Sero",
+    "company": "C A Sero",
     "email": "cathsero@gmail.com",
     "street1": "5915 Lookout Ridge Apt 101",
     "city": "Grand Rapids",
@@ -3845,12 +3932,13 @@ module.exports =
     "postalCode": "49546",
     "country": "US",
     "createdOn": "2023-02-20",
-    "notes": "Company: C A Sero\nImported record: 1 order(s), $132.50 total spent."
+    "notes": "Imported record: 1 order(s), $132.50 total spent."
   },
   {
     "id": 331,
     "firstName": "Jody",
     "lastName": "Fournier",
+    "company": "Cabernet Cowgirl",
     "email": "thecabernetcowgirl@gmail.com",
     "phone": "(303) 518-9516",
     "street1": "6814 S Buckley Rd",
@@ -3858,13 +3946,13 @@ module.exports =
     "state": "CO",
     "postalCode": "80016",
     "country": "US",
-    "createdOn": "2018-02-19",
-    "notes": "Company: Cabernet Cowgirl"
+    "createdOn": "2018-02-19"
   },
   {
     "id": 332,
     "firstName": "Mark",
     "lastName": "Estomin",
+    "company": "Calgo Gardens",
     "email": "info@calgogardens.com",
     "phone": "(732) 919-7770",
     "street1": "462 Adelphia Rd",
@@ -3873,7 +3961,6 @@ module.exports =
     "postalCode": "7728",
     "country": "US",
     "createdOn": "2014-03-19",
-    "notes": "Company: Calgo Gardens",
     "type": "wholesale",
     "website": "http://www.calgogardens.com"
   },
@@ -3889,6 +3976,7 @@ module.exports =
     "id": 334,
     "firstName": "Tracy",
     "lastName": "Camille Lane",
+    "company": "Camille's of Bristol",
     "phone": "(574) 848-4904",
     "street1": "502 W Vistula St",
     "city": "Bristol",
@@ -3896,7 +3984,6 @@ module.exports =
     "postalCode": "46507",
     "country": "US",
     "createdOn": "2024-07-26",
-    "notes": "Company: Camille's of Bristol",
     "type": "wholesale",
     "website": "http://www.camillesfloralshop.com/"
   },
@@ -3904,6 +3991,7 @@ module.exports =
     "id": 335,
     "firstName": "Jane",
     "lastName": "Campbell",
+    "company": "Campbell Pottery Store",
     "email": "campbellpsg@aol.com",
     "phone": "(814) 734-8800",
     "street1": "146 Railroad St",
@@ -3913,7 +4001,7 @@ module.exports =
     "postalCode": "16403",
     "country": "US",
     "createdOn": "2010-05-27",
-    "notes": "Permanently Closed, July 2021\nCompany: Campbell Pottery Store",
+    "notes": "Permanently Closed, July 2021",
     "type": "wholesale",
     "website": "http://www.campbellpotterystore.com/"
   },
@@ -3929,7 +4017,8 @@ module.exports =
     "postalCode": "98251",
     "country": "US",
     "createdOn": "2021-02-03",
-    "notes": "Imported record: 1 order(s), $33.03 total spent."
+    "notes": "Imported record: 1 order(s), $33.03 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 337,
@@ -3943,7 +4032,8 @@ module.exports =
     "postalCode": "20832",
     "country": "US",
     "createdOn": "2021-06-17",
-    "notes": "Imported record: 2 order(s), $56.28 total spent, legacy user ID 59797502."
+    "notes": "Imported record: 2 order(s), $56.28 total spent, legacy user ID 59797502.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 338,
@@ -3960,19 +4050,20 @@ module.exports =
   {
     "id": 339,
     "firstName": "Barbara",
+    "company": "Candle Tree",
     "phone": "(541) 302-9100",
     "street1": "296 E 5th St #263",
     "city": "Eugene",
     "state": "OR",
     "postalCode": "97401",
     "country": "US",
-    "createdOn": "2010-05-27",
-    "notes": "Company: Candle Tree"
+    "createdOn": "2010-05-27"
   },
   {
     "id": 340,
     "firstName": "Susan",
     "lastName": "Robinson",
+    "company": "Canova Home At Boulder Furniture Arts",
     "email": "canovahome@comcast.net",
     "phone": "(303) 443-2030",
     "street1": "PO Box 17245",
@@ -3981,7 +4072,6 @@ module.exports =
     "postalCode": "80308",
     "country": "US",
     "createdOn": "2010-05-27",
-    "notes": "Company: Canova Home At Boulder Furniture Arts",
     "type": "wholesale",
     "website": "http://www.boulderfurniturearts.com/"
   },
@@ -3996,7 +4086,8 @@ module.exports =
     "postalCode": "33483",
     "country": "US",
     "createdOn": "2020-07-25",
-    "notes": "Imported record: 1 order(s), $113.00 total spent."
+    "notes": "Imported record: 1 order(s), $113.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 342,
@@ -4010,7 +4101,8 @@ module.exports =
     "postalCode": "95519",
     "country": "US",
     "createdOn": "2019-10-31",
-    "notes": "Imported record: 1 order(s), $136.35 total spent."
+    "notes": "Imported record: 1 order(s), $136.35 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 343,
@@ -4042,14 +4134,16 @@ module.exports =
     "postalCode": "21804",
     "country": "US",
     "createdOn": "2019-01-31",
-    "notes": "Imported record: 2 order(s), $263.76 total spent."
+    "notes": "Imported record: 2 order(s), $263.76 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 346,
     "firstName": "Carla",
     "lastName": "Long",
     "email": "stylingca777@icloud.com",
-    "createdOn": "2021-03-23"
+    "createdOn": "2021-03-23",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 347,
@@ -4061,6 +4155,7 @@ module.exports =
     "id": 348,
     "firstName": "Carol",
     "lastName": "Ackerman",
+    "company": "Carol & Company",
     "email": "info@carolandcompany.us",
     "phone": "(860) 693-1088",
     "street1": "107 Main St",
@@ -4069,7 +4164,6 @@ module.exports =
     "postalCode": "6019",
     "country": "US",
     "createdOn": "2015-05-25",
-    "notes": "Company: Carol & Company",
     "type": "wholesale",
     "website": "https://carolandcompany.us/"
   },
@@ -4085,7 +4179,8 @@ module.exports =
     "postalCode": "98028",
     "country": "US",
     "createdOn": "2023-11-22",
-    "notes": "Imported record: 4 order(s), $1,392.81 total spent."
+    "notes": "Imported record: 4 order(s), $1,392.81 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 350,
@@ -4099,7 +4194,8 @@ module.exports =
     "postalCode": "55987",
     "country": "US",
     "createdOn": "2018-12-28",
-    "notes": "Imported record: 1 order(s), $75.21 total spent."
+    "notes": "Imported record: 1 order(s), $75.21 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 351,
@@ -4113,7 +4209,8 @@ module.exports =
     "postalCode": "46256",
     "country": "US",
     "createdOn": "2020-02-02",
-    "notes": "Imported record: 2 order(s), $171.30 total spent."
+    "notes": "Imported record: 2 order(s), $171.30 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 352,
@@ -4150,7 +4247,8 @@ module.exports =
     "postalCode": "98030",
     "country": "US",
     "createdOn": "2017-11-12",
-    "notes": "Imported record: 1 order(s), $125.00 total spent."
+    "notes": "Imported record: 1 order(s), $125.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 355,
@@ -4189,7 +4287,8 @@ module.exports =
     "postalCode": "83858",
     "country": "US",
     "createdOn": "2025-03-28",
-    "notes": "Imported record: 1 order(s), $40.65 total spent."
+    "notes": "Imported record: 1 order(s), $40.65 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 358,
@@ -4201,7 +4300,8 @@ module.exports =
     "state": "NC",
     "postalCode": "27587",
     "country": "US",
-    "createdOn": "2023-12-01"
+    "createdOn": "2023-12-01",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 359,
@@ -4215,7 +4315,8 @@ module.exports =
     "postalCode": "19072",
     "country": "US",
     "createdOn": "2020-07-24",
-    "notes": "Imported record: 2 order(s), $215.60 total spent."
+    "notes": "Imported record: 2 order(s), $215.60 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 360,
@@ -4258,7 +4359,8 @@ module.exports =
     "postalCode": "32694",
     "country": "US",
     "createdOn": "2021-12-27",
-    "notes": "Imported record: 1 order(s), legacy user ID 67656601."
+    "notes": "Imported record: 1 order(s), legacy user ID 67656601.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 363,
@@ -4279,6 +4381,7 @@ module.exports =
     "id": 364,
     "firstName": "Carol",
     "lastName": "Solomon",
+    "company": "Carol Solomon Gallery of Gifts & Framing",
     "email": "casolomon@mac.com",
     "phone": "(818) 874-9175",
     "street1": "5649 Kanan Rd",
@@ -4287,7 +4390,6 @@ module.exports =
     "postalCode": "91301-3358",
     "country": "US",
     "createdOn": "2010-05-27",
-    "notes": "Company: Carol Solomon Gallery of Gifts & Framing",
     "type": "wholesale",
     "website": "http://www.carolsolomonsgallery.com/"
   },
@@ -4309,7 +4411,8 @@ module.exports =
     "lastName": "Klein",
     "email": "caroleklein73@gmail.com",
     "createdOn": "2025-09-26",
-    "notes": "Imported record: 1 order(s), $565.00 total spent."
+    "notes": "Imported record: 1 order(s), $565.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 367,
@@ -4322,7 +4425,8 @@ module.exports =
     "postalCode": "33331",
     "country": "US",
     "createdOn": "2021-03-30",
-    "notes": "Imported record: 1 order(s), $48.45 total spent."
+    "notes": "Imported record: 1 order(s), $48.45 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 368,
@@ -4337,12 +4441,14 @@ module.exports =
     "postalCode": "84009",
     "country": "US",
     "createdOn": "2023-09-10",
-    "notes": "Imported record: 1 order(s), $93.28 total spent."
+    "notes": "Imported record: 1 order(s), $93.28 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 369,
     "firstName": "Suzanne",
     "lastName": "Richey",
+    "company": "Carolina Creations",
     "phone": "(252) 675-2011",
     "street1": "317A Pollock St",
     "city": "New Bern",
@@ -4350,7 +4456,6 @@ module.exports =
     "postalCode": "28562",
     "country": "US",
     "createdOn": "2023-06-20",
-    "notes": "Company: Carolina Creations",
     "type": "wholesale",
     "website": "https://carolinacreations.com/"
   },
@@ -4358,6 +4463,7 @@ module.exports =
     "id": 370,
     "firstName": "Vicki",
     "lastName": "McCarthy",
+    "company": "Carolina Helping Paws Rescue",
     "email": "vmccarthy@sc.rr.com",
     "phone": "(803) 565-4191",
     "street1": "1010 Kingsbury Dr",
@@ -4366,7 +4472,7 @@ module.exports =
     "postalCode": "29154",
     "country": "US",
     "createdOn": "2021-06-16",
-    "notes": "Tax Id 47-4645972\nCompany: Carolina Helping Paws Rescue",
+    "notes": "Tax Id 47-4645972",
     "type": "wholesale"
   },
   {
@@ -4424,7 +4530,8 @@ module.exports =
     "state": "TX",
     "postalCode": "75604",
     "country": "US",
-    "createdOn": "2020-11-28"
+    "createdOn": "2020-11-28",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 376,
@@ -4438,7 +4545,8 @@ module.exports =
     "postalCode": "72774",
     "country": "US",
     "createdOn": "2020-10-12",
-    "notes": "Additional contact: cjgriffith5157@gmail.com\nImported record: 2 order(s), $267.15 total spent."
+    "notes": "Additional contact: cjgriffith5157@gmail.com\nImported record: 2 order(s), $267.15 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 377,
@@ -4520,7 +4628,8 @@ module.exports =
     "postalCode": "29585",
     "country": "US",
     "createdOn": "2020-03-26",
-    "notes": "Imported record: 4 order(s), $482.87 total spent."
+    "notes": "Imported record: 4 order(s), $482.87 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 383,
@@ -4541,6 +4650,7 @@ module.exports =
     "id": 384,
     "firstName": "Jana",
     "lastName": "Halwick",
+    "company": "Carver Hill Gallery",
     "email": "jana@carverhillgallery.com",
     "phone": "(207) 236-0745",
     "street1": "264 Meadow St",
@@ -4549,7 +4659,6 @@ module.exports =
     "postalCode": "4856",
     "country": "US",
     "createdOn": "2010-05-27",
-    "notes": "Company: Carver Hill Gallery",
     "type": "wholesale",
     "website": "http://www.carverhillgallery.com/"
   },
@@ -4592,7 +4701,8 @@ module.exports =
     "postalCode": "76109",
     "country": "US",
     "createdOn": "2017-07-04",
-    "notes": "Imported record: 1 order(s), $250.00 total spent."
+    "notes": "Imported record: 1 order(s), $250.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 389,
@@ -4627,7 +4737,8 @@ module.exports =
     "postalCode": "98103",
     "country": "US",
     "createdOn": "2019-01-21",
-    "notes": "Imported record: 1 order(s), $260.00 total spent."
+    "notes": "Imported record: 1 order(s), $260.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 392,
@@ -4663,7 +4774,8 @@ module.exports =
     "postalCode": "18848-1856",
     "country": "US",
     "createdOn": "2021-02-17",
-    "notes": "Imported record: 1 order(s), $29.45 total spent."
+    "notes": "Imported record: 1 order(s), $29.45 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 395,
@@ -4692,7 +4804,8 @@ module.exports =
     "postalCode": "95446",
     "country": "US",
     "createdOn": "2020-01-27",
-    "notes": "Imported record: 1 order(s), $29.50 total spent."
+    "notes": "Imported record: 1 order(s), $29.50 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 397,
@@ -4767,6 +4880,7 @@ module.exports =
     "id": 403,
     "firstName": "Connie",
     "lastName": "Lior",
+    "company": "CBL Fine Art",
     "email": "info@cblfineart.com",
     "phone": "(973) 736-7776",
     "street1": "459 Pleasant Valley Way",
@@ -4775,7 +4889,6 @@ module.exports =
     "postalCode": "7052",
     "country": "US",
     "createdOn": "2011-03-13",
-    "notes": "Company: CBL Fine Art",
     "type": "wholesale",
     "website": "http://www.cblfineart.com"
   },
@@ -4806,7 +4919,8 @@ module.exports =
     "postalCode": "49408",
     "country": "US",
     "createdOn": "2019-12-01",
-    "notes": "Additional contact: cissiepowell@gmail.com\nImported record: 3 order(s), $343.80 total spent."
+    "notes": "Additional contact: cissiepowell@gmail.com\nImported record: 3 order(s), $343.80 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 406,
@@ -4824,6 +4938,7 @@ module.exports =
     "id": 407,
     "firstName": "Lisa",
     "lastName": "Oakley",
+    "company": "Cedar Creek Gallery",
     "email": "info@cedarcreekgallery.com",
     "phone": "(919) 528-1041",
     "street1": "1150 Fleming Rd",
@@ -4832,7 +4947,6 @@ module.exports =
     "postalCode": "27522",
     "country": "US",
     "createdOn": "2021-06-24",
-    "notes": "Company: Cedar Creek Gallery",
     "type": "wholesale",
     "website": "https://cedarcreekgallery.com/"
   },
@@ -4879,7 +4993,8 @@ module.exports =
     "postalCode": "78006",
     "country": "US",
     "createdOn": "2019-12-01",
-    "notes": "Imported record: 1 order(s), $140.60 total spent."
+    "notes": "Imported record: 1 order(s), $140.60 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 412,
@@ -4930,7 +5045,8 @@ module.exports =
     "postalCode": "98103",
     "country": "US",
     "createdOn": "2021-01-05",
-    "notes": "Imported record: 1 order(s), $29.73 total spent."
+    "notes": "Imported record: 1 order(s), $29.73 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 416,
@@ -4954,7 +5070,8 @@ module.exports =
     "postalCode": "54913-8302",
     "country": "US",
     "createdOn": "2021-10-21",
-    "notes": "Imported record: 1 order(s), $74.30 total spent."
+    "notes": "Imported record: 1 order(s), $74.30 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 418,
@@ -4982,7 +5099,8 @@ module.exports =
     "postalCode": "97470-5752",
     "country": "US",
     "createdOn": "2025-09-29",
-    "notes": "Imported record: 1 order(s), $40.65 total spent."
+    "notes": "Imported record: 1 order(s), $40.65 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 420,
@@ -4995,7 +5113,8 @@ module.exports =
     "postalCode": "98136",
     "country": "US",
     "createdOn": "2026-01-23",
-    "notes": "Imported record: 1 order(s), $157.53 total spent."
+    "notes": "Imported record: 1 order(s), $157.53 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 421,
@@ -5021,7 +5140,8 @@ module.exports =
     "postalCode": "78734",
     "country": "US",
     "createdOn": "2020-04-16",
-    "notes": "Imported record: 1 order(s), $138.00 total spent."
+    "notes": "Imported record: 1 order(s), $138.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 423,
@@ -5035,7 +5155,8 @@ module.exports =
     "postalCode": "53511",
     "country": "US",
     "createdOn": "2021-09-17",
-    "notes": "Imported record: 1 order(s), $41.30 total spent."
+    "notes": "Imported record: 1 order(s), $41.30 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 424,
@@ -5049,7 +5170,8 @@ module.exports =
     "postalCode": "32776",
     "country": "US",
     "createdOn": "2020-12-11",
-    "notes": "Imported record: 1 order(s), $37.50 total spent."
+    "notes": "Imported record: 1 order(s), $37.50 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 425,
@@ -5089,7 +5211,8 @@ module.exports =
     "postalCode": "78626",
     "country": "US",
     "createdOn": "2020-08-08",
-    "notes": "Imported record: 1 order(s), $95.00 total spent."
+    "notes": "Imported record: 1 order(s), $95.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 429,
@@ -5115,12 +5238,14 @@ module.exports =
     "postalCode": "55934",
     "country": "US",
     "createdOn": "2020-03-04",
-    "notes": "Imported record: 1 order(s), $59.00 total spent."
+    "notes": "Imported record: 1 order(s), $59.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 431,
     "firstName": "Richenda",
     "lastName": "Richardson",
+    "company": "Childhood's End Gallery",
     "email": "ceg@nwrain.com",
     "phone": "(360) 943-3724",
     "street1": "222 4th Ave W",
@@ -5129,7 +5254,6 @@ module.exports =
     "postalCode": "98501",
     "country": "US",
     "createdOn": "2011-10-21",
-    "notes": "Company: Childhood's End Gallery",
     "type": "wholesale",
     "website": "https://www.childhoods-end-gallery.com/"
   },
@@ -5218,7 +5342,8 @@ module.exports =
     "postalCode": "20152",
     "country": "US",
     "createdOn": "2025-06-19",
-    "notes": "Imported record: 1 order(s), $23.86 total spent."
+    "notes": "Imported record: 1 order(s), $23.86 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 439,
@@ -5287,7 +5412,8 @@ module.exports =
     "postalCode": "98103",
     "country": "US",
     "createdOn": "2017-01-13",
-    "notes": "Imported record: 3 order(s), $375.00 total spent."
+    "notes": "Imported record: 3 order(s), $375.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 446,
@@ -5301,7 +5427,8 @@ module.exports =
     "postalCode": "4071",
     "country": "US",
     "createdOn": "2018-08-15",
-    "notes": "Imported record: 1 order(s), $250.00 total spent."
+    "notes": "Imported record: 1 order(s), $250.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 447,
@@ -5314,7 +5441,8 @@ module.exports =
     "postalCode": "98607",
     "country": "US",
     "createdOn": "2020-10-31",
-    "notes": "Imported record: 1 order(s), $63.96 total spent."
+    "notes": "Imported record: 1 order(s), $63.96 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 448,
@@ -5328,7 +5456,8 @@ module.exports =
     "postalCode": "22311",
     "country": "US",
     "createdOn": "2024-11-18",
-    "notes": "Imported record: 2 order(s), $599.84 total spent."
+    "notes": "Imported record: 2 order(s), $599.84 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 449,
@@ -5342,7 +5471,8 @@ module.exports =
     "postalCode": "98380",
     "country": "US",
     "createdOn": "2017-03-27",
-    "notes": "Imported record: 4 order(s), $431.23 total spent."
+    "notes": "Imported record: 4 order(s), $431.23 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 450,
@@ -5355,7 +5485,8 @@ module.exports =
     "postalCode": "56623",
     "country": "US",
     "createdOn": "2020-02-25",
-    "notes": "Imported record: 4 order(s), $519.00 total spent, legacy user ID 32925911."
+    "notes": "Imported record: 4 order(s), $519.00 total spent, legacy user ID 32925911.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 451,
@@ -5409,7 +5540,8 @@ module.exports =
     "firstName": "Christine",
     "lastName": "Seymour",
     "email": "luvntweety1972@gmail.com",
-    "createdOn": "2020-09-14"
+    "createdOn": "2020-09-14",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 457,
@@ -5423,7 +5555,8 @@ module.exports =
     "postalCode": "79423",
     "country": "US",
     "createdOn": "2018-04-19",
-    "notes": "Imported record: 1 order(s), $177.00 total spent."
+    "notes": "Imported record: 1 order(s), $177.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 458,
@@ -5437,7 +5570,8 @@ module.exports =
     "postalCode": "98077",
     "country": "US",
     "createdOn": "2018-01-06",
-    "notes": "Apron, 25% discount\nImported record: 11 order(s), $4,664.43 total spent."
+    "notes": "Apron, 25% discount\nImported record: 11 order(s), $4,664.43 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 459,
@@ -5486,12 +5620,14 @@ module.exports =
     "postalCode": "98177",
     "country": "US",
     "createdOn": "2020-03-31",
-    "notes": "Imported record: 1 order(s), $106.25 total spent."
+    "notes": "Imported record: 1 order(s), $106.25 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 463,
     "firstName": "Chuck",
     "lastName": "Anderson",
+    "company": "Chuck & Sandra Anderson",
     "email": "chuck.anderson@qbmmanagement.com",
     "phone": "(208) 384-9082",
     "street1": "3174 N 24th Way",
@@ -5499,8 +5635,7 @@ module.exports =
     "state": "ID",
     "postalCode": "83202",
     "country": "US",
-    "createdOn": "2010-09-15",
-    "notes": "Company: Chuck & Sandra Anderson"
+    "createdOn": "2010-09-15"
   },
   {
     "id": 464,
@@ -5531,7 +5666,8 @@ module.exports =
     "firstName": "Cindy",
     "lastName": "Gilbertii",
     "email": "gilbertifineart@gmail.com",
-    "createdOn": "2025-04-14"
+    "createdOn": "2025-04-14",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 468,
@@ -5572,7 +5708,8 @@ module.exports =
     "postalCode": "43725-9581",
     "country": "US",
     "createdOn": "2021-04-28",
-    "notes": "Imported record: 1 order(s), $208.00 total spent."
+    "notes": "Imported record: 1 order(s), $208.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 473,
@@ -5626,12 +5763,14 @@ module.exports =
     "postalCode": "98125",
     "country": "US",
     "createdOn": "2018-07-18",
-    "notes": "Imported record: 19 order(s), $3,768.10 total spent."
+    "notes": "Imported record: 19 order(s), $3,768.10 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 477,
     "firstName": "Gloria",
     "lastName": "Kinne",
+    "company": "Circare",
     "email": "circare@sbcglobal.net",
     "phone": "(586) 771-8510",
     "street1": "23024 Greater Mack",
@@ -5640,7 +5779,6 @@ module.exports =
     "postalCode": "48080",
     "country": "US",
     "createdOn": "2010-05-27",
-    "notes": "Company: Circare",
     "type": "wholesale",
     "website": "http://circaregifts.com/"
   },
@@ -5662,7 +5800,8 @@ module.exports =
     "postalCode": "77095",
     "country": "US",
     "createdOn": "2020-03-03",
-    "notes": "Imported record: 1 order(s), $215.00 total spent."
+    "notes": "Imported record: 1 order(s), $215.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 480,
@@ -5676,7 +5815,8 @@ module.exports =
     "postalCode": "92023",
     "country": "US",
     "createdOn": "2019-12-01",
-    "notes": "Imported record: 1 order(s), $68.50 total spent."
+    "notes": "Imported record: 1 order(s), $68.50 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 481,
@@ -5702,7 +5842,8 @@ module.exports =
     "postalCode": "98045",
     "country": "US",
     "createdOn": "2018-05-11",
-    "notes": "Imported record: 1 order(s), $125.00 total spent."
+    "notes": "Imported record: 1 order(s), $125.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 483,
@@ -5715,7 +5856,8 @@ module.exports =
     "postalCode": "33309",
     "country": "US",
     "createdOn": "2025-07-13",
-    "notes": "Imported record: 1 order(s), $19.15 total spent."
+    "notes": "Imported record: 1 order(s), $19.15 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 484,
@@ -5748,6 +5890,7 @@ module.exports =
     "id": 487,
     "firstName": "Janette",
     "lastName": "Artille",
+    "company": "Clouds Gallery",
     "email": "cloudsgallery@verizon.net",
     "phone": "(845) 679-8155",
     "street1": "One Mill Hill Rd",
@@ -5756,7 +5899,6 @@ module.exports =
     "postalCode": "12498",
     "country": "US",
     "createdOn": "2013-05-22",
-    "notes": "Company: Clouds Gallery",
     "type": "wholesale",
     "website": "http://cloudsofwoodstock.com"
   },
@@ -5764,6 +5906,7 @@ module.exports =
     "id": 488,
     "firstName": "Wendy",
     "lastName": "Garrett",
+    "company": "Cocoanut Jewelry",
     "phone": "(804) 282-1335",
     "street1": "405 N Ridge Rd",
     "city": "Richmond",
@@ -5771,7 +5914,6 @@ module.exports =
     "postalCode": "23229",
     "country": "US",
     "createdOn": "2010-05-27",
-    "notes": "Company: Cocoanut Jewelry",
     "type": "wholesale",
     "website": "https://cocoanutjewelry.com/"
   },
@@ -5779,6 +5921,7 @@ module.exports =
     "id": 489,
     "firstName": "Rachel",
     "lastName": "Lawing",
+    "company": "Cocoon House",
     "email": "rachel.lawing@cocoonhouse.org",
     "phone": "4252595802ext.171",
     "street1": "3530 Colby Ave",
@@ -5786,8 +5929,7 @@ module.exports =
     "state": "WA",
     "postalCode": "98201",
     "country": "US",
-    "createdOn": "2025-08-09",
-    "notes": "Company: Cocoon House"
+    "createdOn": "2025-08-09"
   },
   {
     "id": 490,
@@ -5806,6 +5948,7 @@ module.exports =
     "id": 491,
     "firstName": "Dianne",
     "lastName": "Johnson",
+    "company": "Colgate Bookstore",
     "phone": "(315) 228-6956",
     "street1": "3 Utica St",
     "city": "Hamilton",
@@ -5813,7 +5956,6 @@ module.exports =
     "postalCode": "13346",
     "country": "US",
     "createdOn": "2021-07-30",
-    "notes": "Company: Colgate Bookstore",
     "type": "wholesale",
     "website": "https://www.colgatebookstore.com/"
   },
@@ -5828,12 +5970,14 @@ module.exports =
     "postalCode": "33312",
     "country": "US",
     "createdOn": "2021-02-20",
-    "notes": "Imported record: 1 order(s), $39.30 total spent."
+    "notes": "Imported record: 1 order(s), $39.30 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 493,
     "firstName": "Kathy",
     "lastName": "Fowells",
+    "company": "Columbia City Gallery",
     "email": "kathyf@columbiacitygallery.com",
     "phone": "(206) 760-9843",
     "street1": "4864 Rainier Ave S",
@@ -5842,7 +5986,6 @@ module.exports =
     "postalCode": "98118",
     "country": "US",
     "createdOn": "2010-05-27",
-    "notes": "Company: Columbia City Gallery",
     "type": "wholesale",
     "website": "https://columbiacitygallery.com/"
   },
@@ -5850,6 +5993,7 @@ module.exports =
     "id": 494,
     "firstName": "David",
     "lastName": "Betses",
+    "company": "Compliments Gallery",
     "email": "compdb@roadrunner.com",
     "phone": "(207) 967-2269",
     "street1": "4 Dock Square",
@@ -5859,7 +6003,7 @@ module.exports =
     "postalCode": "4046",
     "country": "US",
     "createdOn": "2015-06-16",
-    "notes": "No 04043, 03907 (Kennebunkport, ogunquit)\nCompany: Compliments Gallery",
+    "notes": "No 04043, 03907 (Kennebunkport, ogunquit)",
     "type": "wholesale",
     "website": "https://www.complimentsgallery.com/"
   },
@@ -5867,6 +6011,7 @@ module.exports =
     "id": 495,
     "firstName": "Lynda",
     "lastName": "Strauch",
+    "company": "Concepts of Art",
     "email": "info@conceptsofart.com",
     "phone": "(413) 637-4845",
     "street1": "65 Church St Ste 101",
@@ -5875,7 +6020,6 @@ module.exports =
     "postalCode": "1240",
     "country": "US",
     "createdOn": "2015-06-10",
-    "notes": "Company: Concepts of Art",
     "type": "wholesale",
     "website": "https://www.conceptsofart.com/"
   },
@@ -5883,6 +6027,7 @@ module.exports =
     "id": 496,
     "firstName": "Greg",
     "lastName": "Link",
+    "company": "Cone Five Gallery",
     "email": "conefivepottery@gmai.com",
     "phone": "(716) 332-0486",
     "street1": "1508 Hertel Ave",
@@ -5891,7 +6036,6 @@ module.exports =
     "postalCode": "14216",
     "country": "US",
     "createdOn": "2018-10-11",
-    "notes": "Company: Cone Five Gallery",
     "type": "wholesale",
     "website": "http://www.conefivepottery.com/"
   },
@@ -5906,7 +6050,8 @@ module.exports =
     "postalCode": "98133",
     "country": "US",
     "createdOn": "2022-04-09",
-    "notes": "Imported record: 1 order(s), $285.00 total spent."
+    "notes": "Imported record: 1 order(s), $285.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 498,
@@ -5920,7 +6065,8 @@ module.exports =
     "postalCode": "98033",
     "country": "US",
     "createdOn": "2017-10-04",
-    "notes": "Imported record: 2 order(s), $269.82 total spent."
+    "notes": "Imported record: 2 order(s), $269.82 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 499,
@@ -5965,6 +6111,7 @@ module.exports =
     "id": 503,
     "firstName": "Kimberly",
     "lastName": "Haas",
+    "company": "Copperwood Artware",
     "email": "copperwoodartware@sbcglobal.net",
     "phone": "(714) 633-8374",
     "street1": "148a N Glassell St",
@@ -5973,7 +6120,6 @@ module.exports =
     "postalCode": "92866",
     "country": "US",
     "createdOn": "2010-05-27",
-    "notes": "Company: Copperwood Artware",
     "type": "wholesale",
     "website": "https://www.facebook.com/CopperwoodArtware/"
   },
@@ -5989,7 +6135,8 @@ module.exports =
     "postalCode": "98020",
     "country": "US",
     "createdOn": "2019-04-22",
-    "notes": "Imported record: 2 order(s), $260.00 total spent."
+    "notes": "Imported record: 2 order(s), $260.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 505,
@@ -6026,6 +6173,7 @@ module.exports =
     "id": 509,
     "firstName": "Lorrie",
     "lastName": "Gavenda",
+    "company": "Corner Frame and Gallery",
     "email": "lorrie@cornerframeandgallery.com",
     "phone": "(609) 758-2337",
     "street1": "407 Route 539",
@@ -6034,13 +6182,13 @@ module.exports =
     "postalCode": "8514",
     "country": "US",
     "createdOn": "2016-08-15",
-    "notes": "Company: Corner Frame and Gallery",
     "type": "wholesale",
     "website": "http://www.cornerframeandgallery.com"
   },
   {
     "id": 510,
     "firstName": "Janice",
+    "company": "Cornerstone Shop",
     "email": "sales@cornerstoneshoppe.com",
     "phone": "(262) 248-6988",
     "street1": "214 Broad St",
@@ -6049,7 +6197,6 @@ module.exports =
     "postalCode": "53147",
     "country": "US",
     "createdOn": "2014-06-11",
-    "notes": "Company: Cornerstone Shop",
     "type": "wholesale",
     "website": "https://www.cornerstoneshoppe.com/"
   },
@@ -6064,12 +6211,14 @@ module.exports =
     "postalCode": "8214",
     "country": "US",
     "createdOn": "2024-01-16",
-    "notes": "Imported record: 1 order(s), $111.92 total spent."
+    "notes": "Imported record: 1 order(s), $111.92 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 512,
     "firstName": "Sharon",
     "lastName": "Prazak",
+    "company": "Courtyards",
     "email": "shop@courtyardsltd.com",
     "phone": "(401) 624-8682",
     "street1": "3980 Main Rd",
@@ -6078,7 +6227,6 @@ module.exports =
     "postalCode": "2878",
     "country": "US",
     "createdOn": "2016-09-12",
-    "notes": "Company: Courtyards",
     "type": "wholesale",
     "website": "https://courtyardsltd.com/"
   },
@@ -6086,6 +6234,7 @@ module.exports =
     "id": 513,
     "firstName": "Madison",
     "lastName": "Robbins",
+    "company": "Crafty Yankee",
     "email": "contactus@craftyyankee.com",
     "phone": "(781) 863-1219",
     "street1": "1838 Massachusetts Ave",
@@ -6094,7 +6243,7 @@ module.exports =
     "postalCode": "2420",
     "country": "US",
     "createdOn": "2021-02-14",
-    "notes": "New ownership as of 8/3/21 (was Kathy Fields, contactus@craftyyankee.com). Madison Robbins is listed in Faire.\nCompany: Crafty Yankee",
+    "notes": "New ownership as of 8/3/21 (was Kathy Fields, contactus@craftyyankee.com). Madison Robbins is listed in Faire.",
     "type": "wholesale",
     "website": "https://www.shopcraftyyankee.com/"
   },
@@ -6109,6 +6258,7 @@ module.exports =
     "id": 515,
     "firstName": "Meg",
     "lastName": "Kelly",
+    "company": "Create A Frame/Handworks Gallery",
     "email": "meg@createaframehandworks.com",
     "phone": "(412) 341-1744",
     "street1": "615 Washington Rd",
@@ -6117,14 +6267,16 @@ module.exports =
     "postalCode": "15228",
     "country": "US",
     "createdOn": "2018-02-19",
-    "notes": "Permanently closed\nCompany: Create A Frame/Handworks Gallery",
+    "notes": "Permanently closed",
     "type": "wholesale",
-    "website": "https://createaframehandworks.com/"
+    "website": "https://createaframehandworks.com/",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 516,
     "firstName": "John",
     "lastName": "Sherman",
+    "company": "Creations Gallery",
     "email": "jws.creations@verizon.net",
     "phone": "(302) 235-2310",
     "street1": "443 Hockessin Cors",
@@ -6133,7 +6285,7 @@ module.exports =
     "postalCode": "19707",
     "country": "US",
     "createdOn": "2013-04-04",
-    "notes": "NOW ONLINE-ONLY (June 2018)\nCompany: Creations Gallery",
+    "notes": "NOW ONLINE-ONLY (June 2018)",
     "type": "wholesale",
     "website": "http://www.creationsgallery.com"
   },
@@ -6141,6 +6293,7 @@ module.exports =
     "id": 517,
     "firstName": "Cindy",
     "lastName": "Vega",
+    "company": "Cricket Forge",
     "email": "cvega@vegametals.com",
     "phone": "(919) 680-3513",
     "street1": "214 Hunt St",
@@ -6149,7 +6302,6 @@ module.exports =
     "postalCode": "27701",
     "country": "US",
     "createdOn": "2015-01-27",
-    "notes": "Company: Cricket Forge",
     "type": "wholesale",
     "website": "https://www.cricketforge.com/"
   },
@@ -6185,6 +6337,7 @@ module.exports =
     "id": 520,
     "firstName": "Mary",
     "lastName": "Matchael",
+    "company": "Crystal Glass Studio",
     "email": "mary@crystalglassstudio.com",
     "phone": "(970) 963-3227",
     "street1": "50 Weant Blvd",
@@ -6193,7 +6346,6 @@ module.exports =
     "postalCode": "81623",
     "country": "US",
     "createdOn": "2010-05-27",
-    "notes": "Company: Crystal Glass Studio",
     "type": "wholesale",
     "website": "http://www.crystalglassstudio.com/"
   },
@@ -6221,6 +6373,7 @@ module.exports =
     "id": 523,
     "firstName": "Kathryn",
     "lastName": "Roy",
+    "company": "Cuckoos Roost",
     "email": "kathryn.roy1@gmail.com",
     "phone": "(239) 860-1238",
     "street1": "133 E Main St",
@@ -6228,8 +6381,7 @@ module.exports =
     "state": "IN",
     "postalCode": "47250",
     "country": "US",
-    "createdOn": "2022-01-25",
-    "notes": "Company: Cuckoos Roost"
+    "createdOn": "2022-01-25"
   },
   {
     "id": 524,
@@ -6263,7 +6415,8 @@ module.exports =
     "postalCode": "90035",
     "country": "US",
     "createdOn": "2021-04-01",
-    "notes": "Imported record: 1 order(s), $60.00 total spent."
+    "notes": "Imported record: 1 order(s), $60.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 527,
@@ -6276,7 +6429,8 @@ module.exports =
     "postalCode": "98062",
     "country": "US",
     "createdOn": "2021-10-29",
-    "notes": "Imported record: 1 order(s), $290.40 total spent."
+    "notes": "Imported record: 1 order(s), $290.40 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 528,
@@ -6290,7 +6444,8 @@ module.exports =
     "postalCode": "98139",
     "country": "US",
     "createdOn": "2020-03-29",
-    "notes": "Imported record: 1 order(s), $200.10 total spent."
+    "notes": "Imported record: 1 order(s), $200.10 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 529,
@@ -6335,7 +6490,8 @@ module.exports =
     "postalCode": "95120",
     "country": "US",
     "createdOn": "2018-04-11",
-    "notes": "Additional contact: cmeyer@grancell-law.com\nImported record: 4 order(s), $877.85 total spent."
+    "notes": "Additional contact: cmeyer@grancell-law.com\nImported record: 4 order(s), $877.85 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 533,
@@ -6356,7 +6512,8 @@ module.exports =
     "postalCode": "98335",
     "country": "US",
     "createdOn": "2019-02-27",
-    "notes": "Imported record: 1 order(s), $150.00 total spent."
+    "notes": "Imported record: 1 order(s), $150.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 535,
@@ -6416,7 +6573,8 @@ module.exports =
     "postalCode": "98012",
     "country": "US",
     "createdOn": "2020-05-23",
-    "notes": "Imported record: 1 order(s), $52.48 total spent."
+    "notes": "Imported record: 1 order(s), $52.48 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 540,
@@ -6430,7 +6588,8 @@ module.exports =
     "postalCode": "98604-6023",
     "country": "US",
     "createdOn": "2021-03-10",
-    "notes": "Imported record: 1 order(s), $236.32 total spent."
+    "notes": "Imported record: 1 order(s), $236.32 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 541,
@@ -6444,7 +6603,8 @@ module.exports =
     "postalCode": "98008",
     "country": "US",
     "createdOn": "2018-07-20",
-    "notes": "Additional contact: dlemmel@icloud.com, daciawpf@gmail.com\nImported record: 6 order(s), $1,251.67 total spent."
+    "notes": "Additional contact: dlemmel@icloud.com, daciawpf@gmail.com\nImported record: 6 order(s), $1,251.67 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 542,
@@ -6466,8 +6626,8 @@ module.exports =
     "id": 544,
     "firstName": "Dan & Jean",
     "lastName": "Crookes",
-    "createdOn": "2010-05-27",
-    "notes": "Company: Dan and Jean Crookes"
+    "company": "Dan and Jean Crookes",
+    "createdOn": "2010-05-27"
   },
   {
     "id": 545,
@@ -6512,7 +6672,8 @@ module.exports =
     "postalCode": "98072",
     "country": "US",
     "createdOn": "2025-04-22",
-    "notes": "Imported record: 1 order(s), $237.09 total spent."
+    "notes": "Imported record: 1 order(s), $237.09 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 549,
@@ -6525,7 +6686,8 @@ module.exports =
     "postalCode": "32541",
     "country": "US",
     "createdOn": "2024-12-18",
-    "notes": "Imported record: 1 order(s), $224.34 total spent."
+    "notes": "Imported record: 1 order(s), $224.34 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 550,
@@ -6553,7 +6715,8 @@ module.exports =
     "postalCode": "98177",
     "country": "US",
     "createdOn": "2025-12-30",
-    "notes": "Imported record: 1 order(s), $579.59 total spent."
+    "notes": "Imported record: 1 order(s), $579.59 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 552,
@@ -6567,7 +6730,8 @@ module.exports =
     "postalCode": "99835",
     "country": "US",
     "createdOn": "2021-10-22",
-    "notes": "Imported record: 1 order(s), $146.00 total spent."
+    "notes": "Imported record: 1 order(s), $146.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 553,
@@ -6602,12 +6766,14 @@ module.exports =
     "postalCode": "98087",
     "country": "US",
     "createdOn": "2017-02-19",
-    "notes": "Imported record: 1 order(s), $125.00 total spent."
+    "notes": "Imported record: 1 order(s), $125.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 556,
     "firstName": "Leslie",
     "lastName": "Woodward",
+    "company": "Dandelion",
     "email": "leslie@dandelionjewelry.com",
     "phone": "(215) 843-5233",
     "street1": "6609 Springbank St",
@@ -6616,7 +6782,7 @@ module.exports =
     "postalCode": "19119",
     "country": "US",
     "createdOn": "2015-06-14",
-    "notes": "Call Randy for payment\nCompany: Dandelion",
+    "notes": "Call Randy for payment",
     "type": "wholesale",
     "website": "https://dandelionjewelry.com/"
   },
@@ -6631,7 +6797,8 @@ module.exports =
     "postalCode": "98034",
     "country": "US",
     "createdOn": "2024-12-11",
-    "notes": "Imported record: 1 order(s), $248.48 total spent."
+    "notes": "Imported record: 1 order(s), $248.48 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 558,
@@ -6644,7 +6811,8 @@ module.exports =
     "postalCode": "98004",
     "country": "US",
     "createdOn": "2025-11-15",
-    "notes": "Imported record: 1 order(s), $314.06 total spent."
+    "notes": "Imported record: 1 order(s), $314.06 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 559,
@@ -6678,7 +6846,8 @@ module.exports =
     "postalCode": "98393",
     "country": "US",
     "createdOn": "2017-10-22",
-    "notes": "Imported record: 1 order(s), $125.00 total spent."
+    "notes": "Imported record: 1 order(s), $125.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 562,
@@ -6698,7 +6867,8 @@ module.exports =
     "postalCode": "97038",
     "country": "US",
     "createdOn": "2019-05-25",
-    "notes": "Imported record: 1 order(s), $57.61 total spent."
+    "notes": "Imported record: 1 order(s), $57.61 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 564,
@@ -6712,7 +6882,8 @@ module.exports =
     "postalCode": "98329",
     "country": "US",
     "createdOn": "2018-07-11",
-    "notes": "Imported record: 7 order(s), $1,785.00 total spent."
+    "notes": "Imported record: 7 order(s), $1,785.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 565,
@@ -6769,14 +6940,16 @@ module.exports =
     "postalCode": "98107",
     "country": "US",
     "createdOn": "2025-11-24",
-    "notes": "Imported record: 1 order(s), $579.33 total spent."
+    "notes": "Imported record: 1 order(s), $579.33 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 569,
     "firstName": "David",
     "lastName": "Bird",
     "email": "davidbird42@gmail.com",
-    "createdOn": "2024-07-07"
+    "createdOn": "2024-07-07",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 570,
@@ -6807,7 +6980,8 @@ module.exports =
     "postalCode": "57186",
     "country": "US",
     "createdOn": "2020-01-09",
-    "notes": "Imported record: 1 order(s), $260.00 total spent."
+    "notes": "Imported record: 1 order(s), $260.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 573,
@@ -6880,7 +7054,8 @@ module.exports =
     "postalCode": "71913",
     "country": "US",
     "createdOn": "2023-05-29",
-    "notes": "Imported record: 1 order(s), $49.28 total spent."
+    "notes": "Imported record: 1 order(s), $49.28 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 579,
@@ -6953,7 +7128,8 @@ module.exports =
     "postalCode": "98115",
     "country": "US",
     "createdOn": "2023-07-22",
-    "notes": "Imported record: 2 order(s), $942.64 total spent."
+    "notes": "Imported record: 2 order(s), $942.64 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 585,
@@ -6975,7 +7151,8 @@ module.exports =
     "firstName": "Deanna",
     "lastName": "McMillian",
     "email": "deanna.mcmillian@gmail.com",
-    "createdOn": "2024-05-02"
+    "createdOn": "2024-05-02",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 587,
@@ -6989,7 +7166,8 @@ module.exports =
     "postalCode": "98007",
     "country": "US",
     "createdOn": "2017-09-18",
-    "notes": "Imported record: 5 order(s), $1,400.00 total spent."
+    "notes": "Imported record: 5 order(s), $1,400.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 588,
@@ -7060,7 +7238,8 @@ module.exports =
     "postalCode": "60559",
     "country": "US",
     "createdOn": "2020-05-10",
-    "notes": "Imported record: 1 order(s), $171.00 total spent."
+    "notes": "Imported record: 1 order(s), $171.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 595,
@@ -7074,7 +7253,8 @@ module.exports =
     "postalCode": "95421",
     "country": "US",
     "createdOn": "2018-04-15",
-    "notes": "Imported record: 2 order(s), $148.80 total spent."
+    "notes": "Imported record: 2 order(s), $148.80 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 596,
@@ -7108,7 +7288,8 @@ module.exports =
     "postalCode": "77664",
     "country": "US",
     "createdOn": "2021-05-29",
-    "notes": "Imported record: 1 order(s), $44.30 total spent."
+    "notes": "Imported record: 1 order(s), $44.30 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 599,
@@ -7127,7 +7308,8 @@ module.exports =
     "firstName": "Debbie",
     "lastName": "Baron",
     "email": "dbaron218@gmail.com",
-    "createdOn": "2020-10-11"
+    "createdOn": "2020-10-11",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 601,
@@ -7174,7 +7356,8 @@ module.exports =
     "firstName": "Debbie",
     "lastName": "Marcinko",
     "email": "lejardin.gast@gmail.com",
-    "createdOn": "2022-04-17"
+    "createdOn": "2022-04-17",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 606,
@@ -7211,7 +7394,8 @@ module.exports =
     "postalCode": "98262",
     "country": "US",
     "createdOn": "2018-11-07",
-    "notes": "Imported record: 3 order(s), $372.06 total spent."
+    "notes": "Imported record: 3 order(s), $372.06 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 609,
@@ -7230,7 +7414,8 @@ module.exports =
     "postalCode": "60586",
     "country": "US",
     "createdOn": "2025-01-31",
-    "notes": "Imported record: 1 order(s), $119.92 total spent."
+    "notes": "Imported record: 1 order(s), $119.92 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 611,
@@ -7257,7 +7442,8 @@ module.exports =
     "postalCode": "75033",
     "country": "US",
     "createdOn": "2021-02-06",
-    "notes": "Imported record: 1 order(s), $40.30 total spent."
+    "notes": "Imported record: 1 order(s), $40.30 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 614,
@@ -7271,7 +7457,8 @@ module.exports =
     "postalCode": "83612",
     "country": "US",
     "createdOn": "2020-02-28",
-    "notes": "Imported record: 1 order(s), $49.50 total spent."
+    "notes": "Imported record: 1 order(s), $49.50 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 615,
@@ -7300,14 +7487,16 @@ module.exports =
     "postalCode": "60542",
     "country": "US",
     "createdOn": "2021-10-28",
-    "notes": "Imported record: 1 order(s), $106.00 total spent."
+    "notes": "Imported record: 1 order(s), $106.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 617,
     "firstName": "Deborah",
     "lastName": "Carlson",
     "email": "g.carlson@comcast.net",
-    "createdOn": "2025-03-01"
+    "createdOn": "2025-03-01",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 618,
@@ -7335,7 +7524,8 @@ module.exports =
     "postalCode": "98117",
     "country": "US",
     "createdOn": "2020-03-29",
-    "notes": "Additional contact: dharlow55@comcast.net\nImported record: 3 order(s), $515.00 total spent."
+    "notes": "Additional contact: dharlow55@comcast.net\nImported record: 3 order(s), $515.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 620,
@@ -7349,7 +7539,8 @@ module.exports =
     "postalCode": "75778",
     "country": "US",
     "createdOn": "2018-04-19",
-    "notes": "Imported record: 1 order(s), $78.00 total spent."
+    "notes": "Imported record: 1 order(s), $78.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 621,
@@ -7378,7 +7569,8 @@ module.exports =
     "postalCode": "12010",
     "country": "US",
     "createdOn": "2020-02-28",
-    "notes": "Imported record: 3 order(s), $314.10 total spent."
+    "notes": "Imported record: 3 order(s), $314.10 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 623,
@@ -7391,7 +7583,8 @@ module.exports =
     "postalCode": "95441",
     "country": "US",
     "createdOn": "2025-09-16",
-    "notes": "Imported record: 1 order(s), $19.15 total spent."
+    "notes": "Imported record: 1 order(s), $19.15 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 624,
@@ -7404,7 +7597,8 @@ module.exports =
     "postalCode": "32789",
     "country": "US",
     "createdOn": "2025-01-23",
-    "notes": "Imported record: 1 order(s), $41.35 total spent."
+    "notes": "Imported record: 1 order(s), $41.35 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 625,
@@ -7419,7 +7613,8 @@ module.exports =
     "postalCode": "60120",
     "country": "US",
     "createdOn": "2018-12-16",
-    "notes": "Imported record: 1 order(s), $29.40 total spent."
+    "notes": "Imported record: 1 order(s), $29.40 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 626,
@@ -7444,7 +7639,8 @@ module.exports =
     "postalCode": "30022",
     "country": "US",
     "createdOn": "2019-09-22",
-    "notes": "Imported record: 2 order(s), $173.68 total spent."
+    "notes": "Imported record: 2 order(s), $173.68 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 629,
@@ -7473,7 +7669,8 @@ module.exports =
     "postalCode": "33544",
     "country": "US",
     "createdOn": "2021-07-29",
-    "notes": "Imported record: 1 order(s), $34.45 total spent."
+    "notes": "Imported record: 1 order(s), $34.45 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 631,
@@ -7487,7 +7684,8 @@ module.exports =
     "postalCode": "33301",
     "country": "US",
     "createdOn": "2024-05-29",
-    "notes": "Imported record: 2 order(s), $575.20 total spent."
+    "notes": "Imported record: 2 order(s), $575.20 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 632,
@@ -7528,7 +7726,8 @@ module.exports =
     "postalCode": "46075",
     "country": "US",
     "createdOn": "2020-10-07",
-    "notes": "Imported record: 7 order(s), $1,279.30 total spent, legacy user ID 47727461."
+    "notes": "Imported record: 7 order(s), $1,279.30 total spent, legacy user ID 47727461.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 635,
@@ -7542,7 +7741,8 @@ module.exports =
     "postalCode": "28732",
     "country": "US",
     "createdOn": "2024-11-19",
-    "notes": "Imported record: 1 order(s), $37.65 total spent."
+    "notes": "Imported record: 1 order(s), $37.65 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 636,
@@ -7556,7 +7756,8 @@ module.exports =
     "postalCode": "98262",
     "country": "US",
     "createdOn": "2018-07-12",
-    "notes": "Imported record: 1 order(s), $250.00 total spent."
+    "notes": "Imported record: 1 order(s), $250.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 637,
@@ -7574,6 +7775,7 @@ module.exports =
     "id": 638,
     "firstName": "Deb",
     "lastName": "Swartz",
+    "company": "Debra Swartz",
     "email": "dhudson238@aol.com",
     "phone": "(440) 382-3343",
     "street1": "13946 Lake Ave",
@@ -7582,13 +7784,14 @@ module.exports =
     "postalCode": "44107",
     "country": "US",
     "createdOn": "2020-04-29",
-    "notes": "Company: Debra Swartz\nImported record: 1 order(s), $85.00 total spent, legacy user ID 38488891.",
+    "notes": "Imported record: 1 order(s), $85.00 total spent, legacy user ID 38488891.",
     "acceptsEmailMarketing": true
   },
   {
     "id": 639,
     "firstName": "Pamela",
     "lastName": "Hoffman",
+    "company": "Decor by Pamela",
     "phone": "(214) 415-1290",
     "street1": "5108 Meadowside Ln",
     "city": "Plano",
@@ -7596,7 +7799,6 @@ module.exports =
     "postalCode": "75093",
     "country": "US",
     "createdOn": "2020-06-17",
-    "notes": "Company: Decor by Pamela",
     "type": "wholesale"
   },
   {
@@ -7611,7 +7813,8 @@ module.exports =
     "postalCode": "81416",
     "country": "US",
     "createdOn": "2020-03-13",
-    "notes": "Imported record: 8 order(s), $1,545.22 total spent, legacy user ID 33396774."
+    "notes": "Imported record: 8 order(s), $1,545.22 total spent, legacy user ID 33396774.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 641,
@@ -7678,7 +7881,8 @@ module.exports =
     "postalCode": "98296",
     "country": "US",
     "createdOn": "2020-08-17",
-    "notes": "Imported record: 6 order(s), $1,219.00 total spent, legacy user ID 44979483."
+    "notes": "Imported record: 6 order(s), $1,219.00 total spent, legacy user ID 44979483.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 648,
@@ -7704,7 +7908,8 @@ module.exports =
     "postalCode": "98138",
     "country": "US",
     "createdOn": "2021-01-04",
-    "notes": "Imported record: 2 order(s), $495.00 total spent."
+    "notes": "Imported record: 2 order(s), $495.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 650,
@@ -7766,6 +7971,7 @@ module.exports =
     "id": 655,
     "firstName": "Joan & Bill",
     "lastName": "Hander",
+    "company": "Design Forum Gallery",
     "email": "info@designforumgallery.com",
     "phone": "(860) 677-7568",
     "street1": "902 Farmington Ave",
@@ -7774,7 +7980,6 @@ module.exports =
     "postalCode": "6032",
     "country": "US",
     "createdOn": "2013-06-17",
-    "notes": "Company: Design Forum Gallery",
     "type": "wholesale",
     "website": "https://designforumgallery.com/"
   },
@@ -7782,6 +7987,7 @@ module.exports =
     "id": 656,
     "firstName": "Marylou",
     "lastName": "Blaisdell",
+    "company": "DesignWares",
     "email": "info@designwares.com",
     "phone": "(603) 882-5535",
     "street1": "206 Main St",
@@ -7790,7 +7996,6 @@ module.exports =
     "postalCode": "3060",
     "country": "US",
     "createdOn": "2010-05-27",
-    "notes": "Company: DesignWares",
     "type": "wholesale",
     "website": "https://www.designwares.com/"
   },
@@ -7819,7 +8024,8 @@ module.exports =
     "postalCode": "98125",
     "country": "US",
     "createdOn": "2018-11-02",
-    "notes": "Imported record: 1 order(s), $260.00 total spent."
+    "notes": "Imported record: 1 order(s), $260.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 659,
@@ -7847,7 +8053,8 @@ module.exports =
     "postalCode": "83712",
     "country": "US",
     "createdOn": "2021-10-28",
-    "notes": "Imported record: 15 order(s), $1,384.77 total spent, legacy user ID 65257713."
+    "notes": "Imported record: 15 order(s), $1,384.77 total spent, legacy user ID 65257713.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 661,
@@ -7861,12 +8068,14 @@ module.exports =
     "postalCode": "98393-0464",
     "country": "US",
     "createdOn": "2019-05-02",
-    "notes": "Imported record: 1 order(s), $260.00 total spent."
+    "notes": "Imported record: 1 order(s), $260.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 662,
     "firstName": "Diane",
     "lastName": "Clausen",
+    "company": "Diane C Clausen",
     "email": "diane.clausen@me.com",
     "street1": "709 N 61st St",
     "city": "Seattle",
@@ -7874,7 +8083,7 @@ module.exports =
     "postalCode": "98103",
     "country": "US",
     "createdOn": "2022-11-17",
-    "notes": "Company: Diane C Clausen\nImported record: 1 order(s), $248.06 total spent."
+    "notes": "Imported record: 1 order(s), $248.06 total spent."
   },
   {
     "id": 663,
@@ -7907,7 +8116,8 @@ module.exports =
     "postalCode": "98038",
     "country": "US",
     "createdOn": "2019-01-12",
-    "notes": "Imported record: 2 order(s), $758.92 total spent."
+    "notes": "Imported record: 2 order(s), $758.92 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 666,
@@ -7957,7 +8167,8 @@ module.exports =
     "postalCode": "77377",
     "country": "US",
     "createdOn": "2020-04-15",
-    "notes": "Imported record: 1 order(s), $134.00 total spent."
+    "notes": "Imported record: 1 order(s), $134.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 670,
@@ -7971,7 +8182,8 @@ module.exports =
     "postalCode": "84126",
     "country": "US",
     "createdOn": "2018-12-05",
-    "notes": "Imported record: 1 order(s), $50.00 total spent."
+    "notes": "Imported record: 1 order(s), $50.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 671,
@@ -8000,7 +8212,8 @@ module.exports =
     "postalCode": "17543",
     "country": "US",
     "createdOn": "2021-02-17",
-    "notes": "Imported record: 1 order(s), $46.00 total spent."
+    "notes": "Imported record: 1 order(s), $46.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 673,
@@ -8081,7 +8294,8 @@ module.exports =
     "postalCode": "98110",
     "country": "US",
     "createdOn": "2020-11-22",
-    "notes": "Imported record: 1 order(s), $159.88 total spent."
+    "notes": "Imported record: 1 order(s), $159.88 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 681,
@@ -8101,7 +8315,8 @@ module.exports =
     "postalCode": "98144",
     "country": "US",
     "createdOn": "2018-06-09",
-    "notes": "Imported record: 2 order(s), $337.53 total spent."
+    "notes": "Imported record: 2 order(s), $337.53 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 683,
@@ -8144,7 +8359,8 @@ module.exports =
     "postalCode": "70817",
     "country": "US",
     "createdOn": "2020-02-27",
-    "notes": "Imported record: 1 order(s), $59.00 total spent."
+    "notes": "Imported record: 1 order(s), $59.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 687,
@@ -8164,6 +8380,7 @@ module.exports =
     "id": 688,
     "firstName": "Debbie",
     "lastName": "Dickinson",
+    "company": "Dickinson Wait",
     "email": "meranddeb@frontiernet.net",
     "phone": "(304) 876-0657",
     "street1": "121 E German St",
@@ -8172,7 +8389,7 @@ module.exports =
     "postalCode": "25443",
     "country": "US",
     "createdOn": "2012-02-02",
-    "notes": "Debbie Dickinson & Meredith Wait\nCompany: Dickinson Wait",
+    "notes": "Debbie Dickinson & Meredith Wait",
     "type": "wholesale",
     "website": "https://www.facebook.com/Dickinson-Wait-Craft-Gallery-287345965588/"
   },
@@ -8193,6 +8410,7 @@ module.exports =
     "id": 690,
     "firstName": "Brandon",
     "lastName": "Henrie",
+    "company": "Discovery Place",
     "email": "brandonh@discoveryplace.org",
     "phone": "7043726261x252",
     "street1": "301 N Tryon St",
@@ -8201,7 +8419,6 @@ module.exports =
     "postalCode": "28202",
     "country": "US",
     "createdOn": "2010-05-27",
-    "notes": "Company: Discovery Place",
     "type": "wholesale",
     "website": "https://www.discoveryplace.org/"
   },
@@ -8209,6 +8426,7 @@ module.exports =
     "id": 691,
     "firstName": "Denise",
     "lastName": "Hood",
+    "company": "District Gallery, The",
     "email": "denise@thedistrictgallery.com",
     "phone": "(865) 200-4452",
     "street1": "5113 Kingston Pike",
@@ -8217,7 +8435,6 @@ module.exports =
     "postalCode": "37919",
     "country": "US",
     "createdOn": "2014-07-24",
-    "notes": "Company: District Gallery, The",
     "type": "wholesale",
     "website": "https://www.thedistrictgallery.com/"
   },
@@ -8233,12 +8450,14 @@ module.exports =
     "postalCode": "34217",
     "country": "US",
     "createdOn": "2020-03-02",
-    "notes": "Imported record: 3 order(s), $656.50 total spent."
+    "notes": "Imported record: 3 order(s), $656.50 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 693,
     "firstName": "Lisa & Don",
     "lastName": "Drumm",
+    "company": "Don Drumm Studios & Gallery",
     "email": "lisa@dondrummstudios.com",
     "phone": "(330) 253-6268",
     "street1": "437 Crouse St",
@@ -8247,7 +8466,6 @@ module.exports =
     "postalCode": "44311",
     "country": "US",
     "createdOn": "2013-05-03",
-    "notes": "Company: Don Drumm Studios & Gallery",
     "type": "wholesale",
     "website": "http://www.dondrummstudios.com"
   },
@@ -8297,7 +8515,8 @@ module.exports =
     "postalCode": "59868",
     "country": "US",
     "createdOn": "2020-03-12",
-    "notes": "Imported record: 1 order(s), $59.00 total spent."
+    "notes": "Imported record: 1 order(s), $59.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 698,
@@ -8311,7 +8530,8 @@ module.exports =
     "postalCode": "92078",
     "country": "US",
     "createdOn": "2021-08-14",
-    "notes": "Imported record: 1 order(s), $36.30 total spent."
+    "notes": "Imported record: 1 order(s), $36.30 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 699,
@@ -8367,7 +8587,8 @@ module.exports =
     "postalCode": "98332",
     "country": "US",
     "createdOn": "2019-08-02",
-    "notes": "Imported record: 1 order(s), $130.00 total spent."
+    "notes": "Imported record: 1 order(s), $130.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 703,
@@ -8394,9 +8615,10 @@ module.exports =
   {
     "id": 705,
     "firstName": "Donna",
+    "company": "Donna Saber",
     "email": "dsaber@saberlawoffices.com",
     "createdOn": "2025-12-07",
-    "notes": "Company: Donna Saber\nImported record: 1 order(s), $499.40 total spent."
+    "notes": "Imported record: 1 order(s), $499.40 total spent."
   },
   {
     "id": 706,
@@ -8459,7 +8681,8 @@ module.exports =
     "postalCode": "21014-5681",
     "country": "US",
     "createdOn": "2021-03-26",
-    "notes": "Imported record: 4 order(s), $188.90 total spent."
+    "notes": "Imported record: 4 order(s), $188.90 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 713,
@@ -8473,7 +8696,8 @@ module.exports =
     "postalCode": "60047",
     "country": "US",
     "createdOn": "2020-04-02",
-    "notes": "Imported record: 1 order(s), $155.00 total spent."
+    "notes": "Imported record: 1 order(s), $155.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 714,
@@ -8487,7 +8711,8 @@ module.exports =
     "postalCode": "61550",
     "country": "US",
     "createdOn": "2020-03-03",
-    "notes": "Imported record: 1 order(s), $29.50 total spent."
+    "notes": "Imported record: 1 order(s), $29.50 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 715,
@@ -8558,6 +8783,7 @@ module.exports =
     "id": 720,
     "firstName": "Aynn",
     "lastName": "Batchler",
+    "company": "Dream Seekers",
     "phone": "(425) 985-5483",
     "street1": "9539 E Pinto Pl",
     "city": "Sun Lakes",
@@ -8565,13 +8791,13 @@ module.exports =
     "postalCode": "85248",
     "country": "US",
     "createdOn": "2021-11-03",
-    "notes": "Company: Dream Seekers",
     "type": "wholesale"
   },
   {
     "id": 721,
     "firstName": "Ryan",
     "lastName": "Hull",
+    "company": "Dreams & Discoveries / Yuletides",
     "email": "yuletides@charter.net",
     "phone": "(503) 436-2565",
     "street1": "224 N Hemlock St",
@@ -8580,7 +8806,6 @@ module.exports =
     "postalCode": "97110",
     "country": "US",
     "createdOn": "2013-05-28",
-    "notes": "Company: Dreams & Discoveries / Yuletides",
     "type": "wholesale",
     "website": "http://yuletides.shop/"
   },
@@ -8602,7 +8827,8 @@ module.exports =
     "postalCode": "37750",
     "country": "MX",
     "createdOn": "2021-03-13",
-    "notes": "Imported record: 1 order(s), $198.45 total spent."
+    "notes": "Imported record: 1 order(s), $198.45 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 724,
@@ -8634,6 +8860,7 @@ module.exports =
     "id": 726,
     "firstName": "Jennifer",
     "lastName": "Heiden",
+    "company": "Ear Expressions",
     "phone": "(541) 549-9572",
     "street1": "221 W Cascade Ave",
     "street2": "PO Box 514",
@@ -8642,7 +8869,6 @@ module.exports =
     "postalCode": "97759",
     "country": "US",
     "createdOn": "2024-01-29",
-    "notes": "Company: Ear Expressions",
     "type": "wholesale",
     "website": "https://earexpressions.com/"
   },
@@ -8650,6 +8876,7 @@ module.exports =
     "id": 727,
     "firstName": "Stephanie",
     "lastName": "Sideroff",
+    "company": "Earth Impact",
     "email": "earthimpact@yahoo.com",
     "phone": "(650) 726-7743",
     "street1": "420 Main St",
@@ -8658,7 +8885,6 @@ module.exports =
     "postalCode": "94019",
     "country": "US",
     "createdOn": "2010-05-27",
-    "notes": "Company: Earth Impact",
     "type": "wholesale",
     "website": "https://www.facebook.com/Earth-Impact-Half-Moon-Bay-222607261154489/"
   },
@@ -8666,6 +8892,7 @@ module.exports =
     "id": 728,
     "firstName": "Donald & Cynthia",
     "lastName": "Hoskins",
+    "company": "Earthenworks (La Conner)",
     "email": "earthenworksart@aol.com",
     "phone": "(360) 466-4422",
     "street1": "713 First St",
@@ -8674,7 +8901,6 @@ module.exports =
     "postalCode": "98257",
     "country": "US",
     "createdOn": "2013-02-26",
-    "notes": "Company: Earthenworks (La Conner)",
     "type": "wholesale",
     "website": "http://www.earthenworksgallery.com"
   },
@@ -8682,6 +8908,7 @@ module.exports =
     "id": 729,
     "firstName": "Don & Cynthia",
     "lastName": "Hoskins",
+    "company": "Earthenworks (Port Townsend)",
     "email": "earthenworksart@aol.com",
     "phone": "(360) 385-0328",
     "street1": "702 Water St",
@@ -8690,7 +8917,6 @@ module.exports =
     "postalCode": "98368",
     "country": "US",
     "createdOn": "2013-05-03",
-    "notes": "Company: Earthenworks (Port Townsend)",
     "type": "wholesale",
     "website": "http://www.earthenworksgallery.com"
   },
@@ -8698,6 +8924,7 @@ module.exports =
     "id": 730,
     "firstName": "Ann & Ron",
     "lastName": "Wilcocks",
+    "company": "Earthwood Collections",
     "email": "info@earthwoodgallery.com",
     "phone": "(970) 577-8100",
     "street1": "PO Box 2317",
@@ -8706,13 +8933,13 @@ module.exports =
     "postalCode": "80517",
     "country": "US",
     "createdOn": "2015-05-25",
-    "notes": "Company: Earthwood Collections",
     "type": "wholesale",
     "website": "http://www.earthwoodgalleries.com/earthwood-collections/"
   },
   {
     "id": 731,
     "firstName": "Megan & Becky",
+    "company": "Easy Street Gallery",
     "email": "easystreetgal@comcast.net",
     "phone": "(410) 263-5556",
     "street1": "PO Box 57",
@@ -8721,13 +8948,14 @@ module.exports =
     "postalCode": "25411",
     "country": "US",
     "createdOn": "2014-02-25",
-    "notes": "NEXT ORDER GETS $65 CREDIT... MAKE SURE NET 30\nCompany: Easy Street Gallery",
+    "notes": "NEXT ORDER GETS $65 CREDIT... MAKE SURE NET 30",
     "type": "wholesale"
   },
   {
     "id": 732,
     "firstName": "Deanna",
     "lastName": "Eckels",
+    "company": "Eckels Pottery",
     "email": "eckelspottery@charter.net",
     "phone": "(717) 779-5617",
     "street1": "85205 State Hwy 13",
@@ -8736,7 +8964,6 @@ module.exports =
     "postalCode": "54814",
     "country": "US",
     "createdOn": "2018-04-04",
-    "notes": "Company: Eckels Pottery",
     "type": "wholesale",
     "website": "https://eckelspottery.com/"
   },
@@ -8744,6 +8971,7 @@ module.exports =
     "id": 733,
     "firstName": "Linda",
     "lastName": "Baker",
+    "company": "Ecolin",
     "email": "linda@ecolin.com",
     "phone": "(631) 473-1117",
     "street1": "14 E Broadway",
@@ -8752,7 +8980,6 @@ module.exports =
     "postalCode": "11777",
     "country": "US",
     "createdOn": "2015-07-15",
-    "notes": "Company: Ecolin",
     "type": "wholesale",
     "website": "http://www.ecolin.com/"
   },
@@ -8766,13 +8993,13 @@ module.exports =
     "id": 735,
     "firstName": "Lilly",
     "lastName": "McClellan",
+    "company": "Edmonds Floretum Garden Club",
     "street1": "9130 207th Pl SW",
     "city": "Edmonds",
     "state": "WA",
     "postalCode": "98026",
     "country": "US",
-    "createdOn": "2021-11-23",
-    "notes": "Company: Edmonds Floretum Garden Club"
+    "createdOn": "2021-11-23"
   },
   {
     "id": 736,
@@ -8807,7 +9034,8 @@ module.exports =
     "postalCode": "97408",
     "country": "US",
     "createdOn": "2021-04-28",
-    "notes": "Imported record: 1 order(s), $74.00 total spent."
+    "notes": "Imported record: 1 order(s), $74.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 739,
@@ -8863,7 +9091,8 @@ module.exports =
     "postalCode": "98116",
     "country": "US",
     "createdOn": "2018-08-30",
-    "notes": "Imported record: 1 order(s), $125.00 total spent."
+    "notes": "Imported record: 1 order(s), $125.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 744,
@@ -8920,6 +9149,7 @@ module.exports =
     "id": 748,
     "firstName": "Sue",
     "lastName": "Stekl",
+    "company": "Eleventh Hour",
     "email": "suestekl@gmail.com",
     "phone": "(585) 256-1450",
     "street1": "1922 Monroe Ave",
@@ -8928,7 +9158,6 @@ module.exports =
     "postalCode": "14618",
     "country": "US",
     "createdOn": "2019-01-22",
-    "notes": "Company: Eleventh Hour",
     "type": "wholesale",
     "website": "https://www.facebook.com/EleventhHourGift"
   },
@@ -8955,7 +9184,8 @@ module.exports =
     "postalCode": "2908",
     "country": "US",
     "createdOn": "2020-03-02",
-    "notes": "Imported record: 1 order(s), $59.00 total spent."
+    "notes": "Imported record: 1 order(s), $59.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 751,
@@ -8981,7 +9211,8 @@ module.exports =
     "postalCode": "34285",
     "country": "US",
     "createdOn": "2020-10-07",
-    "notes": "Imported record: 3 order(s), $466.00 total spent, legacy user ID 47727463."
+    "notes": "Imported record: 3 order(s), $466.00 total spent, legacy user ID 47727463.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 753,
@@ -9016,7 +9247,8 @@ module.exports =
     "postalCode": "3833",
     "country": "US",
     "createdOn": "2021-11-29",
-    "notes": "Imported record: 1 order(s), $47.66 total spent."
+    "notes": "Imported record: 1 order(s), $47.66 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 756,
@@ -9101,7 +9333,8 @@ module.exports =
     "postalCode": "909",
     "country": "US",
     "createdOn": "2021-02-09",
-    "notes": "Imported record: 2 order(s), $80.60 total spent."
+    "notes": "Imported record: 2 order(s), $80.60 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 762,
@@ -9176,7 +9409,8 @@ module.exports =
     "postalCode": "22031",
     "country": "US",
     "createdOn": "2020-09-03",
-    "notes": "Imported record: 1 order(s), $95.00 total spent."
+    "notes": "Imported record: 1 order(s), $95.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 769,
@@ -9218,7 +9452,8 @@ module.exports =
     "postalCode": "33433",
     "country": "US",
     "createdOn": "2020-01-19",
-    "notes": "Imported record: 1 order(s), $93.00 total spent."
+    "notes": "Imported record: 1 order(s), $93.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 772,
@@ -9322,7 +9557,8 @@ module.exports =
     "firstName": "Ellen",
     "lastName": "Singer",
     "email": "elleville00@gmail.com",
-    "createdOn": "2023-08-06"
+    "createdOn": "2023-08-06",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 781,
@@ -9336,7 +9572,8 @@ module.exports =
     "postalCode": "98177",
     "country": "US",
     "createdOn": "2017-10-06",
-    "notes": "Imported record: 1 order(s), $125.00 total spent."
+    "notes": "Imported record: 1 order(s), $125.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 782,
@@ -9445,12 +9682,14 @@ module.exports =
     "postalCode": "48653",
     "country": "US",
     "createdOn": "2025-11-30",
-    "notes": "Imported record: 1 order(s), $91.92 total spent."
+    "notes": "Imported record: 1 order(s), $91.92 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 793,
     "firstName": "Rachel",
     "lastName": "Perkal",
+    "company": "Epilogue Arts",
     "email": "epiloguearts123@gmail.com",
     "phone": "(847) 383-5912",
     "street1": "130 Old McHenry Rd",
@@ -9459,7 +9698,6 @@ module.exports =
     "postalCode": "60047",
     "country": "US",
     "createdOn": "2016-08-01",
-    "notes": "Company: Epilogue Arts",
     "type": "wholesale",
     "website": "http://www.epilogueart.com"
   },
@@ -9481,7 +9719,8 @@ module.exports =
     "firstName": "Eric",
     "lastName": "Steffen",
     "email": "support@mmswarehousesupply.com",
-    "createdOn": "2021-09-11"
+    "createdOn": "2021-09-11",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 796,
@@ -9530,7 +9769,8 @@ module.exports =
     "postalCode": "98119",
     "country": "US",
     "createdOn": "2026-01-06",
-    "notes": "Imported record: 1 order(s), $157.53 total spent."
+    "notes": "Imported record: 1 order(s), $157.53 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 800,
@@ -9559,7 +9799,8 @@ module.exports =
     "postalCode": "33837",
     "country": "US",
     "createdOn": "2018-02-08",
-    "notes": "Imported record: 1 order(s), $23.00 total spent."
+    "notes": "Imported record: 1 order(s), $23.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 802,
@@ -9573,7 +9814,8 @@ module.exports =
     "postalCode": "78634",
     "country": "US",
     "createdOn": "2019-05-11",
-    "notes": "Imported record: 1 order(s), $100.00 total spent."
+    "notes": "Imported record: 1 order(s), $100.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 803,
@@ -9593,7 +9835,8 @@ module.exports =
     "postalCode": "98199",
     "country": "US",
     "createdOn": "2017-03-23",
-    "notes": "Imported record: 1 order(s), $250.00 total spent."
+    "notes": "Imported record: 1 order(s), $250.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 805,
@@ -9606,7 +9849,8 @@ module.exports =
     "postalCode": "98901",
     "country": "US",
     "createdOn": "2020-06-30",
-    "notes": "Imported record: 1 order(s), legacy user ID 41647474."
+    "notes": "Imported record: 1 order(s), legacy user ID 41647474.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 806,
@@ -9620,7 +9864,8 @@ module.exports =
     "postalCode": "98103",
     "country": "US",
     "createdOn": "2018-01-07",
-    "notes": "Imported record: 1 order(s), $125.00 total spent."
+    "notes": "Imported record: 1 order(s), $125.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 807,
@@ -9661,7 +9906,8 @@ module.exports =
     "postalCode": "98225",
     "country": "US",
     "createdOn": "2020-04-08",
-    "notes": "Imported record: 1 order(s), $153.59 total spent."
+    "notes": "Imported record: 1 order(s), $153.59 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 810,
@@ -9688,7 +9934,8 @@ module.exports =
     "postalCode": "14437",
     "country": "US",
     "createdOn": "2017-08-16",
-    "notes": "Imported record: 1 order(s), $17.00 total spent."
+    "notes": "Imported record: 1 order(s), $17.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 812,
@@ -9705,6 +9952,7 @@ module.exports =
     "id": 813,
     "firstName": "Judy",
     "lastName": "Lester",
+    "company": "Escape, The",
     "email": "buy@shoptheescape.com",
     "phone": "(512) 930-0052",
     "street1": "713 S Main St",
@@ -9713,7 +9961,6 @@ module.exports =
     "postalCode": "78626",
     "country": "US",
     "createdOn": "2011-09-18",
-    "notes": "Company: Escape, The",
     "type": "wholesale",
     "website": "https://www.facebook.com/TheEscapeGeorgetown/"
   },
@@ -9728,7 +9975,8 @@ module.exports =
     "postalCode": "L2R 4P3",
     "country": "CA",
     "createdOn": "2022-11-23",
-    "notes": "Imported record: 1 order(s), legacy user ID 86819495."
+    "notes": "Imported record: 1 order(s), legacy user ID 86819495.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 815,
@@ -9762,6 +10010,7 @@ module.exports =
     "id": 817,
     "firstName": "Douglas",
     "lastName": "Elkins",
+    "company": "Euphemia Gallery, The",
     "email": "EuphemiaGallery@gmail.com",
     "phone": "(973) 998-1141",
     "street1": "1319 3rd Avenue",
@@ -9770,7 +10019,6 @@ module.exports =
     "postalCode": "7762",
     "country": "US",
     "createdOn": "2019-07-30",
-    "notes": "Company: Euphemia Gallery, The",
     "type": "wholesale",
     "website": "https://www.facebook.com/The-Euphemia-Gallery-169124353102303/"
   },
@@ -9805,6 +10053,7 @@ module.exports =
   {
     "id": 820,
     "firstName": "Barbara",
+    "company": "Evergreen",
     "email": "info@evergreencrafts.com",
     "phone": "(413) 528-0511",
     "street1": "291 Main St",
@@ -9813,7 +10062,6 @@ module.exports =
     "postalCode": "1230",
     "country": "US",
     "createdOn": "2010-05-27",
-    "notes": "Company: Evergreen",
     "type": "wholesale",
     "website": "https://www.facebook.com/Evergreen-Fine-American-Crafts-260957389610/"
   },
@@ -9821,6 +10069,7 @@ module.exports =
     "id": 821,
     "firstName": "Diane",
     "lastName": "Robinson",
+    "company": "Evergreen Fine Crafts",
     "email": "evergreen12ct@aol.com",
     "phone": "(203) 453-4324",
     "street1": "21 Boston St",
@@ -9829,7 +10078,7 @@ module.exports =
     "postalCode": "6437",
     "country": "US",
     "createdOn": "2010-07-07",
-    "notes": "Co-owners: Diane Robinson & Sharon Silvestrini\nCompany: Evergreen Fine Crafts",
+    "notes": "Co-owners: Diane Robinson & Sharon Silvestrini",
     "type": "wholesale",
     "website": "https://www.facebook.com/evergreenfinecrafts/"
   },
@@ -9837,6 +10086,7 @@ module.exports =
     "id": 822,
     "firstName": "Marlene",
     "lastName": "Heuck",
+    "company": "Every Little Thing",
     "phone": "(815) 528-3920",
     "street1": "3514 W Broad St",
     "city": "McHenry",
@@ -9844,13 +10094,13 @@ module.exports =
     "postalCode": "60050",
     "country": "US",
     "createdOn": "2020-01-25",
-    "notes": "Company: Every Little Thing",
     "type": "wholesale"
   },
   {
     "id": 823,
     "firstName": "Jennifer",
     "lastName": "Cole",
+    "company": "Expressions Art Glass",
     "email": "jenexpressions@qwest.net",
     "phone": "(520) 886-7720",
     "street1": "8002 E Broadway Blvd",
@@ -9859,7 +10109,6 @@ module.exports =
     "postalCode": "85710",
     "country": "US",
     "createdOn": "2011-05-10",
-    "notes": "Company: Expressions Art Glass",
     "type": "wholesale",
     "website": "https://www.expressionsartglass.com/"
   },
@@ -9903,12 +10152,14 @@ module.exports =
     "firstName": "Felix",
     "lastName": "Tran",
     "email": "felixtran1905winner@gmail.com",
-    "createdOn": "2024-01-04"
+    "createdOn": "2024-01-04",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 828,
     "firstName": "Joel",
     "lastName": "Lentzner",
+    "company": "Fiddlehead at Four Corners",
     "email": "joelandnina@yahoo.com",
     "phone": "(802) 447-1000",
     "street1": "338 Main St",
@@ -9917,7 +10168,6 @@ module.exports =
     "postalCode": "5201",
     "country": "US",
     "createdOn": "2010-05-27",
-    "notes": "Company: Fiddlehead at Four Corners",
     "type": "wholesale",
     "website": "https://www.facebook.com/fiddlehead4corners"
   },
@@ -9925,6 +10175,7 @@ module.exports =
     "id": 829,
     "firstName": "Dora",
     "lastName": "Martin",
+    "company": "Fine Eye Gallery",
     "email": "info@fineeye.com",
     "phone": "(209) 267-0571",
     "street1": "71 Main St",
@@ -9933,7 +10184,6 @@ module.exports =
     "postalCode": "95685",
     "country": "US",
     "createdOn": "2017-04-17",
-    "notes": "Company: Fine Eye Gallery",
     "type": "wholesale",
     "website": "https://fineeye.com/"
   },
@@ -9941,6 +10191,7 @@ module.exports =
     "id": 830,
     "firstName": "Nicole",
     "lastName": "Elliott",
+    "company": "Fine Things",
     "email": "finethings@goldrush.com",
     "phone": "(209) 795-1811",
     "street1": "PO Box 3329",
@@ -9949,7 +10200,6 @@ module.exports =
     "postalCode": "95223",
     "country": "US",
     "createdOn": "2010-05-27",
-    "notes": "Company: Fine Things",
     "type": "wholesale",
     "website": "https://www.facebook.com/FineThingsArnold/"
   },
@@ -9972,6 +10222,7 @@ module.exports =
     "id": 832,
     "firstName": "Michele",
     "lastName": "Manasse",
+    "company": "Fireworks Gallery",
     "email": "michelem@fireworksgallery.net",
     "phone": "(206) 682-8707",
     "street1": "210 First Ave S",
@@ -9980,7 +10231,6 @@ module.exports =
     "postalCode": "98104",
     "country": "US",
     "createdOn": "2010-05-27",
-    "notes": "Company: Fireworks Gallery",
     "type": "wholesale",
     "website": "http://www.fireworksgallery.net/"
   },
@@ -9988,6 +10238,7 @@ module.exports =
     "id": 833,
     "firstName": "Marcia",
     "lastName": "Bryan",
+    "company": "Fore Seasons @ Old Waverly",
     "email": "gbryan1@midsourth.rr.com",
     "phone": "(662) 495-5487",
     "street1": "1 Magnolia Dr",
@@ -9996,7 +10247,6 @@ module.exports =
     "postalCode": "39773",
     "country": "US",
     "createdOn": "2010-05-27",
-    "notes": "Company: Fore Seasons @ Old Waverly",
     "type": "wholesale",
     "website": "http://oldwaverly.com/"
   },
@@ -10004,6 +10254,7 @@ module.exports =
     "id": 834,
     "firstName": "Robert",
     "lastName": "Fortin",
+    "company": "Fortin Ironworks",
     "email": "bob@fortinironworks.com",
     "phone": "(614) 291-4342",
     "street1": "944 W 5th Ave",
@@ -10012,7 +10263,6 @@ module.exports =
     "postalCode": "43121",
     "country": "US",
     "createdOn": "2010-05-27",
-    "notes": "Company: Fortin Ironworks",
     "type": "wholesale",
     "website": "https://www.fortinironworks.com/"
   },
@@ -10020,6 +10270,7 @@ module.exports =
     "id": 835,
     "firstName": "Mary Anne",
     "lastName": "Hawley",
+    "company": "Fortunes of Time",
     "email": "maryanne@parajax.com",
     "phone": "(518) 523-4112",
     "street1": "PO Box 670",
@@ -10028,7 +10279,7 @@ module.exports =
     "postalCode": "12946",
     "country": "US",
     "createdOn": "2013-01-25",
-    "notes": "Call Mary Anne for cc#: 518-524-0315\nCompany: Fortunes of Time",
+    "notes": "Call Mary Anne for cc#: 518-524-0315",
     "type": "wholesale",
     "website": "http://parajax.com/"
   },
@@ -10036,6 +10287,7 @@ module.exports =
     "id": 836,
     "firstName": "Paula",
     "lastName": "Bittner",
+    "company": "Four Corners Custom Framing",
     "email": "lqqking4framer@sbcglobal.net",
     "phone": "(260) 355-0650",
     "street1": "419 N Jefferson St",
@@ -10044,7 +10296,6 @@ module.exports =
     "postalCode": "46750",
     "country": "US",
     "createdOn": "2010-07-07",
-    "notes": "Company: Four Corners Custom Framing",
     "type": "wholesale",
     "website": "http://www.fourcornerscustomframing.com/"
   },
@@ -10074,6 +10325,7 @@ module.exports =
     "id": 839,
     "firstName": "Eileen",
     "lastName": "Anatro",
+    "company": "Frick & Frack",
     "email": "ffgift@aol.com",
     "phone": "(973) 696-8266",
     "street1": "1470 Rt 23 N",
@@ -10082,7 +10334,6 @@ module.exports =
     "postalCode": "7470",
     "country": "US",
     "createdOn": "2010-05-27",
-    "notes": "Company: Frick & Frack",
     "type": "wholesale",
     "website": "https://www.frickandfrack.com/"
   },
@@ -10105,6 +10356,7 @@ module.exports =
     "id": 841,
     "firstName": "Russ",
     "lastName": "Gilbert",
+    "company": "Fusion Art Glass",
     "email": "info@fusionartglass.com",
     "phone": "(850) 231-5405",
     "street1": "55 Central Square",
@@ -10114,7 +10366,7 @@ module.exports =
     "postalCode": "32459",
     "country": "US",
     "createdOn": "2014-04-01",
-    "notes": "Office: Russ 850-231-5405\nCompany: Fusion Art Glass",
+    "notes": "Office: Russ 850-231-5405",
     "type": "wholesale",
     "website": "http://www.fusionartglass.com/"
   },
@@ -10122,6 +10374,7 @@ module.exports =
     "id": 842,
     "firstName": "Pat & Harvey",
     "lastName": "Childs",
+    "company": "G Squared Gallery",
     "email": "gsquaredigonier@comcast.net",
     "phone": "(724) 238-8083",
     "street1": "138 E Main St",
@@ -10130,7 +10383,6 @@ module.exports =
     "postalCode": "15658",
     "country": "US",
     "createdOn": "2015-06-14",
-    "notes": "Company: G Squared Gallery",
     "type": "wholesale",
     "website": "https://gsquaredgallery.com/"
   },
@@ -10166,7 +10418,8 @@ module.exports =
     "postalCode": "98303-5001",
     "country": "US",
     "createdOn": "2025-12-02",
-    "notes": "Imported record: 1 order(s), $154.04 total spent."
+    "notes": "Imported record: 1 order(s), $154.04 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 846,
@@ -10180,7 +10433,8 @@ module.exports =
     "postalCode": "95602",
     "country": "US",
     "createdOn": "2020-11-15",
-    "notes": "Imported record: 2 order(s), $456.25 total spent."
+    "notes": "Imported record: 2 order(s), $456.25 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 847,
@@ -10234,12 +10488,14 @@ module.exports =
     "state": "IL",
     "postalCode": "60546",
     "country": "US",
-    "createdOn": "2025-06-17"
+    "createdOn": "2025-06-17",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 852,
     "firstName": "Barbara",
     "lastName": "Caprile",
+    "company": "Galleria Greendale",
     "email": "info@galleriagreendale.com",
     "phone": "(414) 215-7999",
     "street1": "5640 Parking St",
@@ -10248,7 +10504,6 @@ module.exports =
     "postalCode": "53129",
     "country": "US",
     "createdOn": "2021-03-17",
-    "notes": "Company: Galleria Greendale",
     "type": "wholesale",
     "website": "http://galleriagreendale.com/"
   },
@@ -10256,6 +10511,7 @@ module.exports =
     "id": 853,
     "firstName": "Jessie",
     "lastName": "Antonio",
+    "company": "Galleria J Antonio",
     "email": "antonio10009@gmail.com",
     "phone": "(212) 505-9400",
     "street1": "43 Ave A",
@@ -10264,7 +10520,7 @@ module.exports =
     "postalCode": "10009",
     "country": "US",
     "createdOn": "2013-08-16",
-    "notes": "Fax invoice to 1-212-505-0964 for paymentAlso talked with David\nCompany: Galleria J Antonio",
+    "notes": "Fax invoice to 1-212-505-0964 for paymentAlso talked with David",
     "type": "wholesale",
     "website": "http://www.galleriajantonio.com/"
   },
@@ -10272,6 +10528,7 @@ module.exports =
     "id": 854,
     "firstName": "M. Joan",
     "lastName": "Smith",
+    "company": "Gallery 143",
     "email": "gallery143@neo.rr.com",
     "phone": "(330) 896-8166",
     "street1": "4195 Massillon Rd",
@@ -10280,7 +10537,6 @@ module.exports =
     "postalCode": "44685",
     "country": "US",
     "createdOn": "2020-01-30",
-    "notes": "Company: Gallery 143",
     "type": "wholesale",
     "website": "http://gallery143art.com/"
   },
@@ -10302,6 +10558,7 @@ module.exports =
     "id": 856,
     "firstName": "Linda",
     "lastName": "Corapi",
+    "company": "Gardens Galore",
     "email": "gardensgalore@gmail.com",
     "phone": "(781) 438-4130",
     "street1": "300 Trade Center Ste 1450",
@@ -10310,7 +10567,6 @@ module.exports =
     "postalCode": "1801",
     "country": "US",
     "createdOn": "2017-02-26",
-    "notes": "Company: Gardens Galore",
     "type": "wholesale",
     "website": "https://www.facebook.com/Gardens-Galore-402819553198282/"
   },
@@ -10318,6 +10574,7 @@ module.exports =
     "id": 857,
     "firstName": "Jennifer",
     "lastName": "Figliolino",
+    "company": "GEO World-Class Pools",
     "email": "jenniferfigliolino@gmail.com",
     "phone": "(973) 513-9893",
     "street1": "27 N Legion St",
@@ -10326,9 +10583,9 @@ module.exports =
     "postalCode": "7442",
     "country": "US",
     "createdOn": "2024-05-07",
-    "notes": "Company: GEO World-Class Pools",
     "type": "wholesale",
-    "website": "https://www.geoworldclasspools.com/"
+    "website": "https://www.geoworldclasspools.com/",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 858,
@@ -10369,14 +10626,16 @@ module.exports =
     "firstName": "Georgia",
     "lastName": "Keech",
     "email": "receiving@rockcitygardens.com",
-    "createdOn": "2020-08-17"
+    "createdOn": "2020-08-17",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 862,
     "firstName": "Georgina",
     "lastName": "Solivan",
     "email": "gsolivanquiles@yahoo.com",
-    "createdOn": "2022-11-18"
+    "createdOn": "2022-11-18",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 863,
@@ -10405,7 +10664,8 @@ module.exports =
     "postalCode": "98040",
     "country": "US",
     "createdOn": "2018-08-30",
-    "notes": "Imported record: 2 order(s), $125.00 total spent."
+    "notes": "Imported record: 2 order(s), $125.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 865,
@@ -10419,12 +10679,14 @@ module.exports =
     "postalCode": "98026",
     "country": "US",
     "createdOn": "2019-01-16",
-    "notes": "Imported record: 1 order(s), $130.00 total spent."
+    "notes": "Imported record: 1 order(s), $130.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 866,
     "firstName": "Mary",
     "lastName": "Dowling",
+    "company": "Gift Well",
     "phone": "(906) 360-6000",
     "street1": "200 S 7th St",
     "city": "Marquette",
@@ -10432,7 +10694,6 @@ module.exports =
     "postalCode": "49855",
     "country": "US",
     "createdOn": "2022-03-06",
-    "notes": "Company: Gift Well",
     "type": "wholesale",
     "website": "https://uphospitalitygifts.com/"
   },
@@ -10440,6 +10701,7 @@ module.exports =
     "id": 867,
     "firstName": "Deb",
     "lastName": "Kester",
+    "company": "Gifted Home Decor",
     "email": "deb@dsk-enterprises.com",
     "phone": "(301) 466-0869",
     "street1": "23633 Woodfield Rd",
@@ -10448,7 +10710,6 @@ module.exports =
     "postalCode": "20882",
     "country": "US",
     "createdOn": "2017-11-16",
-    "notes": "Company: Gifted Home Decor",
     "type": "wholesale",
     "website": "https://www.giftedhomedecor.com"
   },
@@ -10456,6 +10717,7 @@ module.exports =
     "id": 868,
     "firstName": "Jessica",
     "lastName": "Stone",
+    "company": "Gifts on the Green",
     "email": "giftsonthegreenct@gmail.com",
     "phone": "(860) 537-0539",
     "street1": "43 Hayward Ave",
@@ -10464,7 +10726,6 @@ module.exports =
     "postalCode": "6415",
     "country": "US",
     "createdOn": "2023-08-28",
-    "notes": "Company: Gifts on the Green",
     "type": "wholesale",
     "website": "https://www.giftsonthegreenct.com"
   },
@@ -10529,6 +10790,7 @@ module.exports =
     "id": 874,
     "firstName": "LeeAnne",
     "lastName": "Kornbau",
+    "company": "Glass Accents",
     "email": "leeanne@glassaccentsetc.com",
     "phone": "(717) 625-2973",
     "street1": "2 E 28th Division Hwy",
@@ -10537,7 +10799,6 @@ module.exports =
     "postalCode": "17543",
     "country": "US",
     "createdOn": "2014-06-11",
-    "notes": "Company: Glass Accents",
     "type": "wholesale",
     "website": "https://www.facebook.com/Glass-Accents-Etc-196405100438897/"
   },
@@ -10545,6 +10806,7 @@ module.exports =
     "id": 875,
     "firstName": "Karen",
     "lastName": "Seymour",
+    "company": "Glass and Decor",
     "email": "karen@seymourstainedglass.com",
     "phone": "(206) 525-1577",
     "street1": "5415 Greenwood Ave N",
@@ -10553,13 +10815,13 @@ module.exports =
     "postalCode": "98103",
     "country": "US",
     "createdOn": "2019-10-04",
-    "notes": "Company: Glass and Decor",
     "website": "http://glassanddecor.com"
   },
   {
     "id": 876,
     "firstName": "Emily",
     "lastName": "Ernes",
+    "company": "Glass Growers Gallery, Inc",
     "email": "emily@glassgrowersgallery.com",
     "phone": "(440) 812-8862",
     "street1": "10 E 5th St",
@@ -10568,7 +10830,6 @@ module.exports =
     "postalCode": "16507",
     "country": "US",
     "createdOn": "2010-05-27",
-    "notes": "Company: Glass Growers Gallery, Inc",
     "type": "wholesale",
     "website": "https://glassgrowersgallery.com/"
   },
@@ -10576,6 +10837,7 @@ module.exports =
     "id": 877,
     "firstName": "Marsha",
     "lastName": "Wycich",
+    "company": "Glass Kaleidoscope",
     "phone": "(412) 828-6334",
     "street1": "364 Plum St",
     "city": "Oakmont",
@@ -10583,13 +10845,13 @@ module.exports =
     "postalCode": "15139",
     "country": "US",
     "createdOn": "2018-02-17",
-    "notes": "Company: Glass Kaleidoscope",
     "website": "http://glasskaleidoscope.com/"
   },
   {
     "id": 878,
     "firstName": "Matt",
     "lastName": "Jaros",
+    "company": "Glass Onion Originals",
     "email": "mjaros.glassonion@gmail.com",
     "phone": "(914) 741-6294",
     "street1": "4 Washington Ave",
@@ -10598,7 +10860,6 @@ module.exports =
     "postalCode": "10570",
     "country": "US",
     "createdOn": "2019-02-18",
-    "notes": "Company: Glass Onion Originals",
     "type": "wholesale",
     "website": "https://glassonionoriginals.com/"
   },
@@ -10606,6 +10867,7 @@ module.exports =
     "id": 879,
     "firstName": "Abigail",
     "lastName": "Restko",
+    "company": "Glassando",
     "email": "service@glassando.com",
     "phone": "(319) 341-7887",
     "street1": "201 S Clinton St Ste 116",
@@ -10614,7 +10876,6 @@ module.exports =
     "postalCode": "52240",
     "country": "US",
     "createdOn": "2010-05-27",
-    "notes": "Company: Glassando",
     "type": "wholesale",
     "website": "https://glassando.com/"
   },
@@ -10643,7 +10904,8 @@ module.exports =
     "postalCode": "16046",
     "country": "US",
     "createdOn": "2020-08-23",
-    "notes": "Imported record: 1 order(s), $169.00 total spent."
+    "notes": "Imported record: 1 order(s), $169.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 882,
@@ -10713,6 +10975,7 @@ module.exports =
     "id": 888,
     "firstName": "Terri",
     "lastName": "Sliwecki",
+    "company": "Golden Feather",
     "email": "thegoldenfeather@comcast.net",
     "phone": "(609) 561-0612",
     "street1": "548 Pleasant Mills Rd",
@@ -10721,7 +10984,6 @@ module.exports =
     "postalCode": "8037",
     "country": "US",
     "createdOn": "2011-11-12",
-    "notes": "Company: Golden Feather",
     "type": "wholesale",
     "website": "https://www.thegoldenfeather.com/"
   },
@@ -10729,6 +10991,7 @@ module.exports =
     "id": 889,
     "firstName": "Kim",
     "lastName": "Duncan",
+    "company": "Goldenlight Visions",
     "email": "hello@goldenlightvisions.com",
     "phone": "(212) 393-4300",
     "street1": "2543 Broadway",
@@ -10737,7 +11000,7 @@ module.exports =
     "postalCode": "10025",
     "country": "US",
     "createdOn": "2026-05-20",
-    "notes": "Company: Goldenlight Visions\nImported record: 1 order(s), $480.00 total spent.",
+    "notes": "Imported record: 1 order(s), $480.00 total spent.",
     "type": "wholesale",
     "website": "https://www.goldenlightvisions.com/"
   },
@@ -10751,6 +11014,7 @@ module.exports =
     "id": 891,
     "firstName": "Joyce",
     "lastName": "Massie",
+    "company": "Green Hill Gallery",
     "email": "joycemassie4@gmail.com",
     "phone": "(828) 400-1072",
     "street1": "34 N Main St",
@@ -10759,13 +11023,13 @@ module.exports =
     "postalCode": "28786",
     "country": "US",
     "createdOn": "2025-02-14",
-    "notes": "Company: Green Hill Gallery",
     "type": "wholesale"
   },
   {
     "id": 892,
     "firstName": "Nadeen",
     "lastName": "Kieren",
+    "company": "GreenSky",
     "email": "nadeen@gpdchicago.com",
     "phone": "(773) 275-1911",
     "street1": "5357 N Ashland Ave",
@@ -10774,7 +11038,7 @@ module.exports =
     "postalCode": "60640",
     "country": "US",
     "createdOn": "2011-02-01",
-    "notes": "NOW ONLINE-ONLY (March 2017)\nCompany: GreenSky",
+    "notes": "NOW ONLINE-ONLY (March 2017)",
     "type": "wholesale",
     "website": "http://www.greenskyshop.com/"
   },
@@ -10790,7 +11054,8 @@ module.exports =
     "postalCode": "30513",
     "country": "US",
     "createdOn": "2019-12-06",
-    "notes": "Imported record: 1 order(s), $127.85 total spent."
+    "notes": "Imported record: 1 order(s), $127.85 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 894,
@@ -10804,7 +11069,8 @@ module.exports =
     "postalCode": "98005",
     "country": "US",
     "createdOn": "2018-07-24",
-    "notes": "Imported record: 1 order(s), $125.00 total spent."
+    "notes": "Imported record: 1 order(s), $125.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 895,
@@ -10831,7 +11097,8 @@ module.exports =
     "postalCode": "99021",
     "country": "US",
     "createdOn": "2024-12-22",
-    "notes": "Imported record: 1 order(s), $283.76 total spent."
+    "notes": "Imported record: 1 order(s), $283.76 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 897,
@@ -10844,7 +11111,8 @@ module.exports =
     "postalCode": "97232",
     "country": "US",
     "createdOn": "2021-11-28",
-    "notes": "Imported record: 1 order(s), $280.50 total spent."
+    "notes": "Imported record: 1 order(s), $280.50 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 898,
@@ -10858,7 +11126,8 @@ module.exports =
     "postalCode": "98296",
     "country": "US",
     "createdOn": "2025-07-01",
-    "notes": "Imported record: 1 order(s), $116.58 total spent."
+    "notes": "Imported record: 1 order(s), $116.58 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 899,
@@ -10877,6 +11146,7 @@ module.exports =
     "id": 901,
     "firstName": "Suzanne",
     "lastName": "Zylonis",
+    "company": "Haley Fine Art",
     "email": "zylonis@yahoo.com",
     "phone": "(540) 987-1000",
     "street1": "42 Main St PMB 408",
@@ -10885,7 +11155,7 @@ module.exports =
     "postalCode": "22740",
     "country": "US",
     "createdOn": "2011-10-21",
-    "notes": "FORMERLY Longview Gallery, Sperryville Pottery\nCompany: Haley Fine Art",
+    "notes": "FORMERLY Longview Gallery, Sperryville Pottery",
     "type": "wholesale",
     "website": "http://haleyfineart.com/"
   },
@@ -10893,6 +11163,7 @@ module.exports =
     "id": 902,
     "firstName": "Greg & Emily",
     "lastName": "Kerr",
+    "company": "Handcraft House",
     "email": "handcrafthouse@msn.com",
     "phone": "(508) 240-1412",
     "street1": "3966 Route 6A",
@@ -10901,7 +11172,6 @@ module.exports =
     "postalCode": "2631",
     "country": "US",
     "createdOn": "2010-05-27",
-    "notes": "Company: Handcraft House",
     "type": "wholesale",
     "website": "https://handcrafthousegallery.com/"
   },
@@ -10909,6 +11179,7 @@ module.exports =
     "id": 903,
     "firstName": "Melinda",
     "lastName": "Minervini",
+    "company": "Handmade and More",
     "email": "handmade256@gmail.com",
     "phone": "(845) 255-6277",
     "street1": "6 N Front St",
@@ -10917,7 +11188,6 @@ module.exports =
     "postalCode": "12561",
     "country": "US",
     "createdOn": "2013-04-04",
-    "notes": "Company: Handmade and More",
     "type": "wholesale",
     "website": "https://www.handmadeandmore.com/"
   },
@@ -10925,6 +11195,7 @@ module.exports =
     "id": 904,
     "firstName": "Marlo",
     "lastName": "Miyashiro",
+    "company": "Handmade Showroom, The",
     "email": "marlo@thehandmadeshowroom.com",
     "phone": "(206) 623-0504",
     "street1": "600 Pine St #260",
@@ -10933,13 +11204,14 @@ module.exports =
     "postalCode": "98101",
     "country": "US",
     "createdOn": "2018-01-10",
-    "notes": "Company: Handmade Showroom, The\nType: Consignment (not represented by the wholesale/retail field)",
+    "notes": "Type: Consignment (not represented by the wholesale/retail field)",
     "website": "https://www.thehandmadeshowroom.com/"
   },
   {
     "id": 905,
     "firstName": "Eric",
     "lastName": "Dandurand",
+    "company": "Harmony Glassworks",
     "email": "harmonyglassworks@gmail.com",
     "phone": "(805) 927-4248",
     "street1": "2180 Old Creamery Rd",
@@ -10948,7 +11220,6 @@ module.exports =
     "postalCode": "93435",
     "country": "US",
     "createdOn": "2016-03-01",
-    "notes": "Company: Harmony Glassworks",
     "type": "wholesale",
     "website": "https://www.harmonyglassworks.com/"
   },
@@ -10964,12 +11235,14 @@ module.exports =
     "postalCode": "98045",
     "country": "US",
     "createdOn": "2017-08-12",
-    "notes": "Imported record: 2 order(s), $341.10 total spent."
+    "notes": "Imported record: 2 order(s), $341.10 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 907,
     "firstName": "Diane",
     "lastName": "McCullough",
+    "company": "Hearst Castle (Aramark)",
     "email": "McCullough-Diane@aramark.com",
     "phone": "(805) 927-0339",
     "street1": "PO Box 210",
@@ -10979,13 +11252,14 @@ module.exports =
     "postalCode": "93452",
     "country": "US",
     "createdOn": "2017-02-25",
-    "notes": "*******USE UPS NUMBER******Aramark Site UPS Number - 809-7VY\nCompany: Hearst Castle (Aramark)",
+    "notes": "*******USE UPS NUMBER******Aramark Site UPS Number - 809-7VY",
     "type": "wholesale",
     "website": "http://hearstcastle.org/"
   },
   {
     "id": 908,
     "firstName": "Phyllis, Anna, and Robin",
+    "company": "Heart of the Home Gallery",
     "email": "info@heartofthehome.com",
     "phone": "(215) 862-1880",
     "street1": "28 S Main St",
@@ -10994,7 +11268,6 @@ module.exports =
     "postalCode": "18938",
     "country": "US",
     "createdOn": "2015-09-14",
-    "notes": "Company: Heart of the Home Gallery",
     "type": "wholesale",
     "website": "https://www.heartofthehome.com/"
   },
@@ -11002,6 +11275,7 @@ module.exports =
     "id": 909,
     "firstName": "Richelle",
     "lastName": "Denning",
+    "company": "Hearthside Framing Gallery",
     "email": "richelle@hearthsideframing.com",
     "phone": "(814) 725-9184",
     "street1": "15 W Main St",
@@ -11010,7 +11284,6 @@ module.exports =
     "postalCode": "16428",
     "country": "US",
     "createdOn": "2016-04-11",
-    "notes": "Company: Hearthside Framing Gallery",
     "type": "wholesale"
   },
   {
@@ -11025,7 +11298,8 @@ module.exports =
     "postalCode": "98382",
     "country": "US",
     "createdOn": "2019-07-18",
-    "notes": "Imported record: 1 order(s), $260.00 total spent."
+    "notes": "Imported record: 1 order(s), $260.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 911,
@@ -11052,7 +11326,8 @@ module.exports =
     "postalCode": "44070",
     "country": "US",
     "createdOn": "2020-11-23",
-    "notes": "Imported record: 1 order(s), $16.50 total spent."
+    "notes": "Imported record: 1 order(s), $16.50 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 913,
@@ -11122,7 +11397,8 @@ module.exports =
     "postalCode": "97068",
     "country": "US",
     "createdOn": "2019-05-11",
-    "notes": "Imported record: 1 order(s), $520.00 total spent."
+    "notes": "Imported record: 1 order(s), $520.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 920,
@@ -11135,7 +11411,8 @@ module.exports =
     "postalCode": "59901",
     "country": "US",
     "createdOn": "2025-07-05",
-    "notes": "Imported record: 1 order(s), $84.75 total spent."
+    "notes": "Imported record: 1 order(s), $84.75 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 921,
@@ -11176,12 +11453,14 @@ module.exports =
     "postalCode": "20772",
     "country": "US",
     "createdOn": "2023-09-02",
-    "notes": "Imported record: 1 order(s), $44.15 total spent."
+    "notes": "Imported record: 1 order(s), $44.15 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 924,
     "firstName": "Audrie",
     "lastName": "Ranon",
+    "company": "Henry Plant Museum",
     "email": "museumstore@ut.edu",
     "phone": "(813) 258-7307",
     "street1": "401 W Kennedy Blvd",
@@ -11190,7 +11469,6 @@ module.exports =
     "postalCode": "33606",
     "country": "US",
     "createdOn": "2011-02-21",
-    "notes": "Company: Henry Plant Museum",
     "type": "wholesale",
     "website": "https://www.plantmuseum.com/discover/museum-store"
   },
@@ -11223,6 +11501,7 @@ module.exports =
     "id": 927,
     "firstName": "Stephanie",
     "lastName": "Hoadley",
+    "company": "Hoadley Gallery",
     "email": "info@hoadleygallery.com",
     "phone": "(413) 637-2814",
     "street1": "21 Church St",
@@ -11231,7 +11510,6 @@ module.exports =
     "postalCode": "1240",
     "country": "US",
     "createdOn": "2013-05-22",
-    "notes": "Company: Hoadley Gallery",
     "type": "wholesale",
     "website": "http://hoadleygallery.com"
   },
@@ -11239,6 +11517,7 @@ module.exports =
     "id": 928,
     "firstName": "Casey",
     "lastName": "Dymkoski",
+    "company": "Hole in the Wall Gallery, The",
     "phone": "(724) 335-8888",
     "street1": "2764 Leechburg Rd",
     "city": "Lower Burrell",
@@ -11246,7 +11525,7 @@ module.exports =
     "postalCode": "15068",
     "country": "US",
     "createdOn": "2020-08-26",
-    "notes": "Permanently closed 2021-04-24\nCompany: Hole in the Wall Gallery, The",
+    "notes": "Permanently closed 2021-04-24",
     "type": "wholesale",
     "website": "http://theholeinthewallgallery.com/"
   },
@@ -11269,7 +11548,8 @@ module.exports =
     "postalCode": "98290",
     "country": "US",
     "createdOn": "2023-01-14",
-    "notes": "Imported record: 2 order(s), $644.88 total spent."
+    "notes": "Imported record: 2 order(s), $644.88 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 931,
@@ -11297,6 +11577,7 @@ module.exports =
     "id": 933,
     "firstName": "Malia",
     "lastName": "Santucci",
+    "company": "Holy Rosary Parents Association",
     "email": "malias@holyrosaryedmonds.org",
     "phone": "(425) 778-3197",
     "street1": "PO Box 206",
@@ -11304,13 +11585,13 @@ module.exports =
     "state": "WA",
     "postalCode": "98020",
     "country": "US",
-    "createdOn": "2019-06-02",
-    "notes": "Company: Holy Rosary Parents Association"
+    "createdOn": "2019-06-02"
   },
   {
     "id": 934,
     "firstName": "Christie",
     "lastName": "Phillips",
+    "company": "Hoypoloi Gallery",
     "email": "cdphillips_us@mac.com",
     "phone": "(407) 827-0113",
     "street1": "2310 Raehn St",
@@ -11320,7 +11601,7 @@ module.exports =
     "postalCode": "32830",
     "country": "US",
     "createdOn": "2013-03-18",
-    "notes": "Jennifer at 407.827.0113Jen Molea <hoypoloi.ap@me.com>\nCompany: Hoypoloi Gallery",
+    "notes": "Jennifer at 407.827.0113Jen Molea <hoypoloi.ap@me.com>",
     "type": "wholesale",
     "website": "http://www.hoypoloigallery.com/"
   },
@@ -11328,6 +11609,7 @@ module.exports =
     "id": 935,
     "firstName": "Rebecca",
     "lastName": "Staebler",
+    "company": "HUBBUB",
     "email": "rebecca@hubbubshop.com",
     "phone": "(360) 736-1517",
     "street1": "328 N Tower Ave",
@@ -11336,7 +11618,6 @@ module.exports =
     "postalCode": "98531",
     "country": "US",
     "createdOn": "2019-07-09",
-    "notes": "Company: HUBBUB",
     "type": "wholesale",
     "website": "https://hubbubshop.com/"
   },
@@ -11359,6 +11640,7 @@ module.exports =
     "id": 937,
     "firstName": "Mark",
     "lastName": "Kinney",
+    "company": "Hyde and Seek",
     "email": "markandshawnee@gmail.com",
     "phone": "(907) 299-1153",
     "street1": "1521 N 13th St",
@@ -11367,13 +11649,13 @@ module.exports =
     "postalCode": "83702",
     "country": "US",
     "createdOn": "2020-12-30",
-    "notes": "Company: Hyde and Seek",
     "type": "wholesale"
   },
   {
     "id": 938,
     "firstName": "Carol",
     "lastName": "Jonietz",
+    "company": "Hyde Collection",
     "email": "cjonietz@hydecollection.org",
     "phone": "5187921761x31",
     "street1": "161 Warren St",
@@ -11382,7 +11664,6 @@ module.exports =
     "postalCode": "12801",
     "country": "US",
     "createdOn": "2010-05-27",
-    "notes": "Company: Hyde Collection",
     "type": "wholesale",
     "website": "https://www.hydecollection.org/"
   },
@@ -11404,7 +11685,8 @@ module.exports =
     "postalCode": "99801",
     "country": "US",
     "createdOn": "2021-07-21",
-    "notes": "Imported record: 1 order(s), $169.00 total spent."
+    "notes": "Imported record: 1 order(s), $169.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 941,
@@ -11423,7 +11705,8 @@ module.exports =
     "postalCode": "95695",
     "country": "US",
     "createdOn": "2023-12-02",
-    "notes": "Imported record: 2 order(s), $247.84 total spent."
+    "notes": "Imported record: 2 order(s), $247.84 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 943,
@@ -11440,19 +11723,20 @@ module.exports =
   {
     "id": 944,
     "firstName": "Jackie",
+    "company": "Imagine Designs",
     "email": "faiellai@msn.com",
     "street1": "23905 Clinton Keith #114-260",
     "city": "Wildomar",
     "state": "CA",
     "postalCode": "92595",
     "country": "US",
-    "createdOn": "2010-05-27",
-    "notes": "Company: Imagine Designs"
+    "createdOn": "2010-05-27"
   },
   {
     "id": 945,
     "firstName": "Myriam",
     "lastName": "Mayshark",
+    "company": "Imagine!",
     "email": "info@imagineinbemus.com",
     "phone": "(716) 386-2244",
     "street1": "PO Box 289",
@@ -11461,7 +11745,7 @@ module.exports =
     "postalCode": "14712",
     "country": "US",
     "createdOn": "2010-05-27",
-    "notes": "Do not keep credit card on file\nCompany: Imagine!",
+    "notes": "Do not keep credit card on file",
     "type": "wholesale",
     "website": "https://www.facebook.com/pages/category/Gift-Shop/Imagine-82040234572/"
   },
@@ -11469,6 +11753,7 @@ module.exports =
     "id": 946,
     "firstName": "Jil",
     "lastName": "Smith",
+    "company": "Insatiable Studios",
     "email": "insatiablestudios@gmail.com",
     "phone": "(206) 781-3810",
     "street1": "1121 N 81st St",
@@ -11477,13 +11762,14 @@ module.exports =
     "postalCode": "98103",
     "country": "US",
     "createdOn": "2019-06-02",
-    "notes": "Company: Insatiable Studios\nType: Consignment (not represented by the wholesale/retail field)",
+    "notes": "Type: Consignment (not represented by the wholesale/retail field)",
     "website": "https://www.facebook.com/jilsmithlamps/"
   },
   {
     "id": 947,
     "firstName": "Iris",
     "lastName": "Vail",
+    "company": "Inspired!",
     "email": "inspiredgiftshop@outlook.com",
     "phone": "(360) 504-2590",
     "street1": "124 W 1st St #B",
@@ -11492,7 +11778,6 @@ module.exports =
     "postalCode": "98362",
     "country": "US",
     "createdOn": "2015-08-19",
-    "notes": "Company: Inspired!",
     "type": "wholesale",
     "website": "https://www.facebook.com/InspiredPortAngeles/"
   },
@@ -11513,6 +11798,7 @@ module.exports =
     "id": 949,
     "firstName": "Cheryl",
     "lastName": "Pilchik",
+    "company": "Invitations Plus",
     "email": "invitationsplus@comcast.net",
     "phone": "(215) 947-4385",
     "street1": "823 Oriole Ln",
@@ -11521,7 +11807,6 @@ module.exports =
     "postalCode": "19006",
     "country": "US",
     "createdOn": "2019-02-18",
-    "notes": "Company: Invitations Plus",
     "type": "wholesale",
     "website": "http://www.invitationsplusmore.com/"
   },
@@ -11550,6 +11835,7 @@ module.exports =
     "id": 952,
     "firstName": "Kayel",
     "lastName": "Butler",
+    "company": "Isanze",
     "email": "kayelbutler@yahoo.com",
     "phone": "(512) 393-3223",
     "street1": "2076 Sherrill Rd",
@@ -11558,7 +11844,7 @@ module.exports =
     "postalCode": "78638",
     "country": "US",
     "createdOn": "2018-04-02",
-    "notes": "Company: Isanze\nImported record: 1 order(s), $395.00 total spent.",
+    "notes": "Imported record: 1 order(s), $395.00 total spent.",
     "type": "wholesale",
     "website": "http://www.isanze.com"
   },
@@ -11566,6 +11852,7 @@ module.exports =
     "id": 953,
     "firstName": "Anne",
     "lastName": "Lucido",
+    "company": "Island Outfitters",
     "email": "islandoutfitter1@aol.com",
     "phone": "(805) 566-1851",
     "street1": "873 Linden Ave",
@@ -11574,7 +11861,6 @@ module.exports =
     "postalCode": "93013",
     "country": "US",
     "createdOn": "2010-05-27",
-    "notes": "Company: Island Outfitters",
     "type": "wholesale",
     "website": "https://island-outfitters-on-linden.business.site/"
   },
@@ -11582,6 +11868,7 @@ module.exports =
     "id": 954,
     "firstName": "Lynn",
     "lastName": "Brown",
+    "company": "Island Shop, The",
     "email": "lynnbrown@islandexports.com",
     "phone": "(908) 354-7746",
     "street1": "34 Yale Ave",
@@ -11591,7 +11878,7 @@ module.exports =
     "postalCode": "19081",
     "country": "US",
     "createdOn": "2017-09-25",
-    "notes": "Company: Island Shop, The\nAdditional contact: (441) 292-5292",
+    "notes": "Additional contact: (441) 292-5292",
     "type": "wholesale",
     "website": "https://www.islandexports.com/"
   },
@@ -11627,6 +11914,7 @@ module.exports =
     "id": 958,
     "firstName": "Jackie",
     "lastName": "Cruse",
+    "company": "J Cruse Gift Gallery & Decor",
     "email": "jcrusegallery@yahoo.com",
     "phone": "(806) 687-6983",
     "street1": "4815 50th St Ste A",
@@ -11635,7 +11923,6 @@ module.exports =
     "postalCode": "79414",
     "country": "US",
     "createdOn": "2021-01-22",
-    "notes": "Company: J Cruse Gift Gallery & Decor",
     "type": "wholesale"
   },
   {
@@ -11649,12 +11936,14 @@ module.exports =
     "postalCode": "97236",
     "country": "US",
     "createdOn": "2021-03-08",
-    "notes": "Imported record: 1 order(s), $30.45 total spent."
+    "notes": "Imported record: 1 order(s), $30.45 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 960,
     "firstName": "Kelsey",
     "lastName": "Maginn",
+    "company": "Jack Pine Glass Studio",
     "email": "kelsey@jackpinestudio.com",
     "phone": "(614) 551-1055",
     "street1": "21397 State Route 180",
@@ -11663,7 +11952,6 @@ module.exports =
     "postalCode": "43135",
     "country": "US",
     "createdOn": "2020-01-29",
-    "notes": "Company: Jack Pine Glass Studio",
     "type": "wholesale",
     "website": "https://www.jackpinestudio.com"
   },
@@ -11721,7 +12009,8 @@ module.exports =
     "postalCode": "78758",
     "country": "US",
     "createdOn": "2019-12-09",
-    "notes": "Imported record: 1 order(s), $127.00 total spent."
+    "notes": "Imported record: 1 order(s), $127.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 966,
@@ -11734,7 +12023,8 @@ module.exports =
     "postalCode": "27615-3937",
     "country": "US",
     "createdOn": "2025-05-25",
-    "notes": "Additional contact: avenue.elusive.3o@icloud.com\nImported record: 2 order(s), $314.18 total spent."
+    "notes": "Additional contact: avenue.elusive.3o@icloud.com\nImported record: 2 order(s), $314.18 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 967,
@@ -11780,7 +12070,8 @@ module.exports =
     "firstName": "Jacqueline",
     "lastName": "Hilton",
     "email": "hanksperch@gmail.com",
-    "createdOn": "2024-01-14"
+    "createdOn": "2024-01-14",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 973,
@@ -11826,7 +12117,8 @@ module.exports =
     "postalCode": "76108",
     "country": "US",
     "createdOn": "2021-02-01",
-    "notes": "Imported record: 1 order(s), $28.45 total spent."
+    "notes": "Imported record: 1 order(s), $28.45 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 977,
@@ -11855,12 +12147,12 @@ module.exports =
     "id": 979,
     "firstName": "Jane",
     "lastName": "Rutherford",
+    "company": "Jain Rutherford",
     "email": "jainr@serv.net",
     "phone": "206.323.5776",
     "state": "ID",
     "country": "US",
-    "createdOn": "2010-05-27",
-    "notes": "Company: Jain Rutherford"
+    "createdOn": "2010-05-27"
   },
   {
     "id": 980,
@@ -11892,7 +12184,8 @@ module.exports =
     "postalCode": "98020",
     "country": "US",
     "createdOn": "2018-06-01",
-    "notes": "Imported record: 1 order(s), $250.00 total spent."
+    "notes": "Imported record: 1 order(s), $250.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 983,
@@ -11921,7 +12214,8 @@ module.exports =
     "postalCode": "80207",
     "country": "US",
     "createdOn": "2021-02-15",
-    "notes": "Imported record: 1 order(s), $128.80 total spent."
+    "notes": "Imported record: 1 order(s), $128.80 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 985,
@@ -11967,7 +12261,8 @@ module.exports =
     "postalCode": "42001",
     "country": "US",
     "createdOn": "2019-02-11",
-    "notes": "Imported record: 1 order(s), $40.50 total spent."
+    "notes": "Imported record: 1 order(s), $40.50 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 989,
@@ -12039,7 +12334,8 @@ module.exports =
     "postalCode": "39157",
     "country": "US",
     "createdOn": "2020-02-28",
-    "notes": "Imported record: 1 order(s), $90.00 total spent."
+    "notes": "Imported record: 1 order(s), $90.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 995,
@@ -12093,7 +12389,8 @@ module.exports =
     "postalCode": "80303",
     "country": "US",
     "createdOn": "2025-11-02",
-    "notes": "Imported record: 1 order(s), $41.35 total spent."
+    "notes": "Imported record: 1 order(s), $41.35 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 999,
@@ -12176,7 +12473,8 @@ module.exports =
     "postalCode": "24556",
     "country": "US",
     "createdOn": "2021-06-05",
-    "notes": "Imported record: 1 order(s), $93.50 total spent."
+    "notes": "Imported record: 1 order(s), $93.50 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1006,
@@ -12210,6 +12508,7 @@ module.exports =
     "id": 1009,
     "firstName": "Jane",
     "lastName": "Rostov",
+    "company": "Jane R Rostov",
     "email": "jrostov@verizon.net",
     "street1": "9900 Georgia Ave Apt 506",
     "city": "Silver Spring",
@@ -12217,7 +12516,7 @@ module.exports =
     "postalCode": "20902",
     "country": "US",
     "createdOn": "2022-03-20",
-    "notes": "Company: Jane R Rostov\nImported record: 1 order(s), $196.10 total spent."
+    "notes": "Imported record: 1 order(s), $196.10 total spent."
   },
   {
     "id": 1010,
@@ -12286,7 +12585,8 @@ module.exports =
     "postalCode": "83204",
     "country": "US",
     "createdOn": "2023-05-09",
-    "notes": "Apron\nImported record: 2 order(s), $810.00 total spent."
+    "notes": "Apron\nImported record: 2 order(s), $810.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1016,
@@ -12355,7 +12655,8 @@ module.exports =
     "postalCode": "95973",
     "country": "US",
     "createdOn": "2023-02-22",
-    "notes": "Imported record: 1 order(s), $39.90 total spent."
+    "notes": "Imported record: 1 order(s), $39.90 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1023,
@@ -12368,7 +12669,8 @@ module.exports =
     "postalCode": "46033",
     "country": "US",
     "createdOn": "2020-08-26",
-    "notes": "Imported record: 2 order(s), $225.00 total spent, legacy user ID 47727495."
+    "notes": "Imported record: 2 order(s), $225.00 total spent, legacy user ID 47727495.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1024,
@@ -12382,7 +12684,8 @@ module.exports =
     "postalCode": "98513",
     "country": "US",
     "createdOn": "2021-11-14",
-    "notes": "Imported record: 2 order(s), $340.25 total spent."
+    "notes": "Imported record: 2 order(s), $340.25 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1025,
@@ -12418,7 +12721,8 @@ module.exports =
     "postalCode": "94703",
     "country": "US",
     "createdOn": "2017-11-13",
-    "notes": "Imported record: 1 order(s), $88.00 total spent."
+    "notes": "Imported record: 1 order(s), $88.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1028,
@@ -12432,7 +12736,8 @@ module.exports =
     "postalCode": "66012",
     "country": "US",
     "createdOn": "2025-11-28",
-    "notes": "Imported record: 1 order(s), $104.78 total spent."
+    "notes": "Imported record: 1 order(s), $104.78 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1029,
@@ -12445,7 +12750,8 @@ module.exports =
     "postalCode": "28806",
     "country": "US",
     "createdOn": "2021-04-28",
-    "notes": "Imported record: 1 order(s), $93.50 total spent."
+    "notes": "Imported record: 1 order(s), $93.50 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1030,
@@ -12465,7 +12771,8 @@ module.exports =
     "postalCode": "98038",
     "country": "US",
     "createdOn": "2017-06-19",
-    "notes": "Imported record: 2 order(s), $250.00 total spent."
+    "notes": "Imported record: 2 order(s), $250.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1032,
@@ -12492,7 +12799,8 @@ module.exports =
     "postalCode": "95667",
     "country": "US",
     "createdOn": "2021-02-08",
-    "notes": "Imported record: 1 order(s), $116.00 total spent."
+    "notes": "Imported record: 1 order(s), $116.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1034,
@@ -12519,7 +12827,8 @@ module.exports =
     "postalCode": "98108",
     "country": "US",
     "createdOn": "2020-09-21",
-    "notes": "Imported record: 1 order(s), $100.85 total spent."
+    "notes": "Imported record: 1 order(s), $100.85 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1036,
@@ -12569,7 +12878,8 @@ module.exports =
     "postalCode": "63146",
     "country": "US",
     "createdOn": "2021-11-13",
-    "notes": "Imported record: 1 order(s), $24.30 total spent."
+    "notes": "Imported record: 1 order(s), $24.30 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1042,
@@ -12583,7 +12893,8 @@ module.exports =
     "postalCode": "80525",
     "country": "US",
     "createdOn": "2019-01-08",
-    "notes": "Imported record: 1 order(s), $75.21 total spent."
+    "notes": "Imported record: 1 order(s), $75.21 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1043,
@@ -12729,7 +13040,8 @@ module.exports =
     "postalCode": "98125",
     "country": "US",
     "createdOn": "2018-11-02",
-    "notes": "Imported record: 1 order(s), $260.00 total spent."
+    "notes": "Imported record: 1 order(s), $260.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1054,
@@ -12774,6 +13086,7 @@ module.exports =
     "id": 1057,
     "firstName": "Steven",
     "lastName": "Petrillo",
+    "company": "Jem Jewelers",
     "email": "jewelersjem@aol.com",
     "phone": "(215) 343-3385",
     "street1": "1409 Easton Road",
@@ -12782,7 +13095,6 @@ module.exports =
     "postalCode": "18976",
     "country": "US",
     "createdOn": "2017-04-17",
-    "notes": "Company: Jem Jewelers",
     "type": "wholesale",
     "website": "https://jem-jewelers.com/"
   },
@@ -12818,7 +13130,8 @@ module.exports =
     "postalCode": "98370",
     "country": "US",
     "createdOn": "2025-07-01",
-    "notes": "Imported record: 1 order(s), $233.42 total spent."
+    "notes": "Imported record: 1 order(s), $233.42 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1061,
@@ -12845,7 +13158,8 @@ module.exports =
     "postalCode": "98311-2581",
     "country": "US",
     "createdOn": "2019-10-01",
-    "notes": "Imported record: 1 order(s), $260.00 total spent."
+    "notes": "Imported record: 1 order(s), $260.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1063,
@@ -12873,7 +13187,8 @@ module.exports =
     "postalCode": "37183",
     "country": "US",
     "createdOn": "2019-01-10",
-    "notes": "Imported record: 1 order(s), $252.42 total spent."
+    "notes": "Imported record: 1 order(s), $252.42 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1065,
@@ -12908,7 +13223,8 @@ module.exports =
     "postalCode": "08052-3233",
     "country": "US",
     "createdOn": "2020-08-17",
-    "notes": "Imported record: 1 order(s), $59.00 total spent."
+    "notes": "Imported record: 1 order(s), $59.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1068,
@@ -12933,7 +13249,8 @@ module.exports =
     "postalCode": "11566",
     "country": "US",
     "createdOn": "2026-01-06",
-    "notes": "Imported record: 1 order(s), $160.92 total spent."
+    "notes": "Imported record: 1 order(s), $160.92 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1071,
@@ -12947,7 +13264,8 @@ module.exports =
     "postalCode": "6359",
     "country": "US",
     "createdOn": "2020-07-26",
-    "notes": "Imported record: 3 order(s), $566.74 total spent."
+    "notes": "Imported record: 3 order(s), $566.74 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1072,
@@ -12976,7 +13294,8 @@ module.exports =
     "postalCode": "98166",
     "country": "US",
     "createdOn": "2017-09-24",
-    "notes": "Imported record: 1 order(s), $250.00 total spent."
+    "notes": "Imported record: 1 order(s), $250.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1074,
@@ -13176,7 +13495,8 @@ module.exports =
     "postalCode": "7030",
     "country": "US",
     "createdOn": "2025-11-09",
-    "notes": "Imported record: 1 order(s), $96.92 total spent."
+    "notes": "Imported record: 1 order(s), $96.92 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1091,
@@ -13204,7 +13524,8 @@ module.exports =
     "postalCode": "98012",
     "country": "US",
     "createdOn": "2018-08-12",
-    "notes": "Imported record: 1 order(s), $125.00 total spent."
+    "notes": "Imported record: 1 order(s), $125.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1093,
@@ -13218,7 +13539,8 @@ module.exports =
     "postalCode": "98038",
     "country": "US",
     "createdOn": "2018-01-05",
-    "notes": "Imported record: 1 order(s), $125.00 total spent."
+    "notes": "Imported record: 1 order(s), $125.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1094,
@@ -13231,7 +13553,8 @@ module.exports =
     "postalCode": "49721",
     "country": "US",
     "createdOn": "2019-12-02",
-    "notes": "Imported record: 3 order(s), $702.95 total spent."
+    "notes": "Imported record: 3 order(s), $702.95 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1095,
@@ -13272,14 +13595,16 @@ module.exports =
     "postalCode": "43081",
     "country": "US",
     "createdOn": "2021-09-30",
-    "notes": "Imported record: 1 order(s), $16.30 total spent."
+    "notes": "Imported record: 1 order(s), $16.30 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1099,
     "firstName": "Jerry",
     "lastName": "D",
     "email": "pat@aneesho.com",
-    "createdOn": "2024-05-16"
+    "createdOn": "2024-05-16",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1100,
@@ -13313,7 +13638,8 @@ module.exports =
     "postalCode": "98032",
     "country": "US",
     "createdOn": "2019-03-16",
-    "notes": "Imported record: 1 order(s), $260.00 total spent."
+    "notes": "Imported record: 1 order(s), $260.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1103,
@@ -13342,7 +13668,8 @@ module.exports =
     "postalCode": "7728",
     "country": "US",
     "createdOn": "2021-02-28",
-    "notes": "Imported record: 1 order(s), $98.60 total spent."
+    "notes": "Imported record: 1 order(s), $98.60 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1105,
@@ -13368,6 +13695,7 @@ module.exports =
     "id": 1107,
     "firstName": "Nancy",
     "lastName": "Wines",
+    "company": "Jewel Box, The",
     "email": "nanwines@gmail.com",
     "phone": "(479) 253-7828",
     "street1": "40 Spring St",
@@ -13376,7 +13704,6 @@ module.exports =
     "postalCode": "72632",
     "country": "US",
     "createdOn": "2012-04-27",
-    "notes": "Company: Jewel Box, The",
     "type": "wholesale",
     "website": "https://www.facebook.com/jewelboxeureka/"
   },
@@ -13384,6 +13711,7 @@ module.exports =
     "id": 1108,
     "firstName": "Rachel",
     "lastName": "Taylor",
+    "company": "Jewel of the West",
     "email": "jewelofthewest@hotmail.com",
     "phone": "(605) 574-2464",
     "street1": "208 Main St",
@@ -13392,13 +13720,13 @@ module.exports =
     "postalCode": "57745",
     "country": "US",
     "createdOn": "2017-04-17",
-    "notes": "Company: Jewel of the West",
     "type": "wholesale",
     "website": "http://www.jewelofthewest.com/"
   },
   {
     "id": 1109,
     "firstName": "Michele and Barbara",
+    "company": "Jeweled Studio",
     "email": "jeweledstudio@gmail.com",
     "phone": "(732) 303-9433",
     "street1": "305 Rt 9 S",
@@ -13408,7 +13736,6 @@ module.exports =
     "postalCode": "7726",
     "country": "US",
     "createdOn": "2018-02-19",
-    "notes": "Company: Jeweled Studio",
     "type": "wholesale",
     "website": "http://www.jeweledstudiomanalapan.com/"
   },
@@ -13468,7 +13795,8 @@ module.exports =
     "postalCode": "18337-4210",
     "country": "US",
     "createdOn": "2021-11-17",
-    "notes": "Imported record: 1 order(s), $138.30 total spent."
+    "notes": "Imported record: 1 order(s), $138.30 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1115,
@@ -13501,7 +13829,8 @@ module.exports =
     "postalCode": "80516",
     "country": "US",
     "createdOn": "2021-02-13",
-    "notes": "Imported record: 4 order(s), $561.84 total spent."
+    "notes": "Imported record: 4 order(s), $561.84 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1118,
@@ -13568,9 +13897,9 @@ module.exports =
     "id": 1123,
     "firstName": "Jim & Phoebe",
     "lastName": "Strobel",
+    "company": "Jim and Phoebe Strobel",
     "email": "jamesstrobel@verizon.net",
-    "createdOn": "2019-05-14",
-    "notes": "Company: Jim and Phoebe Strobel"
+    "createdOn": "2019-05-14"
   },
   {
     "id": 1124,
@@ -13646,7 +13975,8 @@ module.exports =
     "postalCode": "98270",
     "country": "US",
     "createdOn": "2018-11-05",
-    "notes": "Imported record: 1 order(s), $260.00 total spent."
+    "notes": "Imported record: 1 order(s), $260.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1130,
@@ -13660,7 +13990,8 @@ module.exports =
     "postalCode": "53189",
     "country": "US",
     "createdOn": "2025-12-13",
-    "notes": "Imported record: 1 order(s), $199.92 total spent."
+    "notes": "Imported record: 1 order(s), $199.92 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1131,
@@ -13716,7 +14047,8 @@ module.exports =
     "postalCode": "48070",
     "country": "US",
     "createdOn": "2021-02-07",
-    "notes": "Imported record: 1 order(s), $23.90 total spent."
+    "notes": "Imported record: 1 order(s), $23.90 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1136,
@@ -13730,7 +14062,8 @@ module.exports =
     "postalCode": "66044",
     "country": "US",
     "createdOn": "2020-08-23",
-    "notes": "Imported record: 1 order(s), $172.50 total spent."
+    "notes": "Imported record: 1 order(s), $172.50 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1137,
@@ -13796,6 +14129,7 @@ module.exports =
     "id": 1143,
     "firstName": "Joanne",
     "lastName": "Pohler",
+    "company": "JoAnne’s Stained Glass & Gallery",
     "email": "joanne@joannesstainedglass.com",
     "phone": "(530) 587-1280",
     "street1": "10064 Donner Pass Rd Suite 101",
@@ -13804,7 +14138,6 @@ module.exports =
     "postalCode": "96161",
     "country": "US",
     "createdOn": "2015-08-19",
-    "notes": "Company: JoAnne’s Stained Glass & Gallery",
     "type": "wholesale",
     "website": "http://joannesstainedglass.com/"
   },
@@ -13874,7 +14207,8 @@ module.exports =
     "postalCode": "95005",
     "country": "US",
     "createdOn": "2021-12-06",
-    "notes": "Imported record: 1 order(s), $199.00 total spent."
+    "notes": "Imported record: 1 order(s), $199.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1150,
@@ -13887,7 +14221,8 @@ module.exports =
     "postalCode": "10471",
     "country": "US",
     "createdOn": "2020-01-20",
-    "notes": "Imported record: 1 order(s), $77.50 total spent."
+    "notes": "Imported record: 1 order(s), $77.50 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1151,
@@ -13914,7 +14249,8 @@ module.exports =
     "postalCode": "98260",
     "country": "US",
     "createdOn": "2022-02-19",
-    "notes": "Imported record: 1 order(s), $157.96 total spent."
+    "notes": "Imported record: 1 order(s), $157.96 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1154,
@@ -13952,13 +14288,14 @@ module.exports =
   {
     "id": 1157,
     "firstName": "David\tEmery",
-    "createdOn": "2010-09-15",
-    "notes": "Company: John Taylor"
+    "company": "John Taylor",
+    "createdOn": "2010-09-15"
   },
   {
     "id": 1158,
     "firstName": "Linda",
     "lastName": "Given",
+    "company": "Joie de Vivre",
     "email": "linda@joiedevivre.net",
     "phone": "(617) 864-8188",
     "street1": "1792 Massachusetts Ave",
@@ -13967,7 +14304,6 @@ module.exports =
     "postalCode": "2140",
     "country": "US",
     "createdOn": "2019-02-18",
-    "notes": "Company: Joie de Vivre",
     "type": "wholesale",
     "website": "http://www.joiedevivre.net"
   },
@@ -13981,6 +14317,7 @@ module.exports =
     "id": 1160,
     "firstName": "Steve & Tava",
     "lastName": "Cook",
+    "company": "Jonesborough Art Glass Gallery",
     "email": "jboart@comcast.net",
     "phone": "(423) 753-5401",
     "street1": "101 E Main St",
@@ -13989,7 +14326,6 @@ module.exports =
     "postalCode": "37659",
     "country": "US",
     "createdOn": "2012-04-09",
-    "notes": "Company: Jonesborough Art Glass Gallery",
     "type": "wholesale",
     "website": "https://www.facebook.com/Jboartglass/"
   },
@@ -14060,7 +14396,8 @@ module.exports =
     "postalCode": "48146",
     "country": "US",
     "createdOn": "2023-04-13",
-    "notes": "Imported record: 1 order(s), $32.20 total spent."
+    "notes": "Imported record: 1 order(s), $32.20 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1167,
@@ -14074,7 +14411,8 @@ module.exports =
     "postalCode": "57751",
     "country": "US",
     "createdOn": "2017-11-18",
-    "notes": "Imported record: 10 order(s), $1,421.95 total spent."
+    "notes": "Imported record: 10 order(s), $1,421.95 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1168,
@@ -14088,7 +14426,8 @@ module.exports =
     "postalCode": "1702",
     "country": "US",
     "createdOn": "2019-12-06",
-    "notes": "Imported record: 2 order(s), $102.90 total spent."
+    "notes": "Imported record: 2 order(s), $102.90 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1169,
@@ -14109,7 +14448,8 @@ module.exports =
     "firstName": "Juaneta",
     "lastName": "Cannon",
     "email": "cannonjuaneta@gmail.com",
-    "createdOn": "2025-12-11"
+    "createdOn": "2025-12-11",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1171,
@@ -14137,7 +14477,8 @@ module.exports =
     "postalCode": "97539",
     "country": "US",
     "createdOn": "2022-07-06",
-    "notes": "Imported record: 1 order(s), $59.45 total spent."
+    "notes": "Imported record: 1 order(s), $59.45 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1173,
@@ -14150,7 +14491,8 @@ module.exports =
     "postalCode": "49749",
     "country": "US",
     "createdOn": "2020-09-01",
-    "notes": "Imported record: 1 order(s), $105.00 total spent."
+    "notes": "Imported record: 1 order(s), $105.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1174,
@@ -14191,7 +14533,8 @@ module.exports =
     "postalCode": "33446",
     "country": "US",
     "createdOn": "2018-09-27",
-    "notes": "Imported record: 5 order(s), $417.46 total spent."
+    "notes": "Imported record: 5 order(s), $417.46 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1178,
@@ -14219,7 +14562,8 @@ module.exports =
     "postalCode": "73801",
     "country": "US",
     "createdOn": "2018-10-09",
-    "notes": "Imported record: 1 order(s), $17.00 total spent."
+    "notes": "Imported record: 1 order(s), $17.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1180,
@@ -14255,7 +14599,8 @@ module.exports =
     "postalCode": "37887",
     "country": "US",
     "createdOn": "2020-11-05",
-    "notes": "Imported record: 1 order(s), $27.50 total spent."
+    "notes": "Imported record: 1 order(s), $27.50 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1183,
@@ -14289,7 +14634,8 @@ module.exports =
     "postalCode": "98125",
     "country": "US",
     "createdOn": "2017-06-18",
-    "notes": "Apron\nImported record: 9 order(s), $1,986.34 total spent."
+    "notes": "Apron\nImported record: 9 order(s), $1,986.34 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1186,
@@ -14328,7 +14674,8 @@ module.exports =
     "postalCode": "85396",
     "country": "US",
     "createdOn": "2019-05-25",
-    "notes": "Imported record: 1 order(s), $126.20 total spent."
+    "notes": "Imported record: 1 order(s), $126.20 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1190,
@@ -14392,7 +14739,8 @@ module.exports =
     "postalCode": "24450",
     "country": "US",
     "createdOn": "2021-01-16",
-    "notes": "Imported record: 1 order(s), $17.50 total spent."
+    "notes": "Imported record: 1 order(s), $17.50 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1195,
@@ -14463,7 +14811,8 @@ module.exports =
     "postalCode": "97535",
     "country": "US",
     "createdOn": "2017-08-09",
-    "notes": "Imported record: 1 order(s), $125.00 total spent."
+    "notes": "Imported record: 1 order(s), $125.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1200,
@@ -14476,7 +14825,8 @@ module.exports =
     "postalCode": "97202",
     "country": "US",
     "createdOn": "2019-11-11",
-    "notes": "Imported record: 1 order(s), $260.00 total spent."
+    "notes": "Imported record: 1 order(s), $260.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1201,
@@ -14503,7 +14853,8 @@ module.exports =
     "postalCode": "93109",
     "country": "US",
     "createdOn": "2020-06-16",
-    "notes": "Imported record: 1 order(s), $177.50 total spent."
+    "notes": "Imported record: 1 order(s), $177.50 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1203,
@@ -14531,7 +14882,8 @@ module.exports =
     "postalCode": "98221",
     "country": "US",
     "createdOn": "2018-09-16",
-    "notes": "Imported record: 1 order(s), $130.00 total spent."
+    "notes": "Imported record: 1 order(s), $130.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1205,
@@ -14545,7 +14897,8 @@ module.exports =
     "postalCode": "76008",
     "country": "US",
     "createdOn": "2021-02-05",
-    "notes": "Imported record: 3 order(s), $402.00 total spent."
+    "notes": "Imported record: 3 order(s), $402.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1206,
@@ -14600,7 +14953,8 @@ module.exports =
     "postalCode": "37912",
     "country": "US",
     "createdOn": "2025-12-31",
-    "notes": "Imported record: 1 order(s), $57.35 total spent."
+    "notes": "Imported record: 1 order(s), $57.35 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1211,
@@ -14727,7 +15081,8 @@ module.exports =
     "postalCode": "98012",
     "country": "US",
     "createdOn": "2021-03-28",
-    "notes": "Imported record: 1 order(s), $90.06 total spent."
+    "notes": "Imported record: 1 order(s), $90.06 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1222,
@@ -14756,6 +15111,7 @@ module.exports =
     "id": 1224,
     "firstName": "Charlotte",
     "lastName": "Sirianni",
+    "company": "Juniper Outpost",
     "email": "juniper.outpost.nv@gmail.com",
     "phone": "(612) 554-2646",
     "street1": "500 Mountainside Ct",
@@ -14764,7 +15120,6 @@ module.exports =
     "postalCode": "89027",
     "country": "US",
     "createdOn": "2025-03-10",
-    "notes": "Company: Juniper Outpost",
     "type": "wholesale",
     "website": "https://juniper-outpost.com"
   },
@@ -14772,6 +15127,7 @@ module.exports =
     "id": 1225,
     "firstName": "Candice",
     "lastName": "Cantrell",
+    "company": "Junk in the Trunk",
     "email": "candicecantrell1@yahoo.com",
     "phone": "(936) 327-2166",
     "street1": "109 Highway 59 Loop S",
@@ -14780,7 +15136,6 @@ module.exports =
     "postalCode": "77351-9048",
     "country": "US",
     "createdOn": "2019-10-04",
-    "notes": "Company: Junk in the Trunk",
     "type": "wholesale",
     "website": "https://www.facebook.com/jittlt/"
   },
@@ -14788,6 +15143,7 @@ module.exports =
     "id": 1226,
     "firstName": "Diane",
     "lastName": "Bower",
+    "company": "Just Around the Corner",
     "email": "jatcgallery@aol.com",
     "phone": "(610) 258-9850",
     "street1": "1803 Meadow Ln Dr",
@@ -14796,7 +15152,6 @@ module.exports =
     "postalCode": "18040",
     "country": "US",
     "createdOn": "2010-05-27",
-    "notes": "Company: Just Around the Corner",
     "type": "wholesale",
     "website": "https://www.facebook.com/jatcgallery/"
   },
@@ -14804,6 +15159,7 @@ module.exports =
     "id": 1227,
     "firstName": "Frances",
     "lastName": "Wildgen",
+    "company": "Just Imagine",
     "email": "justimagineofusvi@gmail.com",
     "phone": "(340) 779-8522",
     "street1": "5143 Palm Passage Suite #6",
@@ -14812,7 +15168,6 @@ module.exports =
     "postalCode": "802",
     "country": "US",
     "createdOn": "2013-04-19",
-    "notes": "Company: Just Imagine",
     "type": "wholesale",
     "website": "https://justimaginevi.weebly.com/"
   },
@@ -14828,7 +15183,8 @@ module.exports =
     "postalCode": "36576",
     "country": "US",
     "createdOn": "2021-09-01",
-    "notes": "Imported record: 1 order(s), $125.50 total spent."
+    "notes": "Imported record: 1 order(s), $125.50 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1229,
@@ -14842,7 +15198,8 @@ module.exports =
     "postalCode": "98030",
     "country": "US",
     "createdOn": "2018-06-10",
-    "notes": "Imported record: 1 order(s), $250.00 total spent."
+    "notes": "Imported record: 1 order(s), $250.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1230,
@@ -14856,7 +15213,8 @@ module.exports =
     "postalCode": "97206",
     "country": "US",
     "createdOn": "2020-04-06",
-    "notes": "Imported record: 1 order(s), $125.00 total spent, legacy user ID 35481358."
+    "notes": "Imported record: 1 order(s), $125.00 total spent, legacy user ID 35481358.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1231,
@@ -14865,7 +15223,8 @@ module.exports =
     "email": "lkcottingim14@gmail.com",
     "country": "US",
     "createdOn": "2021-12-11",
-    "notes": "Imported record: legacy user ID 67172506."
+    "notes": "Imported record: legacy user ID 67172506.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1232,
@@ -14895,6 +15254,7 @@ module.exports =
     "id": 1235,
     "firstName": "Sarah Beth",
     "lastName": "Booker",
+    "company": "Kalled Gallery, The",
     "email": "kalled@myfairpoint.net",
     "phone": "(603) 569-3994",
     "street1": "33 N Main St",
@@ -14903,7 +15263,6 @@ module.exports =
     "postalCode": "3894",
     "country": "US",
     "createdOn": "2014-04-01",
-    "notes": "Company: Kalled Gallery, The",
     "type": "wholesale",
     "website": "http://www.kalledjewelrystudio.com"
   },
@@ -14911,6 +15270,7 @@ module.exports =
     "id": 1236,
     "firstName": "Lisa",
     "lastName": "Mergel",
+    "company": "Kanvas",
     "email": "lisa@kanvasbeauty.com",
     "phone": "(850) 224-7467",
     "street1": "823 Thomasville Rd",
@@ -14919,7 +15279,6 @@ module.exports =
     "postalCode": "32303",
     "country": "US",
     "createdOn": "2017-02-10",
-    "notes": "Company: Kanvas",
     "type": "wholesale",
     "website": "http://kanvasbeauty.com"
   },
@@ -14940,7 +15299,8 @@ module.exports =
     "postalCode": "22602",
     "country": "US",
     "createdOn": "2021-02-21",
-    "notes": "Imported record: 1 order(s), $29.30 total spent."
+    "notes": "Imported record: 1 order(s), $29.30 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1239,
@@ -14980,7 +15340,8 @@ module.exports =
     "postalCode": "24523",
     "country": "US",
     "createdOn": "2019-06-07",
-    "notes": "Imported record: 1 order(s), $139.28 total spent."
+    "notes": "Imported record: 1 order(s), $139.28 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1242,
@@ -15008,7 +15369,8 @@ module.exports =
     "postalCode": "14817",
     "country": "US",
     "createdOn": "2021-11-02",
-    "notes": "Imported record: 1 order(s), $41.30 total spent."
+    "notes": "Imported record: 1 order(s), $41.30 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1244,
@@ -15056,7 +15418,8 @@ module.exports =
     "postalCode": "98036",
     "country": "US",
     "createdOn": "2017-02-11",
-    "notes": "Imported record: 1 order(s), $125.00 total spent."
+    "notes": "Imported record: 1 order(s), $125.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1248,
@@ -15069,7 +15432,8 @@ module.exports =
     "postalCode": "19506",
     "country": "US",
     "createdOn": "2021-04-28",
-    "notes": "Imported record: 1 order(s), $70.00 total spent."
+    "notes": "Imported record: 1 order(s), $70.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1249,
@@ -15084,7 +15448,8 @@ module.exports =
     "postalCode": "5340",
     "country": "US",
     "createdOn": "2020-01-26",
-    "notes": "Imported record: 6 order(s), $651.50 total spent."
+    "notes": "Imported record: 6 order(s), $651.50 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1250,
@@ -15110,7 +15475,8 @@ module.exports =
     "postalCode": "98020",
     "country": "US",
     "createdOn": "2020-11-30",
-    "notes": "Imported record: 1 order(s), $287.04 total spent."
+    "notes": "Imported record: 1 order(s), $287.04 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1253,
@@ -15124,7 +15490,8 @@ module.exports =
     "postalCode": "98125",
     "country": "US",
     "createdOn": "2017-09-01",
-    "notes": "Imported record: 2 order(s), $373.98 total spent."
+    "notes": "Imported record: 2 order(s), $373.98 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1254,
@@ -15156,7 +15523,8 @@ module.exports =
     "postalCode": "97141",
     "country": "US",
     "createdOn": "2020-01-27",
-    "notes": "Imported record: 2 order(s), $134.55 total spent."
+    "notes": "Imported record: 2 order(s), $134.55 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1258,
@@ -15170,7 +15538,8 @@ module.exports =
     "postalCode": "95355-3003",
     "country": "US",
     "createdOn": "2018-09-26",
-    "notes": "Imported record: 2 order(s), $120.30 total spent."
+    "notes": "Imported record: 2 order(s), $120.30 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1259,
@@ -15184,7 +15553,8 @@ module.exports =
     "postalCode": "98335-6507",
     "country": "US",
     "createdOn": "2020-03-12",
-    "notes": "Imported record: 7 order(s), $448.44 total spent."
+    "notes": "Imported record: 7 order(s), $448.44 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1260,
@@ -15198,7 +15568,8 @@ module.exports =
     "postalCode": "29642",
     "country": "US",
     "createdOn": "2022-10-27",
-    "notes": "Imported record: 2 order(s), $82.18 total spent."
+    "notes": "Imported record: 2 order(s), $82.18 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1261,
@@ -15212,7 +15583,8 @@ module.exports =
     "postalCode": "98229",
     "country": "US",
     "createdOn": "2020-07-09",
-    "notes": "Imported record: 1 order(s), $40.75 total spent."
+    "notes": "Imported record: 1 order(s), $40.75 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1262,
@@ -15267,7 +15639,8 @@ module.exports =
     "postalCode": "85712",
     "country": "US",
     "createdOn": "2019-02-05",
-    "notes": "Imported record: 2 order(s), $81.75 total spent."
+    "notes": "Imported record: 2 order(s), $81.75 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1266,
@@ -15293,7 +15666,8 @@ module.exports =
     "postalCode": "63026",
     "country": "US",
     "createdOn": "2020-11-27",
-    "notes": "Imported record: 2 order(s), $278.30 total spent."
+    "notes": "Imported record: 2 order(s), $278.30 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1269,
@@ -15320,7 +15694,8 @@ module.exports =
     "postalCode": "98660",
     "country": "US",
     "createdOn": "2021-05-06",
-    "notes": "Imported record: 1 order(s), $101.36 total spent."
+    "notes": "Imported record: 1 order(s), $101.36 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1271,
@@ -15340,7 +15715,8 @@ module.exports =
     "postalCode": "95662-2846",
     "country": "US",
     "createdOn": "2019-10-31",
-    "notes": "Imported record: 9 order(s), $929.40 total spent."
+    "notes": "Imported record: 9 order(s), $929.40 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1273,
@@ -15369,7 +15745,8 @@ module.exports =
     "postalCode": "98126",
     "country": "US",
     "createdOn": "2019-03-06",
-    "notes": "Imported record: 1 order(s), $130.00 total spent."
+    "notes": "Imported record: 1 order(s), $130.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1275,
@@ -15395,7 +15772,8 @@ module.exports =
     "state": "PA",
     "postalCode": "18914",
     "country": "US",
-    "createdOn": "2020-04-19"
+    "createdOn": "2020-04-19",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1278,
@@ -15434,7 +15812,8 @@ module.exports =
     "postalCode": "98108",
     "country": "US",
     "createdOn": "2019-11-02",
-    "notes": "Imported record: 2 order(s), $473.61 total spent."
+    "notes": "Imported record: 2 order(s), $473.61 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1282,
@@ -15525,7 +15904,8 @@ module.exports =
     "postalCode": "97004",
     "country": "US",
     "createdOn": "2018-11-25",
-    "notes": "Imported record: 2 order(s), $57.40 total spent."
+    "notes": "Imported record: 2 order(s), $57.40 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1289,
@@ -15551,7 +15931,8 @@ module.exports =
     "postalCode": "98335",
     "country": "US",
     "createdOn": "2017-02-01",
-    "notes": "Imported record: 1 order(s), $250.00 total spent."
+    "notes": "Imported record: 1 order(s), $250.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1291,
@@ -15612,7 +15993,8 @@ module.exports =
     "postalCode": "55376",
     "country": "US",
     "createdOn": "2023-06-18",
-    "notes": "Imported record: 1 order(s), $94.78 total spent."
+    "notes": "Imported record: 1 order(s), $94.78 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1297,
@@ -15626,7 +16008,8 @@ module.exports =
     "postalCode": "98105",
     "country": "US",
     "createdOn": "2018-12-28",
-    "notes": "Imported record: 1 order(s), $130.00 total spent."
+    "notes": "Imported record: 1 order(s), $130.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1298,
@@ -15639,7 +16022,8 @@ module.exports =
     "postalCode": "48164",
     "country": "US",
     "createdOn": "2025-04-04",
-    "notes": "Imported record: 1 order(s), $375.28 total spent."
+    "notes": "Imported record: 1 order(s), $375.28 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1299,
@@ -15679,7 +16063,8 @@ module.exports =
     "postalCode": "98368",
     "country": "US",
     "createdOn": "2020-11-29",
-    "notes": "Imported record: 1 order(s), $210.19 total spent."
+    "notes": "Imported record: 1 order(s), $210.19 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1303,
@@ -15698,7 +16083,8 @@ module.exports =
     "postalCode": "78666",
     "country": "US",
     "createdOn": "2024-11-26",
-    "notes": "Imported record: 1 order(s), $243.56 total spent."
+    "notes": "Imported record: 1 order(s), $243.56 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1305,
@@ -15727,7 +16113,8 @@ module.exports =
     "postalCode": "72205",
     "country": "US",
     "createdOn": "2021-02-18",
-    "notes": "Imported record: 1 order(s), $48.30 total spent."
+    "notes": "Imported record: 1 order(s), $48.30 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1307,
@@ -15741,7 +16128,8 @@ module.exports =
     "postalCode": "60010",
     "country": "US",
     "createdOn": "2025-06-10",
-    "notes": "Imported record: 1 order(s), $140.28 total spent."
+    "notes": "Imported record: 1 order(s), $140.28 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1308,
@@ -15755,7 +16143,8 @@ module.exports =
     "postalCode": "98332",
     "country": "US",
     "createdOn": "2021-01-20",
-    "notes": "Imported record: 1 order(s), $242.66 total spent."
+    "notes": "Imported record: 1 order(s), $242.66 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1309,
@@ -15781,7 +16170,8 @@ module.exports =
     "postalCode": "98026",
     "country": "US",
     "createdOn": "2020-09-12",
-    "notes": "Imported record: 1 order(s), $208.85 total spent."
+    "notes": "Imported record: 1 order(s), $208.85 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1312,
@@ -15800,7 +16190,8 @@ module.exports =
     "firstName": "Kathleen",
     "lastName": "Walsh",
     "email": "katewalsh_1@msn.com",
-    "createdOn": "2023-11-28"
+    "createdOn": "2023-11-28",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1314,
@@ -15826,7 +16217,8 @@ module.exports =
     "country": "US",
     "createdOn": "2020-12-21",
     "notes": "Imported record: 1 order(s), $70.50 total spent.",
-    "website": "https://katkirby.com/"
+    "website": "https://katkirby.com/",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1316,
@@ -15895,7 +16287,8 @@ module.exports =
     "postalCode": "78260",
     "country": "US",
     "createdOn": "2020-11-11",
-    "notes": "Imported record: 1 order(s), $37.50 total spent."
+    "notes": "Imported record: 1 order(s), $37.50 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1322,
@@ -15955,7 +16348,8 @@ module.exports =
     "postalCode": "98040",
     "country": "US",
     "createdOn": "2018-07-19",
-    "notes": "Imported record: 1 order(s), $125.00 total spent."
+    "notes": "Imported record: 1 order(s), $125.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1328,
@@ -15994,7 +16388,8 @@ module.exports =
     "postalCode": "66085",
     "country": "US",
     "createdOn": "2020-06-16",
-    "notes": "Imported record: 1 order(s), $69.00 total spent."
+    "notes": "Imported record: 1 order(s), $69.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1332,
@@ -16018,7 +16413,8 @@ module.exports =
     "postalCode": "98296-5456",
     "country": "US",
     "createdOn": "2021-04-09",
-    "notes": "Imported record: 2 order(s), $36.94 total spent, legacy user ID 56826710."
+    "notes": "Imported record: 2 order(s), $36.94 total spent, legacy user ID 56826710.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1334,
@@ -16048,7 +16444,8 @@ module.exports =
     "firstName": "Kathy",
     "lastName": "Wojtczak",
     "email": "rwojtczak@comcast.net",
-    "createdOn": "2021-11-19"
+    "createdOn": "2021-11-19",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1337,
@@ -16076,19 +16473,22 @@ module.exports =
     "postalCode": "34238",
     "country": "US",
     "createdOn": "2020-11-28",
-    "notes": "Imported record: 1 order(s), $81.00 total spent."
+    "notes": "Imported record: 1 order(s), $81.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1339,
     "firstName": "Kavaughnjala",
     "lastName": "Harris",
     "email": "kavaughnjala@aol.com",
-    "createdOn": "2021-03-01"
+    "createdOn": "2021-03-01",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1340,
     "firstName": "Brenda",
     "lastName": "Twyford",
+    "company": "Keepsakes",
     "email": "brenda@omahakeepsakes.com",
     "phone": "(402) 504-9922",
     "street1": "16950 Wright Plz Ste 115",
@@ -16097,7 +16497,6 @@ module.exports =
     "postalCode": "68130",
     "country": "US",
     "createdOn": "2015-10-09",
-    "notes": "Company: Keepsakes",
     "type": "wholesale",
     "website": "http://www.omahakeepsakes.com/"
   },
@@ -16205,7 +16604,8 @@ module.exports =
     "postalCode": "54902",
     "country": "US",
     "createdOn": "2021-03-08",
-    "notes": "Imported record: 1 order(s), $38.30 total spent."
+    "notes": "Imported record: 1 order(s), $38.30 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1350,
@@ -16219,7 +16619,8 @@ module.exports =
     "postalCode": "85224",
     "country": "US",
     "createdOn": "2019-10-17",
-    "notes": "Imported record: 1 order(s), $195.04 total spent."
+    "notes": "Imported record: 1 order(s), $195.04 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1351,
@@ -16240,7 +16641,8 @@ module.exports =
     "postalCode": "80122",
     "country": "US",
     "createdOn": "2022-02-01",
-    "notes": "Imported record: 1 order(s), $56.92 total spent."
+    "notes": "Imported record: 1 order(s), $56.92 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1353,
@@ -16278,7 +16680,8 @@ module.exports =
     "postalCode": "98902",
     "country": "US",
     "createdOn": "2018-08-13",
-    "notes": "Imported record: 1 order(s), $500.00 total spent."
+    "notes": "Imported record: 1 order(s), $500.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1356,
@@ -16304,7 +16707,8 @@ module.exports =
     "postalCode": "85743",
     "country": "US",
     "createdOn": "2020-06-09",
-    "notes": "Imported record: 1 order(s), $103.30 total spent."
+    "notes": "Imported record: 1 order(s), $103.30 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1359,
@@ -16322,7 +16726,8 @@ module.exports =
     "firstName": "Kevin",
     "lastName": "Morris",
     "email": "orders@upsellerr.co",
-    "createdOn": "2022-05-10"
+    "createdOn": "2022-05-10",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1361,
@@ -16348,7 +16753,8 @@ module.exports =
     "postalCode": "98221",
     "country": "US",
     "createdOn": "2025-12-01",
-    "notes": "Imported record: 1 order(s), $217.02 total spent."
+    "notes": "Imported record: 1 order(s), $217.02 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1363,
@@ -16369,7 +16775,8 @@ module.exports =
     "lastName": "Addington",
     "email": "kimberbee22@gmail.com",
     "createdOn": "2023-06-01",
-    "notes": "Imported record: 1 order(s), legacy user ID 94011440."
+    "notes": "Imported record: 1 order(s), legacy user ID 94011440.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1365,
@@ -16382,7 +16789,8 @@ module.exports =
     "postalCode": "55902",
     "country": "US",
     "createdOn": "2021-06-10",
-    "notes": "Imported record: 1 order(s), $150.00 total spent."
+    "notes": "Imported record: 1 order(s), $150.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1366,
@@ -16412,7 +16820,8 @@ module.exports =
     "postalCode": "78723",
     "country": "US",
     "createdOn": "2020-06-29",
-    "notes": "Imported record: 1 order(s), $50.00 total spent."
+    "notes": "Imported record: 1 order(s), $50.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1369,
@@ -16448,7 +16857,8 @@ module.exports =
     "postalCode": "98528",
     "country": "US",
     "createdOn": "2018-09-29",
-    "notes": "Imported record: 1 order(s), $135.44 total spent."
+    "notes": "Imported record: 1 order(s), $135.44 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1372,
@@ -16611,7 +17021,8 @@ module.exports =
     "postalCode": "44203",
     "country": "US",
     "createdOn": "2021-05-03",
-    "notes": "Imported record: 1 order(s), $99.00 total spent."
+    "notes": "Imported record: 1 order(s), $99.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1388,
@@ -16625,7 +17036,8 @@ module.exports =
     "postalCode": "8033",
     "country": "US",
     "createdOn": "2021-02-22",
-    "notes": "Imported record: 1 order(s), $74.30 total spent."
+    "notes": "Imported record: 1 order(s), $74.30 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1389,
@@ -16639,7 +17051,8 @@ module.exports =
     "postalCode": "98502",
     "country": "US",
     "createdOn": "2019-01-03",
-    "notes": "Imported record: 2 order(s), $520.00 total spent."
+    "notes": "Imported record: 2 order(s), $520.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1390,
@@ -16674,7 +17087,8 @@ module.exports =
     "postalCode": "90631",
     "country": "US",
     "createdOn": "2019-02-09",
-    "notes": "Imported record: 1 order(s), $122.23 total spent."
+    "notes": "Imported record: 1 order(s), $122.23 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1393,
@@ -16722,27 +17136,29 @@ module.exports =
     "postalCode": "75205",
     "country": "US",
     "createdOn": "2022-08-31",
-    "notes": "Imported record: 1 order(s), $183.92 total spent."
+    "notes": "Imported record: 1 order(s), $183.92 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1397,
     "firstName": "Kip",
     "lastName": "Caldwell",
     "email": "pxpreally@yahoo.com",
-    "createdOn": "2023-12-11"
+    "createdOn": "2023-12-11",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1398,
     "firstName": "Kirk",
     "lastName": "Johnson",
+    "company": "Kirk & Linda Johnson",
     "email": "kjjldj@comcast.net",
     "street1": "5040 Jarvis Ln",
     "city": "Naples",
     "state": "FL",
     "postalCode": "34119-9538",
     "country": "US",
-    "createdOn": "2025-04-22",
-    "notes": "Company: Kirk & Linda Johnson"
+    "createdOn": "2025-04-22"
   },
   {
     "id": 1399,
@@ -16797,6 +17213,7 @@ module.exports =
     "id": 1403,
     "firstName": "Dianne",
     "lastName": "Krause",
+    "company": "Kravis Center for the Performing Arts",
     "email": "krause@kravis.org",
     "phone": "(561) 651-4329",
     "street1": "701 Okeechobee Blvd",
@@ -16805,7 +17222,6 @@ module.exports =
     "postalCode": "33408",
     "country": "US",
     "createdOn": "2015-02-26",
-    "notes": "Company: Kravis Center for the Performing Arts",
     "type": "wholesale",
     "website": "https://www.kravis.org/"
   },
@@ -16821,7 +17237,8 @@ module.exports =
     "postalCode": "98102",
     "country": "US",
     "createdOn": "2019-10-04",
-    "notes": "Additional contact: krisandrich2001@yahoo.com\nImported record: 5 order(s), $1,087.12 total spent."
+    "notes": "Additional contact: krisandrich2001@yahoo.com\nImported record: 5 order(s), $1,087.12 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1405,
@@ -16840,7 +17257,8 @@ module.exports =
     "postalCode": "60074",
     "country": "US",
     "createdOn": "2021-03-17",
-    "notes": "Imported record: 1 order(s), $175.00 total spent."
+    "notes": "Imported record: 1 order(s), $175.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1407,
@@ -16927,7 +17345,8 @@ module.exports =
     "postalCode": "97267",
     "country": "US",
     "createdOn": "2022-06-03",
-    "notes": "Imported record: 1 order(s), $75.90 total spent."
+    "notes": "Imported record: 1 order(s), $75.90 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1415,
@@ -16941,7 +17360,8 @@ module.exports =
     "postalCode": "91423",
     "country": "US",
     "createdOn": "2023-08-29",
-    "notes": "Imported record: 7 order(s), $672.44 total spent."
+    "notes": "Imported record: 7 order(s), $672.44 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1416,
@@ -16982,7 +17402,8 @@ module.exports =
     "postalCode": "55417",
     "country": "US",
     "createdOn": "2024-06-19",
-    "notes": "Imported record: 1 order(s), $30.85 total spent."
+    "notes": "Imported record: 1 order(s), $30.85 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1419,
@@ -17012,7 +17433,8 @@ module.exports =
     "postalCode": "98661",
     "country": "US",
     "createdOn": "2019-01-21",
-    "notes": "Imported record: 2 order(s), $436.84 total spent."
+    "notes": "Imported record: 2 order(s), $436.84 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1421,
@@ -17032,7 +17454,8 @@ module.exports =
     "postalCode": "94403",
     "country": "US",
     "createdOn": "2021-10-11",
-    "notes": "Imported record: 1 order(s), $348.30 total spent."
+    "notes": "Imported record: 1 order(s), $348.30 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1423,
@@ -17059,7 +17482,8 @@ module.exports =
     "postalCode": "87701",
     "country": "US",
     "createdOn": "2020-12-19",
-    "notes": "Imported record: 1 order(s), $88.00 total spent."
+    "notes": "Imported record: 1 order(s), $88.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1425,
@@ -17094,7 +17518,8 @@ module.exports =
     "postalCode": "98252",
     "country": "US",
     "createdOn": "2018-11-27",
-    "notes": "Imported record: 1 order(s), $17.72 total spent."
+    "notes": "Imported record: 1 order(s), $17.72 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1428,
@@ -17110,6 +17535,7 @@ module.exports =
     "id": 1429,
     "firstName": "Debbie",
     "lastName": "Zuckerman",
+    "company": "Lakeshore Framing and Artworks",
     "email": "artworks263@gmail.com",
     "phone": "(269) 637-7789",
     "street1": "263 Broadway St",
@@ -17118,13 +17544,13 @@ module.exports =
     "postalCode": "49090",
     "country": "US",
     "createdOn": "2018-09-13",
-    "notes": "Company: Lakeshore Framing and Artworks",
     "type": "wholesale",
     "website": "https://www.lakeshorepaint.com/"
   },
   {
     "id": 1430,
     "firstName": "Georgie",
+    "company": "Lakeshore Gallery",
     "email": "lakegalkirkland@comcast.net",
     "phone": "(425) 827-0606",
     "street1": "107 Park Ln",
@@ -17133,7 +17559,7 @@ module.exports =
     "postalCode": "98033",
     "country": "US",
     "createdOn": "2011-12-01",
-    "notes": "Company: Lakeshore Gallery\nType: Consignment (not represented by the wholesale/retail field)"
+    "notes": "Type: Consignment (not represented by the wholesale/retail field)"
   },
   {
     "id": 1431,
@@ -17165,7 +17591,8 @@ module.exports =
     "postalCode": "98051",
     "country": "US",
     "createdOn": "2019-05-11",
-    "notes": "Imported record: 1 order(s), $60.86 total spent."
+    "notes": "Imported record: 1 order(s), $60.86 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1435,
@@ -17177,6 +17604,7 @@ module.exports =
     "id": 1436,
     "firstName": "Karen",
     "lastName": "Corcelli",
+    "company": "Lark",
     "email": "happy@shopatlark.com",
     "phone": "(860) 322-4256",
     "street1": "4 Water St",
@@ -17185,7 +17613,7 @@ module.exports =
     "postalCode": "6412",
     "country": "US",
     "createdOn": "2021-04-20",
-    "notes": "Sterling\nCompany: Lark",
+    "notes": "Sterling",
     "type": "wholesale",
     "website": "https://shopatlark.com/"
   },
@@ -17199,6 +17627,7 @@ module.exports =
   {
     "id": 1438,
     "firstName": "Kathy",
+    "company": "Larue's",
     "email": "info@larues.com",
     "phone": "(612) 827-7317",
     "street1": "3952 Lyndale Ave S",
@@ -17207,7 +17636,7 @@ module.exports =
     "postalCode": "55409",
     "country": "US",
     "createdOn": "2014-03-19",
-    "notes": "Wants everything by email\nCompany: Larue's",
+    "notes": "Wants everything by email",
     "type": "wholesale",
     "website": "https://www.larues.com/"
   },
@@ -17242,7 +17671,8 @@ module.exports =
     "postalCode": "98026",
     "country": "US",
     "createdOn": "2018-11-05",
-    "notes": "Imported record: 1 order(s), $260.00 total spent."
+    "notes": "Imported record: 1 order(s), $260.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1442,
@@ -17256,7 +17686,8 @@ module.exports =
     "postalCode": "60805",
     "country": "US",
     "createdOn": "2020-05-14",
-    "notes": "Imported record: 1 order(s), $115.00 total spent."
+    "notes": "Imported record: 1 order(s), $115.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1443,
@@ -17270,7 +17701,8 @@ module.exports =
     "postalCode": "17543",
     "country": "US",
     "createdOn": "2020-08-16",
-    "notes": "Imported record: 11 order(s), $1,280.31 total spent."
+    "notes": "Imported record: 11 order(s), $1,280.31 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1444,
@@ -17334,7 +17766,8 @@ module.exports =
     "postalCode": "98272",
     "country": "US",
     "createdOn": "2017-01-14",
-    "notes": "Imported record: 3 order(s), $350.00 total spent."
+    "notes": "Imported record: 3 order(s), $350.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1450,
@@ -17487,7 +17920,8 @@ module.exports =
     "postalCode": "19118",
     "country": "US",
     "createdOn": "2020-10-25",
-    "notes": "Imported record: 1 order(s), $63.00 total spent."
+    "notes": "Imported record: 1 order(s), $63.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1463,
@@ -17516,7 +17950,8 @@ module.exports =
     "postalCode": "53092",
     "country": "US",
     "createdOn": "2020-04-30",
-    "notes": "Imported record: 3 order(s), $689.00 total spent, legacy user ID 37578220."
+    "notes": "Imported record: 3 order(s), $689.00 total spent, legacy user ID 37578220.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1465,
@@ -17556,7 +17991,8 @@ module.exports =
     "postalCode": "70005",
     "country": "US",
     "createdOn": "2025-11-20",
-    "notes": "Imported record: 1 order(s), $114.92 total spent."
+    "notes": "Imported record: 1 order(s), $114.92 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1469,
@@ -17611,7 +18047,8 @@ module.exports =
     "postalCode": "48162",
     "country": "US",
     "createdOn": "2020-09-28",
-    "notes": "Imported record: 2 order(s), $169.50 total spent."
+    "notes": "Imported record: 2 order(s), $169.50 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1474,
@@ -17641,6 +18078,7 @@ module.exports =
     "id": 1476,
     "firstName": "Debbie",
     "lastName": "Gast",
+    "company": "Le Jardin",
     "phone": "(814) 734-1444",
     "street1": "118 Erie St",
     "city": "Edinboro",
@@ -17648,7 +18086,6 @@ module.exports =
     "postalCode": "16412",
     "country": "US",
     "createdOn": "2022-07-18",
-    "notes": "Company: Le Jardin",
     "website": "http://lejardinpa.com/"
   },
   {
@@ -17686,6 +18123,7 @@ module.exports =
     "id": 1480,
     "firstName": "David",
     "lastName": "Mauseth",
+    "company": "Leather Depot",
     "phone": "(805) 452-3899",
     "street1": "40794 Village Dr",
     "city": "Big Bear Lake",
@@ -17693,12 +18131,12 @@ module.exports =
     "postalCode": "92315",
     "country": "US",
     "createdOn": "2022-06-09",
-    "notes": "Company: Leather Depot",
     "type": "wholesale"
   },
   {
     "id": 1481,
     "firstName": "Donna",
+    "company": "Leather Exchange",
     "phone": "(231) 436-5371",
     "street1": "213 E Central Ave",
     "city": "Mackinaw City",
@@ -17706,7 +18144,6 @@ module.exports =
     "postalCode": "49701",
     "country": "US",
     "createdOn": "2014-05-26",
-    "notes": "Company: Leather Exchange",
     "type": "wholesale",
     "website": "https://www.facebook.com/LeatherExchangeCo/"
   },
@@ -17721,7 +18158,8 @@ module.exports =
     "postalCode": "28787",
     "country": "US",
     "createdOn": "2021-02-04",
-    "notes": "Imported record: 1 order(s), $114.00 total spent."
+    "notes": "Imported record: 1 order(s), $114.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1483,
@@ -17735,12 +18173,14 @@ module.exports =
     "postalCode": "21042",
     "country": "US",
     "createdOn": "2019-05-29",
-    "notes": "Additional contact: mosaicsbylee@gmail.com, piannno@aol.com\nImported record: 2 order(s), $790.20 total spent."
+    "notes": "Additional contact: mosaicsbylee@gmail.com, piannno@aol.com\nImported record: 2 order(s), $790.20 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1484,
     "firstName": "Audrey",
     "lastName": "Parent",
+    "company": "Left Bank Gallery",
     "email": "aparent@leftbankgallery.com",
     "phone": "(508) 349-9451",
     "street1": "PO Box 764",
@@ -17749,7 +18189,6 @@ module.exports =
     "postalCode": "2667",
     "country": "US",
     "createdOn": "2010-05-27",
-    "notes": "Company: Left Bank Gallery",
     "type": "wholesale",
     "website": "https://www.leftbankgallery.com/"
   },
@@ -17802,7 +18241,8 @@ module.exports =
     "postalCode": "44313",
     "country": "US",
     "createdOn": "2019-10-04",
-    "notes": "Imported record: 1 order(s), $43.35 total spent."
+    "notes": "Imported record: 1 order(s), $43.35 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1490,
@@ -17834,14 +18274,16 @@ module.exports =
     "postalCode": "98277",
     "country": "US",
     "createdOn": "2018-09-29",
-    "notes": "Imported record: 2 order(s), $746.30 total spent."
+    "notes": "Imported record: 2 order(s), $746.30 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1493,
     "firstName": "Leslie",
     "lastName": "Hettenbach",
     "email": "klhettenbach@gmail.com",
-    "createdOn": "2025-05-06"
+    "createdOn": "2025-05-06",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1494,
@@ -17977,7 +18419,8 @@ module.exports =
     "postalCode": "77055",
     "country": "US",
     "createdOn": "2021-09-01",
-    "notes": "Imported record: 1 order(s), $25.30 total spent."
+    "notes": "Imported record: 1 order(s), $25.30 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1505,
@@ -17997,7 +18440,8 @@ module.exports =
     "postalCode": "98020",
     "country": "US",
     "createdOn": "2018-05-30",
-    "notes": "Additional contact: llewis@n-forge.com, trvlm0nster@gmail.com\nImported record: 1 order(s), $125.00 total spent."
+    "notes": "Additional contact: llewis@n-forge.com, trvlm0nster@gmail.com\nImported record: 1 order(s), $125.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1507,
@@ -18057,6 +18501,7 @@ module.exports =
     "id": 1511,
     "firstName": "Lilliam",
     "lastName": "Rosado Soto",
+    "company": "Lilliam Rosado",
     "email": "lillyrosado@hotmail.com",
     "street1": "214 Shroyer Rd",
     "city": "Dayton",
@@ -18064,7 +18509,8 @@ module.exports =
     "postalCode": "45419",
     "country": "US",
     "createdOn": "2022-11-30",
-    "notes": "Company: Lilliam Rosado\nImported record: 1 order(s), $43.40 total spent."
+    "notes": "Imported record: 1 order(s), $43.40 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1512,
@@ -18084,24 +18530,25 @@ module.exports =
     "id": 1513,
     "firstName": "Linda",
     "lastName": "Bond-Hiltner",
+    "company": "Linda  Bond-Hiltner",
     "email": "bondolin@aol.com",
     "country": "US",
     "createdOn": "2019-04-04",
-    "notes": "Company: Linda  Bond-Hiltner\nImported record: legacy user ID 22112173.",
+    "notes": "Imported record: legacy user ID 22112173.",
     "acceptsEmailMarketing": true
   },
   {
     "id": 1514,
     "firstName": "Linda",
     "lastName": "Abbott",
+    "company": "Linda Abbot",
     "email": "linda@orcasonline.com",
     "street1": "117 Harrier Ridge Rd",
     "city": "Eastsound",
     "state": "WA",
     "postalCode": "98245",
     "country": "US",
-    "createdOn": "2010-05-27",
-    "notes": "Company: Linda Abbot"
+    "createdOn": "2010-05-27"
   },
   {
     "id": 1515,
@@ -18133,7 +18580,8 @@ module.exports =
     "postalCode": "25309",
     "country": "US",
     "createdOn": "2019-01-18",
-    "notes": "Imported record: 2 order(s), $250.06 total spent."
+    "notes": "Imported record: 2 order(s), $250.06 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1518,
@@ -18212,7 +18660,8 @@ module.exports =
     "postalCode": "77573",
     "country": "US",
     "createdOn": "2020-04-30",
-    "notes": "Imported record: 6 order(s), $649.90 total spent."
+    "notes": "Imported record: 6 order(s), $649.90 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1524,
@@ -18241,7 +18690,8 @@ module.exports =
     "postalCode": "56007",
     "country": "US",
     "createdOn": "2021-01-19",
-    "notes": "Imported record: 1 order(s), $29.50 total spent."
+    "notes": "Imported record: 1 order(s), $29.50 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1526,
@@ -18302,7 +18752,8 @@ module.exports =
     "postalCode": "48421",
     "country": "US",
     "createdOn": "2021-02-27",
-    "notes": "Imported record: 1 order(s), $16.30 total spent."
+    "notes": "Imported record: 1 order(s), $16.30 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1532,
@@ -18388,7 +18839,8 @@ module.exports =
     "postalCode": "74008",
     "country": "US",
     "createdOn": "2019-12-01",
-    "notes": "Imported record: 1 order(s), $114.25 total spent."
+    "notes": "Imported record: 1 order(s), $114.25 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1538,
@@ -18443,7 +18895,8 @@ module.exports =
     "postalCode": "95123-5915",
     "country": "US",
     "createdOn": "2025-11-28",
-    "notes": "Imported record: 2 order(s), $73.25 total spent."
+    "notes": "Imported record: 2 order(s), $73.25 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1542,
@@ -18457,7 +18910,8 @@ module.exports =
     "postalCode": "28704",
     "country": "US",
     "createdOn": "2020-03-06",
-    "notes": "Additional contact: lj_martin@ymail.com\nImported record: 4 order(s), $495.20 total spent."
+    "notes": "Additional contact: lj_martin@ymail.com\nImported record: 4 order(s), $495.20 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1543,
@@ -18471,7 +18925,8 @@ module.exports =
     "postalCode": "71302",
     "country": "US",
     "createdOn": "2021-06-24",
-    "notes": "Imported record: 1 order(s), $28.30 total spent."
+    "notes": "Imported record: 1 order(s), $28.30 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1544,
@@ -18521,6 +18976,7 @@ module.exports =
     "id": 1549,
     "firstName": "Ann",
     "lastName": "Lindsay",
+    "company": "Lindsay Art Glass",
     "email": "retail@lindsayartglass.com",
     "phone": "(707) 748-1336",
     "street1": "109 E F St",
@@ -18529,7 +18985,6 @@ module.exports =
     "postalCode": "94510",
     "country": "US",
     "createdOn": "2017-04-17",
-    "notes": "Company: Lindsay Art Glass",
     "type": "wholesale",
     "website": "https://lindsayartglass.com/"
   },
@@ -18565,14 +19020,16 @@ module.exports =
     "postalCode": "98370",
     "country": "US",
     "createdOn": "2019-04-26",
-    "notes": "Additional contact: lisaalloin@yahoo.com\nImported record: 9 order(s), $1,648.76 total spent, legacy user ID 22622898."
+    "notes": "Additional contact: lisaalloin@yahoo.com\nImported record: 9 order(s), $1,648.76 total spent, legacy user ID 22622898.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1553,
     "firstName": "Lisa",
     "lastName": "Andolino",
     "email": "lissandolino@aol.com",
-    "createdOn": "2020-05-15"
+    "createdOn": "2020-05-15",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1554,
@@ -18626,7 +19083,8 @@ module.exports =
     "postalCode": "98107",
     "country": "US",
     "createdOn": "2025-06-30",
-    "notes": "Additional contact: davetrop@comcast.net"
+    "notes": "Additional contact: davetrop@comcast.net",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1559,
@@ -18640,7 +19098,8 @@ module.exports =
     "postalCode": "98445",
     "country": "US",
     "createdOn": "2018-09-25",
-    "notes": "Imported record: 1 order(s), $125.00 total spent."
+    "notes": "Imported record: 1 order(s), $125.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1560,
@@ -18678,7 +19137,8 @@ module.exports =
     "postalCode": "90230",
     "country": "US",
     "createdOn": "2026-01-02",
-    "notes": "Imported record: 1 order(s), $211.40 total spent."
+    "notes": "Imported record: 1 order(s), $211.40 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1564,
@@ -18705,7 +19165,8 @@ module.exports =
     "postalCode": "20816-2112",
     "country": "US",
     "createdOn": "2020-09-23",
-    "notes": "Imported record: 2 order(s), $138.80 total spent."
+    "notes": "Imported record: 2 order(s), $138.80 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1566,
@@ -18719,7 +19180,8 @@ module.exports =
     "postalCode": "77073",
     "country": "US",
     "createdOn": "2020-05-15",
-    "notes": "Imported record: 1 order(s), $59.00 total spent."
+    "notes": "Imported record: 1 order(s), $59.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1567,
@@ -18733,7 +19195,8 @@ module.exports =
     "postalCode": "98225",
     "country": "US",
     "createdOn": "2021-01-26",
-    "notes": "Imported record: 1 order(s), $115.25 total spent."
+    "notes": "Imported record: 1 order(s), $115.25 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1568,
@@ -18772,7 +19235,8 @@ module.exports =
     "postalCode": "98546",
     "country": "US",
     "createdOn": "2019-10-13",
-    "notes": "Imported record: 5 order(s), $566.47 total spent."
+    "notes": "Imported record: 5 order(s), $566.47 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1571,
@@ -18909,7 +19373,8 @@ module.exports =
     "postalCode": "60202",
     "country": "US",
     "createdOn": "2019-01-10",
-    "notes": "Imported record: 1 order(s), $18.76 total spent."
+    "notes": "Imported record: 1 order(s), $18.76 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1584,
@@ -18999,14 +19464,16 @@ module.exports =
     "firstName": "Liz",
     "lastName": "McLeish",
     "email": "lizard67@live.com.au",
-    "createdOn": "2021-12-05"
+    "createdOn": "2021-12-05",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1593,
     "firstName": "Liz",
     "lastName": "Titus",
     "email": "etitus@snet.net",
-    "createdOn": "2023-10-16"
+    "createdOn": "2023-10-16",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1594,
@@ -19059,12 +19526,14 @@ module.exports =
     "postalCode": "98056",
     "country": "US",
     "createdOn": "2019-10-20",
-    "notes": "Imported record: 1 order(s), $192.13 total spent."
+    "notes": "Imported record: 1 order(s), $192.13 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1598,
     "firstName": "Rebecca",
     "lastName": "Chase",
+    "company": "Lone Crow Bungalow",
     "email": "hello@lonecrowbungalow.com",
     "phone": "(541) 383-2992",
     "street1": "937 NW Wall St",
@@ -19073,7 +19542,7 @@ module.exports =
     "postalCode": "97701",
     "country": "US",
     "createdOn": "2012-02-02",
-    "notes": "NEW OWNER\nCompany: Lone Crow Bungalow",
+    "notes": "NEW OWNER",
     "type": "wholesale",
     "website": "http://www.lonecrowbungalow.com/"
   },
@@ -19088,7 +19557,8 @@ module.exports =
     "postalCode": "93402",
     "country": "US",
     "createdOn": "2019-11-26",
-    "notes": "Imported record: 1 order(s), $260.00 total spent."
+    "notes": "Imported record: 1 order(s), $260.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1600,
@@ -19108,7 +19578,8 @@ module.exports =
     "postalCode": "98074",
     "country": "US",
     "createdOn": "2020-04-01",
-    "notes": "Imported record: 1 order(s), $106.25 total spent."
+    "notes": "Imported record: 1 order(s), $106.25 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1602,
@@ -19143,6 +19614,7 @@ module.exports =
     "id": 1604,
     "firstName": "Lori",
     "lastName": "Hoff",
+    "company": "Lori A Hoff",
     "email": "lhmaservices@gmail.com",
     "street1": "8800 NE 117th Pl",
     "city": "Kirkland",
@@ -19150,7 +19622,7 @@ module.exports =
     "postalCode": "98034-6118",
     "country": "US",
     "createdOn": "2022-08-03",
-    "notes": "Company: Lori A Hoff\nImported record: 1 order(s), $314.35 total spent.",
+    "notes": "Imported record: 1 order(s), $314.35 total spent.",
     "acceptsEmailMarketing": true
   },
   {
@@ -19229,7 +19701,8 @@ module.exports =
     "postalCode": "89506-4144",
     "country": "US",
     "createdOn": "2026-02-08",
-    "notes": "Imported record: 1 order(s), $140.28 total spent."
+    "notes": "Imported record: 1 order(s), $140.28 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1612,
@@ -19285,7 +19758,8 @@ module.exports =
     "postalCode": "98292",
     "country": "US",
     "createdOn": "2019-05-26",
-    "notes": "Imported record: 2 order(s), $408.52 total spent."
+    "notes": "Imported record: 2 order(s), $408.52 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1617,
@@ -19298,7 +19772,8 @@ module.exports =
     "postalCode": "1085",
     "country": "US",
     "createdOn": "2020-04-20",
-    "notes": "Imported record: 1 order(s), $202.00 total spent."
+    "notes": "Imported record: 1 order(s), $202.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1618,
@@ -19362,7 +19837,8 @@ module.exports =
     "postalCode": "98087",
     "country": "US",
     "createdOn": "2017-02-08",
-    "notes": "Imported record: 1 order(s), $100.00 total spent."
+    "notes": "Imported record: 1 order(s), $100.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1623,
@@ -19376,14 +19852,16 @@ module.exports =
     "postalCode": "6109",
     "country": "US",
     "createdOn": "2021-02-09",
-    "notes": "Imported record: 1 order(s), $46.00 total spent."
+    "notes": "Imported record: 1 order(s), $46.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1624,
     "firstName": "Lorne",
     "lastName": "Swain",
     "email": "lorneswain@gmail.com",
-    "createdOn": "2021-02-23"
+    "createdOn": "2021-02-23",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1625,
@@ -19421,7 +19899,8 @@ module.exports =
     "postalCode": "93013",
     "country": "US",
     "createdOn": "2023-05-18",
-    "notes": "Imported record: 6 order(s), $1,010.90 total spent."
+    "notes": "Imported record: 6 order(s), $1,010.90 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1628,
@@ -19463,7 +19942,8 @@ module.exports =
     "postalCode": "37416",
     "country": "US",
     "createdOn": "2021-06-28",
-    "notes": "Imported record: 1 order(s), $44.45 total spent."
+    "notes": "Imported record: 1 order(s), $44.45 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1631,
@@ -19477,7 +19957,8 @@ module.exports =
     "postalCode": "98296",
     "country": "US",
     "createdOn": "2017-03-20",
-    "notes": "Imported record: 1 order(s), $125.00 total spent."
+    "notes": "Imported record: 1 order(s), $125.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1632,
@@ -19511,6 +19992,7 @@ module.exports =
     "id": 1634,
     "firstName": "Valerie",
     "lastName": "Reimers",
+    "company": "Lucinda's",
     "phone": "(316) 264-1080",
     "street1": "329 N Mead St",
     "city": "Witchita",
@@ -19518,7 +20000,6 @@ module.exports =
     "postalCode": "67202",
     "country": "US",
     "createdOn": "2023-01-27",
-    "notes": "Company: Lucinda's",
     "type": "wholesale",
     "website": "http://lucindas.net/"
   },
@@ -19566,6 +20047,7 @@ module.exports =
     "id": 1638,
     "firstName": "Harold",
     "lastName": "Sturgeon",
+    "company": "Luna Belmont Shore",
     "email": "harold@lunabelmontshore.com",
     "phone": "(562) 987-4780",
     "street1": "4928 E 2nd St",
@@ -19574,7 +20056,6 @@ module.exports =
     "postalCode": "90803",
     "country": "US",
     "createdOn": "2021-06-17",
-    "notes": "Company: Luna Belmont Shore",
     "type": "wholesale",
     "website": "https://www.facebook.com/Luna-Belmont-Shore-154696914540832/"
   },
@@ -19582,6 +20063,7 @@ module.exports =
     "id": 1639,
     "firstName": "Cherie",
     "lastName": "Bosela",
+    "company": "Luna Mosaic Arts",
     "email": "cherie@lunamosaics.com",
     "phone": "(407) 930-0750",
     "street1": "813 Virginia Dr",
@@ -19590,7 +20072,6 @@ module.exports =
     "postalCode": "32803",
     "country": "US",
     "createdOn": "2020-02-26",
-    "notes": "Company: Luna Mosaic Arts",
     "type": "wholesale",
     "website": "https://lunamosaicarts.com/"
   },
@@ -19598,6 +20079,7 @@ module.exports =
     "id": 1640,
     "firstName": "Janice",
     "lastName": "Keen",
+    "company": "LunaSea Gallery",
     "email": "lunaseagallery@peoplepc.com",
     "phone": "(650) 879-1207",
     "street1": "10599 Cbrillo Hwy",
@@ -19606,7 +20088,6 @@ module.exports =
     "postalCode": "94060",
     "country": "US",
     "createdOn": "2013-11-27",
-    "notes": "Company: LunaSea Gallery",
     "type": "wholesale",
     "website": "http://lunaseagallery.net/"
   },
@@ -19677,7 +20158,8 @@ module.exports =
     "postalCode": "95330",
     "country": "US",
     "createdOn": "2021-02-27",
-    "notes": "Imported record: 1 order(s), $114.00 total spent."
+    "notes": "Imported record: 1 order(s), $114.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1646,
@@ -19816,7 +20298,8 @@ module.exports =
     "postalCode": "98133",
     "country": "US",
     "createdOn": "2020-05-16",
-    "notes": "Imported record: 2 order(s), $50.25 total spent."
+    "notes": "Imported record: 2 order(s), $50.25 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1659,
@@ -19851,7 +20334,8 @@ module.exports =
     "postalCode": "85132-7329",
     "country": "US",
     "createdOn": "2020-04-14",
-    "notes": "Imported record: 1 order(s), $103.00 total spent."
+    "notes": "Imported record: 1 order(s), $103.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1662,
@@ -19971,6 +20455,7 @@ module.exports =
     "id": 1672,
     "firstName": "Manya",
     "lastName": "Vee",
+    "company": "Maje Gallery",
     "email": "manya@manyaveeselects.com",
     "phone": "(425) 776-3778",
     "street1": "409 Main St",
@@ -19979,7 +20464,7 @@ module.exports =
     "postalCode": "98020",
     "country": "US",
     "createdOn": "2010-05-27",
-    "notes": "Company: Maje Gallery\nType: Consignment (not represented by the wholesale/retail field)",
+    "notes": "Type: Consignment (not represented by the wholesale/retail field)",
     "website": "https://majegallery.com/"
   },
   {
@@ -19992,6 +20477,7 @@ module.exports =
     "id": 1674,
     "firstName": "Mary Ann",
     "lastName": "Spencer",
+    "company": "Maker + Muse",
     "email": "hello@maker-muse.com",
     "phone": "(973) 313-2722",
     "street1": "170 Maplewood Ave",
@@ -20000,7 +20486,6 @@ module.exports =
     "postalCode": "7040",
     "country": "US",
     "createdOn": "2020-02-12",
-    "notes": "Company: Maker + Muse",
     "type": "wholesale",
     "website": "https://www.maker-muse.com/"
   },
@@ -20021,6 +20506,7 @@ module.exports =
     "id": 1677,
     "firstName": "Jerry",
     "lastName": "Frank",
+    "company": "Mansfield Art Center",
     "email": "jerry@mansfieldartcenter.org",
     "phone": "(419) 756-1700",
     "street1": "700 Marion Ave",
@@ -20029,7 +20515,6 @@ module.exports =
     "postalCode": "44906",
     "country": "US",
     "createdOn": "2018-10-11",
-    "notes": "Company: Mansfield Art Center",
     "type": "wholesale",
     "website": "https://mansfieldartcenter.org/gallery-shop/"
   },
@@ -20037,6 +20522,7 @@ module.exports =
     "id": 1678,
     "firstName": "LouAnn",
     "lastName": "David",
+    "company": "Manzanita Home + Flowers + Gifts",
     "email": "manzanitaonmain@gmail.com",
     "phone": "(541) 488-1588",
     "street1": "55 N Main St",
@@ -20045,7 +20531,7 @@ module.exports =
     "postalCode": "97520",
     "country": "US",
     "createdOn": "2012-04-10",
-    "notes": "FORMERLY FlowerTymeFORMERLY Manzanita on Main\nCompany: Manzanita Home + Flowers + Gifts",
+    "notes": "FORMERLY FlowerTymeFORMERLY Manzanita on Main",
     "type": "wholesale",
     "website": "https://www.manzanitahomeandflowers.com/"
   },
@@ -20067,7 +20553,8 @@ module.exports =
     "postalCode": "98392",
     "country": "US",
     "createdOn": "2018-03-14",
-    "notes": "Imported record: 1 order(s), $500.00 total spent."
+    "notes": "Imported record: 1 order(s), $500.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1681,
@@ -20095,7 +20582,8 @@ module.exports =
     "postalCode": "98040",
     "country": "US",
     "createdOn": "2020-03-10",
-    "notes": "Imported record: 1 order(s), $44.56 total spent."
+    "notes": "Imported record: 1 order(s), $44.56 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1683,
@@ -20162,7 +20650,8 @@ module.exports =
     "postalCode": "98075",
     "country": "US",
     "createdOn": "2019-11-07",
-    "notes": "Imported record: 3 order(s), $209.81 total spent."
+    "notes": "Imported record: 3 order(s), $209.81 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1689,
@@ -20175,12 +20664,14 @@ module.exports =
     "postalCode": "98275",
     "country": "US",
     "createdOn": "2018-12-12",
-    "notes": "Additional contact: nannybird529@gmail.com\nImported record: 2 order(s), $271.92 total spent."
+    "notes": "Additional contact: nannybird529@gmail.com\nImported record: 2 order(s), $271.92 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1690,
     "firstName": "Maggie",
     "lastName": "Ariani",
+    "company": "Margaret Ariani",
     "email": "meriani@comcast.net",
     "phone": "(415) 464-7907",
     "street1": "82 Wimbledon Way",
@@ -20189,7 +20680,7 @@ module.exports =
     "postalCode": "94901",
     "country": "US",
     "createdOn": "2025-07-01",
-    "notes": "Company: Margaret Ariani\nImported record: 4 order(s), $792.48 total spent.",
+    "notes": "Imported record: 4 order(s), $792.48 total spent.",
     "acceptsEmailMarketing": true
   },
   {
@@ -20286,7 +20777,8 @@ module.exports =
     "postalCode": "34432",
     "country": "US",
     "createdOn": "2021-04-22",
-    "notes": "Imported record: 1 order(s), $19.45 total spent."
+    "notes": "Imported record: 1 order(s), $19.45 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1699,
@@ -20313,7 +20805,8 @@ module.exports =
     "postalCode": "48116",
     "country": "US",
     "createdOn": "2020-09-16",
-    "notes": "Imported record: 1 order(s), $247.00 total spent."
+    "notes": "Imported record: 1 order(s), $247.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1701,
@@ -20326,7 +20819,8 @@ module.exports =
     "postalCode": "99201",
     "country": "US",
     "createdOn": "2024-12-23",
-    "notes": "Imported record: 1 order(s), $286.12 total spent."
+    "notes": "Imported record: 1 order(s), $286.12 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1702,
@@ -20349,7 +20843,8 @@ module.exports =
     "postalCode": "29690",
     "country": "US",
     "createdOn": "2021-06-24",
-    "notes": "Imported record: 1 order(s), $66.00 total spent."
+    "notes": "Imported record: 1 order(s), $66.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1704,
@@ -20378,7 +20873,8 @@ module.exports =
     "postalCode": "99835",
     "country": "US",
     "createdOn": "2021-06-18",
-    "notes": "Imported record: 2 order(s), $244.30 total spent."
+    "notes": "Imported record: 2 order(s), $244.30 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1706,
@@ -20392,7 +20888,8 @@ module.exports =
     "postalCode": "99004-4901",
     "country": "US",
     "createdOn": "2024-12-23",
-    "notes": "Imported record: 1 order(s), $567.52 total spent."
+    "notes": "Imported record: 1 order(s), $567.52 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1707,
@@ -20440,7 +20937,8 @@ module.exports =
     "postalCode": "98033",
     "country": "US",
     "createdOn": "2018-09-28",
-    "notes": "Additional contact: mberardo@microsoft.com, Michalis: (206) 718-5544\nImported record: 1 order(s), $125.00 total spent."
+    "notes": "Additional contact: mberardo@microsoft.com, Michalis: (206) 718-5544\nImported record: 1 order(s), $125.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1711,
@@ -20528,7 +21026,8 @@ module.exports =
     "postalCode": "21613",
     "country": "US",
     "createdOn": "2023-10-09",
-    "notes": "Imported record: 1 order(s), $724.92 total spent."
+    "notes": "Imported record: 1 order(s), $724.92 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1718,
@@ -20569,7 +21068,8 @@ module.exports =
     "postalCode": "98008",
     "country": "US",
     "createdOn": "2019-08-10",
-    "notes": "Nickname: \"Cookie\"\nImported record: 1 order(s), $631.41 total spent."
+    "notes": "Nickname: \"Cookie\"\nImported record: 1 order(s), $631.41 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1721,
@@ -20618,7 +21118,8 @@ module.exports =
     "postalCode": "94070",
     "country": "US",
     "createdOn": "2020-10-30",
-    "notes": "Imported record: 2 order(s), $1,016.30 total spent."
+    "notes": "Imported record: 2 order(s), $1,016.30 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1725,
@@ -20631,7 +21132,8 @@ module.exports =
     "postalCode": "20878",
     "country": "US",
     "createdOn": "2021-06-23",
-    "notes": "Imported record: 1 order(s), $55.00 total spent."
+    "notes": "Imported record: 1 order(s), $55.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1726,
@@ -20686,7 +21188,8 @@ module.exports =
     "postalCode": "78733",
     "country": "US",
     "createdOn": "2023-10-06",
-    "notes": "Additional contact: mare.austin@gmail.com\nImported record: 1 order(s), $224.92 total spent."
+    "notes": "Additional contact: mare.austin@gmail.com\nImported record: 1 order(s), $224.92 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1730,
@@ -20700,12 +21203,14 @@ module.exports =
     "postalCode": "85351-3939",
     "country": "US",
     "createdOn": "2018-10-01",
-    "notes": "Imported record: 1 order(s), $28.00 total spent."
+    "notes": "Imported record: 1 order(s), $28.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1731,
     "firstName": "Dennis",
     "lastName": "Reynolds",
+    "company": "Marion's Candles Scents & Seasons",
     "email": "marions.giftshop@gmail.com",
     "phone": "(240) 393-5118",
     "street1": "PO Box 582",
@@ -20714,7 +21219,6 @@ module.exports =
     "postalCode": "22810",
     "country": "US",
     "createdOn": "2021-02-15",
-    "notes": "Company: Marion's Candles Scents & Seasons",
     "type": "wholesale",
     "website": "https://www.marionsgiftshop.com/"
   },
@@ -20745,7 +21249,8 @@ module.exports =
     "firstName": "Mark",
     "lastName": "Tarkovskiy",
     "email": "mark@cascadecleancrews.com",
-    "createdOn": "2024-08-20"
+    "createdOn": "2024-08-20",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1735,
@@ -20759,7 +21264,8 @@ module.exports =
     "postalCode": "33957",
     "country": "US",
     "createdOn": "2021-02-24",
-    "notes": "Imported record: 1 order(s), $28.30 total spent."
+    "notes": "Imported record: 1 order(s), $28.30 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1736,
@@ -20890,6 +21396,7 @@ module.exports =
     "id": 1748,
     "firstName": "Kory",
     "lastName": "Dollar",
+    "company": "Marvelous Mosaic Glass Studio",
     "email": "marvelousmosaicfineart@gmail.com",
     "phone": "(360) 719-9298",
     "street1": "64535 Columbia River Hwy",
@@ -20898,7 +21405,6 @@ module.exports =
     "postalCode": "97054",
     "country": "US",
     "createdOn": "2024-10-28",
-    "notes": "Company: Marvelous Mosaic Glass Studio",
     "type": "wholesale",
     "website": "https://marvelousmosaic.com"
   },
@@ -20927,7 +21433,8 @@ module.exports =
     "postalCode": "94523",
     "country": "US",
     "createdOn": "2018-06-17",
-    "notes": "Imported record: 1 order(s), $88.00 total spent."
+    "notes": "Imported record: 1 order(s), $88.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1751,
@@ -20941,7 +21448,8 @@ module.exports =
     "postalCode": "92240",
     "country": "US",
     "createdOn": "2021-10-06",
-    "notes": "Imported record: 2 order(s), $450.00 total spent, legacy user ID 64404028."
+    "notes": "Imported record: 2 order(s), $450.00 total spent, legacy user ID 64404028.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1752,
@@ -20992,7 +21500,8 @@ module.exports =
     "postalCode": "8057",
     "country": "US",
     "createdOn": "2026-01-19",
-    "notes": "Imported record: 1 order(s), $224.92 total spent."
+    "notes": "Imported record: 1 order(s), $224.92 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1757,
@@ -21027,7 +21536,8 @@ module.exports =
     "postalCode": "49508",
     "country": "US",
     "createdOn": "2021-10-05",
-    "notes": "Imported record: 2 order(s), $325.89 total spent."
+    "notes": "Imported record: 2 order(s), $325.89 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1760,
@@ -21225,7 +21735,8 @@ module.exports =
     "postalCode": "98422",
     "country": "US",
     "createdOn": "2023-07-16",
-    "notes": "Imported record: 1 order(s), $99.99 total spent."
+    "notes": "Imported record: 1 order(s), $99.99 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1779,
@@ -21259,7 +21770,8 @@ module.exports =
     "postalCode": "28785",
     "country": "US",
     "createdOn": "2026-01-01",
-    "notes": "Imported record: 1 order(s), $48.28 total spent."
+    "notes": "Imported record: 1 order(s), $48.28 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1782,
@@ -21304,7 +21816,8 @@ module.exports =
     "postalCode": "55406",
     "country": "US",
     "createdOn": "2025-01-16",
-    "notes": "Imported record: 1 order(s), $77.92 total spent."
+    "notes": "Imported record: 1 order(s), $77.92 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1786,
@@ -21335,7 +21848,8 @@ module.exports =
     "postalCode": "54104-9684",
     "country": "US",
     "createdOn": "2026-01-04",
-    "notes": "Imported record: 1 order(s), $41.35 total spent."
+    "notes": "Imported record: 1 order(s), $41.35 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1789,
@@ -21349,7 +21863,8 @@ module.exports =
     "postalCode": "98103",
     "country": "US",
     "createdOn": "2017-09-13",
-    "notes": "Imported record: 5 order(s), $433.98 total spent."
+    "notes": "Imported record: 5 order(s), $433.98 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1790,
@@ -21363,7 +21878,8 @@ module.exports =
     "postalCode": "28751",
     "country": "US",
     "createdOn": "2018-04-11",
-    "notes": "Imported record: 1 order(s), $56.00 total spent."
+    "notes": "Imported record: 1 order(s), $56.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1791,
@@ -21390,7 +21906,8 @@ module.exports =
     "postalCode": "33774",
     "country": "US",
     "createdOn": "2022-11-01",
-    "notes": "Imported record: 1 order(s), $43.40 total spent."
+    "notes": "Imported record: 1 order(s), $43.40 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1793,
@@ -21417,7 +21934,8 @@ module.exports =
     "postalCode": "49781",
     "country": "US",
     "createdOn": "2019-11-04",
-    "notes": "Imported record: 1 order(s), $29.90 total spent."
+    "notes": "Imported record: 1 order(s), $29.90 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1795,
@@ -21431,7 +21949,8 @@ module.exports =
     "postalCode": "98107",
     "country": "US",
     "createdOn": "2018-04-28",
-    "notes": "Imported record: 2 order(s), $500.00 total spent."
+    "notes": "Imported record: 2 order(s), $500.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1796,
@@ -21445,7 +21964,8 @@ module.exports =
     "postalCode": "21136",
     "country": "US",
     "createdOn": "2018-11-08",
-    "notes": "Imported record: 1 order(s), $101.00 total spent."
+    "notes": "Imported record: 1 order(s), $101.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1797,
@@ -21473,6 +21993,7 @@ module.exports =
     "id": 1799,
     "firstName": "Lana",
     "lastName": "Juarez",
+    "company": "Matrix Gallery",
     "email": "matrixgallerycrafts@gmail.com",
     "phone": "(540) 951-3566",
     "street1": "115 N Main St",
@@ -21481,7 +22002,6 @@ module.exports =
     "postalCode": "24060",
     "country": "US",
     "createdOn": "2024-03-29",
-    "notes": "Company: Matrix Gallery",
     "type": "wholesale",
     "website": "https://www.matrixgallery.com"
   },
@@ -21490,7 +22010,8 @@ module.exports =
     "firstName": "Maura",
     "lastName": "Buckley",
     "email": "maura9@gmail.com",
-    "createdOn": "2021-11-08"
+    "createdOn": "2021-11-08",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1801,
@@ -21504,7 +22025,8 @@ module.exports =
     "postalCode": "98040",
     "country": "US",
     "createdOn": "2020-03-31",
-    "notes": "Imported record: 1 order(s), $120.62 total spent."
+    "notes": "Imported record: 1 order(s), $120.62 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1802,
@@ -21517,7 +22039,8 @@ module.exports =
     "postalCode": "19958",
     "country": "US",
     "createdOn": "2025-02-01",
-    "notes": "Imported record: 1 order(s), $19.15 total spent."
+    "notes": "Imported record: 1 order(s), $19.15 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1803,
@@ -21531,7 +22054,8 @@ module.exports =
     "postalCode": "33756",
     "country": "US",
     "createdOn": "2020-11-30",
-    "notes": "Imported record: 1 order(s), $25.10 total spent."
+    "notes": "Imported record: 1 order(s), $25.10 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1804,
@@ -21588,7 +22112,8 @@ module.exports =
     "postalCode": "98026",
     "country": "US",
     "createdOn": "2017-01-18",
-    "notes": "Imported record: 3 order(s), $910.00 total spent."
+    "notes": "Imported record: 3 order(s), $910.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1808,
@@ -21602,7 +22127,8 @@ module.exports =
     "postalCode": "98366",
     "country": "US",
     "createdOn": "2023-09-17",
-    "notes": "Imported record: 1 order(s), $191.18 total spent."
+    "notes": "Imported record: 1 order(s), $191.18 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1809,
@@ -21622,7 +22148,8 @@ module.exports =
     "firstName": "Maureen",
     "lastName": "Rucker",
     "email": "maureen.r@theprofessionalprofiles.com",
-    "createdOn": "2025-10-09"
+    "createdOn": "2025-10-09",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1811,
@@ -21661,7 +22188,8 @@ module.exports =
     "postalCode": "93401",
     "country": "US",
     "createdOn": "2020-10-07",
-    "notes": "Imported record: 2 order(s), $121.00 total spent, legacy user ID 47727460."
+    "notes": "Imported record: 2 order(s), $121.00 total spent, legacy user ID 47727460.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1815,
@@ -21688,6 +22216,7 @@ module.exports =
     "id": 1817,
     "firstName": "Teresa",
     "lastName": "Schrodel",
+    "company": "Medart Gallery",
     "email": "teresa@medartgalleries.com",
     "phone": "(301) 855-4515",
     "street1": "10735 Town Center Blvd Ste 1",
@@ -21696,7 +22225,6 @@ module.exports =
     "postalCode": "20754",
     "country": "US",
     "createdOn": "2014-10-22",
-    "notes": "Company: Medart Gallery",
     "type": "wholesale",
     "website": "https://medartgalleries.com/"
   },
@@ -21712,7 +22240,8 @@ module.exports =
     "postalCode": "84117",
     "country": "US",
     "createdOn": "2022-04-18",
-    "notes": "Imported record: 1 order(s), $285.00 total spent."
+    "notes": "Imported record: 1 order(s), $285.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1819,
@@ -21724,6 +22253,7 @@ module.exports =
     "id": 1820,
     "firstName": "Nancy",
     "lastName": "Corwin",
+    "company": "Megan Corwin",
     "email": "nmegan@mindspring.com",
     "street1": "421 N 62nd St",
     "city": "Seattle",
@@ -21731,7 +22261,7 @@ module.exports =
     "postalCode": "98103",
     "country": "US",
     "createdOn": "2010-05-27",
-    "notes": "Company: Megan Corwin\nAdditional contact: Mark Phillips"
+    "notes": "Additional contact: Mark Phillips"
   },
   {
     "id": 1821,
@@ -21764,7 +22294,8 @@ module.exports =
     "postalCode": "98026",
     "country": "US",
     "createdOn": "2025-01-07",
-    "notes": "Imported record: 1 order(s), $157.46 total spent."
+    "notes": "Imported record: 1 order(s), $157.46 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1824,
@@ -21778,7 +22309,8 @@ module.exports =
     "postalCode": "11970",
     "country": "US",
     "createdOn": "2023-09-02",
-    "notes": "Imported record: 1 order(s), $51.28 total spent."
+    "notes": "Imported record: 1 order(s), $51.28 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1825,
@@ -21804,7 +22336,8 @@ module.exports =
     "postalCode": "60527",
     "country": "US",
     "createdOn": "2023-12-01",
-    "notes": "Imported record: 1 order(s), $375.28 total spent."
+    "notes": "Imported record: 1 order(s), $375.28 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1827,
@@ -21852,7 +22385,8 @@ module.exports =
     "postalCode": "98236",
     "country": "US",
     "createdOn": "2021-02-25",
-    "notes": "Imported record: 1 order(s), $151.76 total spent."
+    "notes": "Imported record: 1 order(s), $151.76 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1831,
@@ -21893,7 +22427,8 @@ module.exports =
     "postalCode": "98072",
     "country": "US",
     "createdOn": "2025-11-21",
-    "notes": "Imported record: 1 order(s), $314.06 total spent."
+    "notes": "Imported record: 1 order(s), $314.06 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1834,
@@ -21919,7 +22454,8 @@ module.exports =
     "postalCode": "93402",
     "country": "US",
     "createdOn": "2019-12-08",
-    "notes": "Imported record: 1 order(s), $135.50 total spent."
+    "notes": "Imported record: 1 order(s), $135.50 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1837,
@@ -21947,7 +22483,8 @@ module.exports =
     "postalCode": "79925",
     "country": "US",
     "createdOn": "2022-08-10",
-    "notes": "Imported record: 1 order(s), $173.90 total spent."
+    "notes": "Imported record: 1 order(s), $173.90 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1839,
@@ -21961,7 +22498,8 @@ module.exports =
     "postalCode": "98284",
     "country": "US",
     "createdOn": "2020-07-10",
-    "notes": "Imported record: 1 order(s), $30.71 total spent."
+    "notes": "Imported record: 1 order(s), $30.71 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1840,
@@ -22059,6 +22597,7 @@ module.exports =
     "id": 1848,
     "firstName": "Fran and Jay",
     "lastName": "Holtzin",
+    "company": "Metalworks",
     "email": "metalworks@verizon.net",
     "phone": "(215) 625-2640",
     "street1": "315 South St",
@@ -22067,7 +22606,6 @@ module.exports =
     "postalCode": "19147",
     "country": "US",
     "createdOn": "2013-08-16",
-    "notes": "Company: Metalworks",
     "type": "wholesale",
     "website": "https://www.facebook.com/metalworks315/"
   },
@@ -22075,6 +22613,7 @@ module.exports =
     "id": 1849,
     "firstName": "Deborah",
     "lastName": "March",
+    "company": "Mexi-Kids Mosaics",
     "email": "deborahmarch@gmail.com",
     "phone": "(832) 372-7025",
     "street1": "19407 Asterglen Ct",
@@ -22084,7 +22623,6 @@ module.exports =
     "postalCode": "77449",
     "country": "US",
     "createdOn": "2019-11-25",
-    "notes": "Company: Mexi-Kids Mosaics",
     "website": "https://mexi-kids-mosaics.com/"
   },
   {
@@ -22098,7 +22636,8 @@ module.exports =
     "postalCode": "44321",
     "country": "US",
     "createdOn": "2020-05-08",
-    "notes": "Imported record: 1 order(s), legacy user ID 38188332."
+    "notes": "Imported record: 1 order(s), legacy user ID 38188332.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1851,
@@ -22149,7 +22688,8 @@ module.exports =
     "postalCode": "93442",
     "country": "US",
     "createdOn": "2019-10-15",
-    "notes": "Imported record: 3 order(s), $402.50 total spent."
+    "notes": "Imported record: 3 order(s), $402.50 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1856,
@@ -22188,7 +22728,8 @@ module.exports =
     "postalCode": "80138",
     "country": "US",
     "createdOn": "2021-03-13",
-    "notes": "Imported record: 1 order(s), $190.00 total spent."
+    "notes": "Imported record: 1 order(s), $190.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1859,
@@ -22270,7 +22811,8 @@ module.exports =
     "postalCode": "44646",
     "country": "US",
     "createdOn": "2020-02-05",
-    "notes": "Imported record: 1 order(s), $117.50 total spent."
+    "notes": "Imported record: 1 order(s), $117.50 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1865,
@@ -22297,7 +22839,8 @@ module.exports =
     "postalCode": "87111",
     "country": "US",
     "createdOn": "2020-04-01",
-    "notes": "Imported record: 1 order(s), $151.30 total spent."
+    "notes": "Imported record: 1 order(s), $151.30 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1867,
@@ -22311,7 +22854,8 @@ module.exports =
     "postalCode": "34211",
     "country": "US",
     "createdOn": "2021-02-09",
-    "notes": "Imported record: 1 order(s), $46.00 total spent."
+    "notes": "Imported record: 1 order(s), $46.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1868,
@@ -22387,7 +22931,8 @@ module.exports =
     "postalCode": "1949",
     "country": "US",
     "createdOn": "2020-06-09",
-    "notes": "Imported record: 2 order(s), $104.55 total spent."
+    "notes": "Imported record: 2 order(s), $104.55 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1875,
@@ -22401,7 +22946,8 @@ module.exports =
     "postalCode": "92028",
     "country": "US",
     "createdOn": "2018-07-08",
-    "notes": "Imported record: 1 order(s), $171.00 total spent."
+    "notes": "Imported record: 1 order(s), $171.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1876,
@@ -22449,14 +22995,16 @@ module.exports =
     "postalCode": "59858",
     "country": "US",
     "createdOn": "2019-07-18",
-    "notes": "Imported record: 2 order(s), $410.50 total spent."
+    "notes": "Imported record: 2 order(s), $410.50 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1881,
     "firstName": "Michelle",
     "lastName": "Miller",
     "email": "michellemiller0104@gmail.com",
-    "createdOn": "2021-02-20"
+    "createdOn": "2021-02-20",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1882,
@@ -22577,7 +23125,8 @@ module.exports =
     "email": "mimsgo@yahoo.com",
     "country": "US",
     "createdOn": "2024-01-01",
-    "notes": "Imported record: legacy user ID 101528468."
+    "notes": "Imported record: legacy user ID 101528468.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1893,
@@ -22591,7 +23140,8 @@ module.exports =
     "postalCode": "98070",
     "country": "US",
     "createdOn": "2020-05-24",
-    "notes": "Imported record: 1 order(s), $203.35 total spent."
+    "notes": "Imported record: 1 order(s), $203.35 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1894,
@@ -22637,6 +23187,7 @@ module.exports =
     "id": 1897,
     "firstName": "Bart",
     "lastName": "Leatherman",
+    "company": "Modern Artisans",
     "email": "bartley@modernartisans.com",
     "phone": "(877) 848-0957",
     "street1": "1006 Wake Forest Rd",
@@ -22645,7 +23196,6 @@ module.exports =
     "postalCode": "27604",
     "country": "US",
     "createdOn": "2011-02-01",
-    "notes": "Company: Modern Artisans",
     "type": "wholesale",
     "website": "https://www.modernartisans.com/"
   },
@@ -22684,7 +23234,8 @@ module.exports =
     "postalCode": "92504-5655",
     "country": "US",
     "createdOn": "2021-03-31",
-    "notes": "Imported record: 1 order(s), $50.30 total spent."
+    "notes": "Imported record: 1 order(s), $50.30 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1902,
@@ -22697,7 +23248,8 @@ module.exports =
     "postalCode": "78753-2243",
     "country": "US",
     "createdOn": "2020-03-29",
-    "notes": "Imported record: 1 order(s), $125.00 total spent."
+    "notes": "Imported record: 1 order(s), $125.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1903,
@@ -22717,7 +23269,8 @@ module.exports =
     "postalCode": "98002",
     "country": "US",
     "createdOn": "2014-03-02",
-    "notes": "Imported record: 1 order(s), $135.44 total spent."
+    "notes": "Imported record: 1 order(s), $135.44 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1905,
@@ -22731,12 +23284,14 @@ module.exports =
     "postalCode": "90028-4982",
     "country": "US",
     "createdOn": "2025-05-30",
-    "notes": "Imported record: 1 order(s), $19.15 total spent."
+    "notes": "Imported record: 1 order(s), $19.15 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1906,
     "firstName": "Max",
     "lastName": "Salmenson",
+    "company": "Moonshadow Gifts",
     "email": "max@moonshadowgifts.com",
     "phone": "(503) 789-7996",
     "street1": "3107 SW Murray Blvd PMB 413",
@@ -22745,7 +23300,7 @@ module.exports =
     "postalCode": "97008",
     "country": "US",
     "createdOn": "2018-07-02",
-    "notes": "CLOSED FOR NOW\nCompany: Moonshadow Gifts",
+    "notes": "CLOSED FOR NOW",
     "type": "wholesale",
     "website": "https://moonshadowgifts.com"
   },
@@ -22768,6 +23323,7 @@ module.exports =
     "id": 1908,
     "firstName": "Ava",
     "lastName": "Maxwell",
+    "company": "Morse Museum of American Art",
     "email": "amaxwell@morsemuseum.org",
     "phone": "(407) 645-5311",
     "street1": "445 N Park Ave",
@@ -22776,7 +23332,6 @@ module.exports =
     "postalCode": "32789",
     "country": "US",
     "createdOn": "2013-01-25",
-    "notes": "Company: Morse Museum of American Art",
     "type": "wholesale",
     "website": "http://www.morsemuseum.org/"
   },
@@ -22784,6 +23339,7 @@ module.exports =
     "id": 1909,
     "firstName": "Chuck",
     "lastName": "Wheeler",
+    "company": "Mountain Laurel Gallery",
     "email": "wheelerc12@msn.com",
     "phone": "(888) 809-2041",
     "street1": "1 N Washington St",
@@ -22792,7 +23348,6 @@ module.exports =
     "postalCode": "25411",
     "country": "US",
     "createdOn": "2016-06-15",
-    "notes": "Company: Mountain Laurel Gallery",
     "type": "wholesale",
     "website": "http://www.mountainlaurelgallery.com/"
   },
@@ -22808,19 +23363,22 @@ module.exports =
     "postalCode": "48084",
     "country": "US",
     "createdOn": "2022-10-28",
-    "notes": "Imported record: 3 order(s), $390.54 total spent."
+    "notes": "Imported record: 3 order(s), $390.54 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1911,
     "firstName": "Murray",
     "lastName": "Smith",
     "email": "murray_smith@comcast.net",
-    "createdOn": "2020-08-29"
+    "createdOn": "2020-08-29",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1912,
     "firstName": "Audrie",
     "lastName": "Ranon",
+    "company": "Museum of Fine Arts",
     "email": "Audrie@fine-arts.org",
     "phone": "(727) 823-3872",
     "street1": "255 Beach Dr NE",
@@ -22829,7 +23387,6 @@ module.exports =
     "postalCode": "33701",
     "country": "US",
     "createdOn": "2011-04-01",
-    "notes": "Company: Museum of Fine Arts",
     "type": "wholesale",
     "website": "https://mfastpete.org/"
   },
@@ -22882,6 +23439,7 @@ module.exports =
     "id": 1917,
     "firstName": "Bill & Kathy",
     "lastName": "Lamparter",
+    "company": "Naja, The",
     "email": "naja@esedona.net",
     "phone": "(928) 282-5946",
     "street1": "235 N State Route 89A",
@@ -22890,7 +23448,6 @@ module.exports =
     "postalCode": "86336",
     "country": "US",
     "createdOn": "2015-07-15",
-    "notes": "Company: Naja, The",
     "type": "wholesale",
     "website": "https://www.facebook.com/sedonanaja/"
   },
@@ -22899,7 +23456,8 @@ module.exports =
     "firstName": "Nan",
     "lastName": "Goldenthal",
     "email": "engold@charter.net",
-    "createdOn": "2025-03-28"
+    "createdOn": "2025-03-28",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1919,
@@ -22912,7 +23470,8 @@ module.exports =
     "postalCode": "30338",
     "country": "US",
     "createdOn": "2020-05-13",
-    "notes": "Imported record: 1 order(s), $99.50 total spent."
+    "notes": "Imported record: 1 order(s), $99.50 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1920,
@@ -23020,7 +23579,8 @@ module.exports =
     "postalCode": "73064",
     "country": "US",
     "createdOn": "2021-11-18",
-    "notes": "Imported record: 1 order(s), $48.00 total spent."
+    "notes": "Imported record: 1 order(s), $48.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1929,
@@ -23049,7 +23609,8 @@ module.exports =
     "postalCode": "27514",
     "country": "US",
     "createdOn": "2020-09-26",
-    "notes": "Imported record: 5 order(s), $1,250.80 total spent, legacy user ID 47145250."
+    "notes": "Imported record: 5 order(s), $1,250.80 total spent, legacy user ID 47145250.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1931,
@@ -23069,7 +23630,8 @@ module.exports =
     "postalCode": "19090",
     "country": "US",
     "createdOn": "2021-02-03",
-    "notes": "Imported record: 1 order(s), $84.00 total spent."
+    "notes": "Imported record: 1 order(s), $84.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1933,
@@ -23129,7 +23691,8 @@ module.exports =
     "postalCode": "95746",
     "country": "US",
     "createdOn": "2020-03-04",
-    "notes": "Imported record: 1 order(s), $168.00 total spent."
+    "notes": "Imported record: 1 order(s), $168.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1938,
@@ -23157,7 +23720,8 @@ module.exports =
     "postalCode": "76049",
     "country": "US",
     "createdOn": "2020-07-11",
-    "notes": "Imported record: 1 order(s), $107.50 total spent."
+    "notes": "Imported record: 1 order(s), $107.50 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1940,
@@ -23170,7 +23734,8 @@ module.exports =
     "state": "FL",
     "postalCode": "34238",
     "country": "US",
-    "createdOn": "2026-01-06"
+    "createdOn": "2026-01-06",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1941,
@@ -23198,7 +23763,8 @@ module.exports =
     "firstName": "Nancy",
     "lastName": "Whittington",
     "email": "tybee49@yahoo.com",
-    "createdOn": "2020-03-19"
+    "createdOn": "2020-03-19",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1944,
@@ -23234,14 +23800,16 @@ module.exports =
     "postalCode": "57201",
     "country": "US",
     "createdOn": "2018-08-04",
-    "notes": "Imported record: 1 order(s), $115.00 total spent."
+    "notes": "Imported record: 1 order(s), $115.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1947,
     "firstName": "Natalee",
     "lastName": "Balser",
     "email": "nataleekb@gmail.com",
-    "createdOn": "2023-07-25"
+    "createdOn": "2023-07-25",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1948,
@@ -23278,6 +23846,7 @@ module.exports =
     "id": 1950,
     "firstName": "Nancy and Kevin",
     "lastName": "Donahoe",
+    "company": "Nazareth Floral Designs",
     "email": "nazarethfloral@gmail.com",
     "phone": "(610) 746-9998",
     "street1": "589 E Lawn Rd",
@@ -23286,7 +23855,6 @@ module.exports =
     "postalCode": "18064",
     "country": "US",
     "createdOn": "2011-03-13",
-    "notes": "Company: Nazareth Floral Designs",
     "type": "wholesale",
     "website": "http://www.nazarethfloral.com"
   },
@@ -23313,6 +23881,7 @@ module.exports =
     "id": 1953,
     "firstName": "Mary & Sally",
     "lastName": "Dryer",
+    "company": "Nellie Bly Kaleidoscopes and Art Glass",
     "email": "mail@nbscopes.com",
     "phone": "(928) 634-0255",
     "street1": "136 Main St",
@@ -23321,7 +23890,6 @@ module.exports =
     "postalCode": "86331",
     "country": "US",
     "createdOn": "2013-02-25",
-    "notes": "Company: Nellie Bly Kaleidoscopes and Art Glass",
     "type": "wholesale",
     "website": "http://www.nbscopes.com"
   },
@@ -23343,6 +23911,7 @@ module.exports =
     "id": 1955,
     "firstName": "Joan",
     "lastName": "Zoerb",
+    "company": "Neo Inc",
     "phone": "(716) 884-1119",
     "street1": "905 Elmwood Ave",
     "city": "Buffalo",
@@ -23350,7 +23919,6 @@ module.exports =
     "postalCode": "14222",
     "country": "US",
     "createdOn": "2023-01-25",
-    "notes": "Company: Neo Inc",
     "type": "wholesale",
     "website": "http://www.neogiftstudio.com/"
   },
@@ -23358,6 +23926,7 @@ module.exports =
     "id": 1956,
     "firstName": "Dianne",
     "lastName": "Mayfield",
+    "company": "Netique",
     "email": "mayfield@netique.com",
     "phone": "(703) 689-3700",
     "street1": "819 Monroe St",
@@ -23366,7 +23935,6 @@ module.exports =
     "postalCode": "20170",
     "country": "US",
     "createdOn": "2015-04-02",
-    "notes": "Company: Netique",
     "type": "wholesale",
     "website": "https://netique.com/"
   },
@@ -23374,6 +23942,7 @@ module.exports =
     "id": 1957,
     "firstName": "John",
     "lastName": "Cram",
+    "company": "New Morning Gallery",
     "email": "artforliving@newmorninggallery.com",
     "phone": "(828) 274-2831",
     "street1": "7 Boston Way",
@@ -23382,7 +23951,7 @@ module.exports =
     "postalCode": "28803",
     "country": "US",
     "createdOn": "2012-04-10",
-    "notes": "Sarah Marshall, Gallery Manager/BuyerCall Krista the bookkeeper for credit card number before ANY order ships.  John does not want their credit card on file.\nCompany: New Morning Gallery",
+    "notes": "Sarah Marshall, Gallery Manager/BuyerCall Krista the bookkeeper for credit card number before ANY order ships.  John does not want their credit card on file.",
     "type": "wholesale",
     "website": "https://www.newmorninggallerync.com/"
   },
@@ -23430,7 +23999,8 @@ module.exports =
     "postalCode": "98020",
     "country": "US",
     "createdOn": "2017-07-17",
-    "notes": "Apron\nImported record: 8 order(s), $2,194.99 total spent."
+    "notes": "Apron\nImported record: 8 order(s), $2,194.99 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1962,
@@ -23449,6 +24019,7 @@ module.exports =
     "id": 1963,
     "firstName": "Nicole",
     "lastName": "Kaneohe",
+    "company": "Nicole Kanehe",
     "email": "nkanehe@yahoo.com",
     "street1": "5661 NE Caddis Dr",
     "city": "Hillsboro",
@@ -23456,7 +24027,8 @@ module.exports =
     "postalCode": "97124-6198",
     "country": "US",
     "createdOn": "2026-02-11",
-    "notes": "Company: Nicole Kanehe\nImported record: 1 order(s), $285.00 total spent."
+    "notes": "Imported record: 1 order(s), $285.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1964,
@@ -23508,7 +24080,8 @@ module.exports =
     "postalCode": "27517",
     "country": "US",
     "createdOn": "2019-01-13",
-    "notes": "Imported record: 1 order(s), $216.03 total spent."
+    "notes": "Imported record: 1 order(s), $216.03 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1969,
@@ -23535,12 +24108,14 @@ module.exports =
     "postalCode": "95501",
     "country": "US",
     "createdOn": "2020-12-13",
-    "notes": "Imported record: 1 order(s), $38.30 total spent."
+    "notes": "Imported record: 1 order(s), $38.30 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1971,
     "firstName": "Lynda",
     "lastName": "Macekura",
+    "company": "No 6 Park Row",
     "email": "leahmacekura@hotmail.com",
     "phone": "(315) 853-2980",
     "street1": "6 W Park Row Ste 1",
@@ -23549,7 +24124,6 @@ module.exports =
     "postalCode": "13323",
     "country": "US",
     "createdOn": "2010-08-10",
-    "notes": "Company: No 6 Park Row",
     "type": "wholesale",
     "website": "https://www.shoptiques.com/boutiques/no-6-park-row"
   },
@@ -23572,7 +24146,8 @@ module.exports =
     "postalCode": "98020",
     "country": "US",
     "createdOn": "2024-04-30",
-    "notes": "Imported record: 1 order(s), $157.46 total spent."
+    "notes": "Imported record: 1 order(s), $157.46 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1974,
@@ -23621,6 +24196,7 @@ module.exports =
     "id": 1978,
     "firstName": "Liz",
     "lastName": "Schmitt",
+    "company": "Northcountry Fair",
     "email": "northcountryfair@alaska.net",
     "phone": "(907) 262-7715",
     "street1": "35082 Kenai Spur Hwy",
@@ -23630,7 +24206,6 @@ module.exports =
     "postalCode": "99669",
     "country": "US",
     "createdOn": "2014-09-03",
-    "notes": "Company: Northcountry Fair",
     "type": "wholesale",
     "website": "https://www.facebook.com/NorthcountryFairAK/"
   },
@@ -23645,12 +24220,14 @@ module.exports =
     "postalCode": "7661",
     "country": "US",
     "createdOn": "2021-10-04",
-    "notes": "Imported record: 1 order(s), $78.30 total spent."
+    "notes": "Imported record: 1 order(s), $78.30 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1980,
     "firstName": "Joshua & Kim",
     "lastName": "Miller",
+    "company": "Ocean Galleries",
     "email": "kim@oceangalleries.com",
     "phone": "(609) 967-4462",
     "street1": "9618 3rd Ave",
@@ -23659,7 +24236,7 @@ module.exports =
     "postalCode": "8247",
     "country": "US",
     "createdOn": "2010-05-27",
-    "notes": "Do not send product until paymentPROTECT ZIP CODE: 08247 (Stone Harbor)Bookkeeper: Thursday mornings Tammy\nCompany: Ocean Galleries",
+    "notes": "Do not send product until paymentPROTECT ZIP CODE: 08247 (Stone Harbor)Bookkeeper: Thursday mornings Tammy",
     "type": "wholesale",
     "website": "https://www.oceangalleries.com"
   },
@@ -23710,6 +24287,7 @@ module.exports =
     "id": 1984,
     "firstName": "Claudia",
     "lastName": "Barr",
+    "company": "Ormolu",
     "email": "cbarr@ormolu-design.com",
     "phone": "(848) 232-1898",
     "street1": "511 Bay Ave",
@@ -23718,7 +24296,6 @@ module.exports =
     "postalCode": "8742",
     "country": "US",
     "createdOn": "2020-01-27",
-    "notes": "Company: Ormolu",
     "type": "wholesale",
     "website": "https://ormolu-design.com"
   },
@@ -23794,7 +24371,8 @@ module.exports =
     "firstName": "Pam",
     "lastName": "LaCoste",
     "email": "pjla77@yahoo.com",
-    "createdOn": "2022-02-18"
+    "createdOn": "2022-02-18",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1991,
@@ -23843,7 +24421,8 @@ module.exports =
     "postalCode": "76180",
     "country": "US",
     "createdOn": "2020-06-16",
-    "notes": "Imported record: 1 order(s), $59.50 total spent."
+    "notes": "Imported record: 1 order(s), $59.50 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1996,
@@ -23857,7 +24436,8 @@ module.exports =
     "postalCode": "98052",
     "country": "US",
     "createdOn": "2019-06-24",
-    "notes": "Imported record: 1 order(s), $520.00 total spent."
+    "notes": "Imported record: 1 order(s), $520.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1997,
@@ -23878,14 +24458,16 @@ module.exports =
     "postalCode": "98056",
     "country": "US",
     "createdOn": "2018-04-11",
-    "notes": "Imported record: 1 order(s), $250.00 total spent."
+    "notes": "Imported record: 1 order(s), $250.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1999,
     "firstName": "Pamela",
     "lastName": "Fridley",
     "email": "thelittlegalleryva@gmail.com",
-    "createdOn": "2023-08-16"
+    "createdOn": "2023-08-16",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 2000,
@@ -23899,7 +24481,8 @@ module.exports =
     "postalCode": "77339",
     "country": "US",
     "createdOn": "2021-03-14",
-    "notes": "Imported record: 2 order(s), $36.75 total spent."
+    "notes": "Imported record: 2 order(s), $36.75 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 2001,
@@ -23929,7 +24512,8 @@ module.exports =
     "postalCode": "75803",
     "country": "US",
     "createdOn": "2021-02-15",
-    "notes": "Imported record: 2 order(s), $240.92 total spent."
+    "notes": "Imported record: 2 order(s), $240.92 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 2003,
@@ -23971,7 +24555,8 @@ module.exports =
     "postalCode": "21037",
     "country": "US",
     "createdOn": "2020-02-22",
-    "notes": "+Aprons (3)\nImported record: 1 order(s), $858.00 total spent."
+    "notes": "+Aprons (3)\nImported record: 1 order(s), $858.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 2006,
@@ -24022,11 +24607,13 @@ module.exports =
     "postalCode": "75801",
     "country": "US",
     "createdOn": "2020-11-29",
-    "notes": "Additional contact: mojowrx@hotmail.com\nImported record: 2 order(s), $392.10 total spent."
+    "notes": "Additional contact: mojowrx@hotmail.com\nImported record: 2 order(s), $392.10 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 2010,
     "firstName": "Ann or Lynn",
+    "company": "Pandora's Box",
     "email": "pandorasboxsanibel@yahoo.com",
     "phone": "(239) 472-6263",
     "street1": "2015 Periwinkle Way",
@@ -24036,13 +24623,13 @@ module.exports =
     "postalCode": "33957",
     "country": "US",
     "createdOn": "2016-04-01",
-    "notes": "Company: Pandora's Box",
     "website": "https://shoponsanibel.com/shops/pandoras-box/"
   },
   {
     "id": 2011,
     "firstName": "Jody",
     "lastName": "Ensign",
+    "company": "Parkside Gallery",
     "email": "parksidegallery@gmail.com",
     "street1": "50 Weant Blvd",
     "city": "Carbondale",
@@ -24050,7 +24637,6 @@ module.exports =
     "postalCode": "81623",
     "country": "US",
     "createdOn": "2010-05-27",
-    "notes": "Company: Parkside Gallery",
     "type": "wholesale",
     "website": "http://www.crystalglassstudio.com/"
   },
@@ -24058,6 +24644,7 @@ module.exports =
     "id": 2012,
     "firstName": "Sherry",
     "lastName": "Tillman",
+    "company": "Past Present Future",
     "email": "ppfcrafts@gmail.com",
     "phone": "(610) 642-4040",
     "street1": "15 W Lancaster Ave",
@@ -24066,7 +24653,6 @@ module.exports =
     "postalCode": "19003",
     "country": "US",
     "createdOn": "2016-05-20",
-    "notes": "Company: Past Present Future",
     "type": "wholesale",
     "website": "http://past-present-future.com"
   },
@@ -24081,7 +24667,8 @@ module.exports =
     "firstName": "Pat",
     "lastName": "Nicosia",
     "email": "patnicosia@comcast.net",
-    "createdOn": "2021-11-20"
+    "createdOn": "2021-11-20",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 2015,
@@ -24095,7 +24682,8 @@ module.exports =
     "postalCode": "19044-1819",
     "country": "US",
     "createdOn": "2020-01-19",
-    "notes": "Imported record: 1 order(s), $117.50 total spent."
+    "notes": "Imported record: 1 order(s), $117.50 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 2016,
@@ -24108,7 +24696,8 @@ module.exports =
     "postalCode": "77551",
     "country": "US",
     "createdOn": "2020-09-07",
-    "notes": "Imported record: 1 order(s), $59.00 total spent."
+    "notes": "Imported record: 1 order(s), $59.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 2017,
@@ -24127,6 +24716,7 @@ module.exports =
     "id": 2018,
     "firstName": "Teresa",
     "lastName": "Mowery",
+    "company": "Patina Studio",
     "email": "patina2005@gmail.com",
     "phone": "(401) 862-1060",
     "street1": "549 Stafford Rd",
@@ -24135,7 +24725,6 @@ module.exports =
     "postalCode": "2878",
     "country": "US",
     "createdOn": "2021-11-18",
-    "notes": "Company: Patina Studio",
     "type": "wholesale",
     "website": "https://www.patinastudio.com/"
   },
@@ -24144,7 +24733,8 @@ module.exports =
     "firstName": "Patrianne",
     "lastName": "Boucha",
     "email": "glasspaper13@gmail.com",
-    "createdOn": "2021-12-03"
+    "createdOn": "2021-12-03",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 2020,
@@ -24158,7 +24748,8 @@ module.exports =
     "postalCode": "46565",
     "country": "US",
     "createdOn": "2021-03-27",
-    "notes": "Imported record: 1 order(s), $99.00 total spent."
+    "notes": "Imported record: 1 order(s), $99.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 2021,
@@ -24187,7 +24778,8 @@ module.exports =
     "postalCode": "98029",
     "country": "US",
     "createdOn": "2019-03-05",
-    "notes": "Imported record: 1 order(s), $130.00 total spent."
+    "notes": "Imported record: 1 order(s), $130.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 2023,
@@ -24200,7 +24792,8 @@ module.exports =
     "postalCode": "4967",
     "country": "US",
     "createdOn": "2020-03-05",
-    "notes": "Imported record: 1 order(s), $115.00 total spent."
+    "notes": "Imported record: 1 order(s), $115.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 2024,
@@ -24220,14 +24813,16 @@ module.exports =
     "postalCode": "59840",
     "country": "US",
     "createdOn": "2018-09-21",
-    "notes": "Imported record: 1 order(s), $321.00 total spent."
+    "notes": "Imported record: 1 order(s), $321.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 2026,
     "firstName": "Patricia",
     "lastName": "Malone",
     "email": "trish8273@yahoo.com",
-    "createdOn": "2019-09-30"
+    "createdOn": "2019-09-30",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 2027,
@@ -24241,7 +24836,8 @@ module.exports =
     "postalCode": "98008",
     "country": "US",
     "createdOn": "2025-09-08",
-    "notes": "Additional contact: pattysmorgan@gmail.com\nImported record: 2 order(s), $628.12 total spent."
+    "notes": "Additional contact: pattysmorgan@gmail.com\nImported record: 2 order(s), $628.12 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 2028,
@@ -24261,7 +24857,8 @@ module.exports =
     "postalCode": "98103",
     "country": "US",
     "createdOn": "2017-03-11",
-    "notes": "Imported record: 1 order(s), $125.00 total spent."
+    "notes": "Imported record: 1 order(s), $125.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 2030,
@@ -24275,7 +24872,8 @@ module.exports =
     "postalCode": "97707",
     "country": "US",
     "createdOn": "2020-11-30",
-    "notes": "Imported record: 2 order(s), $476.00 total spent."
+    "notes": "Imported record: 2 order(s), $476.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 2031,
@@ -24289,7 +24887,8 @@ module.exports =
     "postalCode": "93401",
     "country": "US",
     "createdOn": "2019-11-26",
-    "notes": "Imported record: 1 order(s), $260.00 total spent."
+    "notes": "Imported record: 1 order(s), $260.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 2032,
@@ -24303,7 +24902,8 @@ module.exports =
     "postalCode": "98036",
     "country": "US",
     "createdOn": "2021-01-21",
-    "notes": "Imported record: 1 order(s), $30.39 total spent."
+    "notes": "Imported record: 1 order(s), $30.39 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 2033,
@@ -24332,7 +24932,8 @@ module.exports =
     "postalCode": "21791",
     "country": "US",
     "createdOn": "2021-10-26",
-    "notes": "Imported record: 1 order(s), $63.20 total spent."
+    "notes": "Imported record: 1 order(s), $63.20 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 2035,
@@ -24345,7 +24946,8 @@ module.exports =
     "postalCode": "48309",
     "country": "US",
     "createdOn": "2021-08-15",
-    "notes": "Imported record: 1 order(s), $50.00 total spent."
+    "notes": "Imported record: 1 order(s), $50.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 2036,
@@ -24388,6 +24990,7 @@ module.exports =
     "id": 2039,
     "firstName": "Patti",
     "lastName": "Clark",
+    "company": "Patti F Clark",
     "email": "pfclark@aol.com",
     "street1": "26 North Ave",
     "city": "Wilmington",
@@ -24395,7 +24998,7 @@ module.exports =
     "postalCode": "19804",
     "country": "US",
     "createdOn": "2022-05-11",
-    "notes": "Company: Patti F Clark\nImported record: 1 order(s), $125.00 total spent."
+    "notes": "Imported record: 1 order(s), $125.00 total spent."
   },
   {
     "id": 2040,
@@ -24422,7 +25025,8 @@ module.exports =
     "postalCode": "16134",
     "country": "US",
     "createdOn": "2021-01-29",
-    "notes": "Imported record: 1 order(s), $68.30 total spent."
+    "notes": "Imported record: 1 order(s), $68.30 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 2042,
@@ -24469,7 +25073,8 @@ module.exports =
     "postalCode": "98221",
     "country": "US",
     "createdOn": "2017-03-25",
-    "notes": "Imported record: 2 order(s), $375.00 total spent."
+    "notes": "Imported record: 2 order(s), $375.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 2047,
@@ -24516,26 +25121,27 @@ module.exports =
     "postalCode": "28110-8882",
     "country": "US",
     "createdOn": "2024-07-02",
-    "notes": "Imported record: 1 order(s), $142.50 total spent."
+    "notes": "Imported record: 1 order(s), $142.50 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 2051,
     "firstName": "Paul",
     "lastName": "Wolfman",
+    "company": "Paul I Wolfman",
     "email": "piwolfman@gmail.com",
     "street1": "1300 N Lakeshore Dr Apt 28A",
     "city": "Chicago",
     "state": "IL",
     "postalCode": "60610",
     "country": "US",
-    "createdOn": "2022-12-08",
-    "notes": "Company: Paul I Wolfman"
+    "createdOn": "2022-12-08"
   },
   {
     "id": 2052,
     "firstName": "Paul & Roberta",
-    "createdOn": "2010-12-22",
-    "notes": "Company: Paul Vosper & Roberta Browne"
+    "company": "Paul Vosper & Roberta Browne",
+    "createdOn": "2010-12-22"
   },
   {
     "id": 2053,
@@ -24549,7 +25155,8 @@ module.exports =
     "postalCode": "98801",
     "country": "US",
     "createdOn": "2024-09-26",
-    "notes": "Imported record: 1 order(s), $310.08 total spent."
+    "notes": "Imported record: 1 order(s), $310.08 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 2054,
@@ -24659,7 +25266,8 @@ module.exports =
     "postalCode": "98208",
     "country": "US",
     "createdOn": "2023-01-14",
-    "notes": "Imported record: 1 order(s), $324.21 total spent."
+    "notes": "Imported record: 1 order(s), $324.21 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 2064,
@@ -24680,6 +25288,7 @@ module.exports =
     "id": 2065,
     "firstName": "Elissia",
     "lastName": "Steinberg",
+    "company": "Pazzazed Gift and Home",
     "email": "elissia.art@gmail.com",
     "phone": "(201) 485-8022",
     "street1": "826 Franklin Ave",
@@ -24688,7 +25297,6 @@ module.exports =
     "postalCode": "7417",
     "country": "US",
     "createdOn": "2016-04-11",
-    "notes": "Company: Pazzazed Gift and Home",
     "type": "wholesale",
     "website": "http://www.pazzazed.com/"
   },
@@ -24696,6 +25304,7 @@ module.exports =
     "id": 2066,
     "firstName": "Barry",
     "lastName": "Richman",
+    "company": "Pearl Grant Richmans",
     "email": "pgrinvites@gmail.com",
     "phone": "5184388409x2",
     "street1": "1475 Western Ave",
@@ -24705,7 +25314,7 @@ module.exports =
     "postalCode": "12203",
     "country": "US",
     "createdOn": "2015-09-23",
-    "notes": "Judy (bookkeeper)pearlgrantoffice@gmail.com: prefer to email invoice\nCompany: Pearl Grant Richmans",
+    "notes": "Judy (bookkeeper)pearlgrantoffice@gmail.com: prefer to email invoice",
     "type": "wholesale",
     "website": "https://www.pearlgrant.com/"
   },
@@ -24735,7 +25344,8 @@ module.exports =
     "postalCode": "80015",
     "country": "US",
     "createdOn": "2021-04-24",
-    "notes": "Imported record: 1 order(s), $90.30 total spent."
+    "notes": "Imported record: 1 order(s), $90.30 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 2069,
@@ -24749,7 +25359,8 @@ module.exports =
     "postalCode": "98277",
     "country": "US",
     "createdOn": "2017-01-09",
-    "notes": "Imported record: 1 order(s), $500.00 total spent."
+    "notes": "Imported record: 1 order(s), $500.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 2070,
@@ -24789,7 +25400,8 @@ module.exports =
     "postalCode": "97439",
     "country": "US",
     "createdOn": "2021-03-16",
-    "notes": "Imported record: 1 order(s), $18.30 total spent."
+    "notes": "Imported record: 1 order(s), $18.30 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 2073,
@@ -24803,7 +25415,8 @@ module.exports =
     "postalCode": "78209",
     "country": "US",
     "createdOn": "2020-07-07",
-    "notes": "Imported record: 1 order(s), $108.00 total spent."
+    "notes": "Imported record: 1 order(s), $108.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 2074,
@@ -24817,7 +25430,8 @@ module.exports =
     "postalCode": "98012",
     "country": "US",
     "createdOn": "2019-08-22",
-    "notes": "Imported record: 1 order(s), $520.00 total spent."
+    "notes": "Imported record: 1 order(s), $520.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 2075,
@@ -24846,7 +25460,8 @@ module.exports =
     "postalCode": "98058",
     "country": "US",
     "createdOn": "2018-07-18",
-    "notes": "Imported record: 1 order(s), $250.00 total spent."
+    "notes": "Imported record: 1 order(s), $250.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 2077,
@@ -24860,7 +25475,8 @@ module.exports =
     "postalCode": "98177",
     "country": "US",
     "createdOn": "2017-01-18",
-    "notes": "Imported record: 2 order(s), $828.81 total spent."
+    "notes": "Imported record: 2 order(s), $828.81 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 2078,
@@ -24878,6 +25494,7 @@ module.exports =
     "id": 2079,
     "firstName": "John",
     "lastName": "DeCola",
+    "company": "Pepperberry Florist & Gift Shop",
     "email": "pepperberryflorist@gmail.com",
     "phone": "(781) 979-0444",
     "street1": "539 Main St",
@@ -24886,7 +25503,6 @@ module.exports =
     "postalCode": "2176",
     "country": "US",
     "createdOn": "2022-03-17",
-    "notes": "Company: Pepperberry Florist & Gift Shop",
     "type": "wholesale",
     "website": "https://www.pepperberryflorist.com/"
   },
@@ -24914,7 +25530,8 @@ module.exports =
     "postalCode": "10536",
     "country": "US",
     "createdOn": "2024-12-26",
-    "notes": "Imported record: 1 order(s), $199.92 total spent."
+    "notes": "Imported record: 1 order(s), $199.92 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 2082,
@@ -24960,6 +25577,7 @@ module.exports =
     "id": 2086,
     "firstName": "Sue",
     "lastName": "Shea",
+    "company": "Phoenix Gallery",
     "email": "info@phoenixgalleryart.com",
     "phone": "(785) 843-0080",
     "street1": "825 Massachusetts St",
@@ -24968,7 +25586,7 @@ module.exports =
     "postalCode": "66044",
     "country": "US",
     "createdOn": "2010-05-27",
-    "notes": "Call\nCompany: Phoenix Gallery",
+    "notes": "Call",
     "type": "wholesale",
     "website": "https://www.phoenixgalleryart.com/"
   },
@@ -24990,7 +25608,8 @@ module.exports =
     "postalCode": "85253",
     "country": "US",
     "createdOn": "2020-05-15",
-    "notes": "Imported record: 2 order(s), $96.50 total spent."
+    "notes": "Imported record: 2 order(s), $96.50 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 2089,
@@ -25004,7 +25623,8 @@ module.exports =
     "postalCode": "33446",
     "country": "US",
     "createdOn": "2023-02-25",
-    "notes": "Imported record: 1 order(s), $75.28 total spent."
+    "notes": "Imported record: 1 order(s), $75.28 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 2090,
@@ -25032,7 +25652,8 @@ module.exports =
     "postalCode": "32162",
     "country": "US",
     "createdOn": "2021-02-15",
-    "notes": "Imported record: 1 order(s), $58.70 total spent."
+    "notes": "Imported record: 1 order(s), $58.70 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 2092,
@@ -25080,6 +25701,7 @@ module.exports =
     "id": 2096,
     "firstName": "Valerie",
     "lastName": "Keuten",
+    "company": "Plain & Fancy Gift Shop",
     "email": "vkeuten@comcast.net",
     "phone": "(248) 651-5188",
     "street1": "323 Main St",
@@ -25088,7 +25710,6 @@ module.exports =
     "postalCode": "48307",
     "country": "US",
     "createdOn": "2010-05-27",
-    "notes": "Company: Plain & Fancy Gift Shop",
     "type": "wholesale",
     "website": "https://www.facebook.com/plainandfancyrochester/"
   },
@@ -25096,6 +25717,7 @@ module.exports =
     "id": 2097,
     "firstName": "Chad",
     "lastName": "Luberger",
+    "company": "Plum Bottom Pottery and Gallery",
     "email": "chad@plumbottomgallery.com",
     "phone": "(719) 599-4565",
     "street1": "1710 Briargate Blvd Ste 833",
@@ -25104,7 +25726,7 @@ module.exports =
     "postalCode": "80920",
     "country": "US",
     "createdOn": "2019-02-18",
-    "notes": "Chad Luberger - Buyer/Owner 920-743-2819 - chad@plumbottomgallery.comErin K. Nolan (Accounts Payable/Consignment)erin@plumbottomgallery.com 920-743-2819\nCompany: Plum Bottom Pottery and Gallery",
+    "notes": "Chad Luberger - Buyer/Owner 920-743-2819 - chad@plumbottomgallery.comErin K. Nolan (Accounts Payable/Consignment)erin@plumbottomgallery.com 920-743-2819",
     "type": "wholesale",
     "website": "https://plumbottomgallery.com/"
   },
@@ -25112,6 +25734,7 @@ module.exports =
     "id": 2098,
     "firstName": "Jennifer",
     "lastName": "Molea",
+    "company": "Pop Gallery",
     "email": "hoypoloi.ap@me.com",
     "phone": "(407) 827-0113",
     "street1": "PO Box 22229",
@@ -25120,7 +25743,6 @@ module.exports =
     "postalCode": "32830",
     "country": "US",
     "createdOn": "2013-02-04",
-    "notes": "Company: Pop Gallery",
     "type": "wholesale",
     "website": "http://www.popgalleryorlando.com/"
   },
@@ -25136,12 +25758,14 @@ module.exports =
     "postalCode": "98498",
     "country": "US",
     "createdOn": "2018-08-15",
-    "notes": "Imported record: 1 order(s), $250.00 total spent."
+    "notes": "Imported record: 1 order(s), $250.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 2100,
     "firstName": "Christopher",
     "lastName": "Lovely",
+    "company": "Post Road Framers",
     "email": "postroadframers@verizon.net",
     "phone": "(978) 948-2710",
     "street1": "225 Newburyport Tpke",
@@ -25150,7 +25774,6 @@ module.exports =
     "postalCode": "1969",
     "country": "US",
     "createdOn": "2023-07-27",
-    "notes": "Company: Post Road Framers",
     "type": "wholesale",
     "website": "https://postroadframers.net"
   },
@@ -25158,6 +25781,7 @@ module.exports =
     "id": 2101,
     "firstName": "Christopher",
     "lastName": "Diez",
+    "company": "Pot Pourri",
     "email": "chris@pot-pourri.com",
     "phone": "(650) 347-3400",
     "street1": "1235 Broadway",
@@ -25166,7 +25790,6 @@ module.exports =
     "postalCode": "94010",
     "country": "US",
     "createdOn": "2014-02-27",
-    "notes": "Company: Pot Pourri",
     "type": "wholesale",
     "website": "http://www.pot-pourri.com/"
   },
@@ -25175,7 +25798,8 @@ module.exports =
     "firstName": "Press",
     "lastName": "Nestor",
     "email": "press-nestor@getbriloto.com",
-    "createdOn": "2025-01-11"
+    "createdOn": "2025-01-11",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 2103,
@@ -25195,6 +25819,7 @@ module.exports =
     "id": 2104,
     "firstName": "Annette",
     "lastName": "Powers",
+    "company": "Prints and the Potter Gallery, The",
     "email": "printsandpotter@conversent.net",
     "phone": "(508) 752-2170",
     "street1": "142 Highland St",
@@ -25203,7 +25828,6 @@ module.exports =
     "postalCode": "1609",
     "country": "US",
     "createdOn": "2010-05-27",
-    "notes": "Company: Prints and the Potter Gallery, The",
     "type": "wholesale",
     "website": "https://www.printsandpotter.com/"
   },
@@ -25243,6 +25867,7 @@ module.exports =
     "id": 2108,
     "firstName": "Daniel",
     "lastName": "Sloane",
+    "company": "Prizmatica",
     "email": "prizmaticastudios@gmail.com",
     "phone": "(917) 817-9578",
     "street1": "314 Toleman Rd",
@@ -25251,7 +25876,6 @@ module.exports =
     "postalCode": "10992",
     "country": "US",
     "createdOn": "2024-08-10",
-    "notes": "Company: Prizmatica",
     "type": "wholesale",
     "website": "https://prizmatica.com"
   },
@@ -25259,6 +25883,7 @@ module.exports =
     "id": 2109,
     "firstName": "Margo",
     "lastName": "Carlson",
+    "company": "Puffins",
     "email": "puffinsmystic@gmail.com",
     "phone": "(860) 415-9644",
     "street1": "44 Washington St",
@@ -25267,7 +25892,6 @@ module.exports =
     "postalCode": "6355",
     "country": "US",
     "createdOn": "2015-06-14",
-    "notes": "Company: Puffins",
     "type": "wholesale",
     "website": "https://www.facebook.com/puffins.mystic"
   },
@@ -25290,6 +25914,7 @@ module.exports =
     "id": 2111,
     "firstName": "Jennifer",
     "lastName": "Raines",
+    "company": "Quirks of Art",
     "email": "jenn@kinksandquirks.com",
     "phone": "(757) 645-4366",
     "street1": "221 N Boundary St",
@@ -25298,7 +25923,6 @@ module.exports =
     "postalCode": "23185",
     "country": "US",
     "createdOn": "2011-10-14",
-    "notes": "Company: Quirks of Art",
     "type": "wholesale",
     "website": "https://www.kinksandquirks.com/"
   },
@@ -25313,12 +25937,14 @@ module.exports =
     "postalCode": "98020",
     "country": "US",
     "createdOn": "2023-04-22",
-    "notes": "Imported record: 1 order(s), $34.10 total spent."
+    "notes": "Imported record: 1 order(s), $34.10 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 2113,
     "firstName": "Lisa",
     "lastName": "Perkins",
+    "company": "R Frogs Gallery",
     "email": "info@rfrogsgallery.com",
     "phone": "(888) 473-7647",
     "street1": "3937 Fisher Trl",
@@ -25327,7 +25953,6 @@ module.exports =
     "postalCode": "49706",
     "country": "US",
     "createdOn": "2015-04-28",
-    "notes": "Company: R Frogs Gallery",
     "type": "wholesale",
     "website": "https://rfrogsgallery.com/"
   },
@@ -25335,6 +25960,7 @@ module.exports =
     "id": 2114,
     "firstName": "Barbara",
     "lastName": "Kaylor",
+    "company": "R Grey Gallery, Inc",
     "email": "barbarak@rgreygallery.com",
     "phone": "(208) 385-9337",
     "street1": "415 S 8th St",
@@ -25343,7 +25969,6 @@ module.exports =
     "postalCode": "83702",
     "country": "US",
     "createdOn": "2013-02-25",
-    "notes": "Company: R Grey Gallery, Inc",
     "type": "wholesale",
     "website": "http://www.rgreygallery.com"
   },
@@ -25351,6 +25976,7 @@ module.exports =
     "id": 2115,
     "firstName": "Richard",
     "lastName": "Georgetti",
+    "company": "RA Georgetti & Co",
     "email": "gifts@georgetti.com",
     "phone": "(860) 536-2964",
     "street1": "27 Coogan Blvd Ste 7A",
@@ -25360,7 +25986,6 @@ module.exports =
     "postalCode": "6355",
     "country": "US",
     "createdOn": "2013-05-22",
-    "notes": "Company: RA Georgetti & Co",
     "type": "wholesale",
     "website": "http://www.georgetti.com"
   },
@@ -25368,6 +25993,7 @@ module.exports =
     "id": 2116,
     "firstName": "Liz",
     "lastName": "Durfee",
+    "company": "Rabbit Brush Gallery",
     "email": "rbg7504@hotmail.com",
     "phone": "(303) 651-1106",
     "street1": "PO Box 263",
@@ -25376,7 +26002,6 @@ module.exports =
     "postalCode": "80533",
     "country": "US",
     "createdOn": "2015-08-03",
-    "notes": "Company: Rabbit Brush Gallery",
     "type": "wholesale",
     "website": "http://rabbitbrushgallery.com/"
   },
@@ -25430,7 +26055,8 @@ module.exports =
     "postalCode": "80487",
     "country": "US",
     "createdOn": "2023-03-06",
-    "notes": "Imported record: 1 order(s), $37.65 total spent."
+    "notes": "Imported record: 1 order(s), $37.65 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 2122,
@@ -25444,7 +26070,8 @@ module.exports =
     "postalCode": "45239",
     "country": "US",
     "createdOn": "2019-02-28",
-    "notes": "Imported record: 8 order(s), $1,053.18 total spent."
+    "notes": "Imported record: 8 order(s), $1,053.18 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 2123,
@@ -25499,6 +26126,7 @@ module.exports =
     "id": 2127,
     "firstName": "Robert",
     "lastName": "Shepanski",
+    "company": "Rainbow Glass Works",
     "phone": "(609) 972-1507",
     "street1": "1080 Shunpike Rd",
     "city": "Cape May",
@@ -25506,7 +26134,6 @@ module.exports =
     "postalCode": "8204",
     "country": "US",
     "createdOn": "2021-01-18",
-    "notes": "Company: Rainbow Glass Works",
     "type": "wholesale"
   },
   {
@@ -25539,7 +26166,8 @@ module.exports =
     "postalCode": "98027",
     "country": "US",
     "createdOn": "2018-07-23",
-    "notes": "Imported record: 2 order(s), $375.00 total spent."
+    "notes": "Imported record: 2 order(s), $375.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 2131,
@@ -25556,6 +26184,7 @@ module.exports =
   {
     "id": 2133,
     "firstName": "Rani",
+    "company": "Random Acts of Art",
     "email": "rani@randomactsart.com",
     "phone": "(239) 435-0668",
     "street1": "761 12th Ave S",
@@ -25564,7 +26193,6 @@ module.exports =
     "postalCode": "34102",
     "country": "US",
     "createdOn": "2014-03-06",
-    "notes": "Company: Random Acts of Art",
     "type": "wholesale",
     "website": "https://randomactsart.com/"
   },
@@ -25587,12 +26215,14 @@ module.exports =
     "firstName": "Rania",
     "lastName": "Hassanein",
     "email": "rhassanen@gmail.com",
-    "createdOn": "2025-10-15"
+    "createdOn": "2025-10-15",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 2136,
     "firstName": "Steve",
     "lastName": "Binder",
+    "company": "Rare Earth Gallery",
     "email": "becky@rareearthgallery.com",
     "phone": "(772) 287-7744",
     "street1": "41 SW Flagler Ave",
@@ -25601,7 +26231,6 @@ module.exports =
     "postalCode": "34994",
     "country": "US",
     "createdOn": "2017-09-25",
-    "notes": "Company: Rare Earth Gallery",
     "type": "wholesale",
     "website": "https://store.rareearthgallery.com/"
   },
@@ -25612,7 +26241,8 @@ module.exports =
     "email": "ravinjaidka@gmail.com",
     "country": "US",
     "createdOn": "2023-02-24",
-    "notes": "Imported record: 1 order(s), legacy user ID 90245287."
+    "notes": "Imported record: 1 order(s), legacy user ID 90245287.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 2138,
@@ -25675,7 +26305,8 @@ module.exports =
     "postalCode": "82701",
     "country": "US",
     "createdOn": "2021-04-28",
-    "notes": "Imported record: 1 order(s), $28.45 total spent."
+    "notes": "Imported record: 1 order(s), $28.45 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 2143,
@@ -25689,7 +26320,8 @@ module.exports =
     "postalCode": "92120",
     "country": "US",
     "createdOn": "2020-03-20",
-    "notes": "Imported record: 1 order(s), $325.00 total spent."
+    "notes": "Imported record: 1 order(s), $325.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 2144,
@@ -25726,7 +26358,8 @@ module.exports =
     "postalCode": "98208",
     "country": "US",
     "createdOn": "2017-03-17",
-    "notes": "Imported record: 1 order(s), $125.00 total spent."
+    "notes": "Imported record: 1 order(s), $125.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 2147,
@@ -25752,7 +26385,8 @@ module.exports =
     "postalCode": "85658",
     "country": "US",
     "createdOn": "2020-08-30",
-    "notes": "Imported record: 2 order(s), $257.50 total spent, legacy user ID 47727462."
+    "notes": "Imported record: 2 order(s), $257.50 total spent, legacy user ID 47727462.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 2149,
@@ -25767,14 +26401,14 @@ module.exports =
     "id": 2150,
     "firstName": "Dianne",
     "lastName": "Moore",
+    "company": "ReFind",
     "phone": "(903) 714-3627",
     "street1": "7737 Timberlake Ct",
     "city": "Tyler",
     "state": "TX",
     "postalCode": "75703",
     "country": "US",
-    "createdOn": "2023-06-06",
-    "notes": "Company: ReFind"
+    "createdOn": "2023-06-06"
   },
   {
     "id": 2151,
@@ -25786,6 +26420,7 @@ module.exports =
     "id": 2152,
     "firstName": "Jessica",
     "lastName": "Regele",
+    "company": "Regal Find, The",
     "email": "egalfind@tds.net",
     "phone": "(608) 852-2695",
     "street1": "1850 Parmenter St",
@@ -25794,7 +26429,6 @@ module.exports =
     "postalCode": "53562",
     "country": "US",
     "createdOn": "2013-03-23",
-    "notes": "Company: Regal Find, The",
     "type": "wholesale",
     "website": "http://www.theregalfind.com/"
   },
@@ -25816,6 +26450,7 @@ module.exports =
     "id": 2154,
     "firstName": "Jennifer",
     "lastName": "Reed",
+    "company": "Relish",
     "email": "jlr@relishinc.com",
     "phone": "(814) 836-1827",
     "street1": "3835 W 12th St",
@@ -25824,7 +26459,6 @@ module.exports =
     "postalCode": "16505",
     "country": "US",
     "createdOn": "2022-08-08",
-    "notes": "Company: Relish",
     "type": "wholesale"
   },
   {
@@ -25876,6 +26510,7 @@ module.exports =
     "id": 2160,
     "firstName": "Molly",
     "lastName": "Walker",
+    "company": "Rhoads Garden, The",
     "email": "molly@rhoadsgarden.com",
     "phone": "(215) 699-2207",
     "street1": "570 Dekalb Pike",
@@ -25884,7 +26519,7 @@ module.exports =
     "postalCode": "19454",
     "country": "US",
     "createdOn": "2013-08-16",
-    "notes": "Kim and Jen have helped me with payment in the past. jen@rhoadsgarden.com. Wants Net 30 terms after this order.\nCompany: Rhoads Garden, The",
+    "notes": "Kim and Jen have helped me with payment in the past. jen@rhoadsgarden.com. Wants Net 30 terms after this order.",
     "type": "wholesale",
     "website": "https://rhoadsgarden.com/"
   },
@@ -25927,7 +26562,8 @@ module.exports =
     "postalCode": "30523",
     "country": "US",
     "createdOn": "2020-10-13",
-    "notes": "Imported record: 1 order(s), $294.30 total spent."
+    "notes": "Imported record: 1 order(s), $294.30 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 2164,
@@ -25941,7 +26577,8 @@ module.exports =
     "postalCode": "98001",
     "country": "US",
     "createdOn": "2018-11-05",
-    "notes": "Imported record: 1 order(s), $130.00 total spent."
+    "notes": "Imported record: 1 order(s), $130.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 2165,
@@ -25953,6 +26590,7 @@ module.exports =
     "id": 2166,
     "firstName": "Denise",
     "lastName": "Cabrera",
+    "company": "Rio Grande",
     "email": "dcabrera@riogrande.com",
     "phone": "(505) 839-3108",
     "street1": "7500 Bluewather Rd NW",
@@ -25961,7 +26599,6 @@ module.exports =
     "postalCode": "87121",
     "country": "US",
     "createdOn": "2015-01-27",
-    "notes": "Company: Rio Grande",
     "type": "wholesale",
     "website": "http://riogrande.com"
   },
@@ -26011,6 +26648,7 @@ module.exports =
     "id": 2170,
     "firstName": "Kimberly",
     "lastName": "Donegan",
+    "company": "River Rays Gift Shop",
     "phone": "(315) 778-5979",
     "street1": "1367 Loomus Dr",
     "city": "Watertown",
@@ -26018,7 +26656,6 @@ module.exports =
     "postalCode": "13601",
     "country": "US",
     "createdOn": "2021-06-03",
-    "notes": "Company: River Rays Gift Shop",
     "type": "wholesale",
     "website": "http://gooddogcharlies.com/"
   },
@@ -26034,7 +26671,8 @@ module.exports =
     "postalCode": "98034",
     "country": "US",
     "createdOn": "2017-10-07",
-    "notes": "Imported record: 2 order(s), $250.00 total spent."
+    "notes": "Imported record: 2 order(s), $250.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 2172,
@@ -26054,7 +26692,8 @@ module.exports =
     "postalCode": "98252-9634",
     "country": "US",
     "createdOn": "2022-08-02",
-    "notes": "Imported record: 1 order(s), $77.04 total spent."
+    "notes": "Imported record: 1 order(s), $77.04 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 2174,
@@ -26075,10 +26714,10 @@ module.exports =
     "id": 2175,
     "firstName": "Rhonda",
     "lastName": "Witt",
+    "company": "Robert Porter",
     "email": "rhonda@rhondawitt.com",
     "phone": "(206) 937-6886",
-    "createdOn": "2010-05-27",
-    "notes": "Company: Robert Porter"
+    "createdOn": "2010-05-27"
   },
   {
     "id": 2176,
@@ -26112,7 +26751,8 @@ module.exports =
     "postalCode": "97008",
     "country": "US",
     "createdOn": "2025-07-04",
-    "notes": "Additional contact: yourhealthwellbeing@gmail.com\nImported record: 1 order(s), $282.50 total spent."
+    "notes": "Additional contact: yourhealthwellbeing@gmail.com\nImported record: 1 order(s), $282.50 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 2179,
@@ -26206,7 +26846,8 @@ module.exports =
     "postalCode": "46168-7801",
     "country": "US",
     "createdOn": "2023-11-24",
-    "notes": "Imported record: 1 order(s), $87.92 total spent."
+    "notes": "Imported record: 1 order(s), $87.92 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 2187,
@@ -26238,7 +26879,8 @@ module.exports =
     "firstName": "Robin",
     "lastName": "Gonzales",
     "email": "gonzalesrobin53@gmail.com",
-    "createdOn": "2020-03-21"
+    "createdOn": "2020-03-21",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 2190,
@@ -26252,7 +26894,8 @@ module.exports =
     "postalCode": "97702",
     "country": "US",
     "createdOn": "2020-10-31",
-    "notes": "Imported record: 1 order(s), $150.50 total spent."
+    "notes": "Imported record: 1 order(s), $150.50 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 2191,
@@ -26266,7 +26909,8 @@ module.exports =
     "postalCode": "49423",
     "country": "US",
     "createdOn": "2021-09-10",
-    "notes": "Imported record: 1 order(s), $44.30 total spent."
+    "notes": "Imported record: 1 order(s), $44.30 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 2192,
@@ -26299,7 +26943,8 @@ module.exports =
     "postalCode": "98290",
     "country": "US",
     "createdOn": "2017-10-17",
-    "notes": "Imported record: 1 order(s), $600.00 total spent."
+    "notes": "Imported record: 1 order(s), $600.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 2195,
@@ -26326,7 +26971,8 @@ module.exports =
     "postalCode": "19103",
     "country": "US",
     "createdOn": "2019-12-31",
-    "notes": "Imported record: 1 order(s), $231.00 total spent."
+    "notes": "Imported record: 1 order(s), $231.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 2197,
@@ -26353,6 +26999,7 @@ module.exports =
     "id": 2199,
     "firstName": "Roger",
     "lastName": "Yost",
+    "company": "Roger Yost Gallery",
     "email": "rogeryost@comcast.net",
     "phone": "(541) 574-0802",
     "street1": "859 SW Bay Blvd",
@@ -26361,7 +27008,6 @@ module.exports =
     "postalCode": "97365",
     "country": "US",
     "createdOn": "2015-11-20",
-    "notes": "Company: Roger Yost Gallery",
     "type": "wholesale",
     "website": "http://www.rogeryostgallery.com/"
   },
@@ -26422,12 +27068,14 @@ module.exports =
     "postalCode": "92111",
     "country": "US",
     "createdOn": "2021-04-14",
-    "notes": "Imported record: 1 order(s), $48.45 total spent."
+    "notes": "Imported record: 1 order(s), $48.45 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 2207,
     "firstName": "Mark",
     "lastName": "Rosenbaum",
+    "company": "Rosetree Blown Glass",
     "email": "rosetreeglass@gmail.com",
     "phone": "(504) 366-3602",
     "street1": "446 Vallette St",
@@ -26436,7 +27084,6 @@ module.exports =
     "postalCode": "70114",
     "country": "US",
     "createdOn": "2014-03-27",
-    "notes": "Company: Rosetree Blown Glass",
     "type": "wholesale",
     "website": "https://rosetreegallery.com/"
   },
@@ -26505,7 +27152,8 @@ module.exports =
     "postalCode": "98466",
     "country": "US",
     "createdOn": "2019-06-27",
-    "notes": "Imported record: 7 order(s), $846.55 total spent."
+    "notes": "Imported record: 7 order(s), $846.55 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 2214,
@@ -26532,7 +27180,8 @@ module.exports =
     "postalCode": "98023",
     "country": "US",
     "createdOn": "2020-03-29",
-    "notes": "Imported record: 2 order(s), $153.93 total spent."
+    "notes": "Imported record: 2 order(s), $153.93 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 2216,
@@ -26564,6 +27213,7 @@ module.exports =
     "id": 2219,
     "firstName": "Jennifer",
     "lastName": "Hurlbut",
+    "company": "Rustic Arts Cabin Outfitters",
     "phone": "(909) 324-1359",
     "street1": "PO Box 3049",
     "city": "Lake Arrowhead",
@@ -26571,7 +27221,6 @@ module.exports =
     "postalCode": "92352",
     "country": "US",
     "createdOn": "2020-08-28",
-    "notes": "Company: Rustic Arts Cabin Outfitters",
     "type": "wholesale",
     "website": "https://www.mountainrusticarts.com/"
   },
@@ -26579,6 +27228,7 @@ module.exports =
     "id": 2220,
     "firstName": "Nancy",
     "lastName": "Goode",
+    "company": "Rustic Home",
     "phone": "(704) 806-4772",
     "street1": "3118 Mountainbrook Rd",
     "city": "Charlotte",
@@ -26586,7 +27236,6 @@ module.exports =
     "postalCode": "28210",
     "country": "US",
     "createdOn": "2023-10-27",
-    "notes": "Company: Rustic Home",
     "type": "wholesale",
     "website": "https://www.facebook.com/NancyGoodeRusticHome/"
   },
@@ -26651,6 +27300,7 @@ module.exports =
   {
     "id": 2226,
     "firstName": "Laurie",
+    "company": "Sadie Green's",
     "email": "sadiegreens2@gmail.com",
     "phone": "(508) 765-9209",
     "street1": "283 Main St",
@@ -26659,7 +27309,6 @@ module.exports =
     "postalCode": "1566",
     "country": "US",
     "createdOn": "2014-07-11",
-    "notes": "Company: Sadie Green's",
     "type": "wholesale",
     "website": "http://www.sadiegreens.com/"
   },
@@ -26667,6 +27316,7 @@ module.exports =
     "id": 2227,
     "firstName": "JoAnn",
     "lastName": "Roser",
+    "company": "Sage Gallery",
     "email": "joann@sageongrant.com",
     "phone": "(418) 895-1913",
     "street1": "828 Grant Ave",
@@ -26675,7 +27325,6 @@ module.exports =
     "postalCode": "94945",
     "country": "US",
     "createdOn": "2012-09-11",
-    "notes": "Company: Sage Gallery",
     "type": "wholesale",
     "website": "http://www.sageongrant.com/"
   },
@@ -26683,6 +27332,7 @@ module.exports =
     "id": 2228,
     "firstName": "Cynthia",
     "lastName": "Lenhart",
+    "company": "Salamander",
     "email": "salamandersaluda@aol.com",
     "phone": "(828) 749-3466",
     "street1": "7 W Main St",
@@ -26691,7 +27341,7 @@ module.exports =
     "postalCode": "28773",
     "country": "US",
     "createdOn": "2013-02-25",
-    "notes": "Ben Lobst\nCompany: Salamander",
+    "notes": "Ben Lobst",
     "type": "wholesale",
     "website": "https://saluda.com/salamander/"
   },
@@ -26733,7 +27383,8 @@ module.exports =
     "postalCode": "98072",
     "country": "US",
     "createdOn": "2019-02-28",
-    "notes": "Imported record: 1 order(s), $99.79 total spent."
+    "notes": "Imported record: 1 order(s), $99.79 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 2232,
@@ -26747,7 +27398,8 @@ module.exports =
     "postalCode": "87111",
     "country": "US",
     "createdOn": "2020-04-05",
-    "notes": "Imported record: 1 order(s), $125.00 total spent."
+    "notes": "Imported record: 1 order(s), $125.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 2233,
@@ -26766,12 +27418,14 @@ module.exports =
     "postalCode": "60514",
     "country": "US",
     "createdOn": "2020-03-11",
-    "notes": "Imported record: 2 order(s), $207.50 total spent."
+    "notes": "Imported record: 2 order(s), $207.50 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 2235,
     "firstName": "Karl & Linda",
     "lastName": "Claus",
+    "company": "Salter's Fireplace & Artisan Shop",
     "email": "thewoodburners@thewoodburners.com",
     "phone": "(215) 362-2443",
     "street1": "11 N Market St",
@@ -26780,7 +27434,6 @@ module.exports =
     "postalCode": "19440",
     "country": "US",
     "createdOn": "2014-04-01",
-    "notes": "Company: Salter's Fireplace & Artisan Shop",
     "type": "wholesale",
     "website": "https://www.saltersfireplace.com/"
   },
@@ -26788,14 +27441,14 @@ module.exports =
     "id": 2236,
     "firstName": "Sandra",
     "lastName": "Christensen",
+    "company": "Sam Christensen",
     "email": "sam.chris@comcast.net",
     "street1": "18720 81st Ave W",
     "city": "Edmonds",
     "state": "WA",
     "postalCode": "98026",
     "country": "US",
-    "createdOn": "2019-08-09",
-    "notes": "Company: Sam Christensen"
+    "createdOn": "2019-08-09"
   },
   {
     "id": 2237,
@@ -26846,6 +27499,7 @@ module.exports =
     "id": 2241,
     "firstName": "Doug",
     "lastName": "Hartman",
+    "company": "San Juan Soda Company",
     "email": "sanjuansoda@gmail.com",
     "phone": "(970) 944-0500",
     "street1": "227 Silver Street",
@@ -26855,7 +27509,6 @@ module.exports =
     "postalCode": "81235",
     "country": "US",
     "createdOn": "2013-03-27",
-    "notes": "Company: San Juan Soda Company",
     "type": "wholesale",
     "website": "https://www.facebook.com/groups/5006924775/"
   },
@@ -26896,6 +27549,7 @@ module.exports =
     "id": 2245,
     "firstName": "Sandy",
     "lastName": "Dempsey",
+    "company": "Sandra Dempsey",
     "email": "shd248@gmail.com",
     "street1": "411 Woodside Ave",
     "city": "Narberth",
@@ -26903,7 +27557,7 @@ module.exports =
     "postalCode": "19072",
     "country": "US",
     "createdOn": "2022-09-25",
-    "notes": "Company: Sandra Dempsey\nAdditional contact: shd1948@hotmail.com\nImported record: 3 order(s), $418.08 total spent, legacy user ID 81818081.",
+    "notes": "Additional contact: shd1948@hotmail.com\nImported record: 3 order(s), $418.08 total spent, legacy user ID 81818081.",
     "acceptsEmailMarketing": true
   },
   {
@@ -26918,7 +27572,8 @@ module.exports =
     "postalCode": "20110",
     "country": "US",
     "createdOn": "2020-03-08",
-    "notes": "Imported record: 1 order(s), $115.00 total spent."
+    "notes": "Imported record: 1 order(s), $115.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 2247,
@@ -26937,7 +27592,8 @@ module.exports =
     "postalCode": "54165",
     "country": "US",
     "createdOn": "2021-08-25",
-    "notes": "Imported record: 1 order(s), $30.30 total spent."
+    "notes": "Imported record: 1 order(s), $30.30 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 2249,
@@ -26962,7 +27618,8 @@ module.exports =
     "postalCode": "19425",
     "country": "US",
     "createdOn": "2021-03-27",
-    "notes": "Imported record: 1 order(s), $54.00 total spent."
+    "notes": "Imported record: 1 order(s), $54.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 2251,
@@ -27022,6 +27679,7 @@ module.exports =
     "id": 2256,
     "firstName": "Linda",
     "lastName": "Meeks",
+    "company": "Sandy Bay Gallery",
     "email": "sandybaygallery1@gmail.com",
     "phone": "(252) 216-5666",
     "street1": "PO Box 538",
@@ -27030,7 +27688,6 @@ module.exports =
     "postalCode": "27943",
     "country": "US",
     "createdOn": "2016-03-11",
-    "notes": "Company: Sandy Bay Gallery",
     "type": "wholesale",
     "website": "https://www.facebook.com/sandybaygallery/"
   },
@@ -27067,7 +27724,8 @@ module.exports =
     "postalCode": "98109",
     "country": "US",
     "createdOn": "2023-01-31",
-    "notes": "Imported record: 1 order(s), $325.24 total spent."
+    "notes": "Imported record: 1 order(s), $325.24 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 2260,
@@ -27080,7 +27738,8 @@ module.exports =
     "postalCode": "98074",
     "country": "US",
     "createdOn": "2023-01-12",
-    "notes": "Imported record: 1 order(s), $324.80 total spent."
+    "notes": "Imported record: 1 order(s), $324.80 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 2261,
@@ -27108,7 +27767,8 @@ module.exports =
     "postalCode": "48386",
     "country": "US",
     "createdOn": "2020-02-15",
-    "notes": "Imported record: 1 order(s), $60.50 total spent."
+    "notes": "Imported record: 1 order(s), $60.50 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 2263,
@@ -27151,7 +27811,8 @@ module.exports =
     "postalCode": "95630",
     "country": "US",
     "createdOn": "2021-02-22",
-    "notes": "Imported record: 1 order(s), $274.00 total spent."
+    "notes": "Imported record: 1 order(s), $274.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 2266,
@@ -27211,7 +27872,8 @@ module.exports =
     "postalCode": "94546",
     "country": "US",
     "createdOn": "2020-05-16",
-    "notes": "Imported record: 1 order(s), $71.00 total spent."
+    "notes": "Imported record: 1 order(s), $71.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 2271,
@@ -27263,6 +27925,7 @@ module.exports =
     "id": 2275,
     "firstName": "Roya",
     "lastName": "Parviz",
+    "company": "Satori Designs",
     "phone": "(619) 708-9357",
     "street1": "435 S Cedros Ave",
     "city": "Solana Beach",
@@ -27270,7 +27933,6 @@ module.exports =
     "postalCode": "92075",
     "country": "US",
     "createdOn": "2023-01-26",
-    "notes": "Company: Satori Designs",
     "type": "wholesale",
     "website": "http://satori-designs.com/"
   },
@@ -27284,6 +27946,7 @@ module.exports =
     "id": 2277,
     "firstName": "Paul",
     "lastName": "Zurowski",
+    "company": "Sawbridge Studios",
     "email": "winnetka@sawbridge.com",
     "phone": "(224) 616-3311",
     "street1": "1804 Johns Dr",
@@ -27292,7 +27955,6 @@ module.exports =
     "postalCode": "60025",
     "country": "US",
     "createdOn": "2014-03-19",
-    "notes": "Company: Sawbridge Studios",
     "type": "wholesale",
     "website": "https://sawbridge.com/"
   },
@@ -27300,6 +27962,7 @@ module.exports =
     "id": 2278,
     "firstName": "Danielle",
     "lastName": "Schindler",
+    "company": "Scandia Home",
     "email": "contact@scandiamionline.com",
     "phone": "(248) 649-7673",
     "street1": "237 Pierce St",
@@ -27308,7 +27971,6 @@ module.exports =
     "postalCode": "48009",
     "country": "US",
     "createdOn": "2021-07-02",
-    "notes": "Company: Scandia Home",
     "type": "wholesale",
     "website": "https://www.facebook.com/scandiaMI/"
   },
@@ -27342,7 +28004,8 @@ module.exports =
     "firstName": "Scott",
     "lastName": "Dolphin",
     "email": "15steps@fifteensteps.com",
-    "createdOn": "2022-08-06"
+    "createdOn": "2022-08-06",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 2282,
@@ -27355,6 +28018,7 @@ module.exports =
     "id": 2283,
     "firstName": "Mary",
     "lastName": "Zazzera",
+    "company": "Sea Moon, The",
     "email": "seamoon508@yahoo.com",
     "phone": "(609) 361-6624",
     "street1": "1503 Long Beach Blvd",
@@ -27363,7 +28027,6 @@ module.exports =
     "postalCode": "8008",
     "country": "US",
     "createdOn": "2019-03-04",
-    "notes": "Company: Sea Moon, The",
     "type": "wholesale",
     "website": "http://www.theseamoon.com/"
   },
@@ -27384,6 +28047,7 @@ module.exports =
     "id": 2285,
     "firstName": "Claire",
     "lastName": "Barnett",
+    "company": "Seattle Mosaic Arts",
     "email": "claire@seattlemosaicarts.com",
     "phone": "(206) 402-6642",
     "street1": "5417 Meridian Ave N",
@@ -27392,7 +28056,6 @@ module.exports =
     "postalCode": "98103",
     "country": "US",
     "createdOn": "2013-11-19",
-    "notes": "Company: Seattle Mosaic Arts",
     "type": "wholesale",
     "website": "http://www.seattlemosaicarts.com/"
   },
@@ -27400,6 +28063,7 @@ module.exports =
     "id": 2286,
     "firstName": "Janet",
     "lastName": "Hill",
+    "company": "SeaWorthy Gallery",
     "email": "janet@seaworthygallery.com",
     "phone": "(252) 986-6510",
     "street1": "58401 Highway 12",
@@ -27409,7 +28073,7 @@ module.exports =
     "postalCode": "27943",
     "country": "US",
     "createdOn": "2014-03-06",
-    "notes": "Carole Nunnally\nCompany: SeaWorthy Gallery",
+    "notes": "Carole Nunnally",
     "type": "wholesale",
     "website": "http://www.seaworthygallery.com"
   },
@@ -27429,6 +28093,7 @@ module.exports =
     "id": 2288,
     "firstName": "Lisa",
     "lastName": "Grant",
+    "company": "See Wee Homes",
     "phone": "(843) 608-7610",
     "street1": "8636 Dorchester Rd Ste 106",
     "city": "North Charleston",
@@ -27436,7 +28101,6 @@ module.exports =
     "postalCode": "29420",
     "country": "US",
     "createdOn": "2021-12-22",
-    "notes": "Company: See Wee Homes",
     "type": "wholesale",
     "website": "https://www.seeweehomes.com/"
   },
@@ -27444,6 +28108,7 @@ module.exports =
     "id": 2289,
     "firstName": "Victoria",
     "lastName": "Seebeck",
+    "company": "Seebecks",
     "email": "vicki@seebeckgallery.com",
     "phone": "(262) 842-5252",
     "street1": "5702 7th Ave",
@@ -27452,7 +28117,6 @@ module.exports =
     "postalCode": "53140",
     "country": "US",
     "createdOn": "2016-09-08",
-    "notes": "Company: Seebecks",
     "type": "wholesale",
     "website": "https://www.seebecks.com/"
   },
@@ -27476,7 +28140,8 @@ module.exports =
     "postalCode": "1720",
     "country": "US",
     "createdOn": "2025-12-28",
-    "notes": "Imported record: 1 order(s), $217.92 total spent."
+    "notes": "Imported record: 1 order(s), $217.92 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 2292,
@@ -27494,6 +28159,7 @@ module.exports =
     "id": 2293,
     "firstName": "Katie",
     "lastName": "Sevigny",
+    "company": "Sevigny Studio",
     "email": "katiesevignyart@yahoo.com",
     "phone": "(907) 258-2787",
     "street1": "312 G St",
@@ -27502,7 +28168,6 @@ module.exports =
     "postalCode": "99501",
     "country": "US",
     "createdOn": "2010-05-27",
-    "notes": "Company: Sevigny Studio",
     "type": "wholesale",
     "website": "https://sevignystudio.com/"
   },
@@ -27543,7 +28208,8 @@ module.exports =
     "postalCode": "74008",
     "country": "US",
     "createdOn": "2025-11-23",
-    "notes": "Imported record: 1 order(s), $19.15 total spent."
+    "notes": "Imported record: 1 order(s), $19.15 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 2297,
@@ -27597,6 +28263,7 @@ module.exports =
     "id": 2301,
     "firstName": "Sue",
     "lastName": "Shapiro",
+    "company": "Shapiro's Gallery",
     "email": "info@shapirogallery.com",
     "phone": "(727) 894-2111",
     "street1": "300 Beach Dr NE Ste 112",
@@ -27605,7 +28272,6 @@ module.exports =
     "postalCode": "33701",
     "country": "US",
     "createdOn": "2011-02-01",
-    "notes": "Company: Shapiro's Gallery",
     "type": "wholesale",
     "website": "https://www.shapirosgallery.com/"
   },
@@ -27620,7 +28286,8 @@ module.exports =
     "postalCode": "89131-0128",
     "country": "US",
     "createdOn": "2025-05-05",
-    "notes": "Imported record: 1 order(s), $40.65 total spent."
+    "notes": "Imported record: 1 order(s), $40.65 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 2303,
@@ -27633,7 +28300,8 @@ module.exports =
     "postalCode": "98682",
     "country": "US",
     "createdOn": "2018-10-02",
-    "notes": "Imported record: 1 order(s), $361.31 total spent."
+    "notes": "Imported record: 1 order(s), $361.31 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 2304,
@@ -27661,7 +28329,8 @@ module.exports =
     "firstName": "Sharon",
     "lastName": "Allen",
     "email": "dsallen@baonline.com.au",
-    "createdOn": "2020-12-21"
+    "createdOn": "2020-12-21",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 2307,
@@ -27805,7 +28474,8 @@ module.exports =
     "postalCode": "99827",
     "country": "US",
     "createdOn": "2020-07-07",
-    "notes": "Imported record: 4 order(s), $344.60 total spent."
+    "notes": "Imported record: 4 order(s), $344.60 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 2320,
@@ -27845,7 +28515,8 @@ module.exports =
     "postalCode": "98034",
     "country": "US",
     "createdOn": "2018-05-01",
-    "notes": "Imported record: 2 order(s), $500.00 total spent."
+    "notes": "Imported record: 2 order(s), $500.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 2323,
@@ -27858,6 +28529,7 @@ module.exports =
     "id": 2324,
     "firstName": "Shaynee",
     "lastName": "Sims",
+    "company": "Shay Sims",
     "email": "bkashay@gmail.com",
     "phone": "(314) 355-2464",
     "street1": "11476 Granger Trail",
@@ -27866,7 +28538,7 @@ module.exports =
     "postalCode": "63033",
     "country": "US",
     "createdOn": "2026-05-06",
-    "notes": "Company: Shay Sims\nImported record: 1 order(s), $3,800.00 total spent."
+    "notes": "Imported record: 1 order(s), $3,800.00 total spent."
   },
   {
     "id": 2325,
@@ -27879,6 +28551,7 @@ module.exports =
     "id": 2326,
     "firstName": "Karen",
     "lastName": "Okie",
+    "company": "Sheepscot River Pottery",
     "email": "sheepscotriverpottery@gmail.com",
     "phone": "(207) 882-9410",
     "street1": "34 Route 1",
@@ -27887,7 +28560,6 @@ module.exports =
     "postalCode": "4556",
     "country": "US",
     "createdOn": "2015-07-15",
-    "notes": "Company: Sheepscot River Pottery",
     "type": "wholesale",
     "website": "https://sheepscotriverpottery.com/"
   },
@@ -27953,7 +28625,8 @@ module.exports =
     "postalCode": "98166",
     "country": "US",
     "createdOn": "2021-12-18",
-    "notes": "Imported record: 1 order(s), $94.60 total spent."
+    "notes": "Imported record: 1 order(s), $94.60 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 2332,
@@ -28004,7 +28677,8 @@ module.exports =
     "postalCode": "43209",
     "country": "US",
     "createdOn": "2025-11-06",
-    "notes": "Imported record: 1 order(s), $47.28 total spent."
+    "notes": "Imported record: 1 order(s), $47.28 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 2336,
@@ -28026,7 +28700,8 @@ module.exports =
     "postalCode": "55306-6385",
     "country": "US",
     "createdOn": "2023-06-14",
-    "notes": "Additional contact: dbdmosaics@gmail.com\nImported record: 5 order(s), $2,802.70 total spent."
+    "notes": "Additional contact: dbdmosaics@gmail.com\nImported record: 5 order(s), $2,802.70 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 2338,
@@ -28050,7 +28725,8 @@ module.exports =
     "postalCode": "48067-3062",
     "country": "US",
     "createdOn": "2020-12-23",
-    "notes": "Imported record: 1 order(s), $93.50 total spent."
+    "notes": "Imported record: 1 order(s), $93.50 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 2340,
@@ -28105,7 +28781,8 @@ module.exports =
     "postalCode": "91320",
     "country": "US",
     "createdOn": "2025-11-29",
-    "notes": "Imported record: 1 order(s), $98.85 total spent."
+    "notes": "Imported record: 1 order(s), $98.85 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 2345,
@@ -28129,7 +28806,8 @@ module.exports =
     "postalCode": "43148",
     "country": "US",
     "createdOn": "2025-07-12",
-    "notes": "Imported record: 1 order(s), $55.65 total spent."
+    "notes": "Imported record: 1 order(s), $55.65 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 2347,
@@ -28149,7 +28827,8 @@ module.exports =
     "postalCode": "94952",
     "country": "US",
     "createdOn": "2018-04-27",
-    "notes": "Imported record: 2 order(s), $341.12 total spent."
+    "notes": "Imported record: 2 order(s), $341.12 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 2349,
@@ -28175,7 +28854,8 @@ module.exports =
     "postalCode": "95959",
     "country": "US",
     "createdOn": "2018-04-12",
-    "notes": "Imported record: 1 order(s), $56.00 total spent."
+    "notes": "Imported record: 1 order(s), $56.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 2351,
@@ -28244,7 +28924,8 @@ module.exports =
     "postalCode": "48706",
     "country": "US",
     "createdOn": "2021-05-16",
-    "notes": "Imported record: 2 order(s), $99.66 total spent."
+    "notes": "Imported record: 2 order(s), $99.66 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 2356,
@@ -28257,14 +28938,16 @@ module.exports =
     "postalCode": "98391",
     "country": "US",
     "createdOn": "2026-01-19",
-    "notes": "Imported record: 1 order(s), $156.04 total spent."
+    "notes": "Imported record: 1 order(s), $156.04 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 2357,
     "firstName": "Sheryl",
     "lastName": "Brown",
     "email": "shersings@aol.com",
-    "createdOn": "2025-06-26"
+    "createdOn": "2025-06-26",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 2358,
@@ -28304,7 +28987,8 @@ module.exports =
     "postalCode": "87104",
     "country": "US",
     "createdOn": "2021-06-29",
-    "notes": "Imported record: 2 order(s), $162.50 total spent."
+    "notes": "Imported record: 2 order(s), $162.50 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 2362,
@@ -28358,12 +29042,14 @@ module.exports =
     "postalCode": "22180",
     "country": "US",
     "createdOn": "2020-02-15",
-    "notes": "Imported record: 1 order(s), $69.00 total spent."
+    "notes": "Imported record: 1 order(s), $69.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 2366,
     "firstName": "Terri",
     "lastName": "Dorsaneo",
+    "company": "Shop at Polk Museum of Art, The",
     "phone": "(863) 688-7743",
     "street1": "800 E Palmetto St",
     "city": "Lakeland",
@@ -28371,7 +29057,6 @@ module.exports =
     "postalCode": "33801",
     "country": "US",
     "createdOn": "2011-04-10",
-    "notes": "Company: Shop at Polk Museum of Art, The",
     "type": "wholesale",
     "website": "https://polkmuseumofart.org/the-shop"
   },
@@ -28379,6 +29064,7 @@ module.exports =
     "id": 2367,
     "firstName": "Butch",
     "lastName": "Ponoroff",
+    "company": "ShopTheAddison.com",
     "email": "addisoncollection@gmail.com",
     "phone": "(561) 717-3327",
     "street1": "16950 Jog Rd",
@@ -28387,7 +29073,6 @@ module.exports =
     "postalCode": "33446",
     "country": "US",
     "createdOn": "2019-10-04",
-    "notes": "Company: ShopTheAddison.com",
     "type": "wholesale",
     "website": "https://shoptheaddison.com/"
   },
@@ -28395,6 +29080,7 @@ module.exports =
     "id": 2368,
     "firstName": "Lisa",
     "lastName": "Palmatier",
+    "company": "Shoreline Arts Council",
     "email": "gallery@shorelinearts.net",
     "phone": "(206) 588-8332",
     "street1": "17171 Bothell Way NE #A136",
@@ -28403,7 +29089,7 @@ module.exports =
     "postalCode": "98155",
     "country": "US",
     "createdOn": "2017-05-24",
-    "notes": "Company: Shoreline Arts Council\nType: Consignment (not represented by the wholesale/retail field)",
+    "notes": "Type: Consignment (not represented by the wholesale/retail field)",
     "website": "http://www.shorelinearts.net/eventsprograms/gallery-at-town-center/"
   },
   {
@@ -28431,6 +29117,7 @@ module.exports =
     "id": 2371,
     "firstName": "Linda",
     "lastName": "Wolbert",
+    "company": "Sign of the Dolphin",
     "email": "signofthedolphin@gmail.com",
     "phone": "(727) 393-1400",
     "street1": "12999 Park Blvd N",
@@ -28439,7 +29126,6 @@ module.exports =
     "postalCode": "33776",
     "country": "US",
     "createdOn": "2021-11-30",
-    "notes": "Company: Sign of the Dolphin",
     "type": "wholesale",
     "website": "http://www.signofthedolphin.com/"
   },
@@ -28477,6 +29163,7 @@ module.exports =
     "id": 2374,
     "firstName": "Gail",
     "lastName": "Cleveland",
+    "company": "Smart Studio",
     "email": "gcleveland50@gmail.com",
     "phone": "(941) 964-0519",
     "street1": "PO Box 865",
@@ -28485,7 +29172,6 @@ module.exports =
     "postalCode": "33921",
     "country": "US",
     "createdOn": "2012-02-08",
-    "notes": "Company: Smart Studio",
     "type": "wholesale",
     "website": "http://smart-studio.com/"
   },
@@ -28519,6 +29205,7 @@ module.exports =
     "id": 2377,
     "firstName": "Molly",
     "lastName": "Bellomo",
+    "company": "Something Special (CA)",
     "email": "ssjewelers@aol.com",
     "phone": "(707) 837-8300",
     "street1": "930 McClelland Dr",
@@ -28527,7 +29214,6 @@ module.exports =
     "postalCode": "95492",
     "country": "US",
     "createdOn": "2015-09-23",
-    "notes": "Company: Something Special (CA)",
     "type": "wholesale",
     "website": "https://www.facebook.com/SomethingSpecialJewelers/"
   },
@@ -28582,6 +29268,7 @@ module.exports =
     "id": 2382,
     "firstName": "Christine",
     "lastName": "Frost",
+    "company": "Soul Source",
     "phone": "(603) 456-2681",
     "street1": "102 E Main St",
     "city": "Bradford",
@@ -28589,13 +29276,13 @@ module.exports =
     "postalCode": "3221",
     "country": "US",
     "createdOn": "2022-04-07",
-    "notes": "Company: Soul Source",
     "type": "wholesale"
   },
   {
     "id": 2383,
     "firstName": "Monty & Kelley",
     "lastName": "Coates",
+    "company": "Southwestern Expressions",
     "email": "info@southwestshop.com",
     "phone": "(435) 649-1612",
     "street1": "312 Main St",
@@ -28604,7 +29291,6 @@ module.exports =
     "postalCode": "84060",
     "country": "US",
     "createdOn": "2015-07-15",
-    "notes": "Company: Southwestern Expressions",
     "type": "wholesale",
     "website": "http://www.southwestshop.com/"
   },
@@ -28612,6 +29298,7 @@ module.exports =
     "id": 2384,
     "firstName": "Lois",
     "lastName": "Atherton",
+    "company": "Sparrow House Pottery",
     "email": "info@sparrowhouse.com",
     "phone": "(508) 747-1240",
     "street1": "1 Massasoit St",
@@ -28620,7 +29307,6 @@ module.exports =
     "postalCode": "2360",
     "country": "US",
     "createdOn": "2013-02-25",
-    "notes": "Company: Sparrow House Pottery",
     "type": "wholesale",
     "website": "http://www.sparrowhouse.com"
   },
@@ -28628,6 +29314,7 @@ module.exports =
     "id": 2385,
     "firstName": "Nick",
     "lastName": "Codd",
+    "company": "Spectacle Shop, The",
     "phone": "(410) 647-4926",
     "street1": "670 Ritchie Hwy",
     "city": "Severna Park",
@@ -28635,7 +29322,6 @@ module.exports =
     "postalCode": "21146",
     "country": "US",
     "createdOn": "2014-02-25",
-    "notes": "Company: Spectacle Shop, The",
     "type": "wholesale",
     "website": "https://www.facebook.com/TheSpectacleShop"
   },
@@ -28643,6 +29329,7 @@ module.exports =
     "id": 2386,
     "firstName": "Nancy",
     "lastName": "Landwehr",
+    "company": "Spirited Hand, The",
     "email": "thespiritedhand@att.net",
     "phone": "(843) 757-7300",
     "street1": "1127 Fording Island Rd Ste 103",
@@ -28651,7 +29338,6 @@ module.exports =
     "postalCode": "29910",
     "country": "US",
     "createdOn": "2013-05-03",
-    "notes": "Company: Spirited Hand, The",
     "type": "wholesale",
     "website": "https://thespiritedhand.com"
   },
@@ -28659,6 +29345,7 @@ module.exports =
     "id": 2387,
     "firstName": "Margie",
     "lastName": "Kraft",
+    "company": "Splash of Red, A",
     "email": "info@ASplashofRed.com",
     "phone": "(610) 987-0483",
     "street1": "325 Snyder Red",
@@ -28667,7 +29354,6 @@ module.exports =
     "postalCode": "19547",
     "country": "US",
     "createdOn": "2012-04-10",
-    "notes": "Company: Splash of Red, A",
     "type": "wholesale",
     "website": "http://www.asplashofred.com"
   },
@@ -28708,7 +29394,8 @@ module.exports =
     "postalCode": "33327",
     "country": "US",
     "createdOn": "2020-11-30",
-    "notes": "Imported record: 1 order(s), $23.50 total spent."
+    "notes": "Imported record: 1 order(s), $23.50 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 2391,
@@ -28736,12 +29423,14 @@ module.exports =
     "postalCode": "94541",
     "country": "US",
     "createdOn": "2025-09-01",
-    "notes": "Imported record: 1 order(s), $565.00 total spent."
+    "notes": "Imported record: 1 order(s), $565.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 2393,
     "firstName": "Holly",
     "lastName": "Synder",
+    "company": "Standing Rock Gallery",
     "email": "hollysnyder23@yahoo.com",
     "phone": "(330) 650-9089",
     "street1": "5194 Darrow Rd",
@@ -28750,7 +29439,6 @@ module.exports =
     "postalCode": "44236",
     "country": "US",
     "createdOn": "2010-05-27",
-    "notes": "Company: Standing Rock Gallery",
     "type": "wholesale",
     "website": "https://www.standingrockgallery.com/"
   },
@@ -28758,6 +29446,7 @@ module.exports =
     "id": 2394,
     "firstName": "Susie",
     "lastName": "Pace",
+    "company": "Steamboat Art Museum",
     "email": "sam@steamboatartmuseum.org",
     "phone": "(970) 870-1755",
     "street1": "807 Lincoln Ave",
@@ -28766,7 +29455,7 @@ module.exports =
     "postalCode": "80487",
     "country": "US",
     "createdOn": "2021-03-30",
-    "notes": "Zip Code exclusion: 80487 until 1/1/22\nCompany: Steamboat Art Museum",
+    "notes": "Zip Code exclusion: 80487 until 1/1/22",
     "type": "wholesale",
     "website": "https://steamboatartmuseum.org/"
   },
@@ -28816,7 +29505,8 @@ module.exports =
     "postalCode": "30707",
     "country": "US",
     "createdOn": "2021-04-05",
-    "notes": "Imported record: 1 order(s), $99.00 total spent."
+    "notes": "Imported record: 1 order(s), $99.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 2399,
@@ -28830,7 +29520,8 @@ module.exports =
     "postalCode": "8322",
     "country": "US",
     "createdOn": "2020-08-15",
-    "notes": "Imported record: 4 order(s), $873.00 total spent, legacy user ID 47727464."
+    "notes": "Imported record: 4 order(s), $873.00 total spent, legacy user ID 47727464.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 2400,
@@ -28889,6 +29580,7 @@ module.exports =
     "id": 2405,
     "firstName": "Stephanie",
     "lastName": "Shane",
+    "company": "Stephanie Shang",
     "email": "stocktake@yahoo.com",
     "street1": "2680 Lucca Ct",
     "city": "Livermore",
@@ -28896,7 +29588,7 @@ module.exports =
     "postalCode": "94550-6862",
     "country": "US",
     "createdOn": "2026-07-23",
-    "notes": "Company: Stephanie Shang\nImported record: 1 order(s), $217.92 total spent."
+    "notes": "Imported record: 1 order(s), $217.92 total spent."
   },
   {
     "id": 2406,
@@ -28928,6 +29620,7 @@ module.exports =
     "id": 2408,
     "firstName": "Sandy",
     "lastName": "Phelan",
+    "company": "Stepping Stone, The",
     "email": "info@steppingstonelewes.com",
     "phone": "(302) 645-1254",
     "street1": "107 W Market St",
@@ -28936,7 +29629,6 @@ module.exports =
     "postalCode": "19958",
     "country": "US",
     "createdOn": "2019-02-17",
-    "notes": "Company: Stepping Stone, The",
     "type": "wholesale",
     "website": "https://www.facebook.com/TheSteppingStoneLewes/"
   },
@@ -28944,14 +29636,14 @@ module.exports =
     "id": 2409,
     "firstName": "and",
     "lastName": "Rodgers",
+    "company": "Steve and Jurene Rodgers",
     "email": "srodgersact@gmail.com",
     "street1": "3017 W Beacon Ave",
     "city": "Spokane",
     "state": "WA",
     "postalCode": "99208",
     "country": "US",
-    "createdOn": "2015-03-27",
-    "notes": "Company: Steve and Jurene Rodgers"
+    "createdOn": "2015-03-27"
   },
   {
     "id": 2410,
@@ -28973,13 +29665,13 @@ module.exports =
   {
     "id": 2412,
     "firstName": "Steve & Christine",
+    "company": "Steve Sack & Christine Stoffels-Sack",
     "street1": "112 NW 83rd St",
     "city": "Seattle",
     "state": "WA",
     "postalCode": "98117",
     "country": "US",
-    "createdOn": "2010-05-27",
-    "notes": "Company: Steve Sack & Christine Stoffels-Sack"
+    "createdOn": "2010-05-27"
   },
   {
     "id": 2413,
@@ -29017,6 +29709,7 @@ module.exports =
     "id": 2416,
     "firstName": "Shelly",
     "lastName": "Stock",
+    "company": "Stock & Associates",
     "email": "sstock@stockandassociates.com",
     "phone": "(206) 443-0494",
     "street1": "109 Bell St",
@@ -29025,7 +29718,6 @@ module.exports =
     "postalCode": "98121",
     "country": "US",
     "createdOn": "2010-05-27",
-    "notes": "Company: Stock & Associates",
     "type": "wholesale",
     "website": "https://www.stockandassociates.com/"
   },
@@ -29033,6 +29725,7 @@ module.exports =
     "id": 2417,
     "firstName": "Andrea",
     "lastName": "Falconer",
+    "company": "Stone's Throw",
     "phone": "(715) 779-5200",
     "street1": "40 S 2nd St",
     "city": "Bayfield",
@@ -29040,7 +29733,6 @@ module.exports =
     "postalCode": "54814",
     "country": "US",
     "createdOn": "2022-08-11",
-    "notes": "Company: Stone's Throw",
     "type": "wholesale",
     "website": "http://www.stonesthrowbayfield.com/"
   },
@@ -29084,7 +29776,8 @@ module.exports =
     "postalCode": "78734",
     "country": "US",
     "createdOn": "2021-02-10",
-    "notes": "Imported record: 1 order(s), $24.30 total spent."
+    "notes": "Imported record: 1 order(s), $24.30 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 2421,
@@ -29154,7 +29847,8 @@ module.exports =
     "postalCode": "15666",
     "country": "US",
     "createdOn": "2020-02-08",
-    "notes": "Imported record: 2 order(s), $86.50 total spent."
+    "notes": "Imported record: 2 order(s), $86.50 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 2427,
@@ -29196,7 +29890,8 @@ module.exports =
     "postalCode": "12180",
     "country": "US",
     "createdOn": "2021-07-23",
-    "notes": "Imported record: 1 order(s), $156.00 total spent."
+    "notes": "Imported record: 1 order(s), $156.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 2431,
@@ -29236,6 +29931,7 @@ module.exports =
     "id": 2434,
     "firstName": "Catherine",
     "lastName": "Tippin",
+    "company": "SunRose Art & Whimsy",
     "email": "cathytippin@gmail.com",
     "phone": "(503) 717-2685",
     "street1": "734 Broadway St",
@@ -29244,7 +29940,6 @@ module.exports =
     "postalCode": "97138",
     "country": "US",
     "createdOn": "2013-09-17",
-    "notes": "Company: SunRose Art & Whimsy",
     "type": "wholesale",
     "website": "https://www.facebook.com/SunRoseGallery/"
   },
@@ -29252,6 +29947,7 @@ module.exports =
     "id": 2435,
     "firstName": "Mobashra",
     "lastName": "Malik",
+    "company": "Sure2Shop247",
     "email": "info@sure2shop.us",
     "phone": "(703) 472-6560",
     "street1": "9016 Edgepark Rd",
@@ -29260,7 +29956,7 @@ module.exports =
     "postalCode": "22182",
     "country": "US",
     "createdOn": "2021-02-14",
-    "notes": "Company: Sure2Shop247"
+    "acceptsEmailMarketing": false
   },
   {
     "id": 2436,
@@ -29273,7 +29969,8 @@ module.exports =
     "postalCode": "98296",
     "country": "US",
     "createdOn": "2019-12-11",
-    "notes": "Imported record: 1 order(s), $194.43 total spent."
+    "notes": "Imported record: 1 order(s), $194.43 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 2437,
@@ -29286,7 +29983,8 @@ module.exports =
     "postalCode": "95946",
     "country": "US",
     "createdOn": "2020-03-03",
-    "notes": "Imported record: 1 order(s), $93.00 total spent."
+    "notes": "Imported record: 1 order(s), $93.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 2438,
@@ -29329,7 +30027,8 @@ module.exports =
     "postalCode": "98117",
     "country": "US",
     "createdOn": "2017-11-07",
-    "notes": "Imported record: 4 order(s), $1,455.00 total spent."
+    "notes": "Imported record: 4 order(s), $1,455.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 2441,
@@ -29403,7 +30102,8 @@ module.exports =
     "postalCode": "98312",
     "country": "US",
     "createdOn": "2017-10-17",
-    "notes": "Imported record: 2 order(s), $187.88 total spent."
+    "notes": "Imported record: 2 order(s), $187.88 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 2446,
@@ -29423,7 +30123,8 @@ module.exports =
     "postalCode": "80226",
     "country": "US",
     "createdOn": "2019-12-08",
-    "notes": "Imported record: 1 order(s), $25.50 total spent."
+    "notes": "Imported record: 1 order(s), $25.50 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 2448,
@@ -29436,7 +30137,8 @@ module.exports =
     "firstName": "Susan",
     "lastName": "Engman",
     "email": "susanmengman@comcast.net",
-    "createdOn": "2019-02-02"
+    "createdOn": "2019-02-02",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 2450,
@@ -29485,7 +30187,8 @@ module.exports =
     "postalCode": "98006",
     "country": "US",
     "createdOn": "2017-09-17",
-    "notes": "Imported record: 1 order(s), $250.00 total spent."
+    "notes": "Imported record: 1 order(s), $250.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 2454,
@@ -29498,7 +30201,8 @@ module.exports =
     "postalCode": "28278",
     "country": "US",
     "createdOn": "2024-07-02",
-    "notes": "Imported record: 1 order(s), $142.50 total spent."
+    "notes": "Imported record: 1 order(s), $142.50 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 2455,
@@ -29527,7 +30231,8 @@ module.exports =
     "postalCode": "33569",
     "country": "US",
     "createdOn": "2019-10-20",
-    "notes": "Imported record: 1 order(s), $18.90 total spent."
+    "notes": "Imported record: 1 order(s), $18.90 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 2457,
@@ -29554,7 +30259,8 @@ module.exports =
     "postalCode": "63049",
     "country": "US",
     "createdOn": "2021-06-05",
-    "notes": "Imported record: 1 order(s), $84.30 total spent."
+    "notes": "Imported record: 1 order(s), $84.30 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 2459,
@@ -29568,7 +30274,8 @@ module.exports =
     "postalCode": "78501",
     "country": "US",
     "createdOn": "2021-04-22",
-    "notes": "Imported record: 1 order(s), $30.30 total spent."
+    "notes": "Imported record: 1 order(s), $30.30 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 2460,
@@ -29581,7 +30288,8 @@ module.exports =
     "postalCode": "20723",
     "country": "US",
     "createdOn": "2020-12-02",
-    "notes": "Imported record: 1 order(s), $100.00 total spent."
+    "notes": "Imported record: 1 order(s), $100.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 2461,
@@ -29594,7 +30302,8 @@ module.exports =
     "postalCode": "98023",
     "country": "US",
     "createdOn": "2023-12-28",
-    "notes": "Imported record: 2 order(s), $446.16 total spent."
+    "notes": "Imported record: 2 order(s), $446.16 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 2462,
@@ -29615,7 +30324,8 @@ module.exports =
     "postalCode": "2852",
     "country": "US",
     "createdOn": "2017-06-09",
-    "notes": "Imported record: 1 order(s), $120.00 total spent."
+    "notes": "Imported record: 1 order(s), $120.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 2464,
@@ -29648,7 +30358,8 @@ module.exports =
     "postalCode": "85262",
     "country": "US",
     "createdOn": "2021-02-22",
-    "notes": "Imported record: 1 order(s), $33.10 total spent."
+    "notes": "Imported record: 1 order(s), $33.10 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 2467,
@@ -29662,7 +30373,8 @@ module.exports =
     "postalCode": "80224",
     "country": "US",
     "createdOn": "2020-09-12",
-    "notes": "Imported record: 2 order(s), $510.00 total spent."
+    "notes": "Imported record: 2 order(s), $510.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 2468,
@@ -29676,7 +30388,8 @@ module.exports =
     "postalCode": "08535-1136",
     "country": "US",
     "createdOn": "2021-02-16",
-    "notes": "Imported record: 2 order(s), $250.60 total spent."
+    "notes": "Imported record: 2 order(s), $250.60 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 2469,
@@ -29720,7 +30433,8 @@ module.exports =
     "postalCode": "92173-1803",
     "country": "US",
     "createdOn": "2019-07-01",
-    "notes": "Imported record: 2 order(s), $257.50 total spent."
+    "notes": "Imported record: 2 order(s), $257.50 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 2472,
@@ -29839,7 +30553,8 @@ module.exports =
     "postalCode": "19096",
     "country": "US",
     "createdOn": "2021-07-14",
-    "notes": "Imported record: 1 order(s), $28.30 total spent."
+    "notes": "Imported record: 1 order(s), $28.30 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 2482,
@@ -30014,7 +30729,8 @@ module.exports =
     "postalCode": "87508",
     "country": "US",
     "createdOn": "2021-09-10",
-    "notes": "Imported record: 1 order(s), $24.30 total spent."
+    "notes": "Imported record: 1 order(s), $24.30 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 2495,
@@ -30041,7 +30757,8 @@ module.exports =
     "firstName": "Susie",
     "lastName": "Shea",
     "email": "susieshea@hotmail.com",
-    "createdOn": "2021-11-11"
+    "createdOn": "2021-11-11",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 2498,
@@ -30127,10 +30844,10 @@ module.exports =
     "id": 2505,
     "firstName": "Suzanne",
     "lastName": "Elliot",
+    "company": "Suzanne Elliott",
     "email": "suzanne@suzanneelliottlaw.com",
     "phone": "(206) 623-0291",
-    "createdOn": "2010-05-27",
-    "notes": "Company: Suzanne Elliott"
+    "createdOn": "2010-05-27"
   },
   {
     "id": 2506,
@@ -30180,7 +30897,8 @@ module.exports =
     "firstName": "Suzi",
     "lastName": "Gross",
     "email": "suzannehgross@gmail.com",
-    "createdOn": "2023-09-16"
+    "createdOn": "2023-09-16",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 2511,
@@ -30193,12 +30911,14 @@ module.exports =
     "postalCode": "98075-7959",
     "country": "US",
     "createdOn": "2019-03-18",
-    "notes": "Imported record: 1 order(s), $130.00 total spent."
+    "notes": "Imported record: 1 order(s), $130.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 2512,
     "firstName": "Olivia",
     "lastName": "Romstad",
+    "company": "Sweet Home Carolina",
     "email": "oliviaromstad@gmail.com",
     "phone": "(937) 789-7382",
     "street1": "10880 Ocean Hwy Unit 13",
@@ -30207,7 +30927,6 @@ module.exports =
     "postalCode": "29585-7987",
     "country": "US",
     "createdOn": "2020-07-16",
-    "notes": "Company: Sweet Home Carolina",
     "type": "wholesale",
     "website": "https://www.sweethomecarolinapawleys.com/"
   },
@@ -30215,6 +30934,7 @@ module.exports =
     "id": 2513,
     "firstName": "Tracy",
     "lastName": "Tumolo",
+    "company": "Sweet Mabel Folk Art",
     "email": "sweetmabelart@aol.com",
     "phone": "(610) 667-3041",
     "street1": "41 N Narberth Ave",
@@ -30223,7 +30943,6 @@ module.exports =
     "postalCode": "19072",
     "country": "US",
     "createdOn": "2010-05-27",
-    "notes": "Company: Sweet Mabel Folk Art",
     "type": "wholesale",
     "website": "http://sweetmabel.com/"
   },
@@ -30231,6 +30950,7 @@ module.exports =
     "id": 2514,
     "firstName": "Lila",
     "lastName": "Bacon",
+    "company": "Sweetheart Gallery",
     "email": "gallery@sweetheartgallery.com",
     "phone": "(845) 679-2622",
     "street1": "8 Tannery Brook Rd",
@@ -30239,9 +30959,9 @@ module.exports =
     "postalCode": "12498",
     "country": "US",
     "createdOn": "2019-04-11",
-    "notes": "Company: Sweetheart Gallery",
     "type": "wholesale",
-    "website": "https://www.sweetheartgallery.com/"
+    "website": "https://www.sweetheartgallery.com/",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 2515,
@@ -30254,7 +30974,8 @@ module.exports =
     "postalCode": "98367",
     "country": "US",
     "createdOn": "2019-05-27",
-    "notes": "Imported record: 2 order(s), $390.00 total spent."
+    "notes": "Imported record: 2 order(s), $390.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 2516,
@@ -30268,7 +30989,8 @@ module.exports =
     "postalCode": "2766",
     "country": "US",
     "createdOn": "2019-01-10",
-    "notes": "Imported record: 2 order(s), $314.64 total spent."
+    "notes": "Imported record: 2 order(s), $314.64 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 2517,
@@ -30305,7 +31027,8 @@ module.exports =
     "postalCode": "27006",
     "country": "US",
     "createdOn": "2019-10-23",
-    "notes": "Imported record: 1 order(s), $29.90 total spent."
+    "notes": "Imported record: 1 order(s), $29.90 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 2520,
@@ -30356,6 +31079,7 @@ module.exports =
     "id": 2524,
     "firstName": "Tamara",
     "lastName": "Thomas",
+    "company": "Tammy Thomas",
     "email": "tammyspamperedpaws@gmail.com",
     "phone": "(206) 661-3139",
     "street1": "P.O. Box 1808",
@@ -30364,7 +31088,7 @@ module.exports =
     "postalCode": "98070",
     "country": "US",
     "createdOn": "2019-08-14",
-    "notes": "Apron\nCompany: Tammy Thomas"
+    "notes": "Apron"
   },
   {
     "id": 2525,
@@ -30383,6 +31107,7 @@ module.exports =
     "id": 2526,
     "firstName": "Judy",
     "lastName": "Joyce",
+    "company": "Tar Heel Trading Co",
     "email": "tarheeltrading@charter.net",
     "phone": "(252) 441-6235",
     "street1": "1171 Duck Rd Ste B7",
@@ -30392,7 +31117,6 @@ module.exports =
     "postalCode": "27949",
     "country": "US",
     "createdOn": "2013-05-21",
-    "notes": "Company: Tar Heel Trading Co",
     "type": "wholesale",
     "website": "http://www.tarheeltrading.com/"
   },
@@ -30415,7 +31139,8 @@ module.exports =
     "firstName": "Tawnya",
     "lastName": "Badger",
     "email": "queentee114@yahoo.com",
-    "createdOn": "2021-10-15"
+    "createdOn": "2021-10-15",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 2529,
@@ -30428,6 +31153,7 @@ module.exports =
     "id": 2530,
     "firstName": "Elsa",
     "lastName": "Mikus",
+    "company": "Tempest in a Teapot",
     "email": "tempest549@optonline.net",
     "phone": "(732) 701-3165",
     "street1": "20 Greylawn Dr",
@@ -30436,13 +31162,13 @@ module.exports =
     "postalCode": "8701",
     "country": "US",
     "createdOn": "2012-04-27",
-    "notes": "Company: Tempest in a Teapot",
     "type": "wholesale",
     "website": "https://tempestinateapot.net/"
   },
   {
     "id": 2531,
     "firstName": "Stacy",
+    "company": "Temple Sinai Sisterhood Gift Shop",
     "email": "giftshopts@gmail.com",
     "phone": "2156436510x104",
     "street1": "1401 N Limekiln Pike",
@@ -30451,7 +31177,6 @@ module.exports =
     "postalCode": "19025",
     "country": "US",
     "createdOn": "2017-02-25",
-    "notes": "Company: Temple Sinai Sisterhood Gift Shop",
     "type": "wholesale",
     "website": "https://www.tsinai.com/sisterhood"
   },
@@ -30459,6 +31184,7 @@ module.exports =
     "id": 2532,
     "firstName": "Ingrid",
     "lastName": "Goff-Maidoff",
+    "company": "Tending Joy",
     "email": "ingrid@ingridgoffmaidoff.com",
     "phone": "(508) 560-1613",
     "street1": "697 State Rd",
@@ -30467,7 +31193,6 @@ module.exports =
     "postalCode": "2575",
     "country": "US",
     "createdOn": "2021-06-18",
-    "notes": "Company: Tending Joy",
     "type": "wholesale",
     "website": "https://tendingjoy.com/"
   },
@@ -30476,7 +31201,8 @@ module.exports =
     "firstName": "Tequila",
     "lastName": "Salmuera",
     "email": "ueukqcyn6hc9sza4n5f@gmail.com",
-    "createdOn": "2020-03-13"
+    "createdOn": "2020-03-13",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 2534,
@@ -30557,7 +31283,8 @@ module.exports =
     "postalCode": "85003",
     "country": "US",
     "createdOn": "2023-07-28",
-    "notes": "Imported record: 1 order(s), $114.92 total spent."
+    "notes": "Imported record: 1 order(s), $114.92 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 2540,
@@ -30571,12 +31298,14 @@ module.exports =
     "postalCode": "98368",
     "country": "US",
     "createdOn": "2017-10-12",
-    "notes": "Imported record: 1 order(s), $500.00 total spent."
+    "notes": "Imported record: 1 order(s), $500.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 2541,
     "firstName": "Diane",
     "lastName": "Bradford",
+    "company": "Terrazza",
     "email": "contactus@terrazzahg.com",
     "phone": "(508) 528-0977",
     "street1": "210 Franklin Village Dr",
@@ -30585,7 +31314,7 @@ module.exports =
     "postalCode": "2038",
     "country": "US",
     "createdOn": "2015-04-02",
-    "notes": "Call Diane McBride for payment @ the Franklin store: 508-528-0977\nCompany: Terrazza",
+    "notes": "Call Diane McBride for payment @ the Franklin store: 508-528-0977",
     "type": "wholesale",
     "website": "https://terrazzagifts.com"
   },
@@ -30642,13 +31371,13 @@ module.exports =
   {
     "id": 2546,
     "firstName": "Terry & Sonja",
+    "company": "Terry Buchanan & Sonja Knudson",
     "street1": "129 NE 57th ST",
     "city": "Seattle",
     "state": "WA",
     "postalCode": "98105",
     "country": "US",
-    "createdOn": "2010-05-27",
-    "notes": "Company: Terry Buchanan & Sonja Knudson"
+    "createdOn": "2010-05-27"
   },
   {
     "id": 2547,
@@ -30660,6 +31389,7 @@ module.exports =
     "id": 2548,
     "firstName": "Terry",
     "lastName": "Janis",
+    "company": "Terry Janis Collection",
     "email": "terry@terryjanis.com",
     "phone": "(614) 235-5445",
     "street1": "2772 Plymouth Ave",
@@ -30668,7 +31398,6 @@ module.exports =
     "postalCode": "43209-1823",
     "country": "US",
     "createdOn": "2010-05-27",
-    "notes": "Company: Terry Janis Collection",
     "type": "wholesale",
     "website": "https://terryjanis.com/"
   },
@@ -30684,7 +31413,8 @@ module.exports =
     "postalCode": "19958",
     "country": "US",
     "createdOn": "2019-12-01",
-    "notes": "Imported record: 1 order(s), $82.80 total spent."
+    "notes": "Imported record: 1 order(s), $82.80 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 2550,
@@ -30709,6 +31439,7 @@ module.exports =
     "id": 2552,
     "firstName": "Melissa",
     "lastName": "Gionfriddo",
+    "company": "Tesoro",
     "email": "tesoroartgallery@hotmail.com",
     "phone": "(860) 704-0607",
     "street1": "680 Main St",
@@ -30717,7 +31448,6 @@ module.exports =
     "postalCode": "6457",
     "country": "US",
     "createdOn": "2020-01-29",
-    "notes": "Company: Tesoro",
     "type": "wholesale",
     "website": "http://www.tesorouniquegifts.com/"
   },
@@ -30737,6 +31467,7 @@ module.exports =
     "id": 2554,
     "firstName": "Sara",
     "lastName": "Bazett",
+    "company": "That's the Spirit",
     "email": "info@thatsthespirit.be",
     "phone": "(613) 256-6322",
     "street1": "42 Mill St",
@@ -30745,7 +31476,6 @@ module.exports =
     "postalCode": "K0A 1A0",
     "country": "CA",
     "createdOn": "2020-08-29",
-    "notes": "Company: That's the Spirit",
     "type": "wholesale",
     "website": "https://www.facebook.com/ThatsTheSpiritAlmonte/"
   },
@@ -30753,6 +31483,7 @@ module.exports =
     "id": 2555,
     "firstName": "Beth",
     "lastName": "Riser",
+    "company": "The Evergreen Gallery",
     "phone": "(303) 717-8958",
     "street1": "624 Conifer Dr",
     "city": "Evergreen",
@@ -30760,7 +31491,6 @@ module.exports =
     "postalCode": "80439",
     "country": "US",
     "createdOn": "2025-07-03",
-    "notes": "Company: The Evergreen Gallery",
     "type": "wholesale",
     "website": "https://theevergreengallery.com"
   },
@@ -30768,6 +31498,7 @@ module.exports =
     "id": 2556,
     "firstName": "Deb",
     "lastName": "Goldberg",
+    "company": "The Giving Tree Gallery",
     "email": "billing@thegivingtreegallery.com",
     "phone": "(941) 388-7754",
     "street1": "5 N Blvd of the Presidents",
@@ -30775,13 +31506,13 @@ module.exports =
     "state": "FL",
     "postalCode": "34236",
     "country": "US",
-    "createdOn": "2024-03-29",
-    "notes": "Company: The Giving Tree Gallery"
+    "createdOn": "2024-03-29"
   },
   {
     "id": 2557,
     "firstName": "Ginny",
     "lastName": "Hanna",
+    "company": "The Hanna Group",
     "email": "ghanna@hannacap.com",
     "phone": "(949) 466-6287",
     "street1": "668 N Coast Hwy #512",
@@ -30790,7 +31521,6 @@ module.exports =
     "postalCode": "92651",
     "country": "US",
     "createdOn": "2025-12-21",
-    "notes": "Company: The Hanna Group",
     "type": "wholesale"
   },
   {
@@ -30811,6 +31541,7 @@ module.exports =
     "id": 2559,
     "firstName": "Stacy",
     "lastName": "Harshman",
+    "company": "The Sparkle Barn",
     "phone": "(802) 446-2044",
     "street1": "1509 US Route 7",
     "city": "Wallingford",
@@ -30818,7 +31549,6 @@ module.exports =
     "postalCode": "5773",
     "country": "US",
     "createdOn": "2023-03-12",
-    "notes": "Company: The Sparkle Barn",
     "type": "wholesale",
     "website": "https://www.thesparklebarn.com"
   },
@@ -30899,7 +31629,8 @@ module.exports =
     "postalCode": "96002",
     "country": "US",
     "createdOn": "2020-09-14",
-    "notes": "Imported record: 2 order(s), $235.50 total spent."
+    "notes": "Imported record: 2 order(s), $235.50 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 2566,
@@ -30926,12 +31657,14 @@ module.exports =
     "postalCode": "98221",
     "country": "US",
     "createdOn": "2017-03-25",
-    "notes": "Imported record: 2 order(s), $250.00 total spent."
+    "notes": "Imported record: 2 order(s), $250.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 2568,
     "firstName": "Bill",
     "lastName": "Hammond",
+    "company": "Tideline Gallery",
     "email": "tidelinegallery@aol.com",
     "phone": "(302) 227-4444",
     "street1": "111 Rehoboth Ave",
@@ -30940,7 +31673,6 @@ module.exports =
     "postalCode": "19971",
     "country": "US",
     "createdOn": "2018-02-19",
-    "notes": "Company: Tideline Gallery",
     "type": "wholesale",
     "website": "http://www.tidelinegallery.com"
   },
@@ -31022,7 +31754,8 @@ module.exports =
     "country": "US",
     "createdOn": "2020-05-23",
     "notes": "Imported record: 3 order(s), $133.05 total spent.",
-    "website": "http://www.etsy.com/shop/wisecrackinmosaics"
+    "website": "http://www.etsy.com/shop/wisecrackinmosaics",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 2575,
@@ -31036,7 +31769,8 @@ module.exports =
     "postalCode": "97439",
     "country": "US",
     "createdOn": "2019-03-01",
-    "notes": "Imported record: 1 order(s), $29.50 total spent."
+    "notes": "Imported record: 1 order(s), $29.50 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 2576,
@@ -31049,17 +31783,18 @@ module.exports =
     "postalCode": "92024",
     "country": "US",
     "createdOn": "2020-11-20",
-    "notes": "Imported record: 1 order(s), $27.50 total spent."
+    "notes": "Imported record: 1 order(s), $27.50 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 2577,
     "firstName": "Tom",
     "lastName": "Nichol",
+    "company": "Tom  Nichol",
     "email": "tomn@mcmc.net",
     "phone": "(541) 980-3734",
     "country": "US",
-    "createdOn": "2014-12-01",
-    "notes": "Company: Tom  Nichol"
+    "createdOn": "2014-12-01"
   },
   {
     "id": 2578,
@@ -31085,6 +31820,7 @@ module.exports =
     "id": 2580,
     "firstName": "Bernardo",
     "lastName": "Grinblat",
+    "company": "Tomlinson Craft Collection",
     "phone": "(410) 338-1572",
     "street1": "711 W 40th St",
     "city": "Baltimore",
@@ -31092,7 +31828,6 @@ module.exports =
     "postalCode": "21211",
     "country": "US",
     "createdOn": "2010-05-27",
-    "notes": "Company: Tomlinson Craft Collection",
     "type": "wholesale"
   },
   {
@@ -31105,6 +31840,7 @@ module.exports =
     "id": 2582,
     "firstName": "Bonnie",
     "lastName": "Poss",
+    "company": "Topka",
     "phone": "(845) 679-0500",
     "street1": "25 Tinker St",
     "city": "Woodstock",
@@ -31112,13 +31848,13 @@ module.exports =
     "postalCode": "12498",
     "country": "US",
     "createdOn": "2016-06-15",
-    "notes": "Company: Topka",
     "type": "wholesale"
   },
   {
     "id": 2583,
     "firstName": "Corinna",
     "lastName": "Breneman",
+    "company": "Torch and Kiln",
     "email": "corinna@torchandkiln.com",
     "phone": "(425) 780-3281",
     "street1": "21150 W Elm Way",
@@ -31127,7 +31863,6 @@ module.exports =
     "postalCode": "85396",
     "country": "US",
     "createdOn": "2025-07-26",
-    "notes": "Company: Torch and Kiln",
     "type": "wholesale",
     "website": "https://www.torchandkiln.com/"
   },
@@ -31148,7 +31883,8 @@ module.exports =
     "postalCode": "98038",
     "country": "US",
     "createdOn": "2019-01-14",
-    "notes": "Imported record: 5 order(s), $1,274.82 total spent."
+    "notes": "Imported record: 5 order(s), $1,274.82 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 2586,
@@ -31352,6 +32088,7 @@ module.exports =
     "id": 2604,
     "firstName": "Bahruz",
     "lastName": "Agayev",
+    "company": "Trueform",
     "email": "bagayev@trueform.io",
     "phone": "(425) 589-6142",
     "street1": "14115 NE 189th St",
@@ -31360,13 +32097,14 @@ module.exports =
     "postalCode": "98072",
     "country": "US",
     "createdOn": "2019-04-30",
-    "notes": "Company: Trueform\nType: Consignment (not represented by the wholesale/retail field)",
+    "notes": "Type: Consignment (not represented by the wholesale/retail field)",
     "website": "https://www.trueform.io/"
   },
   {
     "id": 2605,
     "firstName": "Joanne",
     "lastName": "Fratrich",
+    "company": "Truly Unique Gift Shop",
     "email": "trulyunq@aol.com",
     "phone": "(802) 773-7742",
     "street1": "1114 US Route 4 E",
@@ -31375,7 +32113,6 @@ module.exports =
     "postalCode": "5701",
     "country": "US",
     "createdOn": "2010-05-27",
-    "notes": "Company: Truly Unique Gift Shop",
     "type": "wholesale",
     "website": "https://www.trulyuniquegiftshop.com/"
   },
@@ -31383,6 +32120,7 @@ module.exports =
     "id": 2606,
     "firstName": "Susan",
     "lastName": "Walsh",
+    "company": "Tubac Territory",
     "email": "susan@ttfurniture.com",
     "phone": "(520) 398-2913",
     "street1": "PO Box 4644",
@@ -31391,7 +32129,6 @@ module.exports =
     "postalCode": "85646",
     "country": "US",
     "createdOn": "2013-09-17",
-    "notes": "Company: Tubac Territory",
     "type": "wholesale",
     "website": "http://ttfurniture.com/"
   },
@@ -31399,6 +32136,7 @@ module.exports =
     "id": 2607,
     "firstName": "Sharon",
     "lastName": "Trowbridge",
+    "company": "Tulip Gifts and Cards",
     "email": "tulipgal@icloud.com",
     "phone": "(303) 757-2678",
     "street1": "2312 S Colorado Blvd",
@@ -31407,7 +32145,6 @@ module.exports =
     "postalCode": "80222",
     "country": "US",
     "createdOn": "2015-06-14",
-    "notes": "Company: Tulip Gifts and Cards",
     "type": "wholesale",
     "website": "https://tulipgiftsandcards.com/"
   },
@@ -31415,6 +32152,7 @@ module.exports =
     "id": 2608,
     "firstName": "Dolores",
     "lastName": "Lintz",
+    "company": "Tulips",
     "email": "tulipsportsmouth@aol.com",
     "phone": "(603) 431-9445",
     "street1": "57 Bow St",
@@ -31423,7 +32161,7 @@ module.exports =
     "postalCode": "3801",
     "country": "US",
     "createdOn": "2010-05-27",
-    "notes": "WAITING ON PANACHE EXCLUSIVITY EXPIRATION (February 2012)\nCompany: Tulips",
+    "notes": "WAITING ON PANACHE EXCLUSIVITY EXPIRATION (February 2012)",
     "type": "wholesale",
     "website": "https://www.facebook.com/tulipshandcraftsportsmouth/"
   },
@@ -31431,6 +32169,7 @@ module.exports =
     "id": 2609,
     "firstName": "Cara",
     "lastName": "Wilkinson",
+    "company": "Turning Point Gallery",
     "email": "info@turningpointgallery.com",
     "phone": "(610) 566-9474",
     "street1": "34 W State St",
@@ -31439,7 +32178,7 @@ module.exports =
     "postalCode": "19063",
     "country": "US",
     "createdOn": "2013-02-25",
-    "notes": "NOW ONLINE ONLYCristopher Pavlou\nCompany: Turning Point Gallery",
+    "notes": "NOW ONLINE ONLYCristopher Pavlou",
     "type": "wholesale",
     "website": "http://www.turningpointgallery.com"
   },
@@ -31447,6 +32186,7 @@ module.exports =
     "id": 2610,
     "firstName": "Teresa",
     "lastName": "Fahrbach",
+    "company": "Twisted Sister",
     "email": "thesisters@twistedsistersindy.com",
     "phone": "(317) 841-7177",
     "street1": "3937 E 82nd St",
@@ -31455,7 +32195,6 @@ module.exports =
     "postalCode": "46220",
     "country": "US",
     "createdOn": "2010-05-27",
-    "notes": "Company: Twisted Sister",
     "type": "wholesale",
     "website": "https://www.facebook.com/twistedsistersindy/"
   },
@@ -31463,6 +32202,7 @@ module.exports =
     "id": 2611,
     "firstName": "Krista",
     "lastName": "Camputaro",
+    "company": "Uno Alla Volta",
     "email": "asn@unoallavolta.com",
     "phone": "2038711000x245",
     "street1": "242 Branford Rd",
@@ -31471,7 +32211,7 @@ module.exports =
     "postalCode": "6471",
     "country": "US",
     "createdOn": "2011-04-10",
-    "notes": "UPS# 67V603----------------------As soon as an order ships, it is imperative that you send an Advanced Shipping Notification (ASN) immediately to:ASN@unoallavolta.com   * Please copy the list below and paste it on the body of your ASN email.Vendor Name and Address:Date of Shipment:Carrier:Carrier Tracking Number:Expected Arrival Date:Purchase Order Number (s) in shipment:Is order shipped complete?If \"NO\" list item# and qty. of missing items:When will the missing items ship?:Total Cartons of this shipment:\nCompany: Uno Alla Volta",
+    "notes": "UPS# 67V603----------------------As soon as an order ships, it is imperative that you send an Advanced Shipping Notification (ASN) immediately to:ASN@unoallavolta.com   * Please copy the list below and paste it on the body of your ASN email.Vendor Name and Address:Date of Shipment:Carrier:Carrier Tracking Number:Expected Arrival Date:Purchase Order Number (s) in shipment:Is order shipped complete?If \"NO\" list item# and qty. of missing items:When will the missing items ship?:Total Cartons of this shipment:",
     "type": "wholesale",
     "website": "https://www.unoallavolta.com/"
   },
@@ -31479,6 +32219,7 @@ module.exports =
     "id": 2612,
     "firstName": "Shelly",
     "lastName": "Stock",
+    "company": "Urban Farm Artist",
     "email": "sstock@stockandassociates.com",
     "phone": "(206) 443-0494",
     "street1": "109 Bell St",
@@ -31487,7 +32228,6 @@ module.exports =
     "postalCode": "98121",
     "country": "US",
     "createdOn": "2011-11-30",
-    "notes": "Company: Urban Farm Artist",
     "type": "wholesale",
     "website": "https://www.urbanfarmartist.com/"
   },
@@ -31495,6 +32235,7 @@ module.exports =
     "id": 2613,
     "firstName": "Janis",
     "lastName": "Staskowski",
+    "company": "Utopia",
     "email": "utopia2b@gmail.com",
     "phone": "(425) 497-1513",
     "street1": "7425 166th Ave NE #C115",
@@ -31503,7 +32244,6 @@ module.exports =
     "postalCode": "98052",
     "country": "US",
     "createdOn": "2010-05-27",
-    "notes": "Company: Utopia",
     "type": "wholesale",
     "website": "https://www.utopianorthwest.com/"
   },
@@ -31535,7 +32275,8 @@ module.exports =
     "postalCode": "95348",
     "country": "US",
     "createdOn": "2024-07-14",
-    "notes": "Imported record: 1 order(s), $188.40 total spent."
+    "notes": "Imported record: 1 order(s), $188.40 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 2617,
@@ -31549,12 +32290,14 @@ module.exports =
     "postalCode": "78702",
     "country": "US",
     "createdOn": "2020-04-02",
-    "notes": "Imported record: 2 order(s), $121.55 total spent, legacy user ID 98905243."
+    "notes": "Imported record: 2 order(s), $121.55 total spent, legacy user ID 98905243.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 2618,
     "firstName": "Val",
     "lastName": "Evans",
+    "company": "Veni Vidi Val",
     "email": "venividival@sbcglobal.net",
     "phone": "(708) 354-3686",
     "street1": "25 S La Grange Rd Ste B",
@@ -31563,7 +32306,6 @@ module.exports =
     "postalCode": "60525",
     "country": "US",
     "createdOn": "2011-08-14",
-    "notes": "Company: Veni Vidi Val",
     "type": "wholesale",
     "website": "https://venividival.com/"
   },
@@ -31571,6 +32313,7 @@ module.exports =
     "id": 2619,
     "firstName": "Tyler",
     "lastName": "Christen",
+    "company": "Venture General Contracting",
     "email": "tchristen@ventureseattle.com",
     "phone": "(206) 795-3915",
     "street1": "1518 1st Ave S #400",
@@ -31579,13 +32322,13 @@ module.exports =
     "postalCode": "98134",
     "country": "US",
     "createdOn": "2018-04-04",
-    "notes": "Company: Venture General Contracting",
     "website": "http://ventureseattle.com"
   },
   {
     "id": 2620,
     "firstName": "Diane",
     "lastName": "Macrae",
+    "company": "Venue",
     "email": "venueballard@gmail.com",
     "phone": "(206) 789-3335",
     "street1": "5408 22nd Ave NW",
@@ -31594,7 +32337,7 @@ module.exports =
     "postalCode": "98107",
     "country": "US",
     "createdOn": "2010-05-27",
-    "notes": "Company: Venue\nType: Consignment (not represented by the wholesale/retail field)",
+    "notes": "Type: Consignment (not represented by the wholesale/retail field)",
     "website": "http://www.venueballard.com/"
   },
   {
@@ -31621,7 +32364,8 @@ module.exports =
     "postalCode": "98236",
     "country": "US",
     "createdOn": "2018-03-07",
-    "notes": "Imported record: 3 order(s), $380.00 total spent."
+    "notes": "Imported record: 3 order(s), $380.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 2623,
@@ -31674,7 +32418,8 @@ module.exports =
     "postalCode": "98117",
     "country": "US",
     "createdOn": "2020-03-30",
-    "notes": "Imported record: 5 order(s), $349.96 total spent."
+    "notes": "Imported record: 5 order(s), $349.96 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 2627,
@@ -31701,14 +32446,16 @@ module.exports =
     "postalCode": "44067",
     "country": "US",
     "createdOn": "2021-02-23",
-    "notes": "Imported record: 1 order(s), $28.30 total spent."
+    "notes": "Imported record: 1 order(s), $28.30 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 2629,
     "firstName": "Vickie",
     "lastName": "Greco",
     "email": "vickieann22000@yahoo.com",
-    "createdOn": "2020-08-11"
+    "createdOn": "2020-08-11",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 2630,
@@ -31722,7 +32469,8 @@ module.exports =
     "postalCode": "83686",
     "country": "US",
     "createdOn": "2019-10-20",
-    "notes": "Additional contact: vholbrook.travel@gmail.com\nImported record: 2 order(s), $95.65 total spent."
+    "notes": "Additional contact: vholbrook.travel@gmail.com\nImported record: 2 order(s), $95.65 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 2631,
@@ -31761,7 +32509,8 @@ module.exports =
     "postalCode": "32958-6061",
     "country": "US",
     "createdOn": "2021-08-19",
-    "notes": "Imported record: 1 order(s), $41.30 total spent, legacy user ID 69540824."
+    "notes": "Imported record: 1 order(s), $41.30 total spent, legacy user ID 69540824.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 2634,
@@ -31796,7 +32545,8 @@ module.exports =
     "postalCode": "11758",
     "country": "US",
     "createdOn": "2017-08-03",
-    "notes": "Imported record: 1 order(s), $250.00 total spent."
+    "notes": "Imported record: 1 order(s), $250.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 2637,
@@ -31821,12 +32571,14 @@ module.exports =
     "postalCode": "98073",
     "country": "US",
     "createdOn": "2023-09-19",
-    "notes": "Imported record: 3 order(s), $1,255.13 total spent."
+    "notes": "Imported record: 3 order(s), $1,255.13 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 2639,
     "firstName": "Denise",
     "lastName": "Wallenius",
+    "company": "Vieques Flowers & Gifts",
     "email": "casavieques@yahoo.com",
     "phone": "(413) 522-6590",
     "street1": "134 Calle Flamboyan",
@@ -31835,7 +32587,6 @@ module.exports =
     "postalCode": "765",
     "country": "US",
     "createdOn": "2022-02-26",
-    "notes": "Company: Vieques Flowers & Gifts",
     "type": "wholesale",
     "website": "https://www.viequesgifts.com/"
   },
@@ -31851,7 +32602,8 @@ module.exports =
     "postalCode": "32951",
     "country": "US",
     "createdOn": "2019-01-25",
-    "notes": "Imported record: 1 order(s), $186.18 total spent."
+    "notes": "Imported record: 1 order(s), $186.18 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 2641,
@@ -31888,7 +32640,8 @@ module.exports =
     "postalCode": "85050",
     "country": "US",
     "createdOn": "2020-12-06",
-    "notes": "Imported record: 1 order(s), $38.50 total spent."
+    "notes": "Imported record: 1 order(s), $38.50 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 2645,
@@ -31902,7 +32655,8 @@ module.exports =
     "postalCode": "85718-1700",
     "country": "US",
     "createdOn": "2020-11-29",
-    "notes": "Imported record: 2 order(s), $922.00 total spent."
+    "notes": "Imported record: 2 order(s), $922.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 2646,
@@ -31936,6 +32690,7 @@ module.exports =
     "id": 2648,
     "firstName": "Karen",
     "lastName": "Askin",
+    "company": "VisArts",
     "email": "kaskin@visartscenter.org",
     "phone": "(301) 315-8200",
     "street1": "155 Gibbs St Ste 300",
@@ -31944,7 +32699,7 @@ module.exports =
     "postalCode": "20850",
     "country": "US",
     "createdOn": "2021-10-15",
-    "notes": "Company: VisArts\nImported record: 2 order(s), $693.50 total spent.",
+    "notes": "Imported record: 2 order(s), $693.50 total spent.",
     "website": "https://www.visartscenter.org/",
     "acceptsEmailMarketing": true
   },
@@ -31986,12 +32741,14 @@ module.exports =
     "postalCode": "72941",
     "country": "US",
     "createdOn": "2018-12-16",
-    "notes": "Imported record: 2 order(s), $119.68 total spent."
+    "notes": "Imported record: 2 order(s), $119.68 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 2653,
     "firstName": "Suzanne",
     "lastName": "Talcott",
+    "company": "VT 802 Cottage",
     "email": "vt802cottage@gmail.com",
     "phone": "(802) 782-8491",
     "street1": "34 S Main St",
@@ -32001,7 +32758,7 @@ module.exports =
     "postalCode": "05478",
     "country": "US",
     "createdOn": "2026-04-16",
-    "notes": "Company: VT 802 Cottage\nImported record: 1 order(s), $450.00 total spent.",
+    "notes": "Imported record: 1 order(s), $450.00 total spent.",
     "type": "wholesale",
     "website": "https://www.facebook.com/profile.php?id=61587263081763"
   },
@@ -32016,7 +32773,8 @@ module.exports =
     "postalCode": "93401",
     "country": "US",
     "createdOn": "2019-12-25",
-    "notes": "Imported record: 1 order(s), $100.00 total spent."
+    "notes": "Imported record: 1 order(s), $100.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 2655,
@@ -32042,12 +32800,14 @@ module.exports =
     "postalCode": "20151",
     "country": "US",
     "createdOn": "2024-12-27",
-    "notes": "Imported record: 1 order(s), $157.52 total spent."
+    "notes": "Imported record: 1 order(s), $157.52 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 2657,
     "firstName": "Laura",
     "lastName": "Felsch",
+    "company": "Wandering Moon",
     "email": "wanderingmoon@comcast.net",
     "phone": "(413) 625-9667",
     "street1": "PO Box 333",
@@ -32056,7 +32816,6 @@ module.exports =
     "postalCode": "1370",
     "country": "US",
     "createdOn": "2010-05-27",
-    "notes": "Company: Wandering Moon",
     "type": "wholesale",
     "website": "http://www.wandering-moon.com/"
   },
@@ -32064,6 +32823,7 @@ module.exports =
     "id": 2658,
     "firstName": "Daniela",
     "lastName": "Balzana",
+    "company": "Water Street Jewelers",
     "phone": "(203) 444-2544",
     "street1": "61 Whitfield St",
     "city": "Guildford",
@@ -32071,7 +32831,6 @@ module.exports =
     "postalCode": "6437",
     "country": "US",
     "createdOn": "2024-06-07",
-    "notes": "Company: Water Street Jewelers",
     "type": "wholesale",
     "website": "https://waterstreetjewelry.com"
   },
@@ -32079,6 +32838,7 @@ module.exports =
     "id": 2659,
     "firstName": "Jeanne",
     "lastName": "Rysdahl",
+    "company": "Waters Edge Trading Co",
     "email": "watersedge@boreal.org",
     "phone": "(218) 663-7021",
     "street1": "PO Box 2327",
@@ -32087,7 +32847,6 @@ module.exports =
     "postalCode": "55615",
     "country": "US",
     "createdOn": "2010-05-27",
-    "notes": "Company: Waters Edge Trading Co",
     "type": "wholesale",
     "website": "https://watersedgetradingcompany.com/"
   },
@@ -32095,6 +32854,7 @@ module.exports =
     "id": 2660,
     "firstName": "Joseph & Phillis",
     "lastName": "Satin",
+    "company": "Wave",
     "email": "wavenewhaven@yahoo.com",
     "phone": "(203) 624-3032",
     "street1": "1046 Chapel St",
@@ -32103,7 +32863,6 @@ module.exports =
     "postalCode": "6510",
     "country": "US",
     "createdOn": "2015-04-19",
-    "notes": "Company: Wave",
     "type": "wholesale",
     "website": "https://wavegalleryshop.com/"
   },
@@ -32112,7 +32871,8 @@ module.exports =
     "firstName": "Welton",
     "lastName": "Carruth",
     "email": "welton-carruth@servicewrapone.com",
-    "createdOn": "2025-01-06"
+    "createdOn": "2025-01-06",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 2662,
@@ -32169,7 +32929,8 @@ module.exports =
     "postalCode": "97322",
     "country": "US",
     "createdOn": "2019-11-15",
-    "notes": "Imported record: 1 order(s), $260.00 total spent, legacy user ID 28432256."
+    "notes": "Imported record: 1 order(s), $260.00 total spent, legacy user ID 28432256.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 2666,
@@ -32196,7 +32957,8 @@ module.exports =
     "postalCode": "77418",
     "country": "US",
     "createdOn": "2020-04-21",
-    "notes": "Imported record: 1 order(s), $59.00 total spent."
+    "notes": "Imported record: 1 order(s), $59.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 2668,
@@ -32216,7 +32978,8 @@ module.exports =
     "postalCode": "98273",
     "country": "US",
     "createdOn": "2017-03-26",
-    "notes": "Imported record: 1 order(s), $250.00 total spent."
+    "notes": "Imported record: 1 order(s), $250.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 2670,
@@ -32245,12 +33008,14 @@ module.exports =
     "postalCode": "98144",
     "country": "US",
     "createdOn": "2018-12-26",
-    "notes": "Imported record: 2 order(s), $390.00 total spent."
+    "notes": "Imported record: 2 order(s), $390.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 2672,
     "firstName": "Debra",
     "lastName": "Rubin",
+    "company": "Whitneyville Glass & Gifts",
     "email": "drubin@ptd.net",
     "phone": "(570) 724-7572",
     "street1": "4960 Ore Bed Rd",
@@ -32259,7 +33024,6 @@ module.exports =
     "postalCode": "16933",
     "country": "US",
     "createdOn": "2011-08-14",
-    "notes": "Company: Whitneyville Glass & Gifts",
     "type": "wholesale",
     "website": "http://whitneyvilleglass.com/"
   },
@@ -32267,6 +33031,7 @@ module.exports =
     "id": 2673,
     "firstName": "Julie",
     "lastName": "Boone",
+    "company": "Wildcat on a Wing",
     "email": "leeart47@aol.com",
     "phone": "(770) 735-6923",
     "street1": "10061 Ball Ground Hwy",
@@ -32275,7 +33040,6 @@ module.exports =
     "postalCode": "30107",
     "country": "US",
     "createdOn": "2011-09-06",
-    "notes": "Company: Wildcat on a Wing",
     "type": "wholesale",
     "website": "https://www.facebook.com/wildcatonawing/"
   },
@@ -32296,6 +33060,7 @@ module.exports =
     "id": 2675,
     "firstName": "Robyn",
     "lastName": "Skaar",
+    "company": "Willow",
     "email": "rskaar@willowchelan.com",
     "phone": "(509) 682-8700",
     "street1": "PO Box 2580",
@@ -32304,7 +33069,6 @@ module.exports =
     "postalCode": "98816",
     "country": "US",
     "createdOn": "2010-05-27",
-    "notes": "Company: Willow",
     "type": "wholesale",
     "website": "http://willowchelan.com/"
   },
@@ -32313,12 +33077,14 @@ module.exports =
     "firstName": "Wilmer",
     "lastName": "Watanabe",
     "email": "wilmer.watanabe@go-servicewrap.com",
-    "createdOn": "2025-03-10"
+    "createdOn": "2025-03-10",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 2677,
     "firstName": "Tammy",
     "lastName": "Butler",
+    "company": "Wind Drift Gallery",
     "phone": "(541) 997-9182",
     "street1": "6668 Mercer View Dr",
     "city": "Florence",
@@ -32326,7 +33092,6 @@ module.exports =
     "postalCode": "97439",
     "country": "US",
     "createdOn": "2025-11-17",
-    "notes": "Company: Wind Drift Gallery",
     "type": "wholesale",
     "website": "https://oregoncoastgalleries.net/wind-drift-gallery/"
   },
@@ -32349,6 +33114,7 @@ module.exports =
     "id": 2679,
     "firstName": "Kim",
     "lastName": "Wozniak",
+    "company": "Wits End Mosaic",
     "email": "service@witsendmosaic.com",
     "phone": "(888) 494-8736",
     "street1": "143 N Saint Augustine St",
@@ -32357,7 +33123,6 @@ module.exports =
     "postalCode": "54162",
     "country": "US",
     "createdOn": "2010-05-27",
-    "notes": "Company: Wits End Mosaic",
     "type": "wholesale",
     "website": "https://witsendmosaic.com/"
   },
@@ -32365,6 +33130,7 @@ module.exports =
     "id": 2680,
     "firstName": "Becky",
     "lastName": "Bly",
+    "company": "WomanMade Products",
     "email": "relax.woman.made.products@gmail.com",
     "phone": "(315) 568-9364",
     "street1": "91 Fall St",
@@ -32373,7 +33139,6 @@ module.exports =
     "postalCode": "13148",
     "country": "US",
     "createdOn": "2023-03-05",
-    "notes": "Company: WomanMade Products",
     "type": "wholesale",
     "website": "https://www.facebook.com/WomanMadeProducts/"
   },
@@ -32381,6 +33146,7 @@ module.exports =
     "id": 2681,
     "firstName": "Edwin",
     "lastName": "Knauer",
+    "company": "Woodruff of Minocqua",
     "email": "edjknauer@msn.com",
     "street1": "207 Front St",
     "city": "Minocqua",
@@ -32388,13 +33154,13 @@ module.exports =
     "postalCode": "54548",
     "country": "US",
     "createdOn": "2014-04-29",
-    "notes": "Company: Woodruff of Minocqua",
     "type": "wholesale"
   },
   {
     "id": 2682,
     "firstName": "Cheryl",
     "lastName": "Smitkowski",
+    "company": "Workshop Art Gallery, The",
     "phone": "(440) 775-1540",
     "street1": "24 S Main St",
     "city": "Oberlin",
@@ -32402,7 +33168,6 @@ module.exports =
     "postalCode": "44074",
     "country": "US",
     "createdOn": "2020-12-22",
-    "notes": "Company: Workshop Art Gallery, The",
     "type": "wholesale"
   },
   {
@@ -32417,7 +33182,8 @@ module.exports =
     "postalCode": "44224",
     "country": "US",
     "createdOn": "2018-11-03",
-    "notes": "Imported record: 1 order(s), $76.00 total spent."
+    "notes": "Imported record: 1 order(s), $76.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 2684,
@@ -32431,7 +33197,8 @@ module.exports =
     "postalCode": "98033",
     "country": "US",
     "createdOn": "2017-11-12",
-    "notes": "Additional contact: yadirahm@outlook.com\nImported record: 3 order(s), $500.00 total spent."
+    "notes": "Additional contact: yadirahm@outlook.com\nImported record: 3 order(s), $500.00 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 2685,
@@ -32456,6 +33223,7 @@ module.exports =
     "id": 2687,
     "firstName": "Julie",
     "lastName": "Beebe",
+    "company": "Yes! Gallery",
     "email": "julie@jwgraham.com",
     "phone": "(401) 295-0757",
     "street1": "17 Brown St",
@@ -32464,7 +33232,7 @@ module.exports =
     "postalCode": "2852",
     "country": "US",
     "createdOn": "2011-02-24",
-    "notes": "Carrie (Buyer) - Talk to Carrie or Palmer about payment\nCompany: Yes! Gallery",
+    "notes": "Carrie (Buyer) - Talk to Carrie or Palmer about payment",
     "type": "wholesale",
     "website": "https://www.facebook.com/JWGraham.YesGallery/"
   },
@@ -32472,6 +33240,7 @@ module.exports =
     "id": 2688,
     "firstName": "Yukie",
     "lastName": "Spencer",
+    "company": "Yuki's Clothing and Accessories",
     "email": "yukis@epix.net",
     "phone": "(570) 283-5116",
     "street1": "164 United Penn Plz",
@@ -32480,7 +33249,6 @@ module.exports =
     "postalCode": "18704",
     "country": "US",
     "createdOn": "2020-01-27",
-    "notes": "Company: Yuki's Clothing and Accessories",
     "type": "wholesale",
     "website": "https://www.yukis-boutique.com/"
   },
@@ -32497,6 +33265,7 @@ module.exports =
     "id": 2690,
     "firstName": "Beth",
     "lastName": "Hawks",
+    "company": "Zelda Zen",
     "email": "beth@zeldazen.com",
     "phone": "(443) 540-8822",
     "street1": "1634 Thames St",
@@ -32505,7 +33274,6 @@ module.exports =
     "postalCode": "21231",
     "country": "US",
     "createdOn": "2026-01-11",
-    "notes": "Company: Zelda Zen",
     "type": "wholesale",
     "website": "https://www.facebook.com/profile.php?id=100063778991823"
   },
@@ -32513,6 +33281,7 @@ module.exports =
     "id": 2691,
     "firstName": "Toby",
     "lastName": "Quitel",
+    "company": "Zephyr Gallery",
     "email": "zephyrquarter@comcast.net",
     "phone": "(609) 340-0170",
     "street1": "2801 Pacific Ave",
@@ -32521,7 +33290,6 @@ module.exports =
     "postalCode": "8401",
     "country": "US",
     "createdOn": "2020-01-30",
-    "notes": "Company: Zephyr Gallery",
     "type": "wholesale",
     "website": "http://www.zephyrgalleryac.com"
   },
@@ -32529,6 +33297,7 @@ module.exports =
     "id": 2692,
     "firstName": "Terri",
     "lastName": "Wischerath",
+    "company": "Zinnia",
     "email": "shipzinnia@gmail.com",
     "phone": "(843) 388-9433",
     "street1": "644-O Long Point Rd",
@@ -32537,7 +33306,6 @@ module.exports =
     "postalCode": "29464",
     "country": "US",
     "createdOn": "2015-08-19",
-    "notes": "Company: Zinnia",
     "type": "wholesale",
     "website": "https://www.facebook.com/shopzinnia/"
   },
@@ -32552,6 +33320,7 @@ module.exports =
     "id": 2694,
     "firstName": "Angela",
     "lastName": "Goodman",
+    "company": "Zoes Elf Art & Gifts",
     "email": "angela@zoeself.com",
     "phone": "(704) 332-3925",
     "street1": "1447 S Tryon St Ste 100",
@@ -32560,8 +33329,7 @@ module.exports =
     "state": "NC",
     "postalCode": "28203",
     "country": "US",
-    "createdOn": "2010-05-27",
-    "notes": "Company: Zoes Elf Art & Gifts"
+    "createdOn": "2010-05-27"
   }
 ] )
   },

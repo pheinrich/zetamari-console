@@ -34,6 +34,7 @@ export default function LiveClassAttendeeEditor( {liveClassId, attendees, custom
   const [customer, setCustomer] = useState( null )
   const [firstName, setFirstName] = useState( '' )
   const [lastName, setLastName] = useState( '' )
+  const [email, setEmail] = useState( '' )
   const [status, setStatus] = useState( 'enrolled' )
   const [error, setError] = useState( null )
 
@@ -45,6 +46,7 @@ export default function LiveClassAttendeeEditor( {liveClassId, attendees, custom
         customerId: customer?.id || null,
         firstName: firstName || null,
         lastName: lastName || null,
+        email: email || null,
         status,
       } )
 
@@ -55,6 +57,7 @@ export default function LiveClassAttendeeEditor( {liveClassId, attendees, custom
         setCustomer( null )
         setFirstName( '' )
         setLastName( '' )
+        setEmail( '' )
         setStatus( 'enrolled' )
         router.refresh()
       }
@@ -97,6 +100,7 @@ export default function LiveClassAttendeeEditor( {liveClassId, attendees, custom
           <thead>
             <tr>
               <th>Attendee</th>
+              <th>Email</th>
               <th>Status</th>
               <th>Discount %</th>
               <th></th>
@@ -116,6 +120,9 @@ export default function LiveClassAttendeeEditor( {liveClassId, attendees, custom
                     )}
                     {!attendee.Customer && <Chip label='not linked to a customer' variant='tonal' size='small' className='is-fit' />}
                   </div>
+                </td>
+                <td>
+                  <Typography variant='body2' color='text.secondary'>{attendee.email || '—'}</Typography>
                 </td>
                 <td>
                   <FormControl size='small' className='min-is-[140px]'>
@@ -149,7 +156,7 @@ export default function LiveClassAttendeeEditor( {liveClassId, attendees, custom
               </tr>
             ) )}
             {0 === attendees.length && (
-              <tr><td colSpan={4}>No attendees added yet.</td></tr>
+              <tr><td colSpan={5}>No attendees added yet.</td></tr>
             )}
           </tbody>
         </table>
@@ -170,12 +177,14 @@ export default function LiveClassAttendeeEditor( {liveClassId, attendees, custom
             {
               setFirstName( value.firstName || '' )
               setLastName( value.lastName || '' )
+              setEmail( value.email || '' )
             }
           }}
           renderInput={params => <TextField {...params} label='Customer (optional)' />}
         />
         <TextField size='small' label='First Name' value={firstName} onChange={e => setFirstName( e.target.value )} />
         <TextField size='small' label='Last Name' value={lastName} onChange={e => setLastName( e.target.value )} />
+        <TextField size='small' label='Email' value={email} onChange={e => setEmail( e.target.value )} />
         <FormControl size='small' className='min-is-[140px]'>
           <InputLabel id='attendee-status-select'>Status</InputLabel>
           <Select

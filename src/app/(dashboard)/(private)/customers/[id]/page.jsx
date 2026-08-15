@@ -11,7 +11,7 @@ import Typography from '@mui/material/Typography'
 import { readCustomer, readCustomerOrders } from '@/db/actions/customer'
 import { readEvents } from '@/db/actions/event'
 import { isApronEligible, isDiscountEligible } from '@/libs/customerLoyalty'
-import { customerDisplayName } from '../customerFormat'
+import { customerDisplayName, emailMarketingLabel } from '../customerFormat'
 import CustomAvatar from '@core/components/mui/Avatar'
 import CustomerDetailActions from './CustomerDetailActions'
 import CustomerSourceEditor from './CustomerSourceEditor'
@@ -73,6 +73,10 @@ export default async function CustomerPage( {params} )
                   <Typography>{customer.type ? (customer.type === 'wholesale' ? 'Wholesale' : 'Retail') : '—'}</Typography>
                 </Grid>
                 <Grid size={{ xs: 6, sm: 3 }}>
+                  <Typography variant='body2' color='text.secondary'>Company</Typography>
+                  <Typography>{customer.company || '—'}</Typography>
+                </Grid>
+                <Grid size={{ xs: 6, sm: 3 }}>
                   <Typography variant='body2' color='text.secondary'>Website</Typography>
                   <Typography>
                     {customer.website ? <a href={customer.website} target='_blank' rel='noreferrer'>{customer.website}</a> : '—'}
@@ -91,8 +95,12 @@ export default async function CustomerPage( {params} )
                 <Grid size={{ xs: 6, sm: 3 }}>
                   <Typography variant='body2' color='text.secondary'>Email Marketing</Typography>
                   <Chip
-                    label={customer.acceptsEmailMarketing ? 'Opted In' : 'Opted Out'}
-                    color={customer.acceptsEmailMarketing ? 'success' : 'secondary'}
+                    label={emailMarketingLabel( customer.acceptsEmailMarketing )}
+                    color={
+                      true === customer.acceptsEmailMarketing ? 'success'
+                        : false === customer.acceptsEmailMarketing ? 'secondary'
+                        : 'default'
+                    }
                     variant='tonal'
                     size='small'
                   />

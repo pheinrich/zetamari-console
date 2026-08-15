@@ -11,9 +11,7 @@ import CardHeader from '@mui/material/CardHeader'
 import CardContent from '@mui/material/CardContent'
 import Button from '@mui/material/Button'
 import Alert from '@mui/material/Alert'
-import Checkbox from '@mui/material/Checkbox'
 import FormControl from '@mui/material/FormControl'
-import FormControlLabel from '@mui/material/FormControlLabel'
 import InputLabel from '@mui/material/InputLabel'
 import MenuItem from '@mui/material/MenuItem'
 import Select from '@mui/material/Select'
@@ -35,10 +33,18 @@ const optionalType = z.preprocess(
   z.enum( ['wholesale', 'retail'] ).optional()
 )
 
+// Tri-state - see the Customer model's doc comment on acceptsEmailMarketing.
+// A Select (not a checkbox) submits one of these three literal strings;
+// the server action (parseEmailMarketing in db/actions/customer.js) maps
+// 'true'/'false' to real booleans and anything else (including 'unknown')
+// to null.
+const emailMarketingValue = z.enum( ['true', 'false', 'unknown'] )
+
 const schema = z.object({
   id: z.preprocess( (val) => (val === '' || val == null ? undefined : val), z.coerce.number().optional() ),
   firstName: optionalString,
   lastName: optionalString,
+  company: optionalString,
   email: optionalString,
   phone: optionalString,
   street1: optionalString,
@@ -50,7 +56,7 @@ const schema = z.object({
   notes: optionalString,
   type: optionalType,
   website: optionalString,
-  acceptsEmailMarketing: z.preprocess( (val) => val === 'on' || val === true, z.boolean() ),
+  acceptsEmailMarketing: emailMarketingValue,
   discountPercent: optionalPositiveNumber,
 })
 
@@ -112,6 +118,15 @@ export default function CustomerForm( {initialData={}} )
                 </Grid>
                 <Grid size={{ xs: 12, sm: 6 }}>
                   <TextField fullWidth label='Last Name' name='lastName' defaultValue={initialData?.lastName || ''} />
+                </Grid>
+                <Grid size={{ xs: 12, sm: 6 }}>
+                  <TextField
+                    fullWidth
+                    label='Company'
+                    name='company'
+                    placeholder='e.g. the gallery or shop this contact is at'
+                    defaultValue={initialData?.company || ''}
+                  />
                 </Grid>
                 <Grid size={{ xs: 12, sm: 6 }}>
                   <TextField fullWidth label='Email' name='email' defaultValue={initialData?.email || ''} />
@@ -176,10 +191,23 @@ export default function CustomerForm( {initialData={}} )
             <CardContent>
               <Grid container spacing={5}>
                 <Grid size={{ xs: 12, sm: 6 }}>
-                  <FormControlLabel
-                    control={<Checkbox name='acceptsEmailMarketing' defaultChecked={!!initialData?.acceptsEmailMarketing} />}
-                    label='Accepts email marketing'
-                  />
+                  <FormControl fullWidth>
+                    <InputLabel id='email-marketing-select'>Email Marketing</InputLabel>
+                    <Select
+                      labelId='email-marketing-select'
+                      label='Email Marketing'
+                      name='acceptsEmailMarketing'
+                      defaultValue={
+                        true === initialData?.acceptsEmailMarketing ? 'true'
+                          : false === initialData?.acceptsEmailMarketing ? 'false'
+                          : 'unknown'
+                      }
+                    >
+                      <MenuItem value='unknown'>Unknown</MenuItem>
+                      <MenuItem value='true'>Opted In</MenuItem>
+                      <MenuItem value='false'>Opted Out</MenuItem>
+                    </Select>
+                  </FormControl>
                 </Grid>
                 <Grid size={{ xs: 12, sm: 6 }}>
                   <TextField

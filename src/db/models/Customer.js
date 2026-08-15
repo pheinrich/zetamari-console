@@ -25,6 +25,13 @@ const Customer = sequelize.define(
     id: { type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
     firstName: { type: DataTypes.STRING },
     lastName: { type: DataTypes.STRING },
+
+    // A business/organization name, distinct from firstName/lastName -
+    // e.g. a wholesale account is often "a person at a gallery" (Mike at
+    // Artique), where firstName/lastName is the contact and company is
+    // the business itself. See the 20260815000000-customer-company-and-
+    // marketing.js migration.
+    company: { type: DataTypes.STRING },
     email: { type: DataTypes.STRING },
     phone: { type: DataTypes.STRING },
     street1: { type: DataTypes.STRING },
@@ -37,7 +44,13 @@ const Customer = sequelize.define(
     notes: { type: DataTypes.TEXT },
     type: { type: DataTypes.ENUM( 'wholesale', 'retail' ), allowNull: true },
     website: { type: DataTypes.STRING },
-    acceptsEmailMarketing: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: false },
+
+    // Tri-state, not a plain boolean: true/false is an explicit opt-in/
+    // opt-out, but null means "unknown" - a real, common case for records
+    // imported from a source that never captured a marketing preference
+    // at all, which is different from actively opting out. See the
+    // 20260815000000-customer-company-and-marketing.js migration.
+    acceptsEmailMarketing: { type: DataTypes.BOOLEAN, allowNull: true },
     discountPercent: { type: DataTypes.FLOAT, allowNull: true },
   },
   {

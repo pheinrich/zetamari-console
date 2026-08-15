@@ -14,22 +14,34 @@ import Select from '@mui/material/Select'
 // CustomersListTable's useTableViewState instead of resetting on remount.
 export default function CustomerTableFilters( {customerData, setData, filters, onFiltersChange} )
 {
-  const { type, student, marketing } = filters
+  // Defensive defaults - a view persisted from before this filter set
+  // changed (see useTableViewState.js) may be missing newer keys
+  // entirely, and MUI's Select warns if `value` is ever undefined.
+  const { type = '', marketing = '', orders = '', classes = '' } = filters || {}
 
   useEffect( () => {
     const filtered = customerData?.filter( customer => {
       if( type && customer.type !== type ) return false
-      if( student === 'yes' && !customer.classCount ) return false
-      if( student === 'no' && customer.classCount ) return false
-      if( marketing === 'yes' && !customer.acceptsEmailMarketing ) return false
-      if( marketing === 'no' && customer.acceptsEmailMarketing ) return false
+
+      // Tri-state - see the acceptsEmailMarketing model doc comment.
+      // 'no' here means an explicit opt-out (false), not merely "unknown"
+      // (null), which has its own option below.
+      if( marketing === 'yes' && true !== customer.acceptsEmailMarketing ) return false
+      if( marketing === 'no' && false !== customer.acceptsEmailMarketing ) return false
+      if( marketing === 'unknown' && null != customer.acceptsEmailMarketing ) return false
+
+      if( orders === 'none' && customer.orderCount ) return false
+      if( orders === 'some' && !customer.orderCount ) return false
+
+      if( classes === 'none' && customer.classCount ) return false
+      if( classes === 'some' && !customer.classCount ) return false
 
       return true
     })
 
     setData( filtered ?? [] )
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [type, student, marketing, customerData] )
+  }, [type, marketing, orders, classes, customerData] )
 
   return (
     <CardContent>
@@ -52,22 +64,6 @@ export default function CustomerTableFilters( {customerData, setData, filters, o
         </Grid>
         <Grid size={{ xs: 12, sm: 6, md: 4 }}>
           <FormControl fullWidth>
-            <InputLabel id='customer-student-filter'>Student</InputLabel>
-            <Select
-              fullWidth
-              label='Student'
-              labelId='customer-student-filter'
-              value={student}
-              onChange={e => onFiltersChange( {...filters, student: e.target.value} )}
-            >
-              <MenuItem value=''>All</MenuItem>
-              <MenuItem value='yes'>Has attended a class</MenuItem>
-              <MenuItem value='no'>Never attended a class</MenuItem>
-            </Select>
-          </FormControl>
-        </Grid>
-        <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-          <FormControl fullWidth>
             <InputLabel id='customer-marketing-filter'>Email Marketing</InputLabel>
             <Select
               fullWidth
@@ -79,6 +75,39 @@ export default function CustomerTableFilters( {customerData, setData, filters, o
               <MenuItem value=''>All</MenuItem>
               <MenuItem value='yes'>Opted In</MenuItem>
               <MenuItem value='no'>Opted Out</MenuItem>
+              <MenuItem value='unknown'>Unknown</MenuItem>
+            </Select>
+          </FormControl>
+        </Grid>
+        <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+          <FormControl fullWidth>
+            <InputLabel id='customer-orders-filter'>Orders</InputLabel>
+            <Select
+              fullWidth
+              label='Orders'
+              labelId='customer-orders-filter'
+              value={orders}
+              onChange={e => onFiltersChange( {...filters, orders: e.target.value} )}
+            >
+              <MenuItem value=''>All</MenuItem>
+              <MenuItem value='some'>Has ordered</MenuItem>
+              <MenuItem value='none'>Never ordered</MenuItem>
+            </Select>
+          </FormControl>
+        </Grid>
+        <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+          <FormControl fullWidth>
+            <InputLabel id='customer-classes-filter'>Classes</InputLabel>
+            <Select
+              fullWidth
+              label='Classes'
+              labelId='customer-classes-filter'
+              value={classes}
+              onChange={e => onFiltersChange( {...filters, classes: e.target.value} )}
+            >
+              <MenuItem value=''>All</MenuItem>
+              <MenuItem value='some'>Has attended a class</MenuItem>
+              <MenuItem value='none'>Never attended a class</MenuItem>
             </Select>
           </FormControl>
         </Grid>

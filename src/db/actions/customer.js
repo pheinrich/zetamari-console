@@ -13,6 +13,23 @@ import sequelize from '@/db/sequelize'
 import { auth } from '@/lib/auth'
 import { isDiscountEligible, DEFAULT_DISCOUNT_PERCENT } from '@/libs/customerLoyalty'
 
+// acceptsEmailMarketing is tri-state (see the
+// 20260815000000-customer-company-and-marketing.js migration): the form
+// submits 'true'/'false'/'unknown' (a Select, not a checkbox, since a
+// checkbox can't represent "unknown"). Anything other than the literal
+// strings 'true'/'false' - including 'unknown' itself or a missing value -
+// resolves to null.
+function parseEmailMarketing( value )
+{
+  if( 'true' === value )
+    return true
+
+  if( 'false' === value )
+    return false
+
+  return null
+}
+
 // A class attendance "counts" toward the apron/discount thresholds once
 // enrolled or completed - not while merely waitlisted, and not if later
 // cancelled. Shared by readCustomer(s) below and by liveClass.js's
@@ -39,6 +56,7 @@ export async function createCustomer( data )
     const customer = await Customer.create( {
       firstName: data.firstName || null,
       lastName: data.lastName || null,
+      company: data.company || null,
       email: data.email || null,
       phone: data.phone || null,
       street1: data.street1 || null,
@@ -50,7 +68,7 @@ export async function createCustomer( data )
       notes: data.notes || null,
       type: data.type || null,
       website: data.website || null,
-      acceptsEmailMarketing: Boolean( data.acceptsEmailMarketing ),
+      acceptsEmailMarketing: parseEmailMarketing( data.acceptsEmailMarketing ),
       discountPercent: null != data.discountPercent && '' !== data.discountPercent ? Number( data.discountPercent ) : null,
     } )
 
@@ -198,6 +216,7 @@ export async function updateCustomer( data )
   await customer.update( {
     firstName: data.firstName || null,
     lastName: data.lastName || null,
+    company: data.company || null,
     email: data.email || null,
     phone: data.phone || null,
     street1: data.street1 || null,
@@ -209,7 +228,7 @@ export async function updateCustomer( data )
     notes: data.notes || null,
     type: data.type || null,
     website: data.website || null,
-    acceptsEmailMarketing: Boolean( data.acceptsEmailMarketing ),
+    acceptsEmailMarketing: parseEmailMarketing( data.acceptsEmailMarketing ),
     discountPercent: null != data.discountPercent && '' !== data.discountPercent ? Number( data.discountPercent ) : null,
   } )
 

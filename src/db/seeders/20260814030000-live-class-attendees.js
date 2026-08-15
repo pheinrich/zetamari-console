@@ -16,6 +16,16 @@
 // into notes as "From source sheet: ...". Names with no comma (a small
 // handful of rows) are split on the first space instead.
 //
+// email comes directly from the sheet's own Email column (stored on the
+// attendee row itself, independent of any linked Customer - a walk-in
+// guest may have an email with no Customer record at all, or a Customer's
+// own email may later change without rewriting past rosters). A handful
+// of cells in that column weren't actually an email address (e.g. "via
+// Marsha", "registered by Linda" - someone else signed the person up) or
+// had a stray "Email " prefix pasted in front of a real address; those
+// are left out of the email field and preserved verbatim in notes as
+// "Email column (not a valid address): ...".
+//
 // status: 'cancelled' when the name's annotation or the Upgrade
 // Notes/Other Notes columns mention "cancel" in any form (matches "so
 // marked in the first column" plus a couple of cases only marked in Other
@@ -38,26 +48,30 @@
 // intentional note, not blank data).
 //
 // notes carries forward everything else that doesn't have a column of
-// its own: the non-cancellation annotation, the full Other Notes text
-// (even when a discount percentage was parsed out of it), the "Special"
-// column, an "Imported payment info: ..." summary of Paid 1/2, Class
-// Cost, Up/AlC, and Balance (kept as the sheet's own values, including
-// occasional non-numeric entries like "TRADE" or "Not Paid" verbatim, and
-// literal "0" entries where that's what the sheet actually recorded), and
-// the sheet's own Repeat count for reference.
+// its own: the non-cancellation annotation, an invalid Email-column value
+// (see above), the full Other Notes text (even when a discount
+// percentage was parsed out of it), the "Special" column, an "Imported
+// payment info: ..." summary of Paid 1/2, Class Cost, Up/AlC, and Balance
+// (kept as the sheet's own values, including occasional non-numeric
+// entries like "TRADE" or "Not Paid" verbatim, and literal "0" entries
+// where that's what the sheet actually recorded), and the sheet's own
+// Repeat count for reference.
 //
 // enrolledOn uses the sheet's Paid 1 Date as the best available proxy for
 // when the student signed up, falling back to the Class Date itself when
 // no payment date is present - not today's seed-run date, which would
 // misrepresent nearly two decades of historical enrollments.
 //
-// Of the 1,601 seeded rows, 1,465 matched an existing Customer by email
-// (a handful of shared-email cases were disambiguated using this row's
-// own name against the candidates); the remaining rows are seeded with
-// no customerId, per LiveClassAttendee's own design - a seat need not
+// Of the 1,601 seeded rows, 1,517 have an email (from the sheet's Email
+// column) and 1,466 matched an existing Customer by that email (a
+// handful of shared-email cases were disambiguated using this row's own
+// name against the candidates). The remaining rows are seeded with no
+// customerId, per LiveClassAttendee's own design - a seat need not
 // belong to a Customer record (walk-in guests, a plus-one, or simply
 // someone who isn't in the customer master list export this was matched
-// against).
+// against). 51 rows have an email that didn't match any seeded Customer -
+// see build_liveclass_seeder.py's printed "Unmatched emails" list for the
+// full accounting.
 module.exports =
 {
   async up( queryInterface, Sequelize )
@@ -69,6 +83,7 @@ module.exports =
     "status": "enrolled",
     "firstName": "Andrea",
     "lastName": "Saxton",
+    "email": "aksaxton@gmail.com",
     "upgradeNotes": "TBD",
     "notes": "Imported payment info: paid 1: 142.5 on 7/2/26, class cost: 285.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2026-07-02"
@@ -80,6 +95,7 @@ module.exports =
     "customerId": 1749,
     "firstName": "Mary",
     "lastName": "Toal",
+    "email": "mary.r.toal@gmail.com",
     "upgradeNotes": "TBD",
     "notes": "Imported payment info: paid 1: 285 on 7/12/26, class cost: 285.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2026-07-12"
@@ -91,6 +107,7 @@ module.exports =
     "customerId": 1681,
     "firstName": "Marcia",
     "lastName": "Brixey",
+    "email": "marciabrixey@me.com",
     "upgradeNotes": "TBD",
     "notes": "Imported payment info: paid 1: 285 on 7/14/26, class cost: 285.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2026-07-14"
@@ -102,6 +119,7 @@ module.exports =
     "customerId": 1014,
     "firstName": "Janean",
     "lastName": "Jolly",
+    "email": "janean@davidjollylaw.com",
     "upgradeNotes": "TBD",
     "notes": "Imported payment info: paid 1: 285 on 7/25/26, class cost: 285.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2026-07-25"
@@ -112,6 +130,7 @@ module.exports =
     "status": "enrolled",
     "firstName": "Kelsey",
     "lastName": "Johnson",
+    "email": "kelseyannej70@gmail.com",
     "upgradeNotes": "TBD",
     "notes": "Imported payment info: paid 1: 142.5 on 7/25/26, class cost: 285.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2026-07-25"
@@ -123,6 +142,7 @@ module.exports =
     "customerId": 166,
     "firstName": "Anita",
     "lastName": "Tayyebi",
+    "email": "tayebi77@gmail.com",
     "upgradeNotes": "TBD",
     "notes": "Imported payment info: paid 1: 285 on 8/7/26, class cost: 285.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2026-08-07"
@@ -134,6 +154,7 @@ module.exports =
     "customerId": 166,
     "firstName": "Anita",
     "lastName": "Tayyebi",
+    "email": "tayebi77@gmail.com",
     "upgradeNotes": "TBD",
     "notes": "From source sheet: friend\nImported payment info: paid 1: 142.5 on 8/7/26, class cost: 285.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2026-08-07"
@@ -145,6 +166,7 @@ module.exports =
     "customerId": 458,
     "firstName": "Christine",
     "lastName": "Upchurch",
+    "email": "christineupchurch@hotmail.com",
     "discountPercent": 25,
     "upgradeNotes": "TBD",
     "notes": "25% repeat student discount\nImported payment info: paid 1: 262.5 on 6/30/26, class cost: 393.75.\nClass #26 for this student, per source sheet.",
@@ -157,6 +179,7 @@ module.exports =
     "customerId": 2433,
     "firstName": "Sun",
     "lastName": "Benua",
+    "email": "sunbenua@yahoo.com",
     "upgradeNotes": "Cloud Upgrade $220",
     "notes": "Imported payment info: paid 1: 262.5 on 7/23/26, class cost: 525, upgrade/AlC incl. tax: 220.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2026-07-23"
@@ -167,6 +190,7 @@ module.exports =
     "status": "enrolled",
     "firstName": "Robin",
     "lastName": "Urbach",
+    "email": "robynurbach@gmail.com",
     "upgradeNotes": "TBD",
     "notes": "Traveling with Sun Benua\nImported payment info: paid 1: 262.5 on 7/3/26, class cost: 525.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2026-07-03"
@@ -178,6 +202,7 @@ module.exports =
     "customerId": 2273,
     "firstName": "Sari",
     "lastName": "Dahl",
+    "email": "sarirat@mac.com",
     "upgradeNotes": "TBD",
     "notes": "Imported payment info: paid 1: 262.5 on 7/27/26, class cost: 525.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2026-07-27"
@@ -199,6 +224,7 @@ module.exports =
     "customerId": 1741,
     "firstName": "Marsha",
     "lastName": "Hudson",
+    "email": "marsha@griffyn.us",
     "discountPercent": 30,
     "upgradeNotes": "TBD",
     "notes": "30% repeat student discount\nImported payment info: paid 1: 262.5 on 7/27/26, class cost: 367.5.\nClass #36 for this student, per source sheet.",
@@ -211,6 +237,7 @@ module.exports =
     "customerId": 551,
     "firstName": "Dana",
     "lastName": "Niblack",
+    "email": "dana.m.niblack@gmail.com",
     "upgradeNotes": "TBD",
     "notes": "Imported payment info: paid 1: 525 on 7/29/26, class cost: 525.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2026-07-29"
@@ -222,6 +249,7 @@ module.exports =
     "customerId": 1811,
     "firstName": "Maureen",
     "lastName": "Schoolcraft",
+    "email": "maureen.schoolcraftrussell@gmail.com",
     "upgradeNotes": "TBD",
     "notes": "Imported payment info: paid 1: 525 on 7/29/26, class cost: 525.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2026-07-29"
@@ -233,6 +261,7 @@ module.exports =
     "customerId": 995,
     "firstName": "Jan",
     "lastName": "Vigdor",
+    "email": "janvigdor@cox.net",
     "upgradeNotes": "TBD",
     "notes": "Traveling with Barb Koster\nSpecial: Apron?\nImported payment info: paid 1: 142.5 on 7/23/26, class cost: 285.\nClass #3 for this student, per source sheet.",
     "enrolledOn": "2026-07-23"
@@ -244,6 +273,7 @@ module.exports =
     "customerId": 246,
     "firstName": "Barbara",
     "lastName": "Koster",
+    "email": "bkoster565@gmail.com",
     "upgradeNotes": "TBD",
     "notes": "Traveling with Jan Vigdor\nImported payment info: paid 1: 285 on 7/24/26, class cost: 285.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2026-07-24"
@@ -255,6 +285,7 @@ module.exports =
     "customerId": 1203,
     "firstName": "Julie",
     "lastName": "Campbell",
+    "email": "juliecampbell1201@gmail.com",
     "upgradeNotes": "TBD",
     "notes": "Imported payment info: paid 1: 142.5 on 7/28/26, class cost: 285.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2026-07-28"
@@ -266,6 +297,7 @@ module.exports =
     "customerId": 694,
     "firstName": "Donna",
     "lastName": "Bautista",
+    "email": "dkb5858@yahoo.com",
     "upgradeNotes": "24\" circle (silver)",
     "notes": "Imported payment info: paid 1: 142.5 on 5/18/26, class cost: 285, upgrade/AlC incl. tax: 125.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2026-05-18"
@@ -277,6 +309,7 @@ module.exports =
     "customerId": 1749,
     "firstName": "Mary",
     "lastName": "Toal",
+    "email": "mary.r.toal@gmail.com",
     "upgradeNotes": "24\" circle (silver)",
     "notes": "Imported payment info: paid 1: 285 on 6/2/26, class cost: 285, upgrade/AlC incl. tax: 125.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2026-06-02"
@@ -288,6 +321,7 @@ module.exports =
     "customerId": 310,
     "firstName": "Brenda",
     "lastName": "Alfano",
+    "email": "simonescreations@msn.com",
     "discountPercent": 20,
     "upgradeNotes": "Bugs",
     "notes": "20% repeat student discount\nImported payment info: paid 1: 285 on 6/16/26, paid 2: PAID, class cost: 228.\nClass #6 for this student, per source sheet.",
@@ -300,6 +334,7 @@ module.exports =
     "customerId": 1681,
     "firstName": "Marcia",
     "lastName": "Brixey",
+    "email": "marciabrixey@me.com",
     "upgradeNotes": "18\"x22\" oval (silver)",
     "notes": "Imported payment info: paid 1: 285 on 7/3/26, paid 2: PAID, class cost: 285, upgrade/AlC incl. tax: 125.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2026-07-03"
@@ -311,6 +346,7 @@ module.exports =
     "customerId": 2202,
     "firstName": "Ronelle",
     "lastName": "Tyau",
+    "email": "rotyau@yahoo.com",
     "upgradeNotes": "22\"x28\" oval (gold)",
     "notes": "Imported payment info: paid 1: N/A, paid 2: PAID, class cost: 0, upgrade/AlC incl. tax: 0.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2026-07-11"
@@ -322,6 +358,7 @@ module.exports =
     "customerId": 1058,
     "firstName": "Jen",
     "lastName": "Clemens",
+    "email": "jen-clemens1@comcast.net",
     "upgradeNotes": "28\" square (silver)",
     "notes": "Imported payment info: paid 1: N/A, class cost: 0, upgrade/AlC incl. tax: 0.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2026-07-11"
@@ -332,6 +369,7 @@ module.exports =
     "status": "completed",
     "firstName": "Cassidy",
     "lastName": "Jones",
+    "email": "cassjones05@gmail.com",
     "upgradeNotes": "18\"X27\" rectangle (silver)",
     "notes": "Imported payment info: paid 1: N/A, paid 2: PAID, class cost: 0, upgrade/AlC incl. tax: 0.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2026-07-11"
@@ -342,6 +380,7 @@ module.exports =
     "status": "completed",
     "firstName": "Cathi",
     "lastName": "Morgan",
+    "email": "cathimorgan@gmail.com",
     "upgradeNotes": "19\" circle (silver)",
     "notes": "Imported payment info: paid 2: PAID, class cost: 0, upgrade/AlC incl. tax: 0.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2026-07-11"
@@ -353,6 +392,7 @@ module.exports =
     "customerId": 1558,
     "firstName": "Lisa",
     "lastName": "Campney",
+    "email": "lcampney@comcast.net",
     "upgradeNotes": "17\"x61\" willow, Silver",
     "notes": "Special: Apron\nImported payment info: paid 1: 285 on 3/4/26, paid 2: PAID, class cost: 285, upgrade/AlC incl. tax: 400.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2026-03-04"
@@ -364,6 +404,7 @@ module.exports =
     "customerId": 1112,
     "firstName": "Jill",
     "lastName": "Bliss",
+    "email": "jbliss@hsblawyers.com",
     "discountPercent": 20,
     "upgradeNotes": "17\" circle (silver), 13\" circle (silver)",
     "notes": "20% repeat student discount\nSpecial: Apron\nImported payment info: paid 1: 142.5 on 1/4/26, paid 2: PAID, class cost: 228.\nClass #5 for this student, per source sheet.",
@@ -375,6 +416,7 @@ module.exports =
     "status": "completed",
     "firstName": "Andrea",
     "lastName": "Saxton",
+    "email": "aksaxton@gmail.com",
     "upgradeNotes": "22x28 Oval, Silver",
     "notes": "Special: Apron\nImported payment info: paid 1: 142.5 on 2/16/26, paid 2: PAID, class cost: 285, upgrade/AlC incl. tax: 250.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2026-02-16"
@@ -386,6 +428,7 @@ module.exports =
     "customerId": 710,
     "firstName": "Donna",
     "lastName": "Tracey",
+    "email": "donna.tracey.595@gmail.com",
     "upgradeNotes": "Cancelled, refunded",
     "notes": "Imported payment info: paid 1: 142.5 on 2/26/26, class cost: 285.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2026-02-26"
@@ -397,6 +440,7 @@ module.exports =
     "customerId": 1948,
     "firstName": "Natalie",
     "lastName": "Dalrymple",
+    "email": "glassart1@yahoo.com",
     "discountPercent": 20,
     "upgradeNotes": "18\"x22\" oval (silver)",
     "notes": "20% repeat student discount\nSpecial: Apron\nImported payment info: paid 1: 285 on 5/22/26, paid 2: PAID, class cost: 228, upgrade/AlC incl. tax: 100.\nClass #7 for this student, per source sheet.",
@@ -408,6 +452,7 @@ module.exports =
     "status": "completed",
     "firstName": "Pat",
     "lastName": "Casey",
+    "email": "pacasey@hotmail.com",
     "upgradeNotes": "24x38 Rectangle, Silver (horizontal)",
     "notes": "Special: Apron\nImported payment info: paid 1: 285 on 6/6/26, paid 2: PAID, class cost: 285, upgrade/AlC incl. tax: 325.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2026-06-06"
@@ -419,6 +464,7 @@ module.exports =
     "customerId": 2587,
     "firstName": "Tracy",
     "lastName": "Aiken",
+    "email": "tracylaiken@gmail.com",
     "upgradeNotes": "18\"x22\" oval, Silver",
     "notes": "Imported payment info: paid 1: 142.5 on 3/19/26, class cost: 285, upgrade/AlC incl. tax: 125.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2026-03-19"
@@ -430,6 +476,7 @@ module.exports =
     "customerId": 2379,
     "firstName": "Sonya",
     "lastName": "Miller",
+    "email": "sonyamiller5604@gmail.com",
     "upgradeNotes": "17\" round",
     "notes": "Imported payment info: paid 1: 285 on 3/19/26, class cost: 285, upgrade/AlC incl. tax: 0.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2026-03-19"
@@ -441,6 +488,7 @@ module.exports =
     "customerId": 1880,
     "firstName": "Michelle",
     "lastName": "Lese",
+    "email": "mssoigne@hotmail.com",
     "discountPercent": 20,
     "upgradeNotes": "26\"x33\"x3.5\" oval (bevel), TBD",
     "notes": "20% repeat student discount\nImported payment info: paid 1: 142.5 on 3/24/26, class cost: 228, upgrade/AlC incl. tax: 298.16.\nClass #4 for this student, per source sheet.",
@@ -453,6 +501,7 @@ module.exports =
     "customerId": 1215,
     "firstName": "Julie",
     "lastName": "Martin",
+    "email": "juliemartin775@gmail.com",
     "upgradeNotes": "22\"x30\"x3.25\" rect (bevel), TBD",
     "notes": "Imported payment info: paid 1: 142.5 on 4/6/26, class cost: 285, upgrade/AlC incl. tax: 275.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2026-04-06"
@@ -464,6 +513,7 @@ module.exports =
     "customerId": 1046,
     "firstName": "Jeanine",
     "lastName": "O'Connell",
+    "email": "lilactime57@gmail.com",
     "upgradeNotes": "DID NOT ATTEND and DID NOT HEAR FROM HER",
     "notes": "From source sheet: no show\nImported payment info: paid 1: 142.5 on 11/16/25, class cost: 285.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2025-11-16"
@@ -475,6 +525,7 @@ module.exports =
     "customerId": 1112,
     "firstName": "Jill",
     "lastName": "Bliss",
+    "email": "jbliss@hsblawyers.com",
     "discountPercent": 20,
     "upgradeNotes": "TBD",
     "notes": "20% repeat student discount\nImported payment info: paid 1: 142.5 on 1/4/26, class cost: 228.\nClass #1 for this student, per source sheet.",
@@ -487,6 +538,7 @@ module.exports =
     "customerId": 1948,
     "firstName": "Natalie",
     "lastName": "Dalrymple",
+    "email": "glassart1@yahoo.com",
     "discountPercent": 20,
     "upgradeNotes": "19\" round,silver",
     "notes": "20% repeat student discount\nImported payment info: paid 1: 142.5 on 1/4/26, paid 2: 178.88, class cost: 228, upgrade/AlC incl. tax: 60.\nClass #6 for this student, per source sheet.",
@@ -499,6 +551,7 @@ module.exports =
     "customerId": 117,
     "firstName": "Amy",
     "lastName": "Johnson",
+    "email": "mrs.amyrjohnson@gmail.com",
     "upgradeNotes": "19\" round, silver",
     "notes": "Imported payment info: paid 1: 142.5 on 1/23/26, class cost: 285, upgrade/AlC incl. tax: 75.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2026-01-23"
@@ -510,6 +563,7 @@ module.exports =
     "customerId": 420,
     "firstName": "Cheryl",
     "lastName": "Cunningham",
+    "email": "cheryldcunningham@icloud.com",
     "upgradeNotes": "18\"x27\" rectangle, gold",
     "notes": "Imported payment info: paid 1: 142.5 on 1/23/26, class cost: 285, upgrade/AlC incl. tax: 125.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2026-01-23"
@@ -521,6 +575,7 @@ module.exports =
     "customerId": 2565,
     "firstName": "Theresa",
     "lastName": "Thomsen",
+    "email": "ththomsen@aol.com",
     "upgradeNotes": "17\" round, silver",
     "notes": "Imported payment info: paid 1: 142.5 on 1/27/26, class cost: 285, upgrade/AlC incl. tax: 0.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2026-01-27"
@@ -532,6 +587,7 @@ module.exports =
     "customerId": 1963,
     "firstName": "Nicole",
     "lastName": "Kanehe",
+    "email": "nkanehe@yahoo.com",
     "upgradeNotes": "22\"x28\" oval, gold",
     "notes": "Imported payment info: paid 1: 142.5 on 2/11/26, class cost: 285, upgrade/AlC incl. tax: 250.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2026-02-11"
@@ -553,6 +609,7 @@ module.exports =
     "customerId": 458,
     "firstName": "Christine",
     "lastName": "Upchurch",
+    "email": "christineupchurch@hotmail.com",
     "discountPercent": 25,
     "upgradeNotes": "26\" mandala (silver)",
     "notes": "25% repeat student discount\nImported payment info: paid 1: 262.5 on 11/19/25, class cost: 393.75, upgrade/AlC incl. tax: 168.75.\nClass #25 for this student, per source sheet.",
@@ -565,6 +622,7 @@ module.exports =
     "customerId": 1558,
     "firstName": "Lisa",
     "lastName": "Campney",
+    "email": "lcampney@comcast.net",
     "upgradeNotes": "Birdhouse",
     "notes": "Imported payment info: paid 1: 525 on 11/24/25, class cost: 525.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2025-11-24"
@@ -576,6 +634,7 @@ module.exports =
     "customerId": 243,
     "firstName": "Barbara",
     "lastName": "Olson",
+    "email": "bj.olson_44@yahoo.com",
     "discountPercent": 20,
     "upgradeNotes": "Birdhouse",
     "notes": "20% repeat student discount\nImported payment info: paid 1: 262.5 on 12/6/25, class cost: 420.\nClass #4 for this student, per source sheet.",
@@ -588,6 +647,7 @@ module.exports =
     "customerId": 551,
     "firstName": "Dana",
     "lastName": "Niblack",
+    "email": "dana.m.niblack@gmail.com",
     "upgradeNotes": "Birdhouse",
     "notes": "Imported payment info: paid 1: 525 on 12/30/25, class cost: 525.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2025-12-30"
@@ -599,6 +659,7 @@ module.exports =
     "customerId": 319,
     "firstName": "Bridget",
     "lastName": "Culligan",
+    "email": "saltine.waffle7m@icloud.com",
     "upgradeNotes": "Birdhouse",
     "notes": "Imported payment info: paid 1: 525 on 12/30/25, class cost: 525.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2025-12-30"
@@ -610,6 +671,7 @@ module.exports =
     "customerId": 659,
     "firstName": "Diana",
     "lastName": "Clark",
+    "email": "dsclark4249@gmail.com",
     "upgradeNotes": "21in mandala (silver)",
     "notes": "Imported payment info: paid 1: 525 on 12/30/25, class cost: 525.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2025-12-30"
@@ -621,6 +683,7 @@ module.exports =
     "customerId": 2356,
     "firstName": "Sherri",
     "lastName": "Suppi",
+    "email": "sherry.suppi22@gmail.com",
     "upgradeNotes": "30\" round (gold)",
     "notes": "Imported payment info: paid 1: 142.5 on 1/19/26, class cost: 285, upgrade/AlC incl. tax: 240.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2026-01-19"
@@ -631,6 +694,7 @@ module.exports =
     "status": "completed",
     "firstName": "Carolyn",
     "lastName": "Traub",
+    "email": "carolyntraub@gmail.com",
     "upgradeNotes": "26in Mandala (silver)",
     "notes": "Imported payment info: paid 1: 262.5 on 2/19/26, class cost: 525.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2026-02-19"
@@ -642,6 +706,7 @@ module.exports =
     "customerId": 458,
     "firstName": "Christine",
     "lastName": "Upchurch",
+    "email": "christineupchurch@hotmail.com",
     "discountPercent": 25,
     "upgradeNotes": "22\"x28\" oval (silver)",
     "notes": "25% repeat student discount\nImported payment info: paid 1: 142.5 on 11/19/25, class cost: 213.75, upgrade/AlC incl. tax: 187.5.\nClass #24 for this student, per source sheet.",
@@ -654,6 +719,7 @@ module.exports =
     "customerId": 1066,
     "firstName": "Jennean",
     "lastName": "Everett",
+    "email": "jenneanr@hotmail.com",
     "upgradeNotes": "26\" mandala (silver)",
     "notes": "Imported payment info: paid 1: 285 on 12/26/25, class cost: 285, upgrade/AlC incl. tax: 465.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2025-12-26"
@@ -665,6 +731,7 @@ module.exports =
     "customerId": 307,
     "firstName": "Brandon",
     "lastName": "Obermeyer",
+    "email": "brandonobermeyer@gmail.com",
     "upgradeNotes": "17\" round (gold)",
     "notes": "Imported payment info: paid 1: 142.5 on 12/29/25, class cost: 285, upgrade/AlC incl. tax: 75.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2025-12-29"
@@ -686,6 +753,7 @@ module.exports =
     "customerId": 223,
     "firstName": "Ashley",
     "lastName": "Cederberg",
+    "email": "ashleycederberg@yahoo.com",
     "upgradeNotes": "17\" round (silver)",
     "notes": "Imported payment info: paid 1: 285 on 11/15/25, class cost: 285, upgrade/AlC incl. tax: 0.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2025-11-15"
@@ -697,6 +765,7 @@ module.exports =
     "customerId": 971,
     "firstName": "Jacqueline",
     "lastName": "Gosschalk",
+    "email": "jackie.gosschalk@gmail.com",
     "discountPercent": 20,
     "upgradeNotes": "11\"x18\" rect (silver)",
     "notes": "20% repeat student discount\nImported payment info: paid 1: 142.5 on 1/18/26, class cost: 228, upgrade/AlC incl. tax: 60.\nClass #18 for this student, per source sheet.",
@@ -709,6 +778,7 @@ module.exports =
     "customerId": 668,
     "firstName": "Diane",
     "lastName": "Fletcher",
+    "email": "dfletcher@olypen.com",
     "discountPercent": 20,
     "upgradeNotes": "10\" round, 7\" round, 7\" mandala",
     "notes": "20% repeat student discount\nImported payment info: paid 1: 142.5 on 1/20/26, class cost: 228, upgrade/AlC incl. tax: 28.\nClass #6 for this student, per source sheet.",
@@ -721,6 +791,7 @@ module.exports =
     "customerId": 1833,
     "firstName": "Melisa",
     "lastName": "Moen",
+    "email": "melisajmoen@gmail.com",
     "upgradeNotes": "TBD",
     "notes": "Imported payment info: paid 1: 285 on 11/21/25, class cost: 285.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2025-11-21"
@@ -732,6 +803,7 @@ module.exports =
     "customerId": 178,
     "firstName": "Anne",
     "lastName": "Dinwiddie",
+    "email": "annedinwiddie@gmail.com",
     "upgradeNotes": "22.75\"x26.75\" w/3.5\" border (gold)",
     "notes": "Imported payment info: paid 1: 142.5 on 11/16/25, class cost: 285, upgrade/AlC incl. tax: 135.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2025-11-16"
@@ -743,6 +815,7 @@ module.exports =
     "customerId": 1851,
     "firstName": "Michael",
     "lastName": "Aguilar",
+    "email": "rosielaroux0708@gmail.com",
     "upgradeNotes": "22.75\"x26.75\" w/3.5\" border (gold)",
     "notes": "Annie's spouse\nImported payment info: paid 1: 142.5 on 11/16/25, class cost: 285, upgrade/AlC incl. tax: 135.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2025-11-16"
@@ -754,6 +827,7 @@ module.exports =
     "customerId": 845,
     "firstName": "Gaea",
     "lastName": "Scott",
+    "email": "gaeascott@gmail.com",
     "upgradeNotes": "24\" round (gold)",
     "notes": "Imported payment info: paid 1: 142.5 on 12/2/25, class cost: 285, upgrade/AlC incl. tax: 125.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2025-12-02"
@@ -765,6 +839,7 @@ module.exports =
     "customerId": 971,
     "firstName": "Jacqueline",
     "lastName": "Gosschalk",
+    "email": "jackie.gosschalk@gmail.com",
     "discountPercent": 20,
     "upgradeNotes": "11\"x18\" rect (gold), 19\" round (gold)",
     "notes": "20% repeat student discount\nImported payment info: paid 1: 142.5 on 12/21/25, class cost: 228, upgrade/AlC incl. tax: 120.\nClass #17 for this student, per source sheet.",
@@ -777,6 +852,7 @@ module.exports =
     "customerId": 799,
     "firstName": "Erica",
     "lastName": "Rodriguez",
+    "email": "erica.micheal@gmail.com",
     "upgradeNotes": "22\"x28\" oval (gold)",
     "notes": "Imported payment info: paid 1: 142.5 on 1/6/26, class cost: 285, upgrade/AlC incl. tax: 250.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2026-01-06"
@@ -788,6 +864,7 @@ module.exports =
     "customerId": 2624,
     "firstName": "Victoria",
     "lastName": "Paradis",
+    "email": "vpar4219@yahoo.com",
     "discountPercent": 20,
     "upgradeNotes": "Starlight mandala kit",
     "notes": "Imported payment info: paid 1: 0, class cost: 0, upgrade/AlC incl. tax: 200.\nClass #35 for this student, per source sheet.",
@@ -800,6 +877,7 @@ module.exports =
     "customerId": 1884,
     "firstName": "Michelle",
     "lastName": "Segall",
+    "email": "segallmichelle@gmail.com",
     "upgradeNotes": "TBD",
     "notes": "Imported payment info: paid 1: 25 on 12/30/25, class cost: 25.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2025-12-30"
@@ -811,6 +889,7 @@ module.exports =
     "customerId": 2624,
     "firstName": "Victoria",
     "lastName": "Paradis",
+    "email": "vpar4219@yahoo.com",
     "discountPercent": 20,
     "upgradeNotes": "TBD",
     "notes": "FREE\nImported payment info: paid 1: 25 on 1/1/26, class cost: 25.\nClass #34 for this student, per source sheet.",
@@ -823,6 +902,7 @@ module.exports =
     "customerId": 2045,
     "firstName": "Patty",
     "lastName": "Haldane",
+    "email": "phaldane@hotmail.com",
     "upgradeNotes": "22x24 Leaf, SILVER (has giftcard)",
     "notes": "Imported payment info: paid 1: 142.5 on 7/8/25, paid 2: PAID, class cost: 285, upgrade/AlC incl. tax: 165.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2025-07-08"
@@ -834,6 +914,7 @@ module.exports =
     "customerId": 2045,
     "firstName": "Dave",
     "lastName": "Haldane",
+    "email": "phaldane@hotmail.com",
     "upgradeNotes": "22x28 Oval, SILVER",
     "notes": "Imported payment info: paid 1: 142.5 on 7/8/25, paid 2: PAID, class cost: 285, upgrade/AlC incl. tax: 250.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2025-07-08"
@@ -845,6 +926,7 @@ module.exports =
     "customerId": 2028,
     "firstName": "Patricia",
     "lastName": "Morgan",
+    "email": "pattysmorgan@gmail.com",
     "upgradeNotes": "17in SILVER",
     "notes": "Imported payment info: paid 1: 285 on 10/2/25, paid 2: PAID, class cost: 285, upgrade/AlC incl. tax: 0.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2025-10-02"
@@ -856,6 +938,7 @@ module.exports =
     "customerId": 2027,
     "firstName": "Michelle",
     "lastName": "Bhramari",
+    "email": "auliibee@gmail.com",
     "upgradeNotes": "21in mandala",
     "notes": "Patty's daughter\nImported payment info: paid 1: 285 on 10/3/25, paid 2: PAID, class cost: 285, upgrade/AlC incl. tax: 175.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2025-10-03"
@@ -867,6 +950,7 @@ module.exports =
     "customerId": 243,
     "firstName": "Barbara",
     "lastName": "Olson",
+    "email": "bj.olson_44@yahoo.com",
     "upgradeNotes": "25x36 rectangle, SILVER",
     "notes": "Special: Apron\nImported payment info: paid 1: 142.5 on 10/3/25, paid 2: PAID, class cost: 285, upgrade/AlC incl. tax: 343.\nClass #3 for this student, per source sheet.",
     "enrolledOn": "2025-10-03"
@@ -878,6 +962,7 @@ module.exports =
     "customerId": 88,
     "firstName": "Aliza",
     "lastName": "Gutman",
+    "email": "aliza.gutman@gmail.com",
     "upgradeNotes": "19in, SILVER",
     "notes": "Imported payment info: paid 1: 142.5 on 10/6/25, paid 2: PAID, class cost: 285, upgrade/AlC incl. tax: 75.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2025-10-06"
@@ -889,6 +974,7 @@ module.exports =
     "customerId": 2147,
     "firstName": "Rebecca",
     "lastName": "Walter",
+    "email": "rjw6114@gmail.com",
     "upgradeNotes": "22x24 Leaf mirror, SILVER",
     "notes": "Imported payment info: paid 1: 142.5 on 10/6/25, paid 2: PAID, class cost: 285, upgrade/AlC incl. tax: 165.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2025-10-06"
@@ -900,6 +986,7 @@ module.exports =
     "customerId": 2632,
     "firstName": "Victoria",
     "lastName": "Coen",
+    "email": "vlcoen@yahoo.com",
     "discountPercent": 25,
     "upgradeNotes": "TBD",
     "notes": "25% repeat student discount\nImported payment info: paid 1: 142.5 on 5/31/25, class cost: 213.75.\nClass #4 for this student, per source sheet.",
@@ -912,6 +999,7 @@ module.exports =
     "customerId": 310,
     "firstName": "Brenda",
     "lastName": "Alfano",
+    "email": "simonescreations@msn.com",
     "discountPercent": 20,
     "upgradeNotes": "24\" circle (gold)",
     "notes": "20% repeat, +15% special\nImported payment info: paid 1: 142.5 on 6/9/25, class cost: 193.8, upgrade/AlC incl. tax: 100.\nClass #5 for this student, per source sheet.",
@@ -924,6 +1012,7 @@ module.exports =
     "customerId": 2391,
     "firstName": "Stacy",
     "lastName": "Nissen",
+    "email": "stacy.nissen@gmail.com",
     "discountPercent": 20,
     "upgradeNotes": "30\"x33\" leaf (silver)",
     "notes": "20% repeat, +15% special\nSpecial: Apron?\nImported payment info: paid 1: 142.5 on 6/12/25, class cost: 193.8, upgrade/AlC incl. tax: 280.\nClass #7 for this student, per source sheet.",
@@ -936,6 +1025,7 @@ module.exports =
     "customerId": 2145,
     "firstName": "Rebecca",
     "lastName": "Nissen",
+    "email": "becknissen@gmail.com",
     "discountPercent": 20,
     "upgradeNotes": "24\"x36\" arch (gold)",
     "notes": "20% repeat, +15% special\nSpecial: Apron?\nImported payment info: paid 1: 285 on 6/13/25, class cost: 193.8, upgrade/AlC incl. tax: 240.\nClass #7 for this student, per source sheet.",
@@ -948,6 +1038,7 @@ module.exports =
     "customerId": 178,
     "firstName": "Anne",
     "lastName": "Dinwiddie",
+    "email": "annedinwiddie@gmail.com",
     "upgradeNotes": "20\"x60\" rectangle (TBD): BIRTHDAY",
     "notes": "Lori paid deposit\nImported payment info: paid 1: 142.5 on 7/28/25, class cost: 285, upgrade/AlC incl. tax: 400.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2025-07-28"
@@ -959,6 +1050,7 @@ module.exports =
     "customerId": 1604,
     "firstName": "Lori",
     "lastName": "Hoff",
+    "email": "lhmaservices@gmail.com",
     "upgradeNotes": "30\"x33\" leaf (TBD)",
     "notes": "Imported payment info: paid 1: 142.5 on 7/25/25, class cost: 285.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2025-07-25"
@@ -970,6 +1062,7 @@ module.exports =
     "customerId": 1602,
     "firstName": "Lorena",
     "lastName": "Epstein",
+    "email": "lorenalle@hotmail.com",
     "upgradeNotes": "18\"x22\" oval (TBD)",
     "notes": "Imported payment info: paid 1: 142.5 on 7/31/25, class cost: 285, upgrade/AlC incl. tax: 125.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2025-07-31"
@@ -981,6 +1074,7 @@ module.exports =
     "customerId": 895,
     "firstName": "Gwen",
     "lastName": "Evans",
+    "email": "gweeva2@earthlink.net",
     "upgradeNotes": "18\"x22\" oval (gold)",
     "notes": "Imported payment info: paid 1: 142.5 on 7/31/25, class cost: 285, upgrade/AlC incl. tax: 125.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2025-07-31"
@@ -992,6 +1086,7 @@ module.exports =
     "customerId": 2529,
     "firstName": "Taylor",
     "lastName": "Messer",
+    "email": "tayloramesser@gmail.com",
     "upgradeNotes": "21\" mandala (silver), white, purple, and blue",
     "notes": "Special: PAID\nImported payment info: upgrade/AlC incl. tax: 0.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2025-10-24"
@@ -1003,6 +1098,7 @@ module.exports =
     "customerId": 2427,
     "firstName": "Sue",
     "lastName": "Messer",
+    "email": "ssmesser99@gmail.com",
     "upgradeNotes": "21\" mandala (silver) Purple, turquoise and pink accents",
     "notes": "shipping material for 21in\nSpecial: PAID\nImported payment info: upgrade/AlC incl. tax: 0.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2025-10-24"
@@ -1014,6 +1110,7 @@ module.exports =
     "customerId": 2524,
     "firstName": "Tammy",
     "lastName": "Thomas",
+    "email": "tammyspamperedpaws@gmail.com",
     "upgradeNotes": "26\" mandala (gold), purple with cobalt blue or teal accents",
     "notes": "Wants to purchase birdhouse kit\nSpecial: PAID\nImported payment info: paid 2: upgrade, upgrade/AlC incl. tax: 225.\nClass #3 for this student, per source sheet.",
     "enrolledOn": "2025-10-24"
@@ -1025,6 +1122,7 @@ module.exports =
     "customerId": 243,
     "firstName": "Barbara",
     "lastName": "Olson",
+    "email": "bj.olson_44@yahoo.com",
     "upgradeNotes": "26\" mandala (silver), purple/teal (brown? lighter purple/teal?)",
     "notes": "Special: PAID\nImported payment info: paid 1: 225 on 10/24/25, paid 2: upgrade, upgrade/AlC incl. tax: 225.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2025-10-24"
@@ -1036,6 +1134,7 @@ module.exports =
     "customerId": 443,
     "firstName": "Christi",
     "lastName": "Churchill",
+    "email": "christichurchill@gmail.com",
     "upgradeNotes": "21\" mandala (gold), teal, burgundy red, very pale yellow and/or gold",
     "notes": "Special: PAID\nImported payment info: upgrade/AlC incl. tax: 0.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2025-10-24"
@@ -1047,6 +1146,7 @@ module.exports =
     "customerId": 900,
     "firstName": "Haley",
     "lastName": "Churchill",
+    "email": "haley.mchurchill@gmail.com",
     "upgradeNotes": "21\" mandala (gold), royal blue/bright yellow, gold, iridescent white",
     "notes": "Special: PAID\nImported payment info: upgrade/AlC incl. tax: 0.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2025-10-24"
@@ -1058,6 +1158,7 @@ module.exports =
     "customerId": 2255,
     "firstName": "Sandra",
     "lastName": "Vigen",
+    "email": "mamaduckscleaningservice@gmail.com",
     "upgradeNotes": "36\" mandala (gold), GOLD, metallic ice blue, Dark teal Green, Gold green Cream and gold accents (see photos)",
     "notes": "36\"x35.8\" w/0.83 border\nSpecial: PAID\nImported payment info: paid 2: upgrade, upgrade/AlC incl. tax: 425.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2025-10-24"
@@ -1069,6 +1170,7 @@ module.exports =
     "customerId": 2118,
     "firstName": "Rachel",
     "lastName": "Dollar",
+    "email": "Rachel@marvelousmosaic.com",
     "upgradeNotes": "21\" mandala (silver), green neon, teal, purple",
     "notes": "Special: PAID\nImported payment info: upgrade/AlC incl. tax: 0.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2025-10-24"
@@ -1080,6 +1182,7 @@ module.exports =
     "customerId": 468,
     "firstName": "Cindy",
     "lastName": "Lacey Gifford",
+    "email": "clgifford711@gmail.com",
     "upgradeNotes": "26\" mandala (silver), blue & teal green w/ silver accents, iridescent w/mult colors",
     "notes": "Special: PAID\nImported payment info: paid 2: upgrade, upgrade/AlC incl. tax: 225.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2025-10-24"
@@ -1091,6 +1194,7 @@ module.exports =
     "customerId": 150,
     "firstName": "Angela",
     "lastName": "Schmidin",
+    "email": "angela.schmidlin@gmail.com",
     "upgradeNotes": "21\" mandala (silver), purples, greens, teals",
     "notes": "Special: PAID\nImported payment info: upgrade/AlC incl. tax: 0.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2025-10-24"
@@ -1102,6 +1206,7 @@ module.exports =
     "customerId": 1370,
     "firstName": "Kim",
     "lastName": "Graham",
+    "email": "kimgraham1970@me.com",
     "upgradeNotes": "21\" mandala (gold)",
     "notes": "Special: PAID\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2025-10-25"
@@ -1113,6 +1218,7 @@ module.exports =
     "customerId": 816,
     "firstName": "Etang",
     "lastName": "Inyang",
+    "email": "etang.educate@gmail.com",
     "upgradeNotes": "TBD",
     "notes": "Imported payment info: paid 1: 282.5 on 2/22/25, class cost: 565, upgrade/AlC incl. tax: 0.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2025-02-22"
@@ -1124,6 +1230,7 @@ module.exports =
     "customerId": 942,
     "firstName": "Ilse",
     "lastName": "Cordoni",
+    "email": "ilse@instituteofmosaicart.com",
     "upgradeNotes": "25x36 rectangle - Greys, whites, black, silver",
     "notes": "Imported payment info: paid 1: Organizer on 5/30/25, paid 2: PAID, class cost: 0, upgrade/AlC incl. tax: 368.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2025-05-30"
@@ -1135,6 +1242,7 @@ module.exports =
     "customerId": 1587,
     "firstName": "Liz",
     "lastName": "Bednorz",
+    "email": "lizbednorz@sbcglobal.net",
     "upgradeNotes": "26\" mandala (silver)-  Sage, blue teal, corals, pinks",
     "notes": "Special: Apron\nImported payment info: paid 1: 282.5 on 6/1/25, paid 2: PAID, class cost: 565, upgrade/AlC incl. tax: 225.\nClass #3 for this student, per source sheet.",
     "enrolledOn": "2025-06-01"
@@ -1146,6 +1254,7 @@ module.exports =
     "customerId": 381,
     "firstName": "Carolyn",
     "lastName": "Zerkle",
+    "email": "dczerkle@aol.com",
     "upgradeNotes": "26\" mandala (silver), cobalt, white, iridescent purple",
     "notes": "Imported payment info: paid 1: 282.5 on 6/26/25, paid 2: PAID, class cost: 565, upgrade/AlC incl. tax: 225.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2025-06-26"
@@ -1157,6 +1266,7 @@ module.exports =
     "customerId": 1690,
     "firstName": "Maggie",
     "lastName": "Ariani",
+    "email": "meriani@comcast.net",
     "upgradeNotes": "Birdhouse, turquoise bluem greens, copper and golden brown",
     "notes": "Imported payment info: paid 1: 565 on 7/1/25, paid 2: PAID, class cost: 565, upgrade/AlC incl. tax: 0.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2025-07-01"
@@ -1168,6 +1278,7 @@ module.exports =
     "customerId": 1595,
     "firstName": "Lizzie",
     "lastName": "Lozada",
+    "email": "lozadal@sfusd.edu",
     "upgradeNotes": "21in mandala (gold), Yellow, orange, red",
     "notes": "Imported payment info: paid 1: 282.5 on 7/2/25, paid 2: PAID, class cost: 565, upgrade/AlC incl. tax: 0.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2025-07-02"
@@ -1179,6 +1290,7 @@ module.exports =
     "customerId": 2178,
     "firstName": "Roberta",
     "lastName": "Michaels",
+    "email": "herbs_daughter@yahoo.com",
     "upgradeNotes": "Birdhouse, Blue, Burgundy, Light Grayish/white",
     "notes": "Imported payment info: paid 1: 282.5 on 7/4/25, paid 2: PAID, class cost: 565, upgrade/AlC incl. tax: 0.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2025-07-04"
@@ -1190,6 +1302,7 @@ module.exports =
     "customerId": 1718,
     "firstName": "Marianna",
     "lastName": "Matthews",
+    "email": "mmdesign624@gmail.com",
     "upgradeNotes": "21\" mandala (gold), blue/purple/yellow",
     "notes": "Imported payment info: paid 1: 282.5 on 7/31/25, paid 2: PAID, class cost: 565, upgrade/AlC incl. tax: 0.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2025-07-31"
@@ -1201,6 +1314,7 @@ module.exports =
     "customerId": 621,
     "firstName": "Deborah",
     "lastName": "Jones",
+    "email": "amma4deb@gmail.com",
     "upgradeNotes": "Birdhouse, aqua/fuchsia/orange",
     "notes": "Imported payment info: paid 1: 565 on 8/1/25, paid 2: PAID, class cost: 565, upgrade/AlC incl. tax: 0.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2025-08-01"
@@ -1212,6 +1326,7 @@ module.exports =
     "customerId": 2392,
     "firstName": "Stacy",
     "lastName": "Snowman",
+    "email": "stacysnowman@sbcglobal.net",
     "upgradeNotes": "Birdhouse, turquoise/skyblue/limegreen",
     "notes": "Imported payment info: paid 1: 565 on 9/1/25, paid 2: PAID, class cost: 565, upgrade/AlC incl. tax: 0.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2025-09-01"
@@ -1223,6 +1338,7 @@ module.exports =
     "customerId": 366,
     "firstName": "Carole",
     "lastName": "Klein",
+    "email": "caroleklein73@gmail.com",
     "upgradeNotes": "Birdhouse",
     "notes": "Imported payment info: paid 1: 565 on 9/27/25, paid 2: PAID, class cost: 565, upgrade/AlC incl. tax: 0.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2025-09-27"
@@ -1234,6 +1350,7 @@ module.exports =
     "customerId": 1080,
     "firstName": "Jennifer",
     "lastName": "Herring",
+    "email": "jaherring@outlook.com",
     "upgradeNotes": "11\"x18\" rectangle, silver",
     "notes": "Imported payment info: paid 1: 285 on 8/11/24, class cost: 285, upgrade/AlC incl. tax: 0.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2024-08-11"
@@ -1245,6 +1362,7 @@ module.exports =
     "customerId": 1080,
     "firstName": "Victoria",
     "lastName": "Coen",
+    "email": "jaherring@outlook.com",
     "discountPercent": 25,
     "upgradeNotes": "Canceled",
     "notes": "25% repeat student discount\nImported payment info: paid 1: 142.5 on 5/31/25, class cost: 213.75.\nClass #3 for this student, per source sheet.",
@@ -1257,6 +1375,7 @@ module.exports =
     "customerId": 1060,
     "firstName": "Jen",
     "lastName": "Kramer",
+    "email": "krashinkramer@yahoo.com",
     "discountPercent": 25,
     "upgradeNotes": "Silver, 18x22 Oval",
     "notes": "25% FnF discount (Sami)\nImported payment info: paid 1: 106.88 on 7/1/25, class cost: 213.75, upgrade/AlC incl. tax: 93.75.\nClass #1 for this student, per source sheet.",
@@ -1269,6 +1388,7 @@ module.exports =
     "customerId": 1060,
     "firstName": "Amy",
     "lastName": "Thompson",
+    "email": "krashinkramer@yahoo.com",
     "discountPercent": 25,
     "upgradeNotes": "Silver, 18x22 Oval",
     "notes": "25% FnF discount (Sami)\nImported payment info: paid 1: 106.88 on 7/1/25, class cost: 213.75, upgrade/AlC incl. tax: 93.75.\nClass #1 for this student, per source sheet.",
@@ -1281,6 +1401,7 @@ module.exports =
     "customerId": 898,
     "firstName": "Hailey",
     "lastName": "Watkins",
+    "email": "haileywatkins361@gmail.com",
     "discountPercent": 25,
     "upgradeNotes": "Gold, 17in round",
     "notes": "25% FnF discount (Sami)\nImported payment info: paid 1: 106.88 on 7/1/25, class cost: 213.75, upgrade/AlC incl. tax: 0.\nClass #1 for this student, per source sheet.",
@@ -1293,6 +1414,7 @@ module.exports =
     "customerId": 231,
     "firstName": "Bailee",
     "lastName": "Kramer",
+    "email": "baileekramer@yahoo.com",
     "discountPercent": 25,
     "upgradeNotes": "Silver, 18x22 Oval",
     "notes": "25% FnF discount (Sami)\nImported payment info: paid 1: 106.88 on 7/1/25, class cost: 213.75, upgrade/AlC incl. tax: 93.75.\nClass #1 for this student, per source sheet.",
@@ -1305,6 +1427,7 @@ module.exports =
     "customerId": 2240,
     "firstName": "Sami",
     "lastName": "Pease",
+    "email": "samipease@gmail.com",
     "upgradeNotes": "Birdhouse",
     "notes": "Organizer\nImported payment info: class cost: 0, upgrade/AlC incl. tax: 0.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2025-09-13"
@@ -1316,6 +1439,7 @@ module.exports =
     "customerId": 995,
     "firstName": "Jan",
     "lastName": "Vigdor",
+    "email": "janvigdor@cox.net",
     "upgradeNotes": "Silver, 19in Round",
     "notes": "Imported payment info: paid 1: 142.5 on 7/9/25, class cost: 285, upgrade/AlC incl. tax: 75.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2025-07-09"
@@ -1327,6 +1451,7 @@ module.exports =
     "customerId": 1609,
     "firstName": "Lori",
     "lastName": "Hill",
+    "email": "lmtvegas@yahoo.com",
     "discountPercent": 25,
     "upgradeNotes": "Gold, 18x27 Rectangle",
     "notes": "25% FnF discount (Sami)\nImported payment info: paid 1: 285 on 7/12/25, class cost: 213.75, upgrade/AlC incl. tax: 131.25.\nClass #1 for this student, per source sheet.",
@@ -1339,6 +1464,7 @@ module.exports =
     "customerId": 2632,
     "firstName": "Victoria",
     "lastName": "Coen",
+    "email": "vlcoen@yahoo.com",
     "discountPercent": 25,
     "upgradeNotes": "Canceled",
     "notes": "25% repeat student discount\nImported payment info: paid 1: 142.4 on 5/31/25, class cost: 213.75.\nClass #2 for this student, per source sheet.",
@@ -1351,6 +1477,7 @@ module.exports =
     "customerId": 1056,
     "firstName": "Jeffrey",
     "lastName": "Segal",
+    "email": "jeffbsegal@gmail.com",
     "upgradeNotes": "GOLD CHAIN, 18x48 rectangle ($275 upgrade + $62 shipping)",
     "notes": "Bonnie's husband\nImported payment info: paid 1: 285 on 6/11/25, class cost: 285, upgrade/AlC incl. tax: 275.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2025-06-11"
@@ -1362,6 +1489,7 @@ module.exports =
     "customerId": 1056,
     "firstName": "Bonnie",
     "lastName": "Lipeles",
+    "email": "jeffbsegal@gmail.com",
     "upgradeNotes": "Sharing large mirror",
     "notes": "Jeffrey's wife\nImported payment info: paid 1: 285 on 6/11/25, class cost: 285.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2025-06-11"
@@ -1373,6 +1501,7 @@ module.exports =
     "customerId": 671,
     "firstName": "Diane",
     "lastName": "Gebhardt",
+    "email": "4523dg@gmail.com",
     "discountPercent": 20,
     "upgradeNotes": "SILVER: 30x36 3.75 border rectangle ($385 upgrade)",
     "notes": "20% repeat student discount\nImported payment info: paid 1: 142.5 on 6/14/25, class cost: 228, upgrade/AlC incl. tax: 308.\nClass #4 for this student, per source sheet.",
@@ -1385,6 +1514,7 @@ module.exports =
     "customerId": 1015,
     "firstName": "Janell",
     "lastName": "Correll",
+    "email": "crewin47s@gmail.com",
     "discountPercent": 20,
     "upgradeNotes": "TBD",
     "notes": "20% repeat student discount\nImported payment info: paid 1: 285 on 6/30/25, class cost: 228.\nClass #5 for this student, per source sheet.",
@@ -1397,6 +1527,7 @@ module.exports =
     "customerId": 2064,
     "firstName": "Pavithra",
     "lastName": "Chandrasekaran",
+    "email": "pavith.cs@gmail.com",
     "upgradeNotes": "SILVER: Arch Mirror",
     "notes": "Special: Apron\nImported payment info: paid 1: 142.5 on 7/3/25, class cost: 285, upgrade/AlC incl. tax: 275.\nClass #3 for this student, per source sheet.",
     "enrolledOn": "2025-07-03"
@@ -1408,6 +1539,7 @@ module.exports =
     "customerId": 1536,
     "firstName": "Linda",
     "lastName": "Jackson",
+    "email": "lbjackson@gmail.com",
     "upgradeNotes": "26\"x36\" oval",
     "notes": "Imported payment info: paid 1: 75 on 5/27/25, class cost: 40, upgrade/AlC incl. tax: 450.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2025-05-27"
@@ -1419,6 +1551,7 @@ module.exports =
     "customerId": 84,
     "firstName": "Alison",
     "lastName": "Elafros",
+    "email": "aelafros@gmail.com",
     "upgradeNotes": "18\"x27\" rectangle (gold)",
     "notes": "Imported payment info: paid 1: 40 on 5/31/25, class cost: 40, upgrade/AlC incl. tax: 325.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2025-05-31"
@@ -1430,6 +1563,7 @@ module.exports =
     "customerId": 2632,
     "firstName": "Victoria",
     "lastName": "Coen",
+    "email": "vlcoen@yahoo.com",
     "discountPercent": 25,
     "upgradeNotes": "20\"x28\" oval (gold)",
     "notes": "25% repeat student discount\nImported payment info: paid 1: 40 on 5/31/25, class cost: 30, upgrade/AlC incl. tax: 258.75.\nClass #27 for this student, per source sheet.",
@@ -1442,6 +1576,7 @@ module.exports =
     "customerId": 647,
     "firstName": "Denise",
     "lastName": "Bjorling",
+    "email": "denisebjorling@comcast.net",
     "discountPercent": 20,
     "upgradeNotes": "45\"x32\" Cloud",
     "notes": "20% repeat student discount\nSpecial: Apron?\nImported payment info: paid 1: 40 on 6/7/25, class cost: 32, upgrade/AlC incl. tax: 380.\nClass #1 for this student, per source sheet.",
@@ -1454,6 +1589,7 @@ module.exports =
     "customerId": 310,
     "firstName": "Brenda",
     "lastName": "Alfano",
+    "email": "simonescreations@msn.com",
     "discountPercent": 20,
     "upgradeNotes": "Small Birdhouse",
     "notes": "20% repeat student discount\nImported payment info: paid 1: 40 on 6/7/25, class cost: 32, upgrade/AlC incl. tax: 100.\nClass #4 for this student, per source sheet.",
@@ -1466,6 +1602,7 @@ module.exports =
     "customerId": 349,
     "firstName": "Carol",
     "lastName": "Baker",
+    "email": "tc.baker@frontier.com",
     "upgradeNotes": "18\"x22\" oval",
     "notes": "Imported payment info: paid 1: 40 on 7/2/25, class cost: 40, upgrade/AlC incl. tax: 210.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2025-07-02"
@@ -1477,6 +1614,7 @@ module.exports =
     "customerId": 2298,
     "firstName": "Shannon",
     "lastName": "Lee-Rutherford",
+    "email": "xanalia@yahoo.com",
     "upgradeNotes": "30\"x33\" leaf, gold",
     "notes": "Imported payment info: paid 1: 142.5 on 5/20/25, class cost: 285, upgrade/AlC incl. tax: 350.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2025-05-20"
@@ -1488,6 +1626,7 @@ module.exports =
     "customerId": 1961,
     "firstName": "Nicola",
     "lastName": "Davies",
+    "email": "njd@nicolajane.net",
     "discountPercent": 20,
     "upgradeNotes": "24\" circle, silver",
     "notes": "20% repeat student discount\nImported payment info: paid 1: 285 on 1/9/25, class cost: 228, upgrade/AlC incl. tax: 100.\nClass #8 for this student, per source sheet.",
@@ -1500,6 +1639,7 @@ module.exports =
     "customerId": 1058,
     "firstName": "Jen",
     "lastName": "Clemens",
+    "email": "jen-clemens1@comcast.net",
     "upgradeNotes": "24\" circle, silver",
     "notes": "Imported payment info: paid 1: 290 on 6/16/25, class cost: 115, upgrade/AlC incl. tax: 50.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2025-06-16"
@@ -1511,6 +1651,7 @@ module.exports =
     "customerId": 2570,
     "firstName": "Tiffany",
     "lastName": "Tarrant",
+    "email": "tiffany.tarrant@gmail.com",
     "upgradeNotes": "19\" circle",
     "notes": "Imported payment info: class cost: 115, upgrade/AlC incl. tax: 29.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2025-06-21"
@@ -1522,6 +1663,7 @@ module.exports =
     "customerId": 2570,
     "firstName": "Tiffany",
     "lastName": "Tarrant",
+    "email": "tiffany.tarrant@gmail.com",
     "upgradeNotes": "24\" circle",
     "notes": "From source sheet: Diane\nImported payment info: class cost: 115, upgrade/AlC incl. tax: 50.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2025-06-21"
@@ -1533,6 +1675,7 @@ module.exports =
     "customerId": 2570,
     "firstName": "Tiffany",
     "lastName": "Tarrant",
+    "email": "tiffany.tarrant@gmail.com",
     "upgradeNotes": "18\"x22\" oval, silver",
     "notes": "From source sheet: Mia\nImported payment info: class cost: 115, upgrade/AlC incl. tax: 50.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2025-06-21"
@@ -1544,6 +1687,7 @@ module.exports =
     "customerId": 290,
     "firstName": "Bill",
     "lastName": "Soderberg",
+    "email": "billsoderberglicsw@gmail.com",
     "upgradeNotes": "19\" circle",
     "notes": "Imported payment info: class cost: 115, upgrade/AlC incl. tax: 29.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2025-06-21"
@@ -1555,6 +1699,7 @@ module.exports =
     "customerId": 843,
     "firstName": "Gabby",
     "lastName": "Soderberg",
+    "email": "gabby.starlightt@gmail.com",
     "upgradeNotes": "19\" circle",
     "notes": "Imported payment info: class cost: 115, upgrade/AlC incl. tax: 29.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2025-06-21"
@@ -1566,6 +1711,7 @@ module.exports =
     "customerId": 125,
     "firstName": "Amy",
     "lastName": "Ruble",
+    "email": "amyruble@hotmail.com",
     "discountPercent": 20,
     "upgradeNotes": "10\", 17\", 4x6 picture frames (2)",
     "notes": "20% repeat student discount\nImported payment info: paid 1: 285 on 6/12/25, class cost: 228.\nClass #5 for this student, per source sheet.",
@@ -1578,6 +1724,7 @@ module.exports =
     "customerId": 2323,
     "firstName": "Shawn",
     "lastName": "Matthews",
+    "email": "smurf0223@msn.com",
     "notes": "Class #1 for this student, per source sheet.",
     "enrolledOn": "2025-06-21"
   },
@@ -1588,6 +1735,7 @@ module.exports =
     "customerId": 310,
     "firstName": "Brenda",
     "lastName": "Alfano",
+    "email": "simonescreations@msn.com",
     "discountPercent": 20,
     "upgradeNotes": "Birdhouse, silver accents",
     "notes": "20% repeat student discount\nImported payment info: paid 1: 262.5 on 11/8/24, class cost: 420.\nClass #3 for this student, per source sheet.",
@@ -1600,6 +1748,7 @@ module.exports =
     "customerId": 1316,
     "firstName": "Kathryn",
     "lastName": "Lantz",
+    "email": "kathrynlantz13@gmail.com",
     "upgradeNotes": "Birdhouse",
     "notes": "Imported payment info: paid 1: 525 on 11/8/24, class cost: 525.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2024-11-08"
@@ -1611,6 +1760,7 @@ module.exports =
     "customerId": 2632,
     "firstName": "Victoria",
     "lastName": "Coen",
+    "email": "vlcoen@yahoo.com",
     "discountPercent": 25,
     "upgradeNotes": "Canceled",
     "notes": "25% repeat student discount\nImported payment info: paid 1: 210 on 11/10/24, class cost: 393.75.\nClass #1 for this student, per source sheet.",
@@ -1623,6 +1773,7 @@ module.exports =
     "customerId": 383,
     "firstName": "Carrie",
     "lastName": "Wilson",
+    "email": "carriewilsonrn@gmail.com",
     "upgradeNotes": "Mandala (previously purchased)",
     "notes": "Already purchased substrate\nImported payment info: paid 1: 262.5 on 1/18/25, class cost: 457.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2025-01-18"
@@ -1634,6 +1785,7 @@ module.exports =
     "customerId": 1648,
     "firstName": "Lynn",
     "lastName": "Bartelt",
+    "email": "howzez2@comcast.com",
     "upgradeNotes": "Mandala (previously purchased)",
     "notes": "Already purchased substrate\nImported payment info: paid 1: 262.5 on 1/18/25, class cost: 457.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2025-01-18"
@@ -1645,6 +1797,7 @@ module.exports =
     "customerId": 458,
     "firstName": "Christine",
     "lastName": "Upchurch",
+    "email": "christineupchurch@hotmail.com",
     "discountPercent": 25,
     "upgradeNotes": "Birdhouse, silver accents",
     "notes": "25% repeat student discount\nImported payment info: paid 1: 262.5 on 2/16/25, class cost: 393.75.\nClass #23 for this student, per source sheet.",
@@ -1657,6 +1810,7 @@ module.exports =
     "customerId": 234,
     "firstName": "Barb Doll",
     "lastName": "Schiedermayer",
+    "email": "schiedy@outlook.com",
     "upgradeNotes": "21\" (silver) Cardinal color palette with red, orange, turquoise, chartruese (see picture)",
     "notes": "EXTRA: Large birdhouse kit Friends with Leslie and Linda\nImported payment info: paid 1: 262.5 on 12/16/24, class cost: 525.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2024-12-16"
@@ -1668,6 +1822,7 @@ module.exports =
     "customerId": 1501,
     "firstName": "Leslie",
     "lastName": "Weaver",
+    "email": "lweaver@washingtondmc.com",
     "upgradeNotes": "21\" (silver); Mahogany mirror with turquoise leaves (See picture)",
     "notes": "Friends with Barb and Linda\nImported payment info: paid 1: 525 on 12/21/24, class cost: 525, upgrade/AlC incl. tax: 0.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2024-12-21"
@@ -1679,6 +1834,7 @@ module.exports =
     "customerId": 1539,
     "firstName": "Linda",
     "lastName": "Keturakat",
+    "email": "zagfans@yahoo.com",
     "upgradeNotes": "Birdhouse; Main - teal/turquoise, Accent - yellow/gold, 2nd Accent - white/blues/greens (Picture: Intuition)",
     "notes": "Friends with Barb and Leslie\nImported payment info: paid 1: 525 on 12/21/24, class cost: 525, upgrade/AlC incl. tax: 0.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2024-12-21"
@@ -1690,6 +1846,7 @@ module.exports =
     "customerId": 1500,
     "firstName": "Laree",
     "lastName": "Weaver",
+    "email": "laree@washingtondmc.com",
     "upgradeNotes": "21in (gold) Cinnamon Sage colors Bronze, Copper, gold, green",
     "notes": "Leslie's daughter; Leslie paid\nImported payment info: paid 1: 525 on 12/22/24, class cost: 525.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2024-12-22"
@@ -1701,6 +1858,7 @@ module.exports =
     "customerId": 1369,
     "firstName": "Kimberly",
     "lastName": "Girard",
+    "email": "kimgirard.sunshine@gmail.com",
     "upgradeNotes": "26\" (silver); sent mostly seafoam, teal, possible pink or purple accent examples",
     "notes": "Imported payment info: paid 1: 262.5 on 12/22/24, class cost: 525, upgrade/AlC incl. tax: 225.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2024-12-22"
@@ -1712,6 +1870,7 @@ module.exports =
     "customerId": 896,
     "firstName": "Gwen",
     "lastName": "Welch",
+    "email": "gwenmwelch@earthlink.net",
     "upgradeNotes": "21\" (gold); Main - sage green, Accent -  turquoise blue color ( not green teal ), 2nd Accent - warm Carmel brown/gold (See picture)",
     "notes": "Imported payment info: paid 1: 262.5 on 12/22/24, class cost: 525, upgrade/AlC incl. tax: 0.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2024-12-22"
@@ -1723,6 +1882,7 @@ module.exports =
     "customerId": 1063,
     "firstName": "Jenifer",
     "lastName": "Priest",
+    "email": "jeniferpriest@hotmail.com",
     "upgradeNotes": "21\" (silver); blue then yellow then purple",
     "notes": "Organizer\nImported payment info: paid 1: 262.5 on 12/22/24, class cost: 262.5, upgrade/AlC incl. tax: 0.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2024-12-22"
@@ -1734,6 +1894,7 @@ module.exports =
     "customerId": 1706,
     "firstName": "Margo",
     "lastName": "Buckles",
+    "email": "margo.l.buckles@gmail.com",
     "upgradeNotes": "26\" (gold); dark turquoise, yellow, light turquoise",
     "notes": "Space Host\nImported payment info: paid 1: 525 on 12/23/24, class cost: 262.5, upgrade/AlC incl. tax: 112.5.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2024-12-23"
@@ -1745,6 +1906,7 @@ module.exports =
     "customerId": 1701,
     "firstName": "Peggy",
     "lastName": "Sammons",
+    "email": "pegsammons@aol.com",
     "upgradeNotes": "21\" (gold) peacock colors",
     "notes": "Imported payment info: paid 1: 262.5 on 12/23/24, class cost: 525, upgrade/AlC incl. tax: 0.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2024-12-23"
@@ -1756,6 +1918,7 @@ module.exports =
     "customerId": 113,
     "firstName": "Amy",
     "lastName": "Galbavy",
+    "email": "amy.galbavy@gmail.com",
     "upgradeNotes": "Birdhouse (teal pink yellow?) Silver Bee, Wants very close to picture",
     "notes": "EXTRA: small birdhouse (not paid) Gets apron this class\nSpecial: Apron\nImported payment info: paid 1: 262.5 on 12/30/24, class cost: 525, upgrade/AlC incl. tax: 0.\nClass #3 for this student, per source sheet.",
     "enrolledOn": "2024-12-30"
@@ -1767,6 +1930,7 @@ module.exports =
     "customerId": 1535,
     "firstName": "Linda",
     "lastName": "Ingalls",
+    "email": "tuckerandme@gmail.com",
     "upgradeNotes": "21\" (silver); Main - shades of light minty green, Accent - silver/gray'ish, maybe some iridescent, 2nd Accent - rose/pink",
     "notes": "Imported payment info: paid 1: 525 on 1/24/25, class cost: 525, upgrade/AlC incl. tax: 0.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2025-01-24"
@@ -1778,6 +1942,7 @@ module.exports =
     "customerId": 1425,
     "firstName": "Kristina",
     "lastName": "Hamby",
+    "email": "kristina.p.hamby@gmail.com",
     "upgradeNotes": "21\" (gold); Main - Garnet / Burgundy / crimson (not red) , Accent: copper / gold color, 2nd Accent: Brown or cream or black",
     "notes": "Imported payment info: paid 1: 262.5 on 2/2/25, class cost: 525, upgrade/AlC incl. tax: 0.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2025-02-02"
@@ -1789,6 +1954,7 @@ module.exports =
     "customerId": 2632,
     "firstName": "Victoria",
     "lastName": "Coen",
+    "email": "vlcoen@yahoo.com",
     "discountPercent": 25,
     "upgradeNotes": "22\"x28\" oval, gold",
     "notes": "25% repeat student discount\nImported payment info: paid 1: 114 on 11/4/24, class cost: 213.75, upgrade/AlC incl. tax: 200.\nClass #26 for this student, per source sheet.",
@@ -1801,6 +1967,7 @@ module.exports =
     "customerId": 2626,
     "firstName": "Vicki",
     "lastName": "Thompson",
+    "email": "vicki@il-rifugio.com",
     "discountPercent": 20,
     "upgradeNotes": "Arch Moroccan Frame: 22x43, gold",
     "notes": "20% repeat student discount\nImported payment info: paid 1: 142.5 on 8/30/24, paid 2: 250, class cost: 228, upgrade/AlC incl. tax: 200.\nClass #8 for this student, per source sheet.",
@@ -1813,6 +1980,7 @@ module.exports =
     "customerId": 2157,
     "firstName": "Renee",
     "lastName": "O'Brien",
+    "email": "renee@sharpchip.com",
     "upgradeNotes": "24.5\" circle, Wedi board",
     "notes": "Imported payment info: paid 1: 142.5 on 2/1/25, class cost: 285, upgrade/AlC incl. tax: 165.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2025-02-01"
@@ -1824,6 +1992,7 @@ module.exports =
     "customerId": 1277,
     "firstName": "Karen",
     "lastName": "Zarinski",
+    "email": "kfz911@yahoo.com",
     "upgradeNotes": "22\"x28\" oval, silver (light blue and opalescent tiles, light yellow)",
     "notes": "EXTRA: 2 flower sets & 26 mandala substrate (not paid)\nImported payment info: paid 1: 285, upgrade/AlC incl. tax: 225.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2025-01-24"
@@ -1835,6 +2004,7 @@ module.exports =
     "customerId": 2487,
     "firstName": "Susan",
     "lastName": "Sullivan",
+    "email": "ssullivan.ap.iwd@gmail.com",
     "upgradeNotes": "19\" circle, silver (Turquoise, coppers or oranges)",
     "notes": "EXTRA: Birdhouse, frame, ordered online and paid (2 bags leaves, aqua, red, peacock, silver gold not paid)\nImported payment info: paid 1: 285, upgrade/AlC incl. tax: 125.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2025-01-24"
@@ -1846,6 +2016,7 @@ module.exports =
     "customerId": 392,
     "firstName": "Catherine",
     "lastName": "Parios",
+    "email": "parios_5@msn.com",
     "upgradeNotes": "22\"x24\" leaf, gold (Greens, browns)",
     "notes": "Imported payment info: paid 1: 285, upgrade/AlC incl. tax: 175.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2025-01-24"
@@ -1857,6 +2028,7 @@ module.exports =
     "customerId": 1076,
     "firstName": "Jennifer",
     "lastName": "Geehan",
+    "email": "jennifer.geehan@gmail.com",
     "upgradeNotes": "19\" Round, gold, (dk blue, turquoise, sky blue) orange and yellow accent",
     "notes": "Imported payment info: paid 1: 285, upgrade/AlC incl. tax: 125.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2025-01-25"
@@ -1868,6 +2040,7 @@ module.exports =
     "customerId": 1353,
     "firstName": "Kerri",
     "lastName": "Robbins",
+    "email": "karobbins1@comcast.net",
     "upgradeNotes": "24\" circle, silver",
     "notes": "Imported payment info: paid 1: 285.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2025-01-25"
@@ -1879,6 +2052,7 @@ module.exports =
     "customerId": 1043,
     "firstName": "Jean",
     "lastName": "McNemar",
+    "email": "jmreese000@yahoo.com",
     "upgradeNotes": "18\"x22\" oval, silver (turquoise, mother of pearl pinkish, lavendar, white opalescent)",
     "notes": "Imported payment info: paid 1: 285, upgrade/AlC incl. tax: 145.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2025-01-25"
@@ -1890,6 +2064,7 @@ module.exports =
     "customerId": 999,
     "firstName": "Jane",
     "lastName": "Acton",
+    "email": "janeeacton55@gmail.com",
     "upgradeNotes": "45\"x32\" cloud, silver (teal, turquoise, aqua)",
     "notes": "Imported payment info: paid 1: 285, upgrade/AlC incl. tax: 425.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2025-01-24"
@@ -1901,6 +2076,7 @@ module.exports =
     "customerId": 586,
     "firstName": "Deanna",
     "lastName": "McMillian",
+    "email": "deanna.mcmillian@gmail.com",
     "upgradeNotes": "Birdhouse, See color example purple ombre Blue, Orange, Yellow",
     "notes": "Imported payment info: paid 1: 285.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2025-01-24"
@@ -1912,6 +2088,7 @@ module.exports =
     "customerId": 1001,
     "firstName": "Jane",
     "lastName": "Balliet",
+    "email": "skydyvrchick@aol.com",
     "upgradeNotes": "Birdhouse, see picture totem, Turquoise, tomato red, lime green",
     "notes": "Special: Apron\nImported payment info: paid 1: 285.\nClass #3 for this student, per source sheet.",
     "enrolledOn": "2025-01-24"
@@ -1923,6 +2100,7 @@ module.exports =
     "customerId": 2310,
     "firstName": "Sharon",
     "lastName": "Elliott",
+    "email": "surfermom59@gmail.com",
     "upgradeNotes": "26in Mandala, gold (capri blue, aqua, lavendar, pink) see picture",
     "notes": "EXTRA: 24in Minda $78 (no paid)\nImported payment info: paid 1: 285.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2025-01-24"
@@ -1934,6 +2112,7 @@ module.exports =
     "customerId": 1301,
     "firstName": "Kathleen",
     "lastName": "Antonio",
+    "email": "kathleen@kantoniolmhc.com",
     "upgradeNotes": "21\" mandala (silver), Fuschia/pink (main) + Purples (accent) + Yellow/gold/black (2nd accent)",
     "notes": "Imported payment info: paid 1: 285.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2025-01-24"
@@ -1945,6 +2124,7 @@ module.exports =
     "customerId": 1095,
     "firstName": "Jenny",
     "lastName": "Mitchell",
+    "email": "fabricartsstudio7@gmail.com",
     "upgradeNotes": "Birdhouse, Green (main) + Blue (accent) + Orange/Yellow (2nd accent)",
     "notes": "Imported payment info: paid 1: 285.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2025-01-24"
@@ -1956,6 +2136,7 @@ module.exports =
     "customerId": 2537,
     "firstName": "Teresa",
     "lastName": "White",
+    "email": "gardenheartz@hotmail.com",
     "discountPercent": 20,
     "upgradeNotes": "22x24 leaf (Silver)",
     "notes": "20% repeat student discount\nImported payment info: paid 1: 228 on 8/27/24, class cost: 228, upgrade/AlC incl. tax: 132.\nClass #4 for this student, per source sheet.",
@@ -1968,6 +2149,7 @@ module.exports =
     "customerId": 2315,
     "firstName": "Sharon",
     "lastName": "Morganti",
+    "email": "sharonandmark@msn.com",
     "upgradeNotes": "22x24 leaf (Silver)",
     "notes": "Imported payment info: paid 1: 285 on 8/27/24, class cost: 285.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2024-08-27"
@@ -1979,6 +2161,7 @@ module.exports =
     "customerId": 1823,
     "firstName": "Megan",
     "lastName": "Ratchford",
+    "email": "meganmratchford@icloud.com",
     "upgradeNotes": "17\" circle (silver)",
     "notes": "Imported payment info: paid 1: 142.5 on 1/7/25, class cost: 285.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2025-01-07"
@@ -1990,6 +2173,7 @@ module.exports =
     "customerId": 971,
     "firstName": "Jacqueline",
     "lastName": "Gosschalk",
+    "email": "jackie.gosschalk@gmail.com",
     "discountPercent": 20,
     "upgradeNotes": "small Neslo (gold)",
     "notes": "20% repeat student discount\nImported payment info: paid 1: 114 on 9/15/24, class cost: 228, upgrade/AlC incl. tax: 120.\nClass #16 for this student, per source sheet.",
@@ -2002,6 +2186,7 @@ module.exports =
     "customerId": 971,
     "firstName": "Jacqueline",
     "lastName": "Gosschalk",
+    "email": "jackie.gosschalk@gmail.com",
     "upgradeNotes": "19\" circle, gold",
     "notes": "From source sheet: friend\nImported payment info: paid 1: 142.5 on 7/4/24, class cost: 285, upgrade/AlC incl. tax: 0.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2024-07-04"
@@ -2013,6 +2198,7 @@ module.exports =
     "customerId": 2021,
     "firstName": "Pat",
     "lastName": "Vogt",
+    "email": "pattyannvogt@icloud.com",
     "discountPercent": 20,
     "upgradeNotes": "Special Oval Mirror, gold",
     "notes": "20% repeat student discount\nImported payment info: paid 1: 228, class cost: 228, upgrade/AlC incl. tax: 19.2.\nClass #5 for this student, per source sheet.",
@@ -2025,6 +2211,7 @@ module.exports =
     "customerId": 2021,
     "firstName": "Pat",
     "lastName": "Vogt",
+    "email": "pattyannvogt@icloud.com",
     "discountPercent": 20,
     "upgradeNotes": "17\" circle, gold",
     "notes": "Pat will pay\nSpecial: Courtney\nImported payment info: paid 1: 285, class cost: 228, upgrade/AlC incl. tax: 0.\nClass #4 for this student, per source sheet.",
@@ -2037,6 +2224,7 @@ module.exports =
     "customerId": 2021,
     "firstName": "Pat",
     "lastName": "Vogt",
+    "email": "pattyannvogt@icloud.com",
     "upgradeNotes": "17\" circle, silver",
     "notes": "Pat will pay\nSpecial: Vance\nImported payment info: paid 1: 285, class cost: 228, upgrade/AlC incl. tax: 0.\nClass #3 for this student, per source sheet.",
     "enrolledOn": "2025-01-18"
@@ -2048,6 +2236,7 @@ module.exports =
     "customerId": 2021,
     "firstName": "Pat",
     "lastName": "Vogt",
+    "email": "pattyannvogt@icloud.com",
     "upgradeNotes": "Custom Frame for 16x20 beveled mirror glass, gold",
     "notes": "Pat will pay\nSpecial: Noell\nImported payment info: paid 1: 285, class cost: 228, upgrade/AlC incl. tax: 36.8.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2025-01-18"
@@ -2059,6 +2248,7 @@ module.exports =
     "customerId": 2632,
     "firstName": "Victoria",
     "lastName": "Coen",
+    "email": "vlcoen@yahoo.com",
     "discountPercent": 25,
     "upgradeNotes": "17\" round",
     "notes": "25% repeat student discount\nImported payment info: class cost: 213.75, upgrade/AlC incl. tax: 0.\nClass #25 for this student, per source sheet.",
@@ -2071,6 +2261,7 @@ module.exports =
     "customerId": 1989,
     "firstName": "Pamela",
     "lastName": "Hillinger",
+    "email": "pamhillinger@gmail.com",
     "upgradeNotes": "Cancelled",
     "notes": "Imported payment info: paid 1: 150 on 8/10/24, class cost: 150.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2024-08-10"
@@ -2082,6 +2273,7 @@ module.exports =
     "customerId": 310,
     "firstName": "Brenda",
     "lastName": "Alfano",
+    "email": "simonescreations@msn.com",
     "upgradeNotes": "Sick, sending her votive kits worth $150",
     "notes": "From source sheet: substitution\nImported payment info: paid 1: 150 on 8/12/24, class cost: 150.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2024-08-12"
@@ -2093,6 +2285,7 @@ module.exports =
     "customerId": 550,
     "firstName": "Dana",
     "lastName": "McDonald",
+    "email": "ratgirl@gmail.com",
     "notes": "Imported payment info: paid 1: 150 on 8/13/24, class cost: 150, balance: $290.00.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2024-08-13"
   },
@@ -2103,6 +2296,7 @@ module.exports =
     "customerId": 550,
     "firstName": "Drea",
     "lastName": "McDonald",
+    "email": "ratgirl@gmail.com",
     "upgradeNotes": "Dana's Sister",
     "notes": "Imported payment info: paid 1: 150 on 8/17/24, balance: $100.00.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2024-08-17"
@@ -2114,6 +2308,7 @@ module.exports =
     "customerId": 2624,
     "firstName": "Victoria",
     "lastName": "Paradis",
+    "email": "vpar4219@yahoo.com",
     "discountPercent": 25,
     "upgradeNotes": "371.25",
     "notes": "25% repeat student discount\nImported payment info: paid 1: 112.5 on 8/14/24, class cost: 112.5, balance: $371.25.\nClass #33 for this student, per source sheet.",
@@ -2126,6 +2321,7 @@ module.exports =
     "customerId": 2632,
     "firstName": "Victoria",
     "lastName": "Coen",
+    "email": "vlcoen@yahoo.com",
     "discountPercent": 25,
     "upgradeNotes": "did not pay deposit. will settle up in class",
     "notes": "25% repeat student discount\nImported payment info: paid 1: Not Paid, class cost: 112.5, balance: $177.75.\nClass #24 for this student, per source sheet.",
@@ -2138,6 +2334,7 @@ module.exports =
     "customerId": 971,
     "firstName": "Jacqueline",
     "lastName": "Gosschalk",
+    "email": "jackie.gosschalk@gmail.com",
     "discountPercent": 20,
     "notes": "20% repeat student discount\nImported payment info: paid 1: 120 on 9/15/24, class cost: 120, balance: $144.00.\nClass #15 for this student, per source sheet.",
     "enrolledOn": "2024-09-15"
@@ -2149,6 +2346,7 @@ module.exports =
     "customerId": 458,
     "firstName": "Christine",
     "lastName": "Upchurch",
+    "email": "christineupchurch@hotmail.com",
     "discountPercent": 20,
     "notes": "20% repeat student discount\nImported payment info: paid 1: Not Paid, balance: $380.80.\nClass #22 for this student, per source sheet.",
     "enrolledOn": "2024-11-23"
@@ -2160,6 +2358,7 @@ module.exports =
     "customerId": 125,
     "firstName": "Amy",
     "lastName": "Ruble",
+    "email": "amyruble@hotmail.com",
     "discountPercent": 20,
     "notes": "20% repeat student discount\nImported payment info: paid 1: 150 on 10/15/24, class cost: 120, balance: $104.00.\nClass #4 for this student, per source sheet.",
     "enrolledOn": "2024-10-15"
@@ -2171,6 +2370,7 @@ module.exports =
     "customerId": 125,
     "firstName": "Barb",
     "lastName": "Ruble",
+    "email": "amyruble@hotmail.com",
     "upgradeNotes": "Amy paid (her mother)",
     "notes": "Imported payment info: paid 1: 150 on 10/15/24, class cost: 150, balance: $96.00.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2024-10-15"
@@ -2182,6 +2382,7 @@ module.exports =
     "customerId": 2632,
     "firstName": "Victoria",
     "lastName": "Coen",
+    "email": "vlcoen@yahoo.com",
     "discountPercent": 25,
     "upgradeNotes": "22\"x28\" oval, silver",
     "notes": "25% repeat student discount\nImported payment info: paid 1: Not Paid, class cost: 213.75, upgrade/AlC incl. tax: 187.5.\nClass #23 for this student, per source sheet.",
@@ -2194,6 +2395,7 @@ module.exports =
     "customerId": 458,
     "firstName": "Christine",
     "lastName": "Upchurch",
+    "email": "christineupchurch@hotmail.com",
     "discountPercent": 20,
     "upgradeNotes": "10\" circle, silver (x3), 4\"x6\" photo",
     "notes": "20% repeat student discount\nImported payment info: paid 1: 120 on 8/20/24, class cost: 228, upgrade/AlC incl. tax: 24.\nClass #21 for this student, per source sheet.",
@@ -2206,6 +2408,7 @@ module.exports =
     "customerId": 458,
     "firstName": "Christine",
     "lastName": "Upchurch",
+    "email": "christineupchurch@hotmail.com",
     "discountPercent": 20,
     "upgradeNotes": "19\" circle, silver",
     "notes": "Kendall (Christine's son)\nImported payment info: paid 1: 150 on 8/20/24, class cost: 285, upgrade/AlC incl. tax: 75.\nClass #20 for this student, per source sheet.",
@@ -2218,6 +2421,7 @@ module.exports =
     "customerId": 458,
     "firstName": "Christine",
     "lastName": "Upchurch",
+    "email": "christineupchurch@hotmail.com",
     "discountPercent": 20,
     "upgradeNotes": "19\" circle, silver",
     "notes": "Lea (Kendall's girlfriend)\nImported payment info: paid 1: 150 on 8/20/24, class cost: 285, upgrade/AlC incl. tax: 75.\nClass #19 for this student, per source sheet.",
@@ -2230,6 +2434,7 @@ module.exports =
     "customerId": 378,
     "firstName": "Carolyn",
     "lastName": "Hoebelheinrich",
+    "email": "cjhoebelheinrich@gmail.com",
     "upgradeNotes": "18\"x22\" oval, silver",
     "notes": "Debi's friend\nImported payment info: paid 1: 285 on 9/29/24, class cost: 285, upgrade/AlC incl. tax: 125.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2024-09-29"
@@ -2241,6 +2446,7 @@ module.exports =
     "customerId": 1629,
     "firstName": "Louise",
     "lastName": "Hull",
+    "email": "l.k.hull@hotmail.com",
     "upgradeNotes": "18\"x27\" rect, silver (already purchased)",
     "notes": "Debi's friend\nImported payment info: paid 1: Not Paid, class cost: 285, upgrade/AlC incl. tax: 97.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2024-11-09"
@@ -2252,6 +2458,7 @@ module.exports =
     "customerId": 700,
     "firstName": "Donna",
     "lastName": "Howard",
+    "email": "donna@startupserv.com",
     "upgradeNotes": "18\"x22\" oval, silver",
     "notes": "Imported payment info: paid 1: 142.5 on 10/19/24, class cost: 285, upgrade/AlC incl. tax: 125.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2024-10-19"
@@ -2263,6 +2470,7 @@ module.exports =
     "customerId": 2427,
     "firstName": "Sue",
     "lastName": "Messer",
+    "email": "ssmesser99@gmail.com",
     "upgradeNotes": "21\" mandala, gold (base color blue, then purples, see Plum)",
     "notes": "Imported payment info: upgrade/AlC incl. tax: 0.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2024-10-25"
@@ -2274,6 +2482,7 @@ module.exports =
     "customerId": 468,
     "firstName": "Cindy",
     "lastName": "Lacey Gifford",
+    "email": "clgifford711@gmail.com",
     "upgradeNotes": "21\" mandala, silver (see Inv. 9642 for pictures)",
     "notes": "Imported payment info: upgrade/AlC incl. tax: 0.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2024-10-25"
@@ -2285,6 +2494,7 @@ module.exports =
     "customerId": 2433,
     "firstName": "Sun",
     "lastName": "Benua",
+    "email": "sunbenua@yahoo.com",
     "upgradeNotes": "26\" mandala, silver (Turquoise, red orange, coral orange/red--like cocktail)",
     "notes": "Imported payment info: upgrade/AlC incl. tax: 225.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2024-10-25"
@@ -2296,6 +2506,7 @@ module.exports =
     "customerId": 1569,
     "firstName": "Lisa",
     "lastName": "Lynne",
+    "email": "lisa@lisalynne.com",
     "upgradeNotes": "21\" mandala, silver (see Inv. 9640 for picture)",
     "notes": "Imported payment info: upgrade/AlC incl. tax: 0.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2024-10-26"
@@ -2307,6 +2518,7 @@ module.exports =
     "customerId": 1370,
     "firstName": "Kim",
     "lastName": "Graham",
+    "email": "kimgraham1970@me.com",
     "upgradeNotes": "26\" mandala, silver (purples more dark than light, 1st=turquoise, 2nd=yellow)",
     "notes": "Imported payment info: upgrade/AlC incl. tax: 225.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2024-10-25"
@@ -2318,6 +2530,7 @@ module.exports =
     "customerId": 1370,
     "firstName": "Daisy",
     "lastName": "Graham",
+    "email": "kimgraham1970@me.com",
     "upgradeNotes": "21\" mandala, gold (plum color palette with more vibrant tones)",
     "notes": "Kim's daughter\nImported payment info: upgrade/AlC incl. tax: 0.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2024-10-25"
@@ -2329,6 +2542,7 @@ module.exports =
     "customerId": 999,
     "firstName": "Jane",
     "lastName": "Acton",
+    "email": "janeeacton55@gmail.com",
     "upgradeNotes": "21\" mandala, gold capri blue, pink, gold (see Inv. 9639 for picture)",
     "notes": "Imported payment info: upgrade/AlC incl. tax: 0.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2024-10-26"
@@ -2340,6 +2554,7 @@ module.exports =
     "customerId": 2524,
     "firstName": "Tammy",
     "lastName": "Thomas",
+    "email": "tammyspamperedpaws@gmail.com",
     "upgradeNotes": "CANCELLED",
     "notes": "Class #1 for this student, per source sheet.",
     "enrolledOn": "2024-10-27"
@@ -2351,6 +2566,7 @@ module.exports =
     "customerId": 1628,
     "firstName": "Louise",
     "lastName": "Arndt",
+    "email": "louise.arndt@yahoo.com",
     "upgradeNotes": "21\" mandala, silver (blues, greys--maybe turquoise or a coral accent--and whites)",
     "notes": "Imported payment info: upgrade/AlC incl. tax: 0.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2024-10-28"
@@ -2362,6 +2578,7 @@ module.exports =
     "customerId": 1653,
     "firstName": "Lynn",
     "lastName": "Harelson",
+    "email": "llobeck@gmail.com",
     "upgradeNotes": "30\" round, silver (prefers Ruby or Capri mandala colors)",
     "notes": "Imported payment info: upgrade/AlC incl. tax: 0.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2024-10-25"
@@ -2373,6 +2590,7 @@ module.exports =
     "customerId": 458,
     "firstName": "Christine",
     "lastName": "Upchurch",
+    "email": "christineupchurch@hotmail.com",
     "discountPercent": 20,
     "upgradeNotes": "22\"x28\" oval, silver; jewelry box",
     "notes": "20% repeat student discount\nImported payment info: paid 1: 228 on 8/20/24, class cost: 228, upgrade/AlC incl. tax: 198.4, balance: with tax: 353.60.\nClass #18 for this student, per source sheet.",
@@ -2385,6 +2603,7 @@ module.exports =
     "customerId": 458,
     "firstName": "Christine",
     "lastName": "Upchurch",
+    "email": "christineupchurch@hotmail.com",
     "discountPercent": 20,
     "upgradeNotes": "18\"x22\" oval, silver (Christine's friend Diana)",
     "notes": "Imported payment info: paid 1: 285 on 8/20/24, class cost: 285, upgrade/AlC incl. tax: 125.\nClass #17 for this student, per source sheet.",
@@ -2397,6 +2616,7 @@ module.exports =
     "customerId": 2632,
     "firstName": "Victoria",
     "lastName": "Coen",
+    "email": "vlcoen@yahoo.com",
     "discountPercent": 25,
     "upgradeNotes": "24\"x36\" chapel arch, gold",
     "notes": "25% repeat student discount\nImported payment info: paid 1: 142.5 on 8/20/24, class cost: 213.75, upgrade/AlC incl. tax: 225, balance: prev. bal.: 191.18\ntotal w/tax: 518.09.\nClass #22 for this student, per source sheet.",
@@ -2409,6 +2629,7 @@ module.exports =
     "customerId": 194,
     "firstName": "Annie",
     "lastName": "Nelson",
+    "email": "Annie-nelson@outlook.com",
     "upgradeNotes": "Birdhouse",
     "notes": "Imported payment info: class cost: 0, upgrade/AlC incl. tax: 230.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2024-10-05"
@@ -2420,6 +2641,7 @@ module.exports =
     "customerId": 2240,
     "firstName": "Sami",
     "lastName": "Pease",
+    "email": "samipease@gmail.com",
     "upgradeNotes": "Birdhouse",
     "notes": "Imported payment info: class cost: 0, upgrade/AlC incl. tax: 230.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2024-10-05"
@@ -2431,6 +2653,7 @@ module.exports =
     "customerId": 2523,
     "firstName": "Tammy",
     "lastName": "Smith",
+    "email": "rntls87@nwi.net",
     "upgradeNotes": "17\" round, silver",
     "notes": "Imported payment info: paid 1: 142.5 on 9/3/24, class cost: 285, upgrade/AlC incl. tax: 0.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2024-09-03"
@@ -2442,6 +2665,7 @@ module.exports =
     "customerId": 2053,
     "firstName": "Paula",
     "lastName": "Bennett",
+    "email": "Cpsbbennett1@frontier.com",
     "upgradeNotes": "24\" round, silver",
     "notes": "Imported payment info: paid 1: 285 on 9/26/24, class cost: 285, upgrade/AlC incl. tax: 125.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2024-09-26"
@@ -2453,6 +2677,7 @@ module.exports =
     "customerId": 2138,
     "firstName": "Raydine",
     "lastName": "Perron",
+    "email": "raydine789@gmail.com",
     "upgradeNotes": "18\"x22\" oval, gold",
     "notes": "Imported payment info: paid 1: 142.5 on 9/4/24, class cost: 285, upgrade/AlC incl. tax: 125.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2024-09-04"
@@ -2464,6 +2689,7 @@ module.exports =
     "customerId": 2454,
     "firstName": "Susan",
     "lastName": "Fox",
+    "email": "skysis1@aol.com",
     "upgradeNotes": "25\"x36\" rectangle, silver",
     "notes": "Imported payment info: paid 1: 142.5 on 7/2/24, paid 2: PAID, class cost: 285, upgrade/AlC incl. tax: 350.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2024-07-02"
@@ -2475,6 +2701,7 @@ module.exports =
     "customerId": 2050,
     "firstName": "Patty",
     "lastName": "Yow",
+    "email": "yowpat@gmail.com",
     "upgradeNotes": "26\"x36\" oval, gold",
     "notes": "Imported payment info: paid 1: 142.5 on 7/2/24, paid 2: PAID, class cost: 285, upgrade/AlC incl. tax: 350.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2024-07-02"
@@ -2486,6 +2713,7 @@ module.exports =
     "customerId": 971,
     "firstName": "Jacqueline",
     "lastName": "Gosschalk",
+    "email": "jackie.gosschalk@gmail.com",
     "discountPercent": 20,
     "upgradeNotes": "22\"x24\" leaf, gold",
     "notes": "20% repeat student discount\nImported payment info: paid 1: 142.5 on 7/4/24, paid 2: PAID, class cost: 228, upgrade/AlC incl. tax: 132.\nClass #14 for this student, per source sheet.",
@@ -2498,6 +2726,7 @@ module.exports =
     "customerId": 303,
     "firstName": "Bonnie",
     "lastName": "Marques",
+    "email": "b@marques42.org",
     "upgradeNotes": "18\"x22\" oval, gold",
     "notes": "Imported payment info: paid 1: 142.5 on 4/22/24, paid 2: PAID, class cost: 285, upgrade/AlC incl. tax: 125.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2024-04-22"
@@ -2509,6 +2738,7 @@ module.exports =
     "customerId": 2269,
     "firstName": "Sarah",
     "lastName": "Mitchell",
+    "email": "enchanted_frog@msn.com",
     "upgradeNotes": "24\"x28\" rectangle, silver; maybe an additional small mirror TBD",
     "notes": "Imported payment info: paid 1: 142.5 on 7/28/24, paid 2: PAID, class cost: 285, upgrade/AlC incl. tax: 250.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2024-07-28"
@@ -2520,6 +2750,7 @@ module.exports =
     "customerId": 2269,
     "firstName": "Ashley",
     "lastName": "Mitchell",
+    "email": "enchanted_frog@msn.com",
     "upgradeNotes": "19\" circle, gold",
     "notes": "Sarah pad (daughter)\nImported payment info: paid 1: 142.5 on 7/28/24, paid 2: PAID, class cost: 285, upgrade/AlC incl. tax: 75.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2024-07-28"
@@ -2531,6 +2762,7 @@ module.exports =
     "customerId": 2489,
     "firstName": "Susan",
     "lastName": "Turpen",
+    "email": "susan.turpen@gmail.com",
     "upgradeNotes": "18\"x27\" rectangle, gold",
     "notes": "Imported payment info: paid 1: 142.5 on 8/5/24, paid 2: PAID, class cost: 285, upgrade/AlC incl. tax: 175.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2024-08-05"
@@ -2542,6 +2774,7 @@ module.exports =
     "customerId": 1185,
     "firstName": "Judith",
     "lastName": "Popky",
+    "email": "judypopky@gmail.com",
     "discountPercent": 20,
     "upgradeNotes": "Large birdhouse",
     "notes": "20% repeat student discount\nImported payment info: paid 1: TRADE, paid 2: TRADE, class cost: 228, upgrade/AlC incl. tax: 184.\nClass #7 for this student, per source sheet.",
@@ -2554,6 +2787,7 @@ module.exports =
     "customerId": 1337,
     "firstName": "Katie",
     "lastName": "Yankula",
+    "email": "kyankula@yahoo.com",
     "upgradeNotes": "19\" round, silver",
     "notes": "Imported payment info: paid 1: 142.5 on 5/31/24, paid 2: PAID, class cost: 285, upgrade/AlC incl. tax: 75.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2024-05-31"
@@ -2565,6 +2799,7 @@ module.exports =
     "customerId": 671,
     "firstName": "Diane",
     "lastName": "Gebhardt",
+    "email": "4523dg@gmail.com",
     "discountPercent": 20,
     "upgradeNotes": "10\" round (x3), silver",
     "notes": "20% repeat student discount\nImported payment info: paid 1: 142.5 on 6/29/24, paid 2: PAID, class cost: 228, upgrade/AlC incl. tax: 0.\nClass #3 for this student, per source sheet.",
@@ -2577,6 +2812,7 @@ module.exports =
     "customerId": 1973,
     "firstName": "Nora",
     "lastName": "Carlson",
+    "email": "ndcarlson56@earthlink.net",
     "upgradeNotes": "16\"x20\" Rectangle, silver",
     "notes": "Imported payment info: paid 1: 142.5 on 7/5/24, class cost: 285, upgrade/AlC incl. tax: 125.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2024-07-05"
@@ -2588,6 +2824,7 @@ module.exports =
     "customerId": 1428,
     "firstName": "Lael",
     "lastName": "Bennett",
+    "email": "lael@vogie.com",
     "upgradeNotes": "$200 off class from Auction",
     "notes": "Imported payment info: paid 1: -200, paid 2: PAID.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2024-07-13"
@@ -2599,6 +2836,7 @@ module.exports =
     "customerId": 607,
     "firstName": "Deborah",
     "lastName": "Nordstrom",
+    "email": "dnords@comcast.net",
     "upgradeNotes": "18x27 Rectangle, silver ($368)",
     "notes": "Imported payment info: paid 2: PAID.\nClass #3 for this student, per source sheet.",
     "enrolledOn": "2024-07-13"
@@ -2610,6 +2848,7 @@ module.exports =
     "customerId": 458,
     "firstName": "Christine",
     "lastName": "Upchurch",
+    "email": "christineupchurch@hotmail.com",
     "discountPercent": 20,
     "upgradeNotes": "bird",
     "notes": "20% repeat student discount\nImported payment info: paid 1: 262.5 on 12/29/23, class cost: 420.\nClass #16 for this student, per source sheet.",
@@ -2622,6 +2861,7 @@ module.exports =
     "customerId": 2632,
     "firstName": "Victoria",
     "lastName": "Coen",
+    "email": "vlcoen@yahoo.com",
     "discountPercent": 25,
     "upgradeNotes": "mandala",
     "notes": "25% repeat student discount\nImported payment info: paid 1: 210 on 12/29/23, class cost: 393.75.\nClass #21 for this student, per source sheet.",
@@ -2634,6 +2874,7 @@ module.exports =
     "customerId": 1628,
     "firstName": "Louise",
     "lastName": "Arndt",
+    "email": "louise.arndt@yahoo.com",
     "upgradeNotes": "bird",
     "notes": "Imported payment info: paid 1: 262.5 on 2/28/24, class cost: 525.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2024-02-28"
@@ -2645,6 +2886,7 @@ module.exports =
     "customerId": 2461,
     "firstName": "Susan",
     "lastName": "Hundrup",
+    "email": "shundrup1@gmail.com",
     "upgradeNotes": "bird",
     "notes": "Extended time from 4/29 class\nClass #3 for this student, per source sheet.",
     "enrolledOn": "2024-05-17"
@@ -2656,6 +2898,7 @@ module.exports =
     "customerId": 1146,
     "firstName": "Jodi",
     "lastName": "Bruce",
+    "email": "bruce.jodi@gmail.com",
     "upgradeNotes": "manfdala",
     "notes": "Class #2 for this student, per source sheet.",
     "enrolledOn": "2024-05-17"
@@ -2667,6 +2910,7 @@ module.exports =
     "customerId": 2662,
     "firstName": "Wendi",
     "lastName": "Prekeges",
+    "email": "wmprekeges@outlook.com",
     "upgradeNotes": "Custom rect, 12\"x48\" glass (18\"x54\" w/3\" border?), silver",
     "notes": "Imported payment info: paid 1: 285 on 3/30/24, class cost: 285, upgrade/AlC incl. tax: 215.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2024-03-30"
@@ -2678,6 +2922,7 @@ module.exports =
     "customerId": 607,
     "firstName": "Deborah",
     "lastName": "Nordstrom",
+    "email": "dnords@comcast.net",
     "upgradeNotes": "22\"x24\" leaf, silver",
     "notes": "Imported payment info: paid 2: PAID, class cost: 285, upgrade/AlC incl. tax: 165.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2024-04-29"
@@ -2689,6 +2934,7 @@ module.exports =
     "customerId": 1629,
     "firstName": "Louise",
     "lastName": "Hull",
+    "email": "l.k.hull@hotmail.com",
     "upgradeNotes": "18\"x27\" rect, silver",
     "notes": "Debi's friend\nImported payment info: paid 2: PAID, class cost: 285, upgrade/AlC incl. tax: 175.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2024-04-29"
@@ -2700,6 +2946,7 @@ module.exports =
     "customerId": 2461,
     "firstName": "Susan",
     "lastName": "Hundrup",
+    "email": "shundrup1@gmail.com",
     "upgradeNotes": "30\"x33\" leaf, tbd",
     "notes": "Imported payment info: paid 1: 262.5 on 4/9/24, class cost: 285, upgrade/AlC incl. tax: 350.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2024-04-09"
@@ -2711,6 +2958,7 @@ module.exports =
     "customerId": 458,
     "firstName": "Christine",
     "lastName": "Upchurch",
+    "email": "christineupchurch@hotmail.com",
     "discountPercent": 20,
     "upgradeNotes": "24\"x28\" rect, silver",
     "notes": "20% repeat student discount\nImported payment info: paid 1: 142.5 on 12/29/23, class cost: 228, upgrade/AlC incl. tax: 200.\nClass #15 for this student, per source sheet.",
@@ -2723,6 +2971,7 @@ module.exports =
     "customerId": 2632,
     "firstName": "Victoria",
     "lastName": "Coen",
+    "email": "vlcoen@yahoo.com",
     "discountPercent": 20,
     "upgradeNotes": "22\"x28\" oval, gold",
     "notes": "20% repeat student discount\nImported payment info: paid 1: 114 on 12/29/23, class cost: 228, upgrade/AlC incl. tax: 200.\nClass #20 for this student, per source sheet.",
@@ -2735,6 +2984,7 @@ module.exports =
     "customerId": 2649,
     "firstName": "Vivian",
     "lastName": "Leu",
+    "email": "leu.vivian@gmail.com",
     "upgradeNotes": "18\"x27\" rect, gold",
     "notes": "Jodi Bruce paid deposit\nImported payment info: paid 1: 142.5 on 2/15/24, class cost: 285, upgrade/AlC incl. tax: 175.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2024-02-15"
@@ -2764,6 +3014,7 @@ module.exports =
     "customerId": 1285,
     "firstName": "Karla",
     "lastName": "Opperman",
+    "email": "karla.opperman@gmail.com",
     "upgradeNotes": "18\"x22\" oval, silver",
     "notes": "Imported payment info: paid 1: 285 on 2/1/24, paid 2: PAID, class cost: 285, upgrade/AlC incl. tax: 125.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2024-02-01"
@@ -2775,6 +3026,7 @@ module.exports =
     "customerId": 2004,
     "firstName": "Pamela",
     "lastName": "Martin",
+    "email": "pjmartin1959@gmail.com",
     "upgradeNotes": "18\"x22\" oval, silver",
     "notes": "Special: Pam + Nancy\nImported payment info: paid 1: 142.5 on 3/30/24, paid 2: PAID, class cost: 285, upgrade/AlC incl. tax: 125.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2024-03-30"
@@ -2786,6 +3038,7 @@ module.exports =
     "customerId": 1924,
     "firstName": "Nancy",
     "lastName": "Booth",
+    "email": "nancy.booth2010@gmail.com",
     "upgradeNotes": "17\" round, gold",
     "notes": "Pamela Martin paid deposit\nSpecial: Pam + Nancy\nImported payment info: paid 1: 142.5 on 3/30/24, paid 2: PAID, class cost: 285, upgrade/AlC incl. tax: 0.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2024-03-30"
@@ -2797,6 +3050,7 @@ module.exports =
     "customerId": 2421,
     "firstName": "Sue",
     "lastName": "Dringle",
+    "email": "sdringle@msn.com",
     "upgradeNotes": "17\" round, silver",
     "notes": "Imported payment info: paid 1: 285 on 4/8/24, paid 2: PAID, class cost: 285, upgrade/AlC incl. tax: 0.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2024-04-08"
@@ -2808,6 +3062,7 @@ module.exports =
     "customerId": 674,
     "firstName": "Diane",
     "lastName": "Gebhardt",
+    "email": "borninpa@hotmail.com",
     "upgradeNotes": "22\"x24\" leaf, gold",
     "notes": "Imported payment info: paid 1: 285 on 4/7/24, paid 2: PAID, class cost: 285, upgrade/AlC incl. tax: 165.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2024-04-07"
@@ -2819,6 +3074,7 @@ module.exports =
     "customerId": 458,
     "firstName": "Christine",
     "lastName": "Upchurch",
+    "email": "christineupchurch@hotmail.com",
     "discountPercent": 20,
     "upgradeNotes": "30x33 Leaf (rev), silver",
     "notes": "20% repeat student discount\nImported payment info: paid 1: 285 on 12/29/23, class cost: 228, upgrade/AlC incl. tax: 280.\nClass #14 for this student, per source sheet.",
@@ -2831,6 +3087,7 @@ module.exports =
     "customerId": 2632,
     "firstName": "Victoria",
     "lastName": "Coen",
+    "email": "vlcoen@yahoo.com",
     "discountPercent": 20,
     "upgradeNotes": "lotus",
     "notes": "20% repeat student discount\nImported payment info: paid 1: 114 on 12/29/23, class cost: 228.\nClass #19 for this student, per source sheet.",
@@ -2843,6 +3100,7 @@ module.exports =
     "customerId": 2461,
     "firstName": "Susan",
     "lastName": "Hundrup",
+    "email": "shundrup1@gmail.com",
     "upgradeNotes": "22x24 Leaf, gold",
     "notes": "Imported payment info: paid 1: 142.5 on 12/28/23, class cost: 285, upgrade/AlC incl. tax: 165.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2023-12-28"
@@ -2854,6 +3112,7 @@ module.exports =
     "customerId": 831,
     "firstName": "Fiona",
     "lastName": "Wang",
+    "email": "yfwfiona@gmail.com",
     "upgradeNotes": "26\"x36\" oval, gold",
     "notes": "Imported payment info: paid 1: 142.5 on 1/12/24, class cost: 285, upgrade/AlC incl. tax: 350.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2024-01-12"
@@ -2865,6 +3124,7 @@ module.exports =
     "customerId": 2624,
     "firstName": "Victoria",
     "lastName": "Paradis",
+    "email": "vpar4219@yahoo.com",
     "discountPercent": 25,
     "upgradeNotes": "17in round",
     "notes": "25% repeat student discount\nImported payment info: paid 1: 142.5 on 1/12/24, class cost: 213.75.\nClass #32 for this student, per source sheet.",
@@ -2877,6 +3137,7 @@ module.exports =
     "customerId": 1948,
     "firstName": "Natalie",
     "lastName": "Dalrymple",
+    "email": "glassart1@yahoo.com",
     "discountPercent": 20,
     "upgradeNotes": "18x27 Rectangle, Silver",
     "notes": "20% repeat student discount\nImported payment info: paid 1: 142.5 on 12/30/23, class cost: 228, upgrade/AlC incl. tax: 140.\nClass #5 for this student, per source sheet.",
@@ -2889,6 +3150,7 @@ module.exports =
     "customerId": 170,
     "firstName": "Ann",
     "lastName": "Gihl",
+    "email": "afwgihl@gmail.com",
     "upgradeNotes": "30in round, gold",
     "notes": "Special: 240\nImported payment info: paid 1: 142.5 on 12/27/23, class cost: 285.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2023-12-27"
@@ -2900,6 +3162,7 @@ module.exports =
     "customerId": 458,
     "firstName": "Christine",
     "lastName": "Upchurch",
+    "email": "christineupchurch@hotmail.com",
     "discountPercent": 20,
     "upgradeNotes": "26x36 Oval, gold",
     "notes": "20% repeat student discount\nSpecial: 350\nImported payment info: paid 1: 285 on 12/29/23, class cost: 228.\nClass #13 for this student, per source sheet.",
@@ -2912,6 +3175,7 @@ module.exports =
     "customerId": 2632,
     "firstName": "Victoria",
     "lastName": "Coen",
+    "email": "vlcoen@yahoo.com",
     "discountPercent": 20,
     "upgradeNotes": "22x24 Leaf, Gold",
     "notes": "20% repeat student discount\nSpecial: 165\nImported payment info: paid 1: 114 on 12/29/23, class cost: 228.\nClass #18 for this student, per source sheet.",
@@ -2924,6 +3188,7 @@ module.exports =
     "customerId": 1112,
     "firstName": "Jill",
     "lastName": "Bliss",
+    "email": "jbliss@hsblawyers.com",
     "discountPercent": 20,
     "upgradeNotes": "18x27 rectangle, silver",
     "notes": "20% repeat student discount\nSpecial: 175\nImported payment info: paid 1: 142.5 on 12/30/23, class cost: 228.\nClass #4 for this student, per source sheet.",
@@ -2936,6 +3201,7 @@ module.exports =
     "customerId": 310,
     "firstName": "Brenda",
     "lastName": "Alfano",
+    "email": "simonescreations@msn.com",
     "upgradeNotes": "18x22 oval, silver",
     "notes": "Special: 125\nImported payment info: paid 1: 142.5 on 1/30/24, class cost: 285.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2024-01-30"
@@ -2947,6 +3213,7 @@ module.exports =
     "customerId": 1401,
     "firstName": "Kjersten",
     "lastName": "Johansen",
+    "email": "kjersten@outlook.com",
     "upgradeNotes": "Custom 19in Mirror (see email)",
     "notes": "Special: 125\nImported payment info: paid 1: 142.5 on 1/6/24, class cost: 285.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2024-01-06"
@@ -2958,6 +3225,7 @@ module.exports =
     "customerId": 1401,
     "firstName": "Kjersten",
     "lastName": "Johansen",
+    "email": "kjersten@outlook.com",
     "upgradeNotes": "17in round, silver",
     "notes": "From source sheet: friend\nSpecial: 0\nImported payment info: paid 1: 142.5 on 1/6/24, class cost: 285.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2024-01-06"
@@ -2969,6 +3237,7 @@ module.exports =
     "customerId": 1382,
     "firstName": "Kim",
     "lastName": "Ross",
+    "email": "kimopatra@gmail.com",
     "upgradeNotes": "18\"x22\" oval, Gold ((BIRDHOUSE))",
     "notes": "yellow/earth tones\nImported payment info: upgrade/AlC incl. tax: 145.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2024-02-24"
@@ -2980,6 +3249,7 @@ module.exports =
     "customerId": 1922,
     "firstName": "Nanci",
     "lastName": "Perrin",
+    "email": "vegiepal77@hotmail.com",
     "upgradeNotes": "30in Round, Silver (Green Tea colors)",
     "notes": "might need help cutting tiles\nSpecial: 250\nImported payment info: upgrade/AlC incl. tax: 250.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2024-02-24"
@@ -2991,6 +3261,7 @@ module.exports =
     "customerId": 1791,
     "firstName": "Mary",
     "lastName": "Waters",
+    "email": "WETREUS@AOL.COM",
     "upgradeNotes": "24in Round, Silver",
     "notes": "-\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2024-02-24"
@@ -3002,6 +3273,7 @@ module.exports =
     "customerId": 1001,
     "firstName": "Jane",
     "lastName": "Balliet",
+    "email": "skydyvrchick@aol.com",
     "upgradeNotes": "30in Round, Silver || Cloud, Rings, 2-Med Leaves, birdhouse, neslo",
     "notes": "pinks, dusty rose, black\nSpecial: N/C\nImported payment info: upgrade/AlC incl. tax: 250.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2024-02-24"
@@ -3013,6 +3285,7 @@ module.exports =
     "customerId": 1540,
     "firstName": "Linda",
     "lastName": "Levy",
+    "email": "levy.linda@gmail.com",
     "upgradeNotes": "22x28 Oval, Silver | Also 24x28 Rectangle, substrate only ($99)",
     "notes": "similar to seafoam drop, but blues\nSpecial: 225 + 99\nImported payment info: upgrade/AlC incl. tax: 324.\nClass #3 for this student, per source sheet.",
     "enrolledOn": "2024-02-24"
@@ -3024,6 +3297,7 @@ module.exports =
     "customerId": 149,
     "firstName": "Angela",
     "lastName": "Hefka",
+    "email": "angelahefka@gmail.com",
     "upgradeNotes": "22x26 Leaf, Gold (sage flower colors)",
     "notes": "Greens and golds (like Sage Flower)\nSpecial: 175\nImported payment info: upgrade/AlC incl. tax: 175.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2024-02-24"
@@ -3035,6 +3309,7 @@ module.exports =
     "customerId": 1665,
     "firstName": "Mackie",
     "lastName": "Hefka",
+    "email": "mhefka@aol.com",
     "upgradeNotes": "24in Round, Silver",
     "notes": "Greens, pearl white, and pinks\nSpecial: 175\nImported payment info: upgrade/AlC incl. tax: 175.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2024-02-24"
@@ -3046,6 +3321,7 @@ module.exports =
     "customerId": 1675,
     "firstName": "Malia",
     "lastName": "Bingham",
+    "email": "bingham.main@gmail.com",
     "upgradeNotes": "24in Round, Gold",
     "notes": "Yellow Tones, some bright some deep\nSpecial: 175\nImported payment info: upgrade/AlC incl. tax: 175.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2024-02-24"
@@ -3057,6 +3333,7 @@ module.exports =
     "customerId": 162,
     "firstName": "Anita",
     "lastName": "Desai",
+    "email": "anita.desai@gmail.com",
     "upgradeNotes": "24in Round, Silver",
     "notes": "Purple and turquoise (like mandala)\nSpecial: 175\nImported payment info: upgrade/AlC incl. tax: 175.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2024-02-24"
@@ -3068,6 +3345,7 @@ module.exports =
     "customerId": 1382,
     "firstName": "Kim",
     "lastName": "Ross",
+    "email": "kimopatra@gmail.com",
     "upgradeNotes": "Mandala",
     "notes": "Dark red w/burnt yellow/browns\nSpecial: 225\nImported payment info: upgrade/AlC incl. tax: 230.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2024-02-16"
@@ -3079,6 +3357,7 @@ module.exports =
     "customerId": 320,
     "firstName": "Bridget",
     "lastName": "Finley",
+    "email": "bridget6079@yahoo.com",
     "upgradeNotes": "21in Mandala, Silver",
     "notes": "Peacock colors, purple, lighter purple, and blue\nSpecial: 225\nImported payment info: upgrade/AlC incl. tax: 225.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2024-02-16"
@@ -3090,6 +3369,7 @@ module.exports =
     "customerId": 1001,
     "firstName": "Jane",
     "lastName": "Balliet",
+    "email": "skydyvrchick@aol.com",
     "upgradeNotes": "26in Mandala, Silver, Birhouse to match cactus picture",
     "notes": "Cobalt blue and white\nSpecial: N/C\nImported payment info: upgrade/AlC incl. tax: 500.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2024-02-16"
@@ -3101,6 +3381,7 @@ module.exports =
     "customerId": 869,
     "firstName": "Gina",
     "lastName": "McSherry",
+    "email": "prettypotsnpieces@gmail.com",
     "upgradeNotes": "21in Mandala, Gold",
     "notes": "Coral Joy & Cotton Candy (pop of orange)\nSpecial: 225\nImported payment info: upgrade/AlC incl. tax: 225.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2024-02-16"
@@ -3112,6 +3393,7 @@ module.exports =
     "customerId": 1997,
     "firstName": "Pamela",
     "lastName": "Canestrari",
+    "email": "pamcanestrari@gmail.com",
     "upgradeNotes": "Birdhouse (Cinnamon)",
     "notes": "Main:blue, Accent:brown, green/silver\nSpecial: 230 + 120 birdhouses\nImported payment info: upgrade/AlC incl. tax: 230.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2024-02-16"
@@ -3123,6 +3405,7 @@ module.exports =
     "customerId": 2001,
     "firstName": "Pamela",
     "lastName": "Hess",
+    "email": "pamelahess2961@gmail.com",
     "upgradeNotes": "21in Mandala, Silver",
     "notes": "Coral Joy (teal, coral, purple, light green)\nSpecial: 225+50 (no pole)\nImported payment info: upgrade/AlC incl. tax: 225.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2024-02-16"
@@ -3134,6 +3417,7 @@ module.exports =
     "customerId": 1277,
     "firstName": "Karen",
     "lastName": "Zarinski",
+    "email": "kfz911@yahoo.com",
     "upgradeNotes": "21in Mandala, Silver",
     "notes": "Cocktail w/ brighter turquoise\nSpecial: 225\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2024-02-16"
@@ -3145,6 +3429,7 @@ module.exports =
     "customerId": 1353,
     "firstName": "Kerri",
     "lastName": "Robbins",
+    "email": "karobbins1@comcast.net",
     "upgradeNotes": "Birdhouse",
     "notes": "Yellow, Turquoise, Pink\nSpecial: 230\nImported payment info: upgrade/AlC incl. tax: 230.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2024-02-16"
@@ -3156,6 +3441,7 @@ module.exports =
     "customerId": 2632,
     "firstName": "Victoria",
     "lastName": "Coen",
+    "email": "vlcoen@yahoo.com",
     "discountPercent": 20,
     "upgradeNotes": "18\"x22\" oval, silver",
     "notes": "20% repeat student discount\nImported payment info: class cost: 228, upgrade/AlC incl. tax: 100.\nClass #17 for this student, per source sheet.",
@@ -3168,6 +3454,7 @@ module.exports =
     "customerId": 310,
     "firstName": "Brenda",
     "lastName": "Alfano",
+    "email": "simonescreations@msn.com",
     "upgradeNotes": "17\" round, silver",
     "notes": "Imported payment info: paid 1: 142.5 on 9/4/23, class cost: 285, upgrade/AlC incl. tax: 0.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2023-09-04"
@@ -3179,6 +3466,7 @@ module.exports =
     "customerId": 1316,
     "firstName": "Kathryn",
     "lastName": "Lantz",
+    "email": "kathrynlantz13@gmail.com",
     "upgradeNotes": "17\" round silver",
     "notes": "Imported payment info: paid 1: 285 on 9/8/23, class cost: 285, upgrade/AlC incl. tax: 0.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2023-09-08"
@@ -3190,6 +3478,7 @@ module.exports =
     "customerId": 1492,
     "firstName": "Leslie",
     "lastName": "Eder",
+    "email": "ederleslie@gmail.com",
     "upgradeNotes": "17\" round, silver",
     "notes": "Imported payment info: paid 1: 285 on 9/9/23, class cost: 285, upgrade/AlC incl. tax: 0.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2023-09-09"
@@ -3201,6 +3490,7 @@ module.exports =
     "customerId": 1492,
     "firstName": "Mady",
     "lastName": "Eder",
+    "email": "ederleslie@gmail.com",
     "upgradeNotes": "17\" round, silver",
     "notes": "Leslie's daughter\nImported payment info: paid 1: 285 on 9/9/23, class cost: 285, upgrade/AlC incl. tax: 0.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2023-09-09"
@@ -3212,6 +3502,7 @@ module.exports =
     "customerId": 584,
     "firstName": "De",
     "lastName": "Yamaura",
+    "email": "dyamaura3@gmail.com",
     "upgradeNotes": "18\"x22\" oval, gold",
     "notes": "Imported payment info: paid 1: 285 on 9/16/23, class cost: 285, upgrade/AlC incl. tax: 125.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2023-09-16"
@@ -3233,6 +3524,7 @@ module.exports =
     "customerId": 360,
     "firstName": "Carol",
     "lastName": "Recor",
+    "email": "carrec23@gmail.com",
     "upgradeNotes": "17\" round, silver",
     "notes": "Imported payment info: paid 1: 285 on 9/16/23, class cost: 285, upgrade/AlC incl. tax: 0.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2023-09-16"
@@ -3244,6 +3536,7 @@ module.exports =
     "customerId": 1146,
     "firstName": "Jodi",
     "lastName": "Bruce",
+    "email": "bruce.jodi@gmail.com",
     "upgradeNotes": "18\"x22\" oval, gold",
     "notes": "Special: PAID\nImported payment info: paid 1: 142.5 on 9/16/23, class cost: 285, upgrade/AlC incl. tax: 125.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2023-09-16"
@@ -3255,6 +3548,7 @@ module.exports =
     "customerId": 2649,
     "firstName": "Vivian",
     "lastName": "Leu",
+    "email": "leu.vivian@gmail.com",
     "upgradeNotes": "18\"x22\" oval, silver",
     "notes": "Jodi paid deposit\nSpecial: PAID\nImported payment info: paid 1: 142.5 on 9/16/23, class cost: 285, upgrade/AlC incl. tax: 125.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2023-09-16"
@@ -3266,6 +3560,7 @@ module.exports =
     "customerId": 2638,
     "firstName": "Victoria",
     "lastName": "Windsor",
+    "email": "windsor.v76@gmail.com",
     "upgradeNotes": "24\" round or 18\"x22\" oval, silver",
     "notes": "Special: PAID\nImported payment info: paid 1: 285 on 9/19/23, class cost: 285, upgrade/AlC incl. tax: 125.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2023-09-19"
@@ -3277,6 +3572,7 @@ module.exports =
     "customerId": 1037,
     "firstName": "Jayne",
     "lastName": "Dinsmore",
+    "email": "jaynemore@icloud.com",
     "upgradeNotes": "18\"x22\" oval, gold",
     "notes": "Special: PAID\nImported payment info: paid 1: 285 on 9/19/23, class cost: 285, upgrade/AlC incl. tax: 125.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2023-09-19"
@@ -3288,6 +3584,7 @@ module.exports =
     "customerId": 222,
     "firstName": "Ashley",
     "lastName": "Bisset",
+    "email": "ashelydbisset@gmail.com",
     "upgradeNotes": "24\" round, silver",
     "notes": "Special: PAID\nImported payment info: paid 1: 285 on 9/19/23, class cost: 285, upgrade/AlC incl. tax: 125.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2023-09-19"
@@ -3299,6 +3596,7 @@ module.exports =
     "customerId": 265,
     "firstName": "Bella",
     "lastName": "Erickson",
+    "email": "isabellasbisset@gmail.com",
     "upgradeNotes": "17\" round, silver",
     "notes": "Special: PAID\nImported payment info: paid 1: 285 on 9/19/23, class cost: 285, upgrade/AlC incl. tax: 0.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2023-09-19"
@@ -3310,6 +3608,7 @@ module.exports =
     "customerId": 2624,
     "firstName": "Victoria",
     "lastName": "Paradis",
+    "email": "vpar4219@yahoo.com",
     "discountPercent": 25,
     "upgradeNotes": "17\" round, gold",
     "notes": "25% repeat student discount\nSpecial: PAID\nImported payment info: paid 1: 213.75 on 9/21/23, class cost: 213.75, upgrade/AlC incl. tax: 0.\nClass #31 for this student, per source sheet.",
@@ -3322,6 +3621,7 @@ module.exports =
     "customerId": 2021,
     "firstName": "Patricia",
     "lastName": "Vogt",
+    "email": "pattyannvogt@icloud.com",
     "upgradeNotes": "Custom oval (already made), silver",
     "notes": "will pay during class\nSpecial: PAID\nImported payment info: class cost: 285, upgrade/AlC incl. tax: 25.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2024-01-06"
@@ -3333,6 +3633,7 @@ module.exports =
     "customerId": 1309,
     "firstName": "Kathleen",
     "lastName": "Lawson",
+    "email": "kathleendore55@gmail.com",
     "upgradeNotes": "17\" round, silver",
     "notes": "Patricia's sister\nSpecial: PAID\nImported payment info: class cost: 285, upgrade/AlC incl. tax: 0.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2024-01-06"
@@ -3344,6 +3645,7 @@ module.exports =
     "customerId": 1925,
     "firstName": "Nancy",
     "lastName": "Callanan",
+    "email": "nccallanan@gmail.com",
     "discountPercent": 20,
     "upgradeNotes": "30x33 leaf (gold)",
     "notes": "greys, gold, browns\nSpecial: PAID\nImported payment info: paid 1: 0 on 9/21/23, paid 2: 285, class cost: 0, upgrade/AlC incl. tax: 0.\nClass #4 for this student, per source sheet.",
@@ -3356,6 +3658,7 @@ module.exports =
     "customerId": 1587,
     "firstName": "Liz",
     "lastName": "Bednorz",
+    "email": "lizbednorz@sbcglobal.net",
     "upgradeNotes": "24x28 rectangle (silver)",
     "notes": "blues, greens\nSpecial: PAID\nImported payment info: paid 1: 285 on 9/25/23, paid 2: 260, class cost: 285, upgrade/AlC incl. tax: 260.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2023-09-25"
@@ -3367,6 +3670,7 @@ module.exports =
     "customerId": 1855,
     "firstName": "Michaela",
     "lastName": "Bixler",
+    "email": "scottmichbixler@gmail.com",
     "upgradeNotes": "22x24 Leaf (Silver)",
     "notes": "mustard, pink, blue\nSpecial: PAID (nancy)\nImported payment info: paid 1: 142.5 on 10/4/23, paid 2: 317.5, class cost: 285, upgrade/AlC incl. tax: 175.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2023-10-04"
@@ -3378,6 +3682,7 @@ module.exports =
     "customerId": 2469,
     "firstName": "Susan",
     "lastName": "Marvos",
+    "email": "bill-susie@sbcglobal.net",
     "upgradeNotes": "22x24 leaf (gold)",
     "notes": "dark red, brown, orange\nSpecial: PAID (kit price)\nImported payment info: paid 1: 285 on 10/11/23, paid 2: 115, class cost: 285, upgrade/AlC incl. tax: 175.\nClass #3 for this student, per source sheet.",
     "enrolledOn": "2023-10-11"
@@ -3389,6 +3694,7 @@ module.exports =
     "customerId": 1184,
     "firstName": "Judith",
     "lastName": "Pinkston",
+    "email": "judypinkston1@sbcglobal.net",
     "upgradeNotes": "22x24 leaf (gold)",
     "notes": "teal, gold\nSpecial: PAID\nImported payment info: paid 1: 285 on 10/11/23, paid 2: 175, class cost: 285, upgrade/AlC incl. tax: 175.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2023-10-11"
@@ -3400,6 +3706,7 @@ module.exports =
     "customerId": 2593,
     "firstName": "Tram",
     "lastName": "Baird",
+    "email": "mtram917@gmail.com",
     "upgradeNotes": "19\" round mirror (gold) -Nancy paid",
     "notes": "Greens\nSpecial: PAID\nImported payment info: paid 1: 285 on 10/12/23, paid 2: 125, class cost: 285, upgrade/AlC incl. tax: 125.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2023-10-12"
@@ -3411,6 +3718,7 @@ module.exports =
     "customerId": 2372,
     "firstName": "Sindy",
     "lastName": "Sebastiani",
+    "email": "wildwoman300@hotmail.com",
     "upgradeNotes": "30x33 leaf (gold)",
     "notes": "earth tones\nSpecial: PAID\nImported payment info: paid 1: 285 on 11/19/23, paid 2: 275, class cost: 285, upgrade/AlC incl. tax: 275.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2023-11-19"
@@ -3422,6 +3730,7 @@ module.exports =
     "customerId": 1925,
     "firstName": "Carol",
     "lastName": "Shea",
+    "email": "nccallanan@gmail.com",
     "upgradeNotes": "19\" round (silver) - Nancy will pay",
     "notes": "Blues, aquas, greens\nSpecial: PAID (nancy)\nImported payment info: paid 2: 410, class cost: 285, upgrade/AlC incl. tax: 125.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2023-12-02"
@@ -3433,6 +3742,7 @@ module.exports =
     "customerId": 194,
     "firstName": "Annie",
     "lastName": "Nelson",
+    "email": "Annie-nelson@outlook.com",
     "upgradeNotes": "30in x2, votives",
     "notes": "Imported payment info: paid 2: PAID, class cost: 0, upgrade/AlC incl. tax: 365.48.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2023-11-18"
@@ -3444,6 +3754,7 @@ module.exports =
     "customerId": 2240,
     "firstName": "Sam",
     "lastName": "Pease",
+    "email": "samipease@gmail.com",
     "upgradeNotes": "24x28",
     "notes": "Ann paid\nImported payment info: paid 2: PAID, class cost: 0, upgrade/AlC incl. tax: 169.19.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2023-11-18"
@@ -3455,6 +3766,7 @@ module.exports =
     "customerId": 1664,
     "firstName": "Lynsey",
     "lastName": "McIntosh",
+    "email": "lynsey.nelson70@gmail.com",
     "upgradeNotes": "24in",
     "notes": "Ann paid\nImported payment info: paid 2: PAID, class cost: 0, upgrade/AlC incl. tax: 113.3.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2023-11-18"
@@ -3466,6 +3778,7 @@ module.exports =
     "customerId": 1775,
     "firstName": "Mary",
     "lastName": "Lang",
+    "email": "mary4fitness@gmail.com",
     "upgradeNotes": "30in",
     "notes": "Imported payment info: class cost: 0.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2023-11-18"
@@ -3477,6 +3790,7 @@ module.exports =
     "customerId": 1255,
     "firstName": "Karen",
     "lastName": "Healy",
+    "email": "kathealy@comcast.net",
     "upgradeNotes": "24x28",
     "notes": "Imported payment info: class cost: 0.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2023-11-18"
@@ -3488,6 +3802,7 @@ module.exports =
     "customerId": 2202,
     "firstName": "Ronelle",
     "lastName": "Tyau",
+    "email": "rotyau@yahoo.com",
     "upgradeNotes": "small stuff",
     "notes": "Imported payment info: class cost: 0.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2023-11-18"
@@ -3499,6 +3814,7 @@ module.exports =
     "customerId": 458,
     "firstName": "Christine",
     "lastName": "Upchurch",
+    "email": "christineupchurch@hotmail.com",
     "discountPercent": 20,
     "upgradeNotes": "22x28 oval, silver",
     "notes": "20% repeat student discount\nImported payment info: paid 1: 142.5 on 7/16/23, paid 2: PAID, class cost: 228, upgrade/AlC incl. tax: 200.\nClass #12 for this student, per source sheet.",
@@ -3511,6 +3827,7 @@ module.exports =
     "customerId": 1741,
     "firstName": "Marsha",
     "lastName": "Hudson",
+    "email": "marsha@griffyn.us",
     "discountPercent": 27,
     "upgradeNotes": "Small Birdhouse",
     "notes": "27% repeat student discount\nImported payment info: paid 1: 208.05 on 7/23/23, paid 2: PAID, class cost: 208.05.\nClass #35 for this student, per source sheet.",
@@ -3523,6 +3840,7 @@ module.exports =
     "customerId": 454,
     "firstName": "Christine",
     "lastName": "Madden",
+    "email": "usckiki82@yahoo.com",
     "upgradeNotes": "17in",
     "notes": "Imported payment info: paid 1: 142.5 on 8/1/23, paid 2: PAID, class cost: 285.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2023-08-01"
@@ -3534,6 +3852,7 @@ module.exports =
     "customerId": 454,
     "firstName": "Donna",
     "lastName": "Madden",
+    "email": "usckiki82@yahoo.com",
     "upgradeNotes": "22x24 leaf, gold",
     "notes": "Christine Madden paid\nImported payment info: paid 1: 142.5 on 8/1/23, paid 2: PAID, class cost: 285, upgrade/AlC incl. tax: 165.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2023-08-01"
@@ -3545,6 +3864,7 @@ module.exports =
     "customerId": 454,
     "firstName": "Marisa",
     "lastName": "Roman",
+    "email": "usckiki82@yahoo.com",
     "upgradeNotes": "17in gold",
     "notes": "Imported payment info: paid 1: 142.5 on 8/1/23, paid 2: PAID, class cost: 285.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2023-08-01"
@@ -3556,6 +3876,7 @@ module.exports =
     "customerId": 2049,
     "firstName": "Patty",
     "lastName": "Songstad",
+    "email": "patty.songstad@gmail.com",
     "upgradeNotes": "19in Silver",
     "notes": "Imported payment info: paid 1: 142.5 on 8/6/23, paid 2: PAID, class cost: 285, upgrade/AlC incl. tax: 75.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2023-08-06"
@@ -3567,6 +3888,7 @@ module.exports =
     "customerId": 2049,
     "firstName": "Denise",
     "lastName": "Beaumont",
+    "email": "patty.songstad@gmail.com",
     "notes": "Patty Songstad paid\nImported payment info: paid 1: 142.5 on 8/6/23, paid 2: PAID, class cost: 285.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2023-08-06"
   },
@@ -3577,6 +3899,7 @@ module.exports =
     "customerId": 2049,
     "firstName": "Gayle",
     "lastName": "Signer",
+    "email": "patty.songstad@gmail.com",
     "upgradeNotes": "22x24 leaf, silver, 4x6 picture frame",
     "notes": "Patty Songstad paid\nImported payment info: paid 1: 142.5 on 8/6/23, paid 2: PAID, class cost: 285, upgrade/AlC incl. tax: 75.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2023-08-06"
@@ -3588,6 +3911,7 @@ module.exports =
     "customerId": 404,
     "firstName": "Cecilia",
     "lastName": "Rozendaal",
+    "email": "cecirozie@gmail.com",
     "upgradeNotes": "26x36 oval, silver",
     "notes": "Imported payment info: paid 1: 285 on 10/6/23, paid 2: PAID, class cost: 285, upgrade/AlC incl. tax: 350.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2023-10-06"
@@ -3599,6 +3923,7 @@ module.exports =
     "customerId": 2389,
     "firstName": "Stacey",
     "lastName": "Witt",
+    "email": "stacey2witt@gmail.com",
     "discountPercent": 20,
     "notes": "20% repeat student discount\nImported payment info: paid 1: 262.5 on 7/16/23, paid 2: PAID, class cost: 420.\nClass #4 for this student, per source sheet.",
     "enrolledOn": "2023-07-16"
@@ -3610,6 +3935,7 @@ module.exports =
     "customerId": 1341,
     "firstName": "Keith",
     "lastName": "Witt",
+    "email": "keithawitt@gmail.com",
     "discountPercent": 20,
     "notes": "20% repeat student discount (Stacey Witt)\nImported payment info: paid 1: 262.5 on 7/16/23, paid 2: PAID, class cost: 420.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2023-07-16"
@@ -3621,6 +3947,7 @@ module.exports =
     "customerId": 458,
     "firstName": "Christine",
     "lastName": "Upchurch",
+    "email": "christineupchurch@hotmail.com",
     "discountPercent": 20,
     "notes": "20% repeat student discount\nImported payment info: paid 1: 525 on 7/16/23, paid 2: PAID, class cost: 420.\nClass #11 for this student, per source sheet.",
     "enrolledOn": "2023-07-16"
@@ -3632,6 +3959,7 @@ module.exports =
     "customerId": 971,
     "firstName": "Jacqueline",
     "lastName": "Gosschalk",
+    "email": "jackie.gosschalk@gmail.com",
     "discountPercent": 20,
     "notes": "20% repeat student discount\nImported payment info: paid 1: 262.5 on 9/11/23, paid 2: PAID, class cost: 420.\nClass #13 for this student, per source sheet.",
     "enrolledOn": "2023-09-11"
@@ -3643,6 +3971,7 @@ module.exports =
     "customerId": 971,
     "firstName": "Jacqueline",
     "lastName": "Gosschalk",
+    "email": "jackie.gosschalk@gmail.com",
     "discountPercent": 20,
     "notes": "20% repeat student discount\nImported payment info: paid 1: 262.5 on 9/11/23, paid 2: PAID, class cost: 420.\nClass #12 for this student, per source sheet.",
     "enrolledOn": "2023-09-11"
@@ -3654,6 +3983,7 @@ module.exports =
     "customerId": 1741,
     "firstName": "Marsha",
     "lastName": "Hudson",
+    "email": "marsha@griffyn.us",
     "discountPercent": 27,
     "notes": "27% repeat student discount\nImported payment info: paid 1: 262.5 on 9/16/23, paid 2: PAID, class cost: 383.25.\nClass #34 for this student, per source sheet.",
     "enrolledOn": "2023-09-16"
@@ -3665,6 +3995,7 @@ module.exports =
     "customerId": 2632,
     "firstName": "Victoria",
     "lastName": "Coen",
+    "email": "vlcoen@yahoo.com",
     "discountPercent": 20,
     "notes": "20% repeat student discount\nImported payment info: paid 1: 262.5 on 9/28/23, paid 2: PAID, class cost: 228, upgrade/AlC incl. tax: 160, balance: $176.24.\nClass #16 for this student, per source sheet.",
     "enrolledOn": "2023-09-28"
@@ -3676,6 +4007,7 @@ module.exports =
     "customerId": 458,
     "firstName": "Christine",
     "lastName": "Upchurch",
+    "email": "christineupchurch@hotmail.com",
     "discountPercent": 20,
     "upgradeNotes": "22x24 leaf, Gold",
     "notes": "20% repeat student discount\nImported payment info: paid 1: 285 on 7/16/23, paid 2: PAID, class cost: 228, upgrade/AlC incl. tax: 132, balance: $0.00.\nClass #10 for this student, per source sheet.",
@@ -3688,6 +4020,7 @@ module.exports =
     "customerId": 2632,
     "firstName": "Victoria",
     "lastName": "Coen",
+    "email": "vlcoen@yahoo.com",
     "discountPercent": 20,
     "upgradeNotes": "22\"x28\" oval, gold",
     "notes": "20% repeat student discount\nImported payment info: paid 1: 228 on 7/18/23, paid 2: PAID, class cost: 228, upgrade/AlC incl. tax: 200, balance: $136.72.\nClass #15 for this student, per source sheet.",
@@ -3700,6 +4033,7 @@ module.exports =
     "customerId": 2021,
     "firstName": "Patricia",
     "lastName": "Vogt",
+    "email": "pattyannvogt@icloud.com",
     "upgradeNotes": "17\" round, silver",
     "notes": "Imported payment info: paid 1: 285 on 7/21/23, paid 2: PAID, class cost: 285, balance: $0.00.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2023-07-21"
@@ -3711,6 +4045,7 @@ module.exports =
     "customerId": 584,
     "firstName": "De",
     "lastName": "Yamaura",
+    "email": "dyamaura3@gmail.com",
     "upgradeNotes": "17\" round, silver",
     "notes": "Imported payment info: paid 1: 285 on 7/21/23, paid 2: PAID, class cost: 285, balance: $0.00.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2023-07-21"
@@ -3722,6 +4057,7 @@ module.exports =
     "customerId": 647,
     "firstName": "Denise",
     "lastName": "Bjorling",
+    "email": "denisebjorling@comcast.net",
     "discountPercent": 20,
     "upgradeNotes": "bringing her own substrate",
     "notes": "20% repeat student discount\nImported payment info: paid 1: 142.5 on 7/25/23, paid 2: PAID, class cost: 228, upgrade/AlC incl. tax: 247, balance: $312.83.\nClass #4 for this student, per source sheet.",
@@ -3734,6 +4070,7 @@ module.exports =
     "customerId": 360,
     "firstName": "Carol",
     "lastName": "Recor",
+    "email": "carrec23@gmail.com",
     "upgradeNotes": "19\" round, gold",
     "notes": "Imported payment info: paid 1: 285 on 7/29/23, paid 2: PAID, class cost: 285, upgrade/AlC incl. tax: 75, balance: $82.65.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2023-07-29"
@@ -3745,6 +4082,7 @@ module.exports =
     "customerId": 1192,
     "firstName": "Julia",
     "lastName": "Drebin",
+    "email": "knit.felt@gmail.com",
     "upgradeNotes": "18\"x27\" rect, silver",
     "notes": "Imported payment info: paid 1: 285 on 7/30/23, paid 2: PAID, class cost: 228, upgrade/AlC incl. tax: 175, balance: $192.94.\nClass #3 for this student, per source sheet.",
     "enrolledOn": "2023-07-30"
@@ -3756,6 +4094,7 @@ module.exports =
     "customerId": 2209,
     "firstName": "Rosie",
     "lastName": "Epstein",
+    "email": "rosie1011@nwi.net",
     "upgradeNotes": "18\"x27\" rect, silver",
     "notes": "Juliia Drebin's sister\nImported payment info: paid 1: 285 on 7/30/23, paid 2: PAID, class cost: 285, upgrade/AlC incl. tax: 175, balance: $332.59.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2023-07-30"
@@ -3767,6 +4106,7 @@ module.exports =
     "customerId": 2632,
     "firstName": "Victoria",
     "lastName": "Coen",
+    "email": "vlcoen@yahoo.com",
     "discountPercent": 20,
     "upgradeNotes": "20\"x28\", gold",
     "notes": "20% repeat student discount\nImported payment info: paid 1: 228 on 4/4/23, paid 2: PAID, class cost: 228, upgrade/AlC incl. tax: 160.\nClass #14 for this student, per source sheet.",
@@ -3779,6 +4119,7 @@ module.exports =
     "customerId": 971,
     "firstName": "Jacqueline",
     "lastName": "Gosschalk",
+    "email": "jackie.gosschalk@gmail.com",
     "discountPercent": 20,
     "upgradeNotes": "24\" round, gold",
     "notes": "20% repeat student discount\nImported payment info: paid 1: 228 on 4/23/23, paid 2: PAID, class cost: 228, upgrade/AlC incl. tax: 100.\nClass #11 for this student, per source sheet.",
@@ -3791,6 +4132,7 @@ module.exports =
     "customerId": 971,
     "firstName": "Jacqueline",
     "lastName": "Gosschalk",
+    "email": "jackie.gosschalk@gmail.com",
     "discountPercent": 20,
     "upgradeNotes": "19\" round, gold",
     "notes": "20% repeat student discount\nImported payment info: paid 1: 228 on 4/23/23, paid 2: PAID, class cost: 228, upgrade/AlC incl. tax: 60.\nClass #10 for this student, per source sheet.",
@@ -3803,6 +4145,7 @@ module.exports =
     "customerId": 2624,
     "firstName": "Victoria",
     "lastName": "Paradis",
+    "email": "vpar4219@yahoo.com",
     "discountPercent": 25,
     "upgradeNotes": "22\"x24\" leaf, silver",
     "notes": "25% repeat student discount\nImported payment info: paid 1: 213.75 on 7/21/23, paid 2: PAID, class cost: 213.75, upgrade/AlC incl. tax: 123.75.\nClass #30 for this student, per source sheet.",
@@ -3815,6 +4158,7 @@ module.exports =
     "customerId": 1185,
     "firstName": "Judith",
     "lastName": "Popky",
+    "email": "judypopky@gmail.com",
     "discountPercent": 20,
     "upgradeNotes": "Cloud Mirror in purples, silver",
     "notes": "20% repeat student discount\nImported payment info: paid 1: 228 on 7/29/23, paid 2: PAID, class cost: 228, upgrade/AlC incl. tax: 340.\nClass #6 for this student, per source sheet.",
@@ -3827,6 +4171,7 @@ module.exports =
     "customerId": 2145,
     "firstName": "Rebecca",
     "lastName": "Nissen",
+    "email": "becknissen@gmail.com",
     "discountPercent": 20,
     "notes": "20% repeat student discount\nImported payment info: paid 1: 262.5 on 4/1/23, paid 2: PAID, class cost: 420.\nClass #6 for this student, per source sheet.",
     "enrolledOn": "2023-04-01"
@@ -3838,6 +4183,7 @@ module.exports =
     "customerId": 2476,
     "firstName": "Susan",
     "lastName": "Murray",
+    "email": "dowdingmurray@gmail.com",
     "notes": "Imported payment info: paid 1: 525 on 4/16/23, class cost: 525.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2023-04-16"
   },
@@ -3848,6 +4194,7 @@ module.exports =
     "customerId": 2077,
     "firstName": "Pennie",
     "lastName": "Hardwick",
+    "email": "pennie4@gmail.com",
     "notes": "Imported payment info: paid 1: 525 on 4/16/23, class cost: 525.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2023-04-16"
   },
@@ -3858,6 +4205,7 @@ module.exports =
     "customerId": 1244,
     "firstName": "Karen",
     "lastName": "Correll",
+    "email": "karenac@me.com",
     "discountPercent": 20,
     "notes": "20% repeat student discount\nImported payment info: paid 1: 262.5 on 5/10/23, class cost: 420.\nClass #4 for this student, per source sheet.",
     "enrolledOn": "2023-05-10"
@@ -3868,6 +4216,7 @@ module.exports =
     "status": "completed",
     "firstName": "Janell",
     "lastName": "Correll",
+    "email": "janell.correll@gmail.com",
     "discountPercent": 20,
     "notes": "20% repeat student discount\nImported payment info: paid 1: 525 on 5/10/23, class cost: 420.\nClass #4 for this student, per source sheet.",
     "enrolledOn": "2023-05-10"
@@ -3879,6 +4228,7 @@ module.exports =
     "customerId": 2389,
     "firstName": "Stacey",
     "lastName": "Witt",
+    "email": "stacey2witt@gmail.com",
     "notes": "Imported payment info: paid 1: 262.5 on 5/17/23, paid 2: PAID, class cost: 525.\nClass #3 for this student, per source sheet.",
     "enrolledOn": "2023-05-17"
   },
@@ -3889,6 +4239,7 @@ module.exports =
     "customerId": 674,
     "firstName": "Diane",
     "lastName": "Gebhardt",
+    "email": "borninpa@hotmail.com",
     "notes": "Imported payment info: paid 1: 262.5 on 5/24/23, class cost: 525.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2023-05-24"
   },
@@ -3899,6 +4250,7 @@ module.exports =
     "customerId": 1192,
     "firstName": "Julia",
     "lastName": "Drebin",
+    "email": "knit.felt@gmail.com",
     "notes": "Imported payment info: paid 1: 262.5 on 6/20/23, paid 2: PAID, class cost: 525.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2023-06-20"
   },
@@ -3909,6 +4261,7 @@ module.exports =
     "customerId": 1767,
     "firstName": "Mary",
     "lastName": "Glink",
+    "email": "maryglink1@me.com",
     "upgradeNotes": "24” SILVER round with the colors that you use on your sage coral mandala mirror",
     "notes": "Imported payment info: paid 1: 175, paid 2: PAID, upgrade/AlC incl. tax: 175.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2023-05-20"
@@ -3920,6 +4273,7 @@ module.exports =
     "customerId": 469,
     "firstName": "Cindy",
     "lastName": "Lawrence",
+    "email": "cblawrence10@gmail.com",
     "upgradeNotes": "18x22 SILVER Oval Blue, Turq, Orange, green, yellow",
     "notes": "Imported payment info: paid 1: 145, paid 2: PAID (cash), upgrade/AlC incl. tax: 145.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2023-05-20"
@@ -3931,6 +4285,7 @@ module.exports =
     "customerId": 1502,
     "firstName": "Leslie",
     "lastName": "Williams Pruss",
+    "email": "unklpaul@aol.com",
     "upgradeNotes": "18x22  SILVER Aqua, Seafoam, Turquoise, Silver Drops",
     "notes": "From source sheet: Katie\nImported payment info: paid 1: 145, paid 2: PAID, upgrade/AlC incl. tax: 145.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2023-05-20"
@@ -3942,6 +4297,7 @@ module.exports =
     "customerId": 1633,
     "firstName": "Lucile",
     "lastName": "Arntzen",
+    "email": "lsa51@sbcglobal.net",
     "upgradeNotes": "18x22 SILVER blues, pinks",
     "notes": "Imported payment info: paid 1: 145, paid 2: PAID, upgrade/AlC incl. tax: 145.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2023-05-20"
@@ -3953,6 +4309,7 @@ module.exports =
     "customerId": 1450,
     "firstName": "Laurel",
     "lastName": "Rubin",
+    "email": "laurel.rubin33@yahoo.com",
     "upgradeNotes": "22x28 GOLD, Neutral/ off white/ beige/ gold/ very light tan",
     "notes": "Imported payment info: paid 1: 225, paid 2: PAID, upgrade/AlC incl. tax: 225.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2023-05-20"
@@ -3964,6 +4321,7 @@ module.exports =
     "customerId": 2372,
     "firstName": "Sindy",
     "lastName": "Sebastiani",
+    "email": "wildwoman300@hotmail.com",
     "upgradeNotes": "22x24 Leaf, SILVER, Teal light/ dark Lavender/ purple, rose, Peach",
     "notes": "PLUS 24in KIT white, cream, ivory\nSpecial: 440\nImported payment info: paid 1: 175 on 265, paid 2: PAID (Cash), upgrade/AlC incl. tax: 175.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2023-05-20"
@@ -3975,6 +4333,7 @@ module.exports =
     "customerId": 785,
     "firstName": "Elyse",
     "lastName": "Babinski",
+    "email": "ebinski@icloud.com",
     "upgradeNotes": "18x22 GOLD cream colors (no white) | no leaves on edge",
     "notes": "Imported payment info: paid 1: 145, paid 2: PAID (Cash), upgrade/AlC incl. tax: 145.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2023-05-20"
@@ -3986,6 +4345,7 @@ module.exports =
     "customerId": 1739,
     "firstName": "Marsha",
     "lastName": "Goldman",
+    "email": "marshabarig@gmail.com",
     "upgradeNotes": "18x22 SILVER greens and creams; 17\" sub",
     "notes": "Imported payment info: paid 1: 145 on 32, paid 2: PAID, upgrade/AlC incl. tax: 145.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2023-05-20"
@@ -3997,6 +4357,7 @@ module.exports =
     "customerId": 2344,
     "firstName": "Shelly",
     "lastName": "Armas",
+    "email": "shellyarmas@icloud.com",
     "upgradeNotes": "24\" SILVER green turquoise yellow, silver drops",
     "notes": "Imported payment info: paid 1: 175, paid 2: PAID, upgrade/AlC incl. tax: 175.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2023-05-20"
@@ -4008,6 +4369,7 @@ module.exports =
     "customerId": 1660,
     "firstName": "Lynne",
     "lastName": "Barker",
+    "email": "dlynnebarker@outlook.com",
     "upgradeNotes": "24\" GOLD yellow, greens, browns",
     "notes": "Imported payment info: paid 1: 175, paid 2: PAID, upgrade/AlC incl. tax: 175.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2023-05-20"
@@ -4019,6 +4381,7 @@ module.exports =
     "customerId": 171,
     "firstName": "Ann",
     "lastName": "Gonzales",
+    "email": "Anngonzalesart@gmail.com",
     "upgradeNotes": "24\" SILVER light blues",
     "notes": "Imported payment info: paid 1: 175, paid 2: PAID, upgrade/AlC incl. tax: 175.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2023-05-20"
@@ -4030,6 +4393,7 @@ module.exports =
     "customerId": 1762,
     "firstName": "Mary Ellen",
     "lastName": "Reed",
+    "email": "shawmmutt@comcast.net",
     "upgradeNotes": "22x28 SILVER blues, purple",
     "notes": "Imported payment info: paid 1: 225, paid 2: PAID, upgrade/AlC incl. tax: 225.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2023-05-20"
@@ -4041,6 +4405,7 @@ module.exports =
     "customerId": 2624,
     "firstName": "Victoria",
     "lastName": "Paradis",
+    "email": "vpar4219@yahoo.com",
     "discountPercent": 25,
     "upgradeNotes": "19\" circle, SILVER",
     "notes": "25% repeat student discount\nImported payment info: paid 1: 221.25 on 4/24/23, paid 2: PAID, class cost: 221.25, upgrade/AlC incl. tax: 56.25.\nClass #29 for this student, per source sheet.",
@@ -4053,6 +4418,7 @@ module.exports =
     "customerId": 701,
     "firstName": "Donna",
     "lastName": "Murphy",
+    "email": "donnamurphy@msn.com",
     "discountPercent": 20,
     "upgradeNotes": "Wants car shape",
     "notes": "20% repeat student discount\nImported payment info: paid 1: 236 on 2/13/23, paid 2: 8451, class cost: 236, upgrade/AlC incl. tax: 156.\nClass #10 for this student, per source sheet.",
@@ -4065,6 +4431,7 @@ module.exports =
     "customerId": 1920,
     "firstName": "Nanci",
     "lastName": "Murphy",
+    "email": "nanci_m@hotmail.com",
     "upgradeNotes": "17\" circle, SILVER",
     "notes": "Donna Murphy paid\nImported payment info: paid 1: 295 on 2/13/23, paid 2: PAID, class cost: 295, upgrade/AlC incl. tax: 0.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2023-02-13"
@@ -4076,6 +4443,7 @@ module.exports =
     "customerId": 2389,
     "firstName": "Stacey",
     "lastName": "Witt",
+    "email": "stacey2witt@gmail.com",
     "upgradeNotes": "17\" circle, SILVER",
     "notes": "Imported payment info: paid 1: 295 on 4/24/23, paid 2: PAID, class cost: 295, upgrade/AlC incl. tax: 0.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2023-04-24"
@@ -4087,6 +4455,7 @@ module.exports =
     "customerId": 1401,
     "firstName": "Kjersten",
     "lastName": "Johansen",
+    "email": "kjersten@outlook.com",
     "upgradeNotes": "17\" circle, GOLD",
     "notes": "Imported payment info: paid 1: 295 on 2/19/23, paid 2: PAID, class cost: 295, upgrade/AlC incl. tax: 0.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2023-02-19"
@@ -4098,6 +4467,7 @@ module.exports =
     "customerId": 1827,
     "firstName": "Melanie",
     "lastName": "Smith",
+    "email": "smith.melaniej@gmail.com",
     "upgradeNotes": "22\"x24\" leaf, SILVER",
     "notes": "Imported payment info: paid 1: 295 on 2/22/23, paid 2: 8505, class cost: 295, upgrade/AlC incl. tax: 165.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2023-02-22"
@@ -4109,6 +4479,7 @@ module.exports =
     "customerId": 1495,
     "firstName": "Leslie",
     "lastName": "Khoury",
+    "email": "leslie.khoury@outlook.com",
     "upgradeNotes": "22\"x24\" leaf, GOLD",
     "notes": "Imported payment info: paid 1: 295 on 2/26/23, paid 2: PAID, class cost: 295, upgrade/AlC incl. tax: 165.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2023-02-26"
@@ -4120,6 +4491,7 @@ module.exports =
     "customerId": 1959,
     "firstName": "Nicki",
     "lastName": "Sadow-Hasenberg",
+    "email": "nicole.hasenberg@gmail.com",
     "upgradeNotes": "17\" circle",
     "notes": "Imported payment info: paid 1: 295 on 3/5/23, paid 2: 8540, class cost: 295, upgrade/AlC incl. tax: 0.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2023-03-05"
@@ -4131,6 +4503,7 @@ module.exports =
     "customerId": 2624,
     "firstName": "Victoria",
     "lastName": "Paradis",
+    "email": "vpar4219@yahoo.com",
     "discountPercent": 25,
     "upgradeNotes": "19in SILVER",
     "notes": "25% repeat student discount\nImported payment info: paid 1: 221.25 on 1/7/23, class cost: 221.25, upgrade/AlC incl. tax: 56.25.\nClass #28 for this student, per source sheet.",
@@ -4143,6 +4516,7 @@ module.exports =
     "customerId": 1295,
     "firstName": "Kate",
     "lastName": "Pryor",
+    "email": "kpryor9@msn.com",
     "upgradeNotes": "17in, GOLD",
     "notes": "Imported payment info: paid 1: 295 on 1/22/23, class cost: 295, upgrade/AlC incl. tax: 0.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2023-01-22"
@@ -4154,6 +4528,7 @@ module.exports =
     "customerId": 2632,
     "firstName": "Victoria",
     "lastName": "Coen",
+    "email": "vlcoen@yahoo.com",
     "discountPercent": 20,
     "upgradeNotes": "Pointed Cathedral, GOLD",
     "notes": "20% repeat student discount\nImported payment info: paid 1: 295 on 1/24/23, class cost: 236, upgrade/AlC incl. tax: 73.\nClass #13 for this student, per source sheet.",
@@ -4166,6 +4541,7 @@ module.exports =
     "customerId": 2389,
     "firstName": "Stacey",
     "lastName": "Witt",
+    "email": "stacey2witt@gmail.com",
     "upgradeNotes": "17in SILVER",
     "notes": "Imported payment info: paid 1: 295 on 1/27/23, class cost: 295, upgrade/AlC incl. tax: 0.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2023-01-27"
@@ -4187,6 +4563,7 @@ module.exports =
     "customerId": 1948,
     "firstName": "Natalie",
     "lastName": "Dalrymple",
+    "email": "glassart1@yahoo.com",
     "discountPercent": 20,
     "upgradeNotes": "18x22 oval SILVER",
     "notes": "20% repeat student discount\nImported payment info: paid 1: 295 on 1/28/23, class cost: 236, upgrade/AlC incl. tax: 100.\nClass #4 for this student, per source sheet.",
@@ -4199,6 +4576,7 @@ module.exports =
     "customerId": 1112,
     "firstName": "Jill",
     "lastName": "Bliss",
+    "email": "jbliss@hsblawyers.com",
     "upgradeNotes": "19in SILVER",
     "notes": "Imported payment info: paid 1: 295 on 1/28/23, class cost: 295, upgrade/AlC incl. tax: 75.\nClass #3 for this student, per source sheet.",
     "enrolledOn": "2023-01-28"
@@ -4210,6 +4588,7 @@ module.exports =
     "customerId": 930,
     "firstName": "Holly",
     "lastName": "Bernstein",
+    "email": "hollyabernstein@yahoo.com",
     "upgradeNotes": "21in Mandala SILVER",
     "notes": "Imported payment info: paid 1: 295 on 1/14/23, class cost: 295, upgrade/AlC incl. tax: 175.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2023-01-14"
@@ -4231,6 +4610,7 @@ module.exports =
     "customerId": 971,
     "firstName": "Jacqueline",
     "lastName": "Gosschalk",
+    "email": "jackie.gosschalk@gmail.com",
     "discountPercent": 20,
     "upgradeNotes": "24in SILVER",
     "notes": "20% repeat student discount\nImported payment info: paid 1: 236 on 2/16/23, class cost: 236, upgrade/AlC incl. tax: 80.\nClass #9 for this student, per source sheet.",
@@ -4243,6 +4623,7 @@ module.exports =
     "customerId": 1527,
     "firstName": "Linda",
     "lastName": "Giddens",
+    "email": "lindagiddens30@gmail.com",
     "discountPercent": 20,
     "upgradeNotes": "22x28 Oval (gold)",
     "notes": "20% repeat student discount\nImported payment info: paid 1: 295 on 1/8/23, class cost: 236, upgrade/AlC incl. tax: 250.\nClass #5 for this student, per source sheet.",
@@ -4255,6 +4636,7 @@ module.exports =
     "customerId": 599,
     "firstName": "Debbie",
     "lastName": "Alfieri",
+    "email": "mareng48@msn.com",
     "upgradeNotes": "30in (gold)",
     "notes": "Imported payment info: paid 1: 295 on 1/10/23, class cost: 295, upgrade/AlC incl. tax: 240.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2023-01-10"
@@ -4266,6 +4648,7 @@ module.exports =
     "customerId": 2492,
     "firstName": "Susan",
     "lastName": "Mantyla",
+    "email": "susi.mantyla@gmail.com",
     "upgradeNotes": "18x27 Rectangle (silver)",
     "notes": "Imported payment info: paid 1: 295 on 1/10/23, class cost: 295, upgrade/AlC incl. tax: 175.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2023-01-10"
@@ -4286,6 +4669,7 @@ module.exports =
     "customerId": 458,
     "firstName": "Christine",
     "lastName": "Upchurch",
+    "email": "christineupchurch@hotmail.com",
     "discountPercent": 20,
     "upgradeNotes": "14x20 Oval (silver)",
     "notes": "20% repeat student discount\nImported payment info: paid 1: 295 on 1/11/23, class cost: 236, upgrade/AlC incl. tax: 75.\nClass #9 for this student, per source sheet.",
@@ -4298,6 +4682,7 @@ module.exports =
     "customerId": 668,
     "firstName": "Diane",
     "lastName": "Fletcher",
+    "email": "dfletcher@olypen.com",
     "discountPercent": 20,
     "upgradeNotes": "Gift Class",
     "notes": "20% repeat student discount\nImported payment info: paid 1: 180 on 1/24/23, class cost: 180.\nClass #5 for this student, per source sheet.",
@@ -4310,6 +4695,7 @@ module.exports =
     "customerId": 1273,
     "firstName": "Karen",
     "lastName": "Wickstrom",
+    "email": "karen.wickstrom@gmail.com",
     "discountPercent": 20,
     "upgradeNotes": "2-3 sunflowers",
     "notes": "20% repeat student discount\nImported payment info: paid 1: 180 on 1/24/23, class cost: 180.\nClass #8 for this student, per source sheet.",
@@ -4322,6 +4708,7 @@ module.exports =
     "customerId": 2632,
     "firstName": "Victoria",
     "lastName": "Coen",
+    "email": "vlcoen@yahoo.com",
     "discountPercent": 20,
     "upgradeNotes": "18x27 Rectangle (gold)",
     "notes": "20% repeat student discount\nImported payment info: paid 1: 295 on 1/24/23, class cost: 236, upgrade/AlC incl. tax: 175.\nClass #12 for this student, per source sheet.",
@@ -4334,6 +4721,7 @@ module.exports =
     "customerId": 1922,
     "firstName": "Nanci",
     "lastName": "Perrin",
+    "email": "vegiepal77@hotmail.com",
     "upgradeNotes": "24\" Round (silver) - Seafoam Purple colors",
     "notes": "Imported payment info: paid 2: PAID, upgrade/AlC incl. tax: 175.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2023-02-25"
@@ -4345,6 +4733,7 @@ module.exports =
     "customerId": 1419,
     "firstName": "Kristina",
     "lastName": "Jacobsen",
+    "email": "kristina1rn@aol.com",
     "discountPercent": 20,
     "upgradeNotes": "22\"x28\" (silver) Golden Meadow colors but golden bronze design",
     "notes": "Imported payment info: paid 2: PAID, upgrade/AlC incl. tax: 225.\nClass #4 for this student, per source sheet.",
@@ -4357,6 +4746,7 @@ module.exports =
     "customerId": 2252,
     "firstName": "Sandra",
     "lastName": "Smith",
+    "email": "1945sandy@gmail.com",
     "discountPercent": 20,
     "upgradeNotes": "18\"x22\" Oval (gold) - Butterfly",
     "notes": "Imported payment info: paid 2: PAID, upgrade/AlC incl. tax: 145.\nClass #4 for this student, per source sheet.",
@@ -4369,6 +4759,7 @@ module.exports =
     "customerId": 2479,
     "firstName": "Susan",
     "lastName": "Reynolds",
+    "email": "toosie115@aol.com",
     "upgradeNotes": "Coat rack (silver) - Silver, Gold, Yellow, Black, Red, Turquoise, Green",
     "notes": "Imported payment info: paid 2: PAID, upgrade/AlC incl. tax: 120.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2023-02-25"
@@ -4380,6 +4771,7 @@ module.exports =
     "customerId": 361,
     "firstName": "Carol",
     "lastName": "Riddle",
+    "email": "criddle28@comcast.net",
     "upgradeNotes": "19\" Round (gold) - White, gold, and teal",
     "notes": "Imported payment info: paid 2: PAID, upgrade/AlC incl. tax: 125.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2023-02-25"
@@ -4391,6 +4783,7 @@ module.exports =
     "customerId": 989,
     "firstName": "Jan",
     "lastName": "Anderson",
+    "email": "cecille0907@gmail.com",
     "upgradeNotes": "21\" Mandala (two-day project)",
     "notes": "Imported payment info: paid 2: PAID, upgrade/AlC incl. tax: 275.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2023-02-25"
@@ -4402,6 +4795,7 @@ module.exports =
     "customerId": 1540,
     "firstName": "Linda",
     "lastName": "Levy",
+    "email": "levy.linda@gmail.com",
     "upgradeNotes": "18\"x22\" Oval (gold) Navy, Light blues",
     "notes": "Imported payment info: paid 2: PAID, upgrade/AlC incl. tax: 145.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2023-02-25"
@@ -4413,6 +4807,7 @@ module.exports =
     "customerId": 2218,
     "firstName": "Rupa",
     "lastName": "Singh",
+    "email": "ruparsingh@gmail.com",
     "upgradeNotes": "18\"x22\" Oval (gold) - Earth tones",
     "notes": "Imported payment info: paid 2: PAID, upgrade/AlC incl. tax: 145.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2023-02-25"
@@ -4424,6 +4819,7 @@ module.exports =
     "customerId": 2137,
     "firstName": "Ravi",
     "lastName": "Sidhu",
+    "email": "ravinjaidka@gmail.com",
     "upgradeNotes": "18\"x22\" Oval (silver) - White, baige, silver, mixed of light and dark blue, bottle green, metallic",
     "notes": "Imported payment info: paid 2: PAID, upgrade/AlC incl. tax: 145.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2023-02-25"
@@ -4445,6 +4841,7 @@ module.exports =
     "customerId": 1419,
     "firstName": "Kristina",
     "lastName": "Jacobsen",
+    "email": "kristina1rn@aol.com",
     "upgradeNotes": "22\"x28\" (Silver) Golden Meadow",
     "notes": "Imported payment info: paid 2: PAID, upgrade/AlC incl. tax: 225.\nClass #3 for this student, per source sheet.",
     "enrolledOn": "2023-02-24"
@@ -4456,6 +4853,7 @@ module.exports =
     "customerId": 2252,
     "firstName": "Sandra",
     "lastName": "Smith",
+    "email": "1945sandy@gmail.com",
     "upgradeNotes": "19\" Round (silver) - Seafoam Drop",
     "notes": "Imported payment info: paid 2: PAID, upgrade/AlC incl. tax: 125.\nClass #3 for this student, per source sheet.",
     "enrolledOn": "2023-02-24"
@@ -4467,6 +4865,7 @@ module.exports =
     "customerId": 2479,
     "firstName": "Susan",
     "lastName": "Reynolds",
+    "email": "toosie115@aol.com",
     "upgradeNotes": "22\"x28\" Oval (silver) - Silver, Gold, Black, Red, Turquoise",
     "notes": "Imported payment info: paid 2: PAID, upgrade/AlC incl. tax: 225.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2023-02-24"
@@ -4478,6 +4877,7 @@ module.exports =
     "customerId": 989,
     "firstName": "Jan",
     "lastName": "Anderson",
+    "email": "cecille0907@gmail.com",
     "upgradeNotes": "21\" Mandala (two-day project)",
     "notes": "Imported payment info: paid 2: PAID, upgrade/AlC incl. tax: 275.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2023-02-24"
@@ -4489,6 +4889,7 @@ module.exports =
     "customerId": 1540,
     "firstName": "Linda",
     "lastName": "Levy",
+    "email": "levy.linda@gmail.com",
     "upgradeNotes": "24\"x28\" Rectangle (silver) Lavendar, greens, light smokey blues",
     "notes": "Imported payment info: paid 2: PAID, upgrade/AlC incl. tax: 260.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2023-02-24"
@@ -4500,6 +4901,7 @@ module.exports =
     "customerId": 2218,
     "firstName": "Rupa",
     "lastName": "Singh",
+    "email": "ruparsingh@gmail.com",
     "upgradeNotes": "19\" Circle (silver) - Earth tones",
     "notes": "Imported payment info: paid 2: PAID, upgrade/AlC incl. tax: 125.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2023-02-24"
@@ -4511,6 +4913,7 @@ module.exports =
     "customerId": 2137,
     "firstName": "Ravi",
     "lastName": "Sidhu",
+    "email": "ravinjaidka@gmail.com",
     "upgradeNotes": "19\" Circle (silver) - White, beige, silver, mixed of light and dark blue, bottle green, metallic",
     "notes": "Imported payment info: paid 2: PAID, upgrade/AlC incl. tax: 125.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2023-02-24"
@@ -4522,6 +4925,7 @@ module.exports =
     "customerId": 886,
     "firstName": "Gloria",
     "lastName": "Morales",
+    "email": "gamorales@cfl.rr.com",
     "upgradeNotes": "18\"x22\" Oval (silver) - Turquoise",
     "notes": "Imported payment info: paid 2: PAID, upgrade/AlC incl. tax: 145.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2023-02-24"
@@ -4533,6 +4937,7 @@ module.exports =
     "customerId": 1275,
     "firstName": "Karen",
     "lastName": "Williams",
+    "email": "proenterprise@icloud.com",
     "upgradeNotes": "18\"x27\" Rect (gold) - Orange or coral shades",
     "notes": "Imported payment info: paid 2: PAID, upgrade/AlC incl. tax: 225.\nClass #3 for this student, per source sheet.",
     "enrolledOn": "2023-02-24"
@@ -4544,6 +4949,7 @@ module.exports =
     "customerId": 1301,
     "firstName": "Kathleen",
     "lastName": "Antonio",
+    "email": "kathleen@kantoniolmhc.com",
     "upgradeNotes": "18\"x22\" Oval (silver) - Neutrals like black, white, grey",
     "notes": "Imported payment info: paid 2: PAID, upgrade/AlC incl. tax: 145.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2023-02-24"
@@ -4555,6 +4961,7 @@ module.exports =
     "customerId": 971,
     "firstName": "Jacqueline",
     "lastName": "Gosschalk",
+    "email": "jackie.gosschalk@gmail.com",
     "discountPercent": 20,
     "upgradeNotes": "14\"x20\" Oval (silver) + 14\"x20\" Oval (silver)",
     "notes": "20% repeat student discount\nImported payment info: paid 1: 295 on 1/8/23, class cost: 236, upgrade/AlC incl. tax: 150.\nClass #8 for this student, per source sheet.",
@@ -4567,6 +4974,7 @@ module.exports =
     "customerId": 2260,
     "firstName": "Sanjida",
     "lastName": "Sharmin Mity",
+    "email": "sanjida.sharmin@live.com",
     "notes": "Imported payment info: paid 1: 295 on 1/11/23, class cost: 295.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2023-01-11"
   },
@@ -4577,6 +4985,7 @@ module.exports =
     "customerId": 2063,
     "firstName": "Paulina",
     "lastName": "Przydzielski",
+    "email": "p.przydzielski@gmail.com",
     "upgradeNotes": "17\" Circle (TBD)",
     "notes": "Imported payment info: paid 1: 295 on 1/14/23, class cost: 295.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2023-01-14"
@@ -4588,6 +4997,7 @@ module.exports =
     "customerId": 2632,
     "firstName": "Victoria",
     "lastName": "Coen",
+    "email": "vlcoen@yahoo.com",
     "discountPercent": 20,
     "upgradeNotes": "22\"x28\" Oval (gold)",
     "notes": "20% repeat student discount\nImported payment info: paid 1: 295 on 1/24/23, class cost: 236, upgrade/AlC incl. tax: 200.\nClass #11 for this student, per source sheet.",
@@ -4600,6 +5010,7 @@ module.exports =
     "customerId": 2342,
     "firstName": "Shelley",
     "lastName": "Rosmarin",
+    "email": "shelley.rosmarin@gmail.com",
     "upgradeNotes": "17\" Circle (silver)",
     "notes": "Imported payment info: paid 1: 295 on 1/24/23, class cost: 295.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2023-01-24"
@@ -4611,6 +5022,7 @@ module.exports =
     "customerId": 1192,
     "firstName": "Julia",
     "lastName": "Drebin",
+    "email": "knit.felt@gmail.com",
     "upgradeNotes": "22\"x28\" Oval (silver)",
     "notes": "Imported payment info: paid 1: 295 on 1/26/23, class cost: 295, upgrade/AlC incl. tax: 250.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2023-01-26"
@@ -4622,6 +5034,7 @@ module.exports =
     "customerId": 2064,
     "firstName": "Pavithra",
     "lastName": "Chandrasekaran",
+    "email": "pavith.cs@gmail.com",
     "upgradeNotes": "24\"x28\" Rect (silver)",
     "notes": "Imported payment info: paid 1: 295 on 1/28/23, class cost: 295, upgrade/AlC incl. tax: 250.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2023-01-28"
@@ -4633,6 +5046,7 @@ module.exports =
     "customerId": 2259,
     "firstName": "Sanjana",
     "lastName": "Ruchandani",
+    "email": "sanjana.ruchandani@gmail.com",
     "upgradeNotes": "17\" Circle (gold)",
     "notes": "Imported payment info: paid 1: 295 on 1/31/23, class cost: 295.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2023-01-31"
@@ -4644,6 +5058,7 @@ module.exports =
     "customerId": 497,
     "firstName": "Connie",
     "lastName": "Curran",
+    "email": "concur@comcast.net",
     "upgradeNotes": "18\"x27\" Rect (silver) + 19\" Round (silver)",
     "notes": "Imported payment info: paid 1: 285 on 4/9/22, class cost: 520, balance: $235.00.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2022-04-09"
@@ -4655,6 +5070,7 @@ module.exports =
     "customerId": 2624,
     "firstName": "Victoria",
     "lastName": "Paradis",
+    "email": "vpar4219@yahoo.com",
     "discountPercent": 25,
     "upgradeNotes": "19\" Round (silver)",
     "notes": "25% repeat student discount\nImported payment info: paid 1: 285 on 4/12/22, class cost: 268, balance: $0.00.\nClass #27 for this student, per source sheet.",
@@ -4667,6 +5083,7 @@ module.exports =
     "customerId": 2632,
     "firstName": "Victoria",
     "lastName": "Coen",
+    "email": "vlcoen@yahoo.com",
     "discountPercent": 20,
     "upgradeNotes": "22x28 (silver)",
     "notes": "20% repeat student discount\nImported payment info: paid 1: refunded by mistake, class cost: 376, balance: $376.00.\nClass #10 for this student, per source sheet.",
@@ -4679,6 +5096,7 @@ module.exports =
     "customerId": 173,
     "firstName": "Ann",
     "lastName": "McFarland",
+    "email": "annmcfar@gmail.com",
     "upgradeNotes": "24x28 Rectangle (Silver)",
     "notes": "Imported payment info: paid 1: 285 on 4/18/22, paid 2: PAID, class cost: 535, balance: $250.00.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2022-04-18"
@@ -4690,6 +5108,7 @@ module.exports =
     "customerId": 1818,
     "firstName": "Megan",
     "lastName": "Blazzard",
+    "email": "mmblazz@yahoo.com",
     "upgradeNotes": "19\" Gold",
     "notes": "Imported payment info: paid 1: 285 on 4/18/22, paid 2: PAID, class cost: 335, balance: $50.00.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2022-04-18"
@@ -4701,6 +5120,7 @@ module.exports =
     "customerId": 2064,
     "firstName": "Pavithra",
     "lastName": "Chandrasekaran",
+    "email": "pavith.cs@gmail.com",
     "upgradeNotes": "Transfer from online class (18\"x22\" Green Tea oval)",
     "notes": "Imported payment info: paid 1: 325 on 2/21/22, paid 2: PAID, class cost: 380, balance: $55.00.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2022-02-21"
@@ -4712,6 +5132,7 @@ module.exports =
     "customerId": 1126,
     "firstName": "Jo",
     "lastName": "Horton",
+    "email": "jojoe291@msn.com",
     "upgradeNotes": "24in Round, undecided",
     "notes": "Imported payment info: paid 1: 285 on 5/9/22, class cost: 385, balance: $100.00.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2022-05-09"
@@ -4723,6 +5144,7 @@ module.exports =
     "customerId": 1961,
     "firstName": "Nicola",
     "lastName": "Davies",
+    "email": "njd@nicolajane.net",
     "discountPercent": 20,
     "upgradeNotes": "24\" Round",
     "notes": "20% repeat student discount\nImported payment info: paid 1: refunded on 5/5/22, class cost: 308, balance: $308.00.\nClass #7 for this student, per source sheet.",
@@ -4735,6 +5157,7 @@ module.exports =
     "customerId": 2252,
     "firstName": "Sandra",
     "lastName": "Smith",
+    "email": "1945sandy@gmail.com",
     "upgradeNotes": "Mandala: Cocktail ($250)",
     "notes": "Class #2 for this student, per source sheet.",
     "enrolledOn": "2022-02-26"
@@ -4746,6 +5169,7 @@ module.exports =
     "customerId": 745,
     "firstName": "Elaine",
     "lastName": "Fossler",
+    "email": "emfossler@hotmail.com",
     "upgradeNotes": "18\"x22\" Oval (silver)",
     "notes": "Class #2 for this student, per source sheet.",
     "enrolledOn": "2022-02-26"
@@ -4757,6 +5181,7 @@ module.exports =
     "customerId": 1419,
     "firstName": "Kristina",
     "lastName": "Jacobsen",
+    "email": "kristina1rn@aol.com",
     "upgradeNotes": "24\"x28\" Rect (silver), light blues/purples",
     "notes": "Class #2 for this student, per source sheet.",
     "enrolledOn": "2022-02-26"
@@ -4768,6 +5193,7 @@ module.exports =
     "customerId": 1879,
     "firstName": "Michelle",
     "lastName": "LaLonde",
+    "email": "mimosagallery@yahoo.com",
     "notes": "Class #1 for this student, per source sheet.",
     "enrolledOn": "2022-02-26"
   },
@@ -4778,6 +5204,7 @@ module.exports =
     "customerId": 1310,
     "firstName": "Kathleen",
     "lastName": "Bromley Rothman",
+    "email": "katglass@aol.com",
     "notes": "Class #1 for this student, per source sheet.",
     "enrolledOn": "2022-02-26"
   },
@@ -4788,6 +5215,7 @@ module.exports =
     "customerId": 1704,
     "firstName": "Marge",
     "lastName": "Mingori",
+    "email": "mmingori0804@gmail.com",
     "notes": "Class #1 for this student, per source sheet.",
     "enrolledOn": "2022-02-26"
   },
@@ -4798,6 +5226,7 @@ module.exports =
     "customerId": 916,
     "firstName": "Heidi",
     "lastName": "Ennekin",
+    "email": "hennekin@tampabay.rr.com",
     "notes": "Class #2 for this student, per source sheet.",
     "enrolledOn": "2022-02-26"
   },
@@ -4808,6 +5237,7 @@ module.exports =
     "customerId": 2474,
     "firstName": "Sue",
     "lastName": "Murphy",
+    "email": "suemurphy33@yahoo.com",
     "notes": "Class #2 for this student, per source sheet.",
     "enrolledOn": "2022-02-26"
   },
@@ -4818,6 +5248,7 @@ module.exports =
     "customerId": 1759,
     "firstName": "Mary",
     "lastName": "Deming",
+    "email": "marydeming0322@gmail.com",
     "notes": "Class #2 for this student, per source sheet.",
     "enrolledOn": "2022-02-26"
   },
@@ -4828,6 +5259,7 @@ module.exports =
     "customerId": 745,
     "firstName": "Elaine",
     "lastName": "Fossler",
+    "email": "emfossler@hotmail.com",
     "notes": "Class #1 for this student, per source sheet.",
     "enrolledOn": "2022-02-25"
   },
@@ -4838,6 +5270,7 @@ module.exports =
     "customerId": 916,
     "firstName": "Heidi",
     "lastName": "Ennekin",
+    "email": "hennekin@tampabay.rr.com",
     "notes": "Class #1 for this student, per source sheet.",
     "enrolledOn": "2022-02-25"
   },
@@ -4848,6 +5281,7 @@ module.exports =
     "customerId": 2474,
     "firstName": "Sue",
     "lastName": "Murphy",
+    "email": "suemurphy33@yahoo.com",
     "notes": "Class #1 for this student, per source sheet.",
     "enrolledOn": "2022-02-25"
   },
@@ -4858,6 +5292,7 @@ module.exports =
     "customerId": 1759,
     "firstName": "Mary",
     "lastName": "Deming",
+    "email": "marydeming0322@gmail.com",
     "notes": "Class #1 for this student, per source sheet.",
     "enrolledOn": "2022-02-25"
   },
@@ -4868,6 +5303,7 @@ module.exports =
     "customerId": 1870,
     "firstName": "Ronnie",
     "lastName": "Moose",
+    "email": "chemrightoffice@gmail.com",
     "notes": "Class #1 for this student, per source sheet.",
     "enrolledOn": "2022-02-25"
   },
@@ -4878,6 +5314,7 @@ module.exports =
     "customerId": 612,
     "firstName": "Debe",
     "lastName": "Hurley",
+    "email": "hurley70@aol.com",
     "notes": "Class #1 for this student, per source sheet.",
     "enrolledOn": "2022-02-25"
   },
@@ -4888,6 +5325,7 @@ module.exports =
     "customerId": 2316,
     "firstName": "Sharon",
     "lastName": "Ruryk",
+    "email": "sruryk@aol.com",
     "notes": "Class #1 for this student, per source sheet.",
     "enrolledOn": "2022-02-25"
   },
@@ -4898,6 +5336,7 @@ module.exports =
     "customerId": 1571,
     "firstName": "Lisa",
     "lastName": "Miller",
+    "email": "gomich32@yahoo.com",
     "notes": "Class #1 for this student, per source sheet.",
     "enrolledOn": "2022-02-25"
   },
@@ -4908,6 +5347,7 @@ module.exports =
     "customerId": 580,
     "firstName": "Dawn",
     "lastName": "Stevens",
+    "email": "Stev8050@bellsouth.net",
     "notes": "Class #1 for this student, per source sheet.",
     "enrolledOn": "2022-02-25"
   },
@@ -4918,6 +5358,7 @@ module.exports =
     "customerId": 418,
     "firstName": "Cherisse",
     "lastName": "Figueroa",
+    "email": "shoppingbuys@protonmail.com",
     "upgradeNotes": "Iris Coral",
     "notes": "Special: SHIPPED\nImported payment info: paid 1: 450 on 8/8/21, paid 2: Paid in Full.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2021-08-08"
@@ -4929,6 +5370,7 @@ module.exports =
     "customerId": 1751,
     "firstName": "Mary Ann",
     "lastName": "Park",
+    "email": "maryannstarpark@icloud.com",
     "upgradeNotes": "Purple Haze",
     "notes": "Special: DELIVERED\nImported payment info: paid 1: 450 on 8/28/21, paid 2: Paid in Full.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2021-08-28"
@@ -4940,6 +5382,7 @@ module.exports =
     "customerId": 2061,
     "firstName": "Paula",
     "lastName": "Wilson",
+    "email": "paulajeane8@gmail.com",
     "upgradeNotes": "Purple Haze",
     "notes": "Special: DELIVERED\nImported payment info: paid 1: 450 on 8/30/21, paid 2: Paid in Full.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2021-08-30"
@@ -4951,6 +5394,7 @@ module.exports =
     "customerId": 1128,
     "firstName": "Jo",
     "lastName": "Simon",
+    "email": "jsimon14@aol.com",
     "discountPercent": 20,
     "upgradeNotes": "22\"x34\" Oval (earth tones, cinnamon, green, some red)",
     "notes": "Paid for class\nImported payment info: paid 1: 485 on 6/17/21, paid 2: Paid in Full, class cost: 485.\nClass #4 for this student, per source sheet.",
@@ -4963,6 +5407,7 @@ module.exports =
     "customerId": 1128,
     "firstName": "Jo",
     "lastName": "Simon",
+    "email": "jsimon14@aol.com",
     "upgradeNotes": "24\" Round (light pink emphasis with \"flower\" design)",
     "notes": "Amanda\nImported payment info: paid 1: 360 on 6/17/21, paid 2: Paid in Full, class cost: 360.\nClass #3 for this student, per source sheet.",
     "enrolledOn": "2021-06-17"
@@ -4974,6 +5419,7 @@ module.exports =
     "customerId": 1128,
     "firstName": "Jo",
     "lastName": "Simon",
+    "email": "jsimon14@aol.com",
     "upgradeNotes": "18\"x27\" Rect (light teal or seafoam emphasis)",
     "notes": "Amy\nImported payment info: paid 1: 435 on 6/17/21, paid 2: Paid in Full, class cost: 435.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2021-06-17"
@@ -4985,6 +5431,7 @@ module.exports =
     "customerId": 1128,
     "firstName": "Jo",
     "lastName": "Simon",
+    "email": "jsimon14@aol.com",
     "upgradeNotes": "12\"x15\" Oval (earth tones, brown/gold)",
     "notes": "Margaret\nImported payment info: paid 1: 235 on 6/17/21, paid 2: Paid in Full, class cost: 235.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2021-06-17"
@@ -4996,6 +5443,7 @@ module.exports =
     "customerId": 1020,
     "firstName": "Janet",
     "lastName": "Longberg",
+    "email": "ja_kri_lo@hotmail.com",
     "upgradeNotes": "Capri Blue + Grout kit",
     "notes": "Special: DELIVERED\nImported payment info: paid 1: 450 on 11/23/20, paid 2: Paid in Full, class cost: 450.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2020-11-23"
@@ -5007,6 +5455,7 @@ module.exports =
     "customerId": 607,
     "firstName": "Deborah",
     "lastName": "Nordstrom",
+    "email": "dnords@comcast.net",
     "upgradeNotes": "Purple Haze *Moved from12/7 class",
     "notes": "Special: DELIVERED\nImported payment info: paid 1: 260 on 11/23/19, paid 2: Paid in Full, class cost: 412.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2019-11-23"
@@ -5018,6 +5467,7 @@ module.exports =
     "customerId": 461,
     "firstName": "Christy",
     "lastName": "Spivey",
+    "email": "box_cox_2003@yahoo.com",
     "upgradeNotes": "Plum",
     "notes": "Special: DELIVERED\nImported payment info: paid 1: 360 on 11/28/20, paid 2: Paid in Full, class cost: 360.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2020-11-28"
@@ -5029,6 +5479,7 @@ module.exports =
     "customerId": 1369,
     "firstName": "Kimberly",
     "lastName": "Girard",
+    "email": "kimgirard.sunshine@gmail.com",
     "upgradeNotes": "Cocktail",
     "notes": "Special: DELIVERED\nImported payment info: paid 1: 450 on 1/18/21, paid 2: Paid in Full, class cost: 450.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2021-01-18"
@@ -5040,6 +5491,7 @@ module.exports =
     "customerId": 169,
     "firstName": "Ann",
     "lastName": "Bur",
+    "email": "4acbur@gmail.com",
     "upgradeNotes": "Plum/Capri Blue/5x7 Lace Mirror",
     "notes": "Special: DELIVERED\nImported payment info: paid 1: FREE, paid 2: Paid in Full, class cost: FREE.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2021-02-27"
@@ -5051,6 +5503,7 @@ module.exports =
     "customerId": 142,
     "firstName": "Andrea",
     "lastName": "Mason",
+    "email": "masonak@verizon.net",
     "upgradeNotes": "Plum",
     "notes": "Special: DELIVERED\nImported payment info: paid 1: 405 on 11/24/20, paid 2: Paid in Full, class cost: 405.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2020-11-24"
@@ -5062,6 +5515,7 @@ module.exports =
     "customerId": 1081,
     "firstName": "Jennifer",
     "lastName": "Kourelakos",
+    "email": "jkourela@gmail.com",
     "upgradeNotes": "Cardinal + Grout kit",
     "notes": "Special: DELIVERED\nImported payment info: paid 1: 180 on 11/27/20, paid 2: Paid in Full, class cost: 360.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2020-11-27"
@@ -5073,6 +5527,7 @@ module.exports =
     "customerId": 1047,
     "firstName": "Jeanne",
     "lastName": "Cost",
+    "email": "shopping4jeanne@gmail.com",
     "upgradeNotes": "Lime Aqua + Grout kit",
     "notes": "Special: DELIVERED\nImported payment info: paid 1: 360 on 11/29/20, paid 2: Paid in Full, class cost: 360.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2020-11-29"
@@ -5084,6 +5539,7 @@ module.exports =
     "customerId": 131,
     "firstName": "Amy",
     "lastName": "Torres",
+    "email": "amyttor@gmail.com",
     "upgradeNotes": "Purple Haze",
     "notes": "Special: DELIVERED\nImported payment info: paid 1: 360 on 11/30/20, paid 2: Paid in Full, class cost: 360.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2020-11-30"
@@ -5095,6 +5551,7 @@ module.exports =
     "customerId": 1416,
     "firstName": "Kristin",
     "lastName": "Dieng",
+    "email": "kdieng@yahoo.com",
     "upgradeNotes": "Iris Coral",
     "notes": "Special: DELIVERED\nImported payment info: paid 1: 360 on 11/30/20, paid 2: Paid in Full, class cost: 360.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2020-11-30"
@@ -5106,6 +5563,7 @@ module.exports =
     "customerId": 678,
     "firstName": "Diane",
     "lastName": "Honda",
+    "email": "dhonda99@yahoo.com",
     "upgradeNotes": "Purple Haze + Grout kit",
     "notes": "Special: DELIVERED\nImported payment info: paid 1: 360 on 11/30/20, paid 2: Paid in Full, class cost: 360.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2020-11-30"
@@ -5117,6 +5575,7 @@ module.exports =
     "customerId": 1242,
     "firstName": "Karen",
     "lastName": "Coffey",
+    "email": "kcoffey506@gmail.com",
     "upgradeNotes": "Plum + Grout kit",
     "notes": "Special: DELIVERED\nImported payment info: paid 1: 225 on 12/5/20, paid 2: Paid in Full, class cost: 450.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2020-12-05"
@@ -5128,6 +5587,7 @@ module.exports =
     "customerId": 1880,
     "firstName": "Michelle",
     "lastName": "Lese",
+    "email": "mssoigne@hotmail.com",
     "upgradeNotes": "Blue / Blue / Pewter + Grout kit + stand",
     "notes": "Imported payment info: paid 1: 125 on 10/13/20, paid 2: Paid in Full, class cost: 125.\nClass #3 for this student, per source sheet.",
     "enrolledOn": "2020-10-13"
@@ -5139,6 +5599,7 @@ module.exports =
     "customerId": 2145,
     "firstName": "Rebecca",
     "lastName": "Nissen",
+    "email": "becknissen@gmail.com",
     "discountPercent": 20,
     "upgradeNotes": "Pewter / Red / Blue + Grout kit + stand (14 votives total: see receipt 6191)",
     "notes": "Imported payment info: paid 1: 125 on 10/30/20, paid 2: Paid in Full, class cost: 125.\nClass #5 for this student, per source sheet.",
@@ -5151,6 +5612,7 @@ module.exports =
     "customerId": 2075,
     "firstName": "Peggy",
     "lastName": "Young",
+    "email": "pegleg54@comcast.net",
     "upgradeNotes": "TBD + stand (7 votives total)",
     "notes": "Imported payment info: paid 1: 125 on 11/22/20, paid 2: Paid in Full, class cost: 125.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2020-11-22"
@@ -5162,6 +5624,7 @@ module.exports =
     "customerId": 255,
     "firstName": "Barbara",
     "lastName": "Sanderson",
+    "email": "barbthecanuck@gmail.com",
     "upgradeNotes": "Blue / Red / Bronze + stand",
     "notes": "Special: SHIPPED\nImported payment info: paid 1: 125 on 10/31/20, paid 2: Paid in Full, class cost: 125.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2020-10-31"
@@ -5173,6 +5636,7 @@ module.exports =
     "customerId": 1789,
     "firstName": "Mary",
     "lastName": "Sullivan",
+    "email": "sullivandoyle@msn.com",
     "upgradeNotes": "Green / Bronze / Bronze + Grout kit + stand",
     "notes": "Imported payment info: paid 1: 125 on 11/30/20, paid 2: Paid in Full, class cost: 125.\nClass #3 for this student, per source sheet.",
     "enrolledOn": "2020-11-30"
@@ -5184,6 +5648,7 @@ module.exports =
     "customerId": 1581,
     "firstName": "Lisa",
     "lastName": "Twardowski",
+    "email": "lisa@twardowski.org",
     "upgradeNotes": "PEWTER / PURPLE / RED",
     "notes": "Imported payment info: paid 1: 100, paid 2: Paid in Full.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2020-12-05"
@@ -5195,6 +5660,7 @@ module.exports =
     "customerId": 1763,
     "firstName": "Mary",
     "lastName": "Ward",
+    "email": "hondapilot55@yahoo.com",
     "upgradeNotes": "Pewter / Pewter / Pewter + stand",
     "notes": "Special: SHIPPED\nImported payment info: paid 1: 125 on 10/10/20, paid 2: Paid in Full, class cost: 125.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2020-10-10"
@@ -5206,6 +5672,7 @@ module.exports =
     "customerId": 376,
     "firstName": "Carolyn",
     "lastName": "Griffith",
+    "email": "carolyn.griffith5390@gmail.com",
     "upgradeNotes": "Blue / Tangerine / Green + Grout kit + stand",
     "notes": "Special: SHIPPED\nImported payment info: paid 1: 125 on 10/12/20, paid 2: Paid in Full, class cost: 125.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2020-10-12"
@@ -5217,6 +5684,7 @@ module.exports =
     "customerId": 2190,
     "firstName": "Robin",
     "lastName": "McQuiston",
+    "email": "robinmcq@msn.com",
     "upgradeNotes": "Tangerine / Soft Pink / Purple + Grout kit + stand",
     "notes": "Special: SHIPPED\nImported payment info: paid 1: 125 on 11/1/20, paid 2: Paid in Full, class cost: 125.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2020-11-01"
@@ -5228,6 +5696,7 @@ module.exports =
     "customerId": 763,
     "firstName": "Elizabeth",
     "lastName": "Schnettler",
+    "email": "esschnettler@gmail.com",
     "upgradeNotes": "Green / Purple / Blue + stand",
     "notes": "Special: SHIPPED\nImported payment info: paid 1: 125 on 11/4/20, paid 2: Paid in Full, class cost: 125.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2020-11-04"
@@ -5239,6 +5708,7 @@ module.exports =
     "customerId": 844,
     "firstName": "Gabrielle",
     "lastName": "Rousso",
+    "email": "gbergrousso@gmail.com",
     "upgradeNotes": "Blue / Green / Bronze + stand",
     "notes": "Special: SHIPPED\nImported payment info: paid 1: 125 on 11/6/20, paid 2: Paid in Full, class cost: 125.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2020-11-06"
@@ -5250,6 +5720,7 @@ module.exports =
     "customerId": 183,
     "firstName": "Anne",
     "lastName": "Ryan",
+    "email": "akryan5484@gmail.com",
     "discountPercent": 20,
     "upgradeNotes": "Plum + Grout kit Shipped",
     "notes": "Special: SHIPPED\nImported payment info: paid 1: 225 on 10/10/20, paid 2: Paid in Full, class cost: 360.\nClass #15 for this student, per source sheet.",
@@ -5262,6 +5733,7 @@ module.exports =
     "customerId": 1728,
     "firstName": "Marilyn",
     "lastName": "Mayers",
+    "email": "mayersmarilyn@gmail.com",
     "upgradeNotes": "Capri Blue-Shipped",
     "notes": "wants me to grout\nSpecial: SHIPPED\nImported payment info: paid 1: 450 on 10/11/20, paid 2: Paid in Full, class cost: 450.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2020-10-11"
@@ -5273,6 +5745,7 @@ module.exports =
     "customerId": 2300,
     "firstName": "Shanon",
     "lastName": "Stathers",
+    "email": "shanoneileen@gmail.com",
     "upgradeNotes": "Capri Blue + Grout kit Shipped",
     "notes": "no grout kit - wants me to grout\nSpecial: SHIPPED\nImported payment info: paid 1: 405 on 10/11/20, paid 2: Paid in Full, class cost: 405.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2020-10-11"
@@ -5284,6 +5757,7 @@ module.exports =
     "customerId": 127,
     "firstName": "Amy",
     "lastName": "Shaftel",
+    "email": "shaftela@aol.com",
     "upgradeNotes": "Capri Blue-Shipped",
     "notes": "Special: SHIPPED\nImported payment info: paid 1: 405 on 10/11/20, paid 2: Paid in Full, class cost: 405.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2020-10-11"
@@ -5295,6 +5769,7 @@ module.exports =
     "customerId": 2452,
     "firstName": "Susan",
     "lastName": "Faurot",
+    "email": "susanmfcc@sbcglobal.net",
     "upgradeNotes": "Plum-Shipped",
     "notes": "Special: SHIPPED\nImported payment info: paid 1: 405 on 10/11/20, paid 2: Paid in Full, class cost: 405.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2020-10-11"
@@ -5306,6 +5781,7 @@ module.exports =
     "customerId": 371,
     "firstName": "Carolyn",
     "lastName": "Barnes",
+    "email": "car45bar@aol.com",
     "upgradeNotes": "Lime Aqua Shipped",
     "notes": "Special: SHIPPED\nImported payment info: paid 1: 360 on 10/13/20, paid 2: Paid in Full, class cost: 360.\nClass #3 for this student, per source sheet.",
     "enrolledOn": "2020-10-13"
@@ -5317,6 +5793,7 @@ module.exports =
     "customerId": 1806,
     "firstName": "Maureen",
     "lastName": "O'Hara",
+    "email": "lisleamoh@aol.com",
     "upgradeNotes": "Custom (similar to green tea design with browns) + Grout kit Shipped",
     "notes": "Special: SHIPPED\nImported payment info: paid 1: 405 on 10/23/20, paid 2: Paid in Full, class cost: 405.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2020-10-23"
@@ -5328,6 +5805,7 @@ module.exports =
     "customerId": 818,
     "firstName": "Evelyn",
     "lastName": "Ashley",
+    "email": "evelynashley@lycos.com",
     "upgradeNotes": "Cardinal-Shipped",
     "notes": "Special: SHIPPED\nImported payment info: paid 1: 405 on 10/25/20, paid 2: Paid in Full, class cost: 405.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2020-10-25"
@@ -5339,6 +5817,7 @@ module.exports =
     "customerId": 1524,
     "firstName": "Linda",
     "lastName": "Esparza",
+    "email": "emersondrive8965@gmail.com",
     "upgradeNotes": "Capri Blue Shipped",
     "notes": "Special: SHIPPED\nImported payment info: paid 1: 405 on 10/30/20, paid 2: Paid in Full, class cost: 405.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2020-10-30"
@@ -5350,6 +5829,7 @@ module.exports =
     "customerId": 1075,
     "firstName": "Jennifer",
     "lastName": "Edwards",
+    "email": "edwardsjennee@aol.com",
     "upgradeNotes": "Plum-Shipped",
     "notes": "Special: SHIPPED\nImported payment info: paid 1: 405 on 10/30/20, paid 2: Paid in Full, class cost: 405.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2020-10-30"
@@ -5361,6 +5841,7 @@ module.exports =
     "customerId": 2502,
     "firstName": "Suzanne",
     "lastName": "Bredy",
+    "email": "suzbredy@gmail.com",
     "upgradeNotes": "Cocktail + Grout kit - shipped",
     "notes": "Special: SHIPPED\nImported payment info: paid 1: 405 on 11/1/20, paid 2: Paid in Full, class cost: 405.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2020-11-01"
@@ -5372,6 +5853,7 @@ module.exports =
     "customerId": 1411,
     "firstName": "Kristen",
     "lastName": "Olsen",
+    "email": "hfthg11@gmail.com",
     "upgradeNotes": "Capri Blue + Grout kit",
     "notes": "Special: PICKED UP\nImported payment info: paid 1: 450 on 11/7/20, paid 2: Paid in Full, class cost: 450.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2020-11-07"
@@ -5383,6 +5865,7 @@ module.exports =
     "customerId": 2624,
     "firstName": "Victoria",
     "lastName": "Paradis",
+    "email": "vpar4219@yahoo.com",
     "discountPercent": 20,
     "upgradeNotes": "Purple / Green / Bronze + stand",
     "notes": "refunded $25 for superstar student\nSpecial: SHIPPED\nImported payment info: paid 1: 125 on 10/9/20, paid 2: Paid in Full, class cost: 100.\nClass #26 for this student, per source sheet.",
@@ -5395,6 +5878,7 @@ module.exports =
     "customerId": 238,
     "firstName": "Barbara",
     "lastName": "Bolvin",
+    "email": "bbolvin9024@gmail.com",
     "upgradeNotes": "Purple / Blue / Green + stand",
     "notes": "Special: SHIPPED\nImported payment info: paid 1: 125 on 10/11/20, paid 2: Paid in Full, class cost: 125.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2020-10-11"
@@ -5406,6 +5890,7 @@ module.exports =
     "customerId": 2033,
     "firstName": "Patricia",
     "lastName": "Ricard",
+    "email": "ricard4@msn.com",
     "discountPercent": 20,
     "upgradeNotes": "Blue / Red / Green + Grout kit + stand",
     "notes": "refunded $28.60 for superstar student\nSpecial: SHIPPED\nImported payment info: paid 1: 125 on 10/12/20, paid 2: Paid in Full, class cost: 100.\nClass #6 for this student, per source sheet.",
@@ -5418,6 +5903,7 @@ module.exports =
     "customerId": 2163,
     "firstName": "Rhonda",
     "lastName": "Milam",
+    "email": "rhondas.milam@gmail.com",
     "upgradeNotes": "Blue / Blue / Red + Grout kit + stand",
     "notes": "Special: SHIPPED\nImported payment info: paid 1: 125 on 10/13/20, paid 2: Paid in Full, class cost: 125.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2020-10-13"
@@ -5439,6 +5925,7 @@ module.exports =
     "customerId": 646,
     "firstName": "Denise",
     "lastName": "Bavier",
+    "email": "denise@bavier.com",
     "upgradeNotes": "Pewter / Bronze / Purple + 4 stands",
     "notes": "Special: SHIPPED\nImported payment info: paid 1: 125 on 10/16/20, paid 2: Paid in Full.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2020-10-16"
@@ -5450,6 +5937,7 @@ module.exports =
     "customerId": 1045,
     "firstName": "Jeanine",
     "lastName": "Dunsmoor",
+    "email": "jldunsmoor@gmail.com",
     "upgradeNotes": "Capri Blue",
     "notes": "Special: SHIPPED\nImported payment info: paid 1: 225 on 8/31/20, paid 2: Paid in Full, class cost: 450.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2020-08-31"
@@ -5461,6 +5949,7 @@ module.exports =
     "customerId": 1930,
     "firstName": "Nancy",
     "lastName": "Earl",
+    "email": "nancyearl50@gmail.com",
     "upgradeNotes": "Capri Blue",
     "notes": "Special: SHIPPED\nImported payment info: paid 1: 450 on 9/25/20, paid 2: Paid in Full, class cost: 450.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2020-09-25"
@@ -5472,6 +5961,7 @@ module.exports =
     "customerId": 188,
     "firstName": "Annette",
     "lastName": "Dokken",
+    "email": "annette.dokken@motiva.com",
     "upgradeNotes": "Capri Blue + Grout Kit (sub gold for silver, seafoam tiles vs green)",
     "notes": "Special: SHIPPED\nImported payment info: paid 1: 407 on 8/6/20, paid 2: Paid in Full, class cost: 407.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2020-08-06"
@@ -5483,6 +5973,7 @@ module.exports =
     "customerId": 2600,
     "firstName": "Trish",
     "lastName": "Gesuale",
+    "email": "trishgesuale@gmail.com",
     "upgradeNotes": "Cardinal",
     "notes": "Special: SHIPPED\nImported payment info: paid 1: 450 on 8/11/20, paid 2: Paid in Full, class cost: 450.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2020-08-11"
@@ -5494,6 +5985,7 @@ module.exports =
     "customerId": 1814,
     "firstName": "Maureen",
     "lastName": "Theobald",
+    "email": "maureentw@outlook.com",
     "upgradeNotes": "CUSTOM no substrate (Blues, dark blue, turquoise, Coral.. maybe rusty brown cream, slate blue)  see rug",
     "notes": "Already has substrate\nSpecial: SHIPPED\nImported payment info: paid 1: 382 on 8/18/20, paid 2: Paid in Full, class cost: 382.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2020-08-18"
@@ -5505,6 +5997,7 @@ module.exports =
     "customerId": 634,
     "firstName": "Debra",
     "lastName": "Dubenetzky",
+    "email": "ddubenet@gmail.com",
     "upgradeNotes": "Iris Coral + Grout Kit",
     "notes": "Special: SHIPPED\nImported payment info: paid 1: 475 on 8/24/20, paid 2: Paid in Full, class cost: 450.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2020-08-24"
@@ -5516,6 +6009,7 @@ module.exports =
     "customerId": 2148,
     "firstName": "Rebecca",
     "lastName": "Waxbom",
+    "email": "r.waxbom@gmail.com",
     "upgradeNotes": "Iris Coral + Grout Kit",
     "notes": "Special: SHIPPED\nImported payment info: paid 1: 225 on 8/30/20, paid 2: Paid in Full, class cost: 450.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2020-08-30"
@@ -5527,6 +6021,7 @@ module.exports =
     "customerId": 752,
     "firstName": "Elizabeth",
     "lastName": "Flerlage",
+    "email": "bethflerlage@gmail.com",
     "upgradeNotes": "Lime Aqua",
     "notes": "Aleene's / DAP\nSpecial: SHIPPED\nImported payment info: paid 1: 225 on 8/10/20, paid 2: Paid in Full, class cost: 450.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2020-08-10"
@@ -5538,6 +6033,7 @@ module.exports =
     "customerId": 2399,
     "firstName": "Stephanie",
     "lastName": "Cosenza",
+    "email": "sscosenza11@gmail.com",
     "upgradeNotes": "Lime Aqua",
     "notes": "Special: SHIPPED\nImported payment info: paid 1: 450 on 8/15/20, paid 2: Paid in Full, class cost: 450.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2020-08-15"
@@ -5549,6 +6045,7 @@ module.exports =
     "customerId": 169,
     "firstName": "Ann",
     "lastName": "Bur",
+    "email": "4acbur@gmail.com",
     "upgradeNotes": "Lime Aqua + Grout Kit",
     "notes": "Special: SHIPPED\nImported payment info: paid 1: 450 on 8/19/20, paid 2: Paid in Full, class cost: 450.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2020-08-19"
@@ -5560,6 +6057,7 @@ module.exports =
     "customerId": 450,
     "firstName": "Christine",
     "lastName": "Hansen",
+    "email": "carphansens@centurytel.net",
     "upgradeNotes": "Purple Haze",
     "notes": "Special: SHIPPED\nImported payment info: paid 1: 225 on 7/20/20, paid 2: Paid in Full, class cost: 450.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2020-07-20"
@@ -5571,6 +6069,7 @@ module.exports =
     "customerId": 640,
     "firstName": "Dee",
     "lastName": "Brown",
+    "email": "wdbrown83@gmail.com",
     "upgradeNotes": "Purple Haze (do not ship substrate)",
     "notes": "Special: SHIPPED\nImported payment info: paid 1: 382 on 8/19/20, paid 2: Paid in Full, class cost: 382.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2020-08-19"
@@ -5582,6 +6081,7 @@ module.exports =
     "customerId": 1023,
     "firstName": "Janet",
     "lastName": "Winget",
+    "email": "schmanet77@gmail.com",
     "upgradeNotes": "Sage Coral",
     "notes": "Special: SHIPPED\nImported payment info: paid 1: 225 on 8/26/20, paid 2: Paid in Full, class cost: 450.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2020-08-26"
@@ -5593,6 +6093,7 @@ module.exports =
     "customerId": 502,
     "firstName": "Constance",
     "lastName": "Stout",
+    "email": "laloba999@comcast.net",
     "upgradeNotes": "Iris Coral + Grout Kit - shipped",
     "notes": "Imported payment info: paid 1: 250 on 7/13/20, paid 2: Paid in Full, class cost: 450.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2020-07-13"
@@ -5604,6 +6105,7 @@ module.exports =
     "customerId": 2145,
     "firstName": "Rebecca",
     "lastName": "Nissen",
+    "email": "becknissen@gmail.com",
     "discountPercent": 20,
     "upgradeNotes": "Capri Bue + Grout Kit - Shipped",
     "notes": "Imported payment info: paid 1: 385 on 7/13/20, paid 2: Paid in Full, class cost: 360.\nClass #4 for this student, per source sheet.",
@@ -5616,6 +6118,7 @@ module.exports =
     "customerId": 646,
     "firstName": "Denise",
     "lastName": "Bavier",
+    "email": "denise@bavier.com",
     "upgradeNotes": "Iris Coral (may change) - shipped",
     "notes": "Imported payment info: paid 1: 225 on 7/14/20, paid 2: Paid in Full, class cost: 450.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2020-07-14"
@@ -5627,6 +6130,7 @@ module.exports =
     "customerId": 2391,
     "firstName": "Stacy",
     "lastName": "Nissen",
+    "email": "stacy.nissen@gmail.com",
     "discountPercent": 20,
     "upgradeNotes": "Cardinal - shipped",
     "notes": "Imported payment info: paid 1: 225 on 7/14/20, paid 2: Paid in Full, class cost: 360.\nClass #6 for this student, per source sheet.",
@@ -5639,6 +6143,7 @@ module.exports =
     "customerId": 2033,
     "firstName": "Patricia",
     "lastName": "Ricard",
+    "email": "ricard4@msn.com",
     "discountPercent": 20,
     "upgradeNotes": "Iris Coral - shipped",
     "notes": "Imported payment info: paid 1: 360 on 7/14/20, paid 2: Paid in Full, class cost: 360.\nClass #5 for this student, per source sheet.",
@@ -5651,6 +6156,7 @@ module.exports =
     "customerId": 1925,
     "firstName": "Nancy",
     "lastName": "Callanan",
+    "email": "nccallanan@gmail.com",
     "upgradeNotes": "Capri Blue - shipped",
     "notes": "Imported payment info: paid 1: 225 on 7/15/20, paid 2: Paid in Full, class cost: 450.\nClass #3 for this student, per source sheet.",
     "enrolledOn": "2020-07-15"
@@ -5662,6 +6168,7 @@ module.exports =
     "customerId": 2469,
     "firstName": "Susan",
     "lastName": "Marvos",
+    "email": "bill-susie@sbcglobal.net",
     "upgradeNotes": "Capri Blue - shipped",
     "notes": "Imported payment info: paid 1: 450 on 7/15/20, paid 2: Paid in Full, class cost: 450.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2020-07-15"
@@ -5673,6 +6180,7 @@ module.exports =
     "customerId": 1391,
     "firstName": "Kimberly",
     "lastName": "Gusta",
+    "email": "kim@kimgusta.com",
     "upgradeNotes": "Capri Blue  - shipped",
     "notes": "Imported payment info: paid 1: 450 on 7/15/20, paid 2: Paid in Full, class cost: 450.\nClass #3 for this student, per source sheet.",
     "enrolledOn": "2020-07-15"
@@ -5684,6 +6192,7 @@ module.exports =
     "customerId": 2312,
     "firstName": "Sharon",
     "lastName": "Gillespie",
+    "email": "smgillespie1@gmail.com",
     "upgradeNotes": "Purple Haze + Grout Kit - shipped",
     "notes": "Imported payment info: paid 1: 450 on 7/16/20, paid 2: Paid in Full, class cost: 450.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2020-07-16"
@@ -5695,6 +6204,7 @@ module.exports =
     "customerId": 397,
     "firstName": "Catherine",
     "lastName": "Altiere",
+    "email": "tandc6769@comcast.net",
     "upgradeNotes": "Cotton Candy + Grout Kit - shipped",
     "notes": "Imported payment info: paid 1: 450 on 9/3/20, paid 2: Paid in Full, class cost: 450.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2020-09-03"
@@ -5706,6 +6216,7 @@ module.exports =
     "customerId": 1741,
     "firstName": "Marsha",
     "lastName": "Hudson",
+    "email": "marsha@griffyn.us",
     "discountPercent": 20,
     "upgradeNotes": "Sage & Orange/Pumpkin",
     "notes": "Imported payment info: paid 1: 328.5 on 7/9/20, class cost: 328.5.\nClass #33 for this student, per source sheet.",
@@ -5718,6 +6229,7 @@ module.exports =
     "customerId": 1000,
     "firstName": "Jane",
     "lastName": "Adams",
+    "email": "janeda71@gmail.com",
     "upgradeNotes": "Purple Haze (wants to move to July class if possible)",
     "notes": "Imported payment info: paid 1: 450 on 7/9/20, class cost: 450.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2020-07-09"
@@ -5729,6 +6241,7 @@ module.exports =
     "customerId": 2537,
     "firstName": "Teresa",
     "lastName": "White",
+    "email": "gardenheartz@hotmail.com",
     "upgradeNotes": "Capri Blue",
     "notes": "Imported payment info: paid 1: 360 on 7/9/20, class cost: 360.\nClass #3 for this student, per source sheet.",
     "enrolledOn": "2020-07-09"
@@ -5740,6 +6253,7 @@ module.exports =
     "customerId": 2314,
     "firstName": "Sharon",
     "lastName": "Hawksworth",
+    "email": "shmia@aol.com",
     "upgradeNotes": "Capri Blue + Grout Kit",
     "notes": "Imported payment info: paid 1: 475 on 7/9/20, class cost: 450.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2020-07-09"
@@ -5751,6 +6265,7 @@ module.exports =
     "customerId": 2075,
     "firstName": "Peggy",
     "lastName": "Young",
+    "email": "pegleg54@comcast.net",
     "upgradeNotes": "Capri Blue",
     "notes": "Imported payment info: paid 1: 450 on 7/9/20, class cost: 450.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2020-07-09"
@@ -5762,6 +6277,7 @@ module.exports =
     "customerId": 1641,
     "firstName": "Lyde",
     "lastName": "Fowler",
+    "email": "lyde@pacbell.net",
     "upgradeNotes": "Capri Blue",
     "notes": "Imported payment info: paid 1: 450 on 7/10/20, class cost: 450.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2020-07-10"
@@ -5773,6 +6289,7 @@ module.exports =
     "customerId": 371,
     "firstName": "Carolyn",
     "lastName": "Barnes",
+    "email": "car45bar@aol.com",
     "upgradeNotes": "Capri Blue + Grout Kit",
     "notes": "Imported payment info: paid 1: 450 on 7/10/20, class cost: 450.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2020-07-10"
@@ -5784,6 +6301,7 @@ module.exports =
     "customerId": 1523,
     "firstName": "Linda",
     "lastName": "Duryea",
+    "email": "shoretwo@comcast.net",
     "upgradeNotes": "Sage Coral",
     "notes": "Imported payment info: paid 1: 450 on 7/10/20, class cost: 450.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2020-07-10"
@@ -5795,6 +6313,7 @@ module.exports =
     "customerId": 647,
     "firstName": "Denise",
     "lastName": "Bjorling",
+    "email": "denisebjorling@comcast.net",
     "upgradeNotes": "Cardinal + Grout Kit",
     "notes": "Imported payment info: paid 1: 475 on 7/12/20, class cost: 450.\nClass #3 for this student, per source sheet.",
     "enrolledOn": "2020-07-12"
@@ -5806,6 +6325,7 @@ module.exports =
     "customerId": 2406,
     "firstName": "Stephanie",
     "lastName": "Woolley",
+    "email": "teewoolley@gmail.com",
     "discountPercent": 20,
     "upgradeNotes": "Cotton Candy | Pick up Thursday | Needs nippers",
     "notes": "Imported payment info: paid 1: 212.5 on 12/1/19, class cost: 340.\nClass #10 for this student, per source sheet.",
@@ -5818,6 +6338,7 @@ module.exports =
     "customerId": 458,
     "firstName": "Christine",
     "lastName": "Upchurch",
+    "email": "christineupchurch@hotmail.com",
     "discountPercent": 20,
     "upgradeNotes": "Custom Colors | Pick up Friday",
     "notes": "Imported payment info: paid 1: 212.5 on 12/16/19.\nClass #8 for this student, per source sheet.",
@@ -5830,6 +6351,7 @@ module.exports =
     "customerId": 2070,
     "firstName": "Peggy",
     "lastName": "Estela",
+    "email": "peggyestela@hotmail.com",
     "discountPercent": 20,
     "upgradeNotes": "Lime Aqua | Pick up Friday",
     "notes": "Imported payment info: paid 1: 212.5 on 12/14/19.\nClass #5 for this student, per source sheet.",
@@ -5842,6 +6364,7 @@ module.exports =
     "customerId": 1404,
     "firstName": "Kris",
     "lastName": "Benvenuto",
+    "email": "kbenvenuto05@yahoo.com",
     "discountPercent": 20,
     "upgradeNotes": "Lime Aqua | Pick up Thursday",
     "notes": "Imported payment info: paid 1: 212.5 on 12/12/19.\nClass #4 for this student, per source sheet.",
@@ -5854,6 +6377,7 @@ module.exports =
     "customerId": 2624,
     "firstName": "Victoria",
     "lastName": "Paradis",
+    "email": "vpar4219@yahoo.com",
     "discountPercent": 20,
     "upgradeNotes": "Purple | Pick up Friday | Whole order + jewelry box top",
     "notes": "Imported payment info: paid 1: 212.5 on 12/15/19.\nClass #25 for this student, per source sheet.",
@@ -5866,6 +6390,7 @@ module.exports =
     "customerId": 2617,
     "firstName": "Vanessa",
     "lastName": "Hemingway",
+    "email": "vanessa.hemingwayphd@gmail.com",
     "upgradeNotes": "Turquoise Mint | Mailed Overnight",
     "enrolledOn": "2020-05-02"
   },
@@ -5876,6 +6401,7 @@ module.exports =
     "customerId": 2440,
     "firstName": "Susan",
     "lastName": "Boyd",
+    "email": "boyd9501@comcast.net",
     "discountPercent": 20,
     "upgradeNotes": "Turquoise Mint | Pick Up Thursday",
     "notes": "Imported payment info: paid 1: 425 on 1/3/20.\nClass #4 for this student, per source sheet.",
@@ -5888,6 +6414,7 @@ module.exports =
     "customerId": 2598,
     "firstName": "Trina",
     "lastName": "Kaye",
+    "email": "trinakaye23@gmail.com",
     "upgradeNotes": "Turquoise Mint | Pick Up Thursday",
     "notes": "Imported payment info: paid 1: 212.5 on 1/18/20.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2020-01-18"
@@ -5899,6 +6426,7 @@ module.exports =
     "customerId": 498,
     "firstName": "Connie",
     "lastName": "Flores",
+    "email": "connieflores@hotmail.com",
     "discountPercent": 20,
     "notes": "Imported payment info: paid 1: 125 on 4/4/20.\nClass #5 for this student, per source sheet.",
     "enrolledOn": "2020-04-04"
@@ -5910,6 +6438,7 @@ module.exports =
     "customerId": 1230,
     "firstName": "Kaira",
     "lastName": "West",
+    "email": "kairaconnect@gmail.com",
     "notes": "Imported payment info: paid 1: 125 on 4/6/20.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2020-04-06"
   },
@@ -5920,6 +6449,7 @@ module.exports =
     "customerId": 87,
     "firstName": "Alissa",
     "lastName": "Blumenthal",
+    "email": "alissatrip@yahoo.com",
     "notes": "Imported payment info: paid 1: 125 on 4/7/20.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2020-04-07"
   },
@@ -5929,6 +6459,7 @@ module.exports =
     "status": "completed",
     "firstName": "Kris",
     "lastName": "Benvenuto",
+    "email": "krisandrich2001@yahoo.com",
     "notes": "Imported payment info: paid 1: 106.25 on 3/30/20.\nClass #3 for this student, per source sheet.",
     "enrolledOn": "2020-03-30"
   },
@@ -5939,6 +6470,7 @@ module.exports =
     "customerId": 640,
     "firstName": "Dee",
     "lastName": "Brown",
+    "email": "wdbrown83@gmail.com",
     "notes": "Imported payment info: paid 1: 106.25 on 3/30/20.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2020-03-30"
   },
@@ -5949,6 +6481,7 @@ module.exports =
     "customerId": 1391,
     "firstName": "Kimberly",
     "lastName": "Gusta",
+    "email": "kim@kimgusta.com",
     "notes": "Imported payment info: paid 1: 125 on 3/30/20.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2020-03-30"
   },
@@ -5959,6 +6492,7 @@ module.exports =
     "customerId": 1771,
     "firstName": "Mary",
     "lastName": "Jones",
+    "email": "marlo2558@aol.com",
     "notes": "Imported payment info: paid 1: 106.25 on 3/31/20.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2020-03-31"
   },
@@ -5969,6 +6503,7 @@ module.exports =
     "customerId": 1866,
     "firstName": "Michelle",
     "lastName": "Bloodworth",
+    "email": "bloodworth.m@gmail.com",
     "notes": "Imported payment info: paid 1: 125 on 4/1/20.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2020-04-01"
   },
@@ -5979,6 +6514,7 @@ module.exports =
     "customerId": 2617,
     "firstName": "Vanessa",
     "lastName": "Hemingway",
+    "email": "vanessa.hemingwayphd@gmail.com",
     "notes": "Imported payment info: paid 1: 106.25 on 4/2/20.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2020-04-02"
   },
@@ -5989,6 +6525,7 @@ module.exports =
     "customerId": 542,
     "firstName": "Dacia",
     "lastName": "Emmel",
+    "email": "daciawpf@gmail.com",
     "discountPercent": 20,
     "notes": "Imported payment info: paid 1: 106.25 on 4/3/20.\nClass #4 for this student, per source sheet.",
     "enrolledOn": "2020-04-03"
@@ -6000,6 +6537,7 @@ module.exports =
     "customerId": 2232,
     "firstName": "Sally",
     "lastName": "Moretti",
+    "email": "semoretti@gmail.com",
     "notes": "Imported payment info: paid 1: 125 on 4/5/20.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2020-04-05"
   },
@@ -6010,6 +6548,7 @@ module.exports =
     "customerId": 2664,
     "firstName": "Wendy",
     "lastName": "Daugherty",
+    "email": "w.daughertyrn@gmail.com",
     "notes": "Imported payment info: paid 1: 106.25 on 3/29/20.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2020-03-29"
   },
@@ -6020,6 +6559,7 @@ module.exports =
     "customerId": 2215,
     "firstName": "Kurt",
     "lastName": "Kaufman",
+    "email": "rkaufman13.rk@gmail.com",
     "notes": "Imported payment info: paid 1: 125 on 3/29/20.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2020-03-29"
   },
@@ -6030,6 +6570,7 @@ module.exports =
     "customerId": 1120,
     "firstName": "Jill",
     "lastName": "Schwenke",
+    "email": "jillschwenke@yahoo.com",
     "notes": "Imported payment info: paid 1: 125 on 3/29/20.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2020-03-29"
   },
@@ -6040,6 +6581,7 @@ module.exports =
     "customerId": 608,
     "firstName": "Debra",
     "lastName": "Pawlak",
+    "email": "creeksideartstudio@aol.com",
     "notes": "Imported payment info: paid 1: 106.25 on 3/29/20.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2020-03-29"
   },
@@ -6050,6 +6592,7 @@ module.exports =
     "customerId": 462,
     "firstName": "Chrys",
     "lastName": "Bertolotto",
+    "email": "chrys.bertolotto@gmail.com",
     "notes": "Imported payment info: paid 1: 106.25 on 3/31/20.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2020-03-31"
   },
@@ -6060,6 +6603,7 @@ module.exports =
     "customerId": 476,
     "firstName": "Cintra",
     "lastName": "Rene",
+    "email": "cintra@destinationtiki.com",
     "discountPercent": 20,
     "notes": "Imported payment info: paid 1: 106.25 on 3/29/20.\nClass #6 for this student, per source sheet.",
     "enrolledOn": "2020-03-29"
@@ -6071,6 +6615,7 @@ module.exports =
     "customerId": 2328,
     "firstName": "Sheila",
     "lastName": "Jones",
+    "email": "sjharger@gmail.com",
     "notes": "Imported payment info: paid 1: 106.25 on 3/29/20.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2020-03-29"
   },
@@ -6081,6 +6626,7 @@ module.exports =
     "customerId": 863,
     "firstName": "Georgine",
     "lastName": "Madden",
+    "email": "georginemadden@icloud.com",
     "notes": "Imported payment info: paid 1: 106.25 on 3/29/20.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2020-03-29"
   },
@@ -6091,6 +6637,7 @@ module.exports =
     "customerId": 1741,
     "firstName": "Marsha",
     "lastName": "Hudson",
+    "email": "marsha@griffyn.us",
     "discountPercent": 20,
     "notes": "Imported payment info: paid 1: 106.25 on 3/29/20.\nClass #32 for this student, per source sheet.",
     "enrolledOn": "2020-03-29"
@@ -6102,6 +6649,7 @@ module.exports =
     "customerId": 1552,
     "firstName": "Lisa",
     "lastName": "Alloin",
+    "email": "lisaalloin3404@gmail.com",
     "notes": "Imported payment info: paid 1: 125 on 3/29/20.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2020-03-29"
   },
@@ -6112,6 +6660,7 @@ module.exports =
     "customerId": 1902,
     "firstName": "Monica",
     "lastName": "Meadows",
+    "email": "monicaforthecure@gmail.com",
     "upgradeNotes": "Wants to substitute orange for red",
     "notes": "Imported payment info: paid 1: 125 on 3/29/20.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2020-03-29"
@@ -6123,6 +6672,7 @@ module.exports =
     "customerId": 2511,
     "firstName": "Swati",
     "lastName": "Jain",
+    "email": "swatijainshah@yahoo.com",
     "notes": "Imported payment info: paid 1: 106.25 on 3/29/20.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2020-03-29"
   },
@@ -6133,6 +6683,7 @@ module.exports =
     "customerId": 619,
     "firstName": "Deborah",
     "lastName": "Harlow",
+    "email": "dharlow@starbucks.com",
     "notes": "Imported payment info: paid 1: 125 on 3/29/20.\nClass #3 for this student, per source sheet.",
     "enrolledOn": "2020-03-29"
   },
@@ -6143,6 +6694,7 @@ module.exports =
     "customerId": 2452,
     "firstName": "Susan",
     "lastName": "Faurot",
+    "email": "susanmfcc@sbcglobal.net",
     "notes": "Imported payment info: paid 1: 106.25 on 3/29/20.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2020-03-29"
   },
@@ -6153,6 +6705,7 @@ module.exports =
     "customerId": 1600,
     "firstName": "Loraine",
     "lastName": "Martinez",
+    "email": "loraine.martinez@live.com",
     "notes": "Imported payment info: paid 1: 106.25 on 4/1/20.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2020-04-01"
   },
@@ -6163,6 +6716,7 @@ module.exports =
     "customerId": 2252,
     "firstName": "Sandra",
     "lastName": "Smith",
+    "email": "1945sandy@gmail.com",
     "upgradeNotes": "24\"x28\" Rect silver/seafoam/aqua/blue",
     "notes": "Class #1 for this student, per source sheet.",
     "enrolledOn": "2020-02-21"
@@ -6174,6 +6728,7 @@ module.exports =
     "customerId": 1419,
     "firstName": "Kristina",
     "lastName": "Jacobsen",
+    "email": "kristina1rn@aol.com",
     "upgradeNotes": "24\" Round silver/pink/gray",
     "notes": "Class #1 for this student, per source sheet.",
     "enrolledOn": "2020-02-21"
@@ -6185,6 +6740,7 @@ module.exports =
     "customerId": 2005,
     "firstName": "Pamela",
     "lastName": "Mather",
+    "email": "dittobuddydasher@yahoo.com",
     "upgradeNotes": "22\"x28\" Oval",
     "notes": "Class #1 for this student, per source sheet.",
     "enrolledOn": "2020-02-21"
@@ -6196,6 +6752,7 @@ module.exports =
     "customerId": 1497,
     "firstName": "Leslie",
     "lastName": "Mather-Jones",
+    "email": "lmather1970@comcast.net",
     "upgradeNotes": "18\"x27\" Rect",
     "notes": "Class #1 for this student, per source sheet.",
     "enrolledOn": "2020-02-21"
@@ -6207,6 +6764,7 @@ module.exports =
     "customerId": 1071,
     "firstName": "Jennifer",
     "lastName": "Clays",
+    "email": "jmclays@yahoo.com",
     "upgradeNotes": "26\" Square",
     "notes": "Class #1 for this student, per source sheet.",
     "enrolledOn": "2020-02-21"
@@ -6218,6 +6776,7 @@ module.exports =
     "customerId": 371,
     "firstName": "Carolyn",
     "lastName": "Barnes",
+    "email": "car45bar@aol.com",
     "upgradeNotes": "24\" Round silver/blue/teal/turquoise",
     "notes": "Class #1 for this student, per source sheet.",
     "enrolledOn": "2020-02-21"
@@ -6229,6 +6788,7 @@ module.exports =
     "customerId": 692,
     "firstName": "Dixie",
     "lastName": "Lampers",
+    "email": "dlampers@comcast.net",
     "upgradeNotes": "30\" Square silver",
     "notes": "Class #1 for this student, per source sheet.",
     "enrolledOn": "2020-02-21"
@@ -6240,6 +6800,7 @@ module.exports =
     "customerId": 2204,
     "firstName": "Rossana",
     "lastName": "De Fusco",
+    "email": "rossanadf25@gmail.com",
     "upgradeNotes": "24\" Round undecided",
     "notes": "Class #1 for this student, per source sheet.",
     "enrolledOn": "2020-02-21"
@@ -6251,6 +6812,7 @@ module.exports =
     "customerId": 624,
     "firstName": "Deborah J",
     "lastName": "Korfmacher",
+    "email": "1veryhappyheart@gmail.com",
     "upgradeNotes": "18\"x22\" Oval",
     "notes": "Class #1 for this student, per source sheet.",
     "enrolledOn": "2020-02-21"
@@ -6262,6 +6824,7 @@ module.exports =
     "customerId": 2423,
     "firstName": "Sue",
     "lastName": "Howard",
+    "email": "showard@howardvocational.com",
     "upgradeNotes": "24\"x28\" Rect gold/maroons/dusty rose/tan/teal/soft green",
     "notes": "Class #1 for this student, per source sheet.",
     "enrolledOn": "2020-02-21"
@@ -6273,6 +6836,7 @@ module.exports =
     "customerId": 2632,
     "firstName": "Victoria",
     "lastName": "Coen",
+    "email": "vlcoen@yahoo.com",
     "discountPercent": 20,
     "upgradeNotes": "Med. Leaf",
     "notes": "Imported payment info: paid 1: 260 on 8/22/19, class cost: 208.\nClass #9 for this student, per source sheet.",
@@ -6285,6 +6849,7 @@ module.exports =
     "customerId": 1281,
     "firstName": "Karin",
     "lastName": "Roberts",
+    "email": "karinilene@yahoo.com",
     "upgradeNotes": "24in Round",
     "notes": "Imported payment info: paid 1: 260 on 11/2/19, class cost: 260.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2019-11-02"
@@ -6296,6 +6861,7 @@ module.exports =
     "customerId": 1200,
     "firstName": "Julianne",
     "lastName": "Thompson",
+    "email": "juliannetmd@cox.net",
     "upgradeNotes": "Med. Leaf",
     "notes": "Imported payment info: paid 1: 260 on 11/11/19, class cost: 260.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2019-11-11"
@@ -6307,6 +6873,7 @@ module.exports =
     "customerId": 2665,
     "firstName": "Wendy",
     "lastName": "Fekkers",
+    "email": "walla2wendy@hotmail.com",
     "upgradeNotes": "14x20in Oval",
     "notes": "Imported payment info: paid 1: 260 on 11/15/19, class cost: 260.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2019-11-15"
@@ -6318,6 +6885,7 @@ module.exports =
     "customerId": 1391,
     "firstName": "Kimberly",
     "lastName": "Gusta",
+    "email": "kim@kimgusta.com",
     "upgradeNotes": "24in Round",
     "notes": "Imported payment info: paid 1: 260 on 12/2/19.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2019-12-02"
@@ -6329,6 +6897,7 @@ module.exports =
     "customerId": 458,
     "firstName": "Christine",
     "lastName": "Upchurch",
+    "email": "christineupchurch@hotmail.com",
     "discountPercent": 20,
     "upgradeNotes": "24x28in Rect",
     "notes": "Special: 1/19/20\nImported payment info: paid 1: 130 on 12/16/19, paid 2: 78.\nClass #7 for this student, per source sheet.",
@@ -6341,6 +6910,7 @@ module.exports =
     "customerId": 572,
     "firstName": "David",
     "lastName": "Leach",
+    "email": "dave@dmleach.com",
     "upgradeNotes": "30in Round",
     "notes": "Imported payment info: paid 1: 260 on 1/9/20.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2020-01-09"
@@ -6352,6 +6922,7 @@ module.exports =
     "customerId": 572,
     "firstName": "Leslie",
     "lastName": "Swiedom",
+    "email": "dave@dmleach.com",
     "notes": "Sharing 30\" round with David Leach\nImported payment info: paid 1: 0.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2020-01-18"
   },
@@ -6362,6 +6933,7 @@ module.exports =
     "customerId": 587,
     "firstName": "Deanna",
     "lastName": "Nakashima",
+    "email": "dknakashima@hotmail.com",
     "discountPercent": 20,
     "upgradeNotes": "24x28 silver, two jewelry boxes",
     "notes": "paid for Kara\nImported payment info: paid 1: 130 on 8/23/19, class cost: 208.\nClass #6 for this student, per source sheet.",
@@ -6392,6 +6964,7 @@ module.exports =
     "customerId": 2632,
     "firstName": "Victoria",
     "lastName": "Coen",
+    "email": "vlcoen@yahoo.com",
     "discountPercent": 20,
     "upgradeNotes": "17in round, 7x Votives",
     "notes": "Imported payment info: paid 1: 208 on 8/23/19, class cost: 208.\nClass #8 for this student, per source sheet.",
@@ -6404,6 +6977,7 @@ module.exports =
     "customerId": 374,
     "firstName": "Carolyn",
     "lastName": "Fuson",
+    "email": "carolynfuson@outlook.com",
     "upgradeNotes": "24in round",
     "notes": "Imported payment info: paid 1: 0.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2019-12-14"
@@ -6415,6 +6989,7 @@ module.exports =
     "customerId": 458,
     "firstName": "Christine",
     "lastName": "Upchurch",
+    "email": "christineupchurch@hotmail.com",
     "discountPercent": 20,
     "upgradeNotes": "\"I would like to do the jewelry box and a small oval. In lots of purple for each.\"",
     "notes": "Imported payment info: paid 1: 130 on 12/10/19.\nClass #6 for this student, per source sheet.",
@@ -6427,6 +7002,7 @@ module.exports =
     "customerId": 1925,
     "firstName": "Nancy",
     "lastName": "Callanan",
+    "email": "nccallanan@gmail.com",
     "upgradeNotes": "19in / silver Light to dark turquoise, irridescent (bring extra 10\" mirrors)",
     "notes": "Free Class\nImported payment info: class cost: 0.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2019-12-07"
@@ -6438,6 +7014,7 @@ module.exports =
     "customerId": 347,
     "firstName": "Carmen",
     "lastName": "Medina",
+    "email": "carmen.medina4@hotmail.com",
     "upgradeNotes": "19\" round mirror",
     "notes": "Nancy paid dep\nImported payment info: paid 1: 130 on 10/9/19, class cost: 260.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2019-10-09"
@@ -6449,6 +7026,7 @@ module.exports =
     "customerId": 1184,
     "firstName": "Judy",
     "lastName": "Pinkston",
+    "email": "judypinkston1@sbcglobal.net",
     "upgradeNotes": "17\" roundmirror / navy to light blue, cream, silver accent",
     "notes": "Imported payment info: paid 1: 260 on 11/14/19, class cost: 260.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2019-11-14"
@@ -6460,6 +7038,7 @@ module.exports =
     "customerId": 342,
     "firstName": "Cari",
     "lastName": "Trenery",
+    "email": "jupitergalaxy999@yahoo.com",
     "upgradeNotes": "19\" round / black, grey, white, burgundy",
     "notes": "Nancy paid dep\nImported payment info: paid 1: 130 on 10/9/19, class cost: 260.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2019-10-09"
@@ -6471,6 +7050,7 @@ module.exports =
     "customerId": 2469,
     "firstName": "Susie",
     "lastName": "Marvos",
+    "email": "bill-susie@sbcglobal.net",
     "upgradeNotes": "19\" round",
     "notes": "Imported payment info: paid 1: 260 on 11/1/19, class cost: 260.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2019-11-01"
@@ -6482,6 +7062,7 @@ module.exports =
     "customerId": 2040,
     "firstName": "Patti",
     "lastName": "Remmenga",
+    "email": "pattiremm@yahoo.com",
     "upgradeNotes": "19\" fall colors, gold",
     "notes": "Imported payment info: paid 1: 260 on 11/26/19, class cost: 260.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2019-11-26"
@@ -6493,6 +7074,7 @@ module.exports =
     "customerId": 1587,
     "firstName": "Liz",
     "lastName": "Bednorz",
+    "email": "lizbednorz@sbcglobal.net",
     "upgradeNotes": "18x27 Rect / silver blue, green, brown",
     "notes": "Imported payment info: paid 1: 135 on 10/8/19, class cost: 270.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2019-10-08"
@@ -6504,6 +7086,7 @@ module.exports =
     "customerId": 1855,
     "firstName": "Michaela",
     "lastName": "Bixler",
+    "email": "scottmichbixler@gmail.com",
     "upgradeNotes": "18x27 Rect /silver yellow/amber, green/gray, Shades of purple, cream/white",
     "notes": "Imported payment info: paid 1: 260 on 10/15/19, 11/23/19, class cost: 260.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2019-12-07"
@@ -6515,6 +7098,7 @@ module.exports =
     "customerId": 1599,
     "firstName": "Lora",
     "lastName": "Weinstock",
+    "email": "lunalove813@gmail.com",
     "upgradeNotes": "18x22 Oval",
     "notes": "Imported payment info: paid 1: 260 on 11/26/19, class cost: 260.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2019-11-26"
@@ -6526,6 +7110,7 @@ module.exports =
     "customerId": 458,
     "firstName": "Christine",
     "lastName": "Upchurch",
+    "email": "christineupchurch@hotmail.com",
     "discountPercent": 20,
     "upgradeNotes": "24x28 rectangle + small mirrors",
     "notes": "Imported payment info: paid 1: 130 on 8/20/19, class cost: 208.\nClass #5 for this student, per source sheet.",
@@ -6538,6 +7123,7 @@ module.exports =
     "customerId": 668,
     "firstName": "Diane",
     "lastName": "Fletcher",
+    "email": "dfletcher@olypen.com",
     "discountPercent": 20,
     "upgradeNotes": "small mirrors",
     "notes": "Imported payment info: paid 1: 130 on 11/5/19, class cost: 208.\nClass #4 for this student, per source sheet.",
@@ -6550,6 +7136,7 @@ module.exports =
     "customerId": 702,
     "firstName": "Donna",
     "lastName": "Nichols",
+    "email": "donnajnichols1@gmail.com",
     "upgradeNotes": "18x22 Mirror",
     "notes": "moving to another class date\nImported payment info: paid 1: 130 on 8/2/19, class cost: 260.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2019-08-02"
@@ -6561,6 +7148,7 @@ module.exports =
     "customerId": 2213,
     "firstName": "Roxanne",
     "lastName": "Carlson",
+    "email": "roxcarl80@gmail.com",
     "notes": "Imported payment info: paid 1: 130 on 11/8/19, class cost: 260.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2019-11-08"
   },
@@ -6571,6 +7159,7 @@ module.exports =
     "customerId": 1273,
     "firstName": "Karen",
     "lastName": "Wickstrom",
+    "email": "karen.wickstrom@gmail.com",
     "discountPercent": 20,
     "notes": "Imported payment info: paid 1: 0, class cost: 208.\nClass #7 for this student, per source sheet.",
     "enrolledOn": "2019-12-02"
@@ -6582,6 +7171,7 @@ module.exports =
     "customerId": 2440,
     "firstName": "Susan",
     "lastName": "Boyd",
+    "email": "boyd9501@comcast.net",
     "upgradeNotes": "19in Round",
     "notes": "Imported payment info: paid 1: 260 on 11/15/19, class cost: 260.\nClass #3 for this student, per source sheet.",
     "enrolledOn": "2019-11-15"
@@ -6593,6 +7183,7 @@ module.exports =
     "customerId": 1961,
     "firstName": "Nicola",
     "lastName": "Davies",
+    "email": "njd@nicolajane.net",
     "discountPercent": 20,
     "notes": "Moved from Oct 3 class\nImported payment info: paid 1: 260 on 4/11/19, class cost: 208.\nClass #6 for this student, per source sheet.",
     "enrolledOn": "2019-04-11"
@@ -6604,6 +7195,7 @@ module.exports =
     "customerId": 2632,
     "firstName": "Victoria",
     "lastName": "Coen",
+    "email": "vlcoen@yahoo.com",
     "discountPercent": 20,
     "notes": "Imported payment info: paid 1: 260 on 8/22/19, class cost: 104, upgrade/AlC incl. tax: 84.\nClass #7 for this student, per source sheet.",
     "enrolledOn": "2019-08-22"
@@ -6615,6 +7207,7 @@ module.exports =
     "customerId": 476,
     "firstName": "Cintra",
     "lastName": "Rene",
+    "email": "cintra@destinationtiki.com",
     "discountPercent": 20,
     "notes": "Special: 11/23/19\nImported payment info: paid 1: 130 on 8/24/19, paid 2: 103.6, class cost: 104, upgrade/AlC incl. tax: 129.6.\nClass #5 for this student, per source sheet.",
     "enrolledOn": "2019-08-24"
@@ -6626,6 +7219,7 @@ module.exports =
     "customerId": 152,
     "firstName": "Angela",
     "lastName": "Vitense",
+    "email": "vitense.angela@gmail.com",
     "notes": "Special: 11/23/19\nImported payment info: paid 1: 130 on 8/24/19, paid 2: 70, class cost: 130, upgrade/AlC incl. tax: 70.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2019-08-24"
   },
@@ -6636,6 +7230,7 @@ module.exports =
     "customerId": 2671,
     "firstName": "Wendy",
     "lastName": "Stockholm",
+    "email": "stockholm.wendy@gmail.com",
     "notes": "Special: 11/23/19\nImported payment info: paid 1: 130 on 9/5/19, paid 2: 210, class cost: 260, upgrade/AlC incl. tax: 80.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2019-09-05"
   },
@@ -6646,6 +7241,7 @@ module.exports =
     "customerId": 508,
     "firstName": "Corky",
     "lastName": "Lee",
+    "email": "canddlee2@gmail.com",
     "notes": "Special: 11/23/19\nImported payment info: paid 1: 130 on 9/5/19, paid 2: 330, class cost: 260, upgrade/AlC incl. tax: 200.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2019-09-05"
   },
@@ -6656,6 +7252,7 @@ module.exports =
     "customerId": 1274,
     "firstName": "Karen",
     "lastName": "Williams",
+    "email": "kjhwilliams7530@gmail.com",
     "notes": "Originally signed up for May25/26 class. Paid on March 6\nSpecial: 11/23/19\nImported payment info: paid 1: 130 on 3/6/19, paid 2: 130, class cost: 260.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2019-03-06"
   },
@@ -6666,6 +7263,7 @@ module.exports =
     "customerId": 1404,
     "firstName": "Kris",
     "lastName": "Benvenuto",
+    "email": "kbenvenuto05@yahoo.com",
     "notes": "Imported payment info: paid 1: 260 on 10/4/19, class cost: 260.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2019-10-04"
   },
@@ -6676,6 +7274,7 @@ module.exports =
     "customerId": 458,
     "firstName": "Christine",
     "lastName": "Upchurch",
+    "email": "christineupchurch@hotmail.com",
     "discountPercent": 20,
     "notes": "22\"x28\" Oval?\nSpecial: 11/2/19\nImported payment info: paid 1: 130 on 8/20/19, paid 2: 210, class cost: 208, upgrade/AlC incl. tax: 132.\nClass #4 for this student, per source sheet.",
     "enrolledOn": "2019-08-20"
@@ -6687,6 +7286,7 @@ module.exports =
     "customerId": 1420,
     "firstName": "Kristina",
     "lastName": "Keller",
+    "email": "litratec@hotmail.com",
     "notes": "Special: 11/2/19\nImported payment info: paid 1: 130 on 8/21/19, paid 2: 130, class cost: 260.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2019-08-21"
   },
@@ -6697,6 +7297,7 @@ module.exports =
     "customerId": 2074,
     "firstName": "Peggy",
     "lastName": "Snow",
+    "email": "psnowmn@mac.com",
     "notes": "From source sheet: Friend\n22\"x28\" Oval silver\nSpecial: 11/2/19\nImported payment info: paid 1: 260 on 8/22/19, paid 2: 165, class cost: 260, upgrade/AlC incl. tax: 165.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2019-08-22"
   },
@@ -6707,6 +7308,7 @@ module.exports =
     "customerId": 2074,
     "firstName": "Peggy",
     "lastName": "Snow",
+    "email": "psnowmn@mac.com",
     "notes": "18\"x27\" Rect silver\nSpecial: 11/2/19\nImported payment info: paid 1: 260 on 8/22/19, paid 2: 120, class cost: 260, upgrade/AlC incl. tax: 120.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2019-08-22"
   },
@@ -6717,6 +7319,7 @@ module.exports =
     "customerId": 2632,
     "firstName": "Victoria",
     "lastName": "Coen",
+    "email": "vlcoen@yahoo.com",
     "discountPercent": 20,
     "notes": "Imported payment info: paid 1: 260 on 8/22/19, class cost: 208.\nClass #6 for this student, per source sheet.",
     "enrolledOn": "2019-08-22"
@@ -6728,6 +7331,7 @@ module.exports =
     "customerId": 2213,
     "firstName": "Roxanne",
     "lastName": "Carlson",
+    "email": "roxcarl80@gmail.com",
     "notes": "24\" silver\nSpecial: 11/2/19\nImported payment info: paid 1: 130 on 9/7/19, paid 2: 210, class cost: 260, upgrade/AlC incl. tax: 80.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2019-09-07"
   },
@@ -6738,6 +7342,7 @@ module.exports =
     "customerId": 1570,
     "firstName": "Lisa",
     "lastName": "Merz",
+    "email": "brindisi101@gmail.com",
     "notes": "Imported payment info: paid 1: 260 on 10/13/19, class cost: 260.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2019-10-13"
   },
@@ -6748,6 +7353,7 @@ module.exports =
     "customerId": 1989,
     "firstName": "Pamela",
     "lastName": "Hillinger",
+    "email": "pamhillinger@gmail.com",
     "notes": "Special: 11/2/19\nImported payment info: paid 1: 130 on 10/27/19, paid 2: 75, class cost: 130, upgrade/AlC incl. tax: 75.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2019-10-27"
   },
@@ -6758,6 +7364,7 @@ module.exports =
     "customerId": 1273,
     "firstName": "Noelle",
     "lastName": "King",
+    "email": "karen.wickstrom@gmail.com",
     "discountPercent": 20,
     "notes": "20% disc. app. to dep.\nImported payment info: paid 1: 104 on 6/23/19, class cost: 104.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2019-06-23"
@@ -6769,6 +7376,7 @@ module.exports =
     "customerId": 249,
     "firstName": "Barbara",
     "lastName": "Lickiss",
+    "email": "wild_4ever@comcast.net",
     "discountPercent": 20,
     "upgradeNotes": "22x28 Oval",
     "notes": "20% disc. app. to dep.\nSpecial: 10/15\nImported payment info: paid 1: 104 on 6/25/19, paid 2: 236, class cost: 208, upgrade/AlC incl. tax: 132.\nClass #7 for this student, per source sheet.",
@@ -6781,6 +7389,7 @@ module.exports =
     "customerId": 910,
     "firstName": "Heather",
     "lastName": "Faulstich",
+    "email": "hfaulstich8@gmail.com",
     "upgradeNotes": "19in with silver",
     "notes": "Imported payment info: paid 1: 260 on 7/18/19, class cost: 260.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2019-07-18"
@@ -6792,6 +7401,7 @@ module.exports =
     "customerId": 668,
     "firstName": "Diane",
     "lastName": "Fletcher",
+    "email": "dfletcher@olypen.com",
     "upgradeNotes": "22x28 Oval silver",
     "notes": "Special: 10/15/19\nImported payment info: paid 1: 130 on 7/25/19, paid 2: 295, class cost: 260, upgrade/AlC incl. tax: 165.\nClass #3 for this student, per source sheet.",
     "enrolledOn": "2019-07-25"
@@ -6803,6 +7413,7 @@ module.exports =
     "customerId": 89,
     "firstName": "Allan",
     "lastName": "Lickiss",
+    "email": "ablickiss80@comcast.net",
     "upgradeNotes": "18x22 Oval",
     "notes": "Special: 10/15\nImported payment info: paid 1: 130 on 10/8/19, paid 2: 210, class cost: 260, upgrade/AlC incl. tax: 80.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2019-10-08"
@@ -6814,6 +7425,7 @@ module.exports =
     "customerId": 79,
     "firstName": "Alice",
     "lastName": "Rodgers",
+    "email": "casa-alice@live.com",
     "notes": "Imported payment info: paid 1: 260 on 5/2/19, class cost: 260.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2019-05-02"
   },
@@ -6824,6 +7436,7 @@ module.exports =
     "customerId": 661,
     "firstName": "Diane",
     "lastName": "Bedrosian",
+    "email": "dianebedrosian@hotmail.com",
     "notes": "Imported payment info: paid 1: 260 on 5/2/19, class cost: 260.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2019-05-02"
   },
@@ -6834,6 +7447,7 @@ module.exports =
     "customerId": 1741,
     "firstName": "Marsha",
     "lastName": "Hudson",
+    "email": "marsha@griffyn.us",
     "discountPercent": 20,
     "notes": "Imported payment info: class cost: 0.\nClass #31 for this student, per source sheet.",
     "enrolledOn": "2019-10-03"
@@ -6845,6 +7459,7 @@ module.exports =
     "customerId": 1062,
     "firstName": "Jeni",
     "lastName": "Bedrosian",
+    "email": "jeanbluebed@gmail.com",
     "notes": "Imported payment info: paid 1: 260 on 10/1/19, class cost: 260.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2019-10-01"
   },
@@ -6855,6 +7470,7 @@ module.exports =
     "customerId": 1185,
     "firstName": "Judith",
     "lastName": "Popky",
+    "email": "judypopky@gmail.com",
     "discountPercent": 20,
     "notes": "upgrade large leaf 225\nImported payment info: paid 1: 130 on 3/7/19, paid 2: 258, class cost: 208, upgrade/AlC incl. tax: 180.\nClass #5 for this student, per source sheet.",
     "enrolledOn": "2019-03-07"
@@ -6866,6 +7482,7 @@ module.exports =
     "customerId": 564,
     "firstName": "Darlene",
     "lastName": "Galaviz",
+    "email": "darlenesayler@hotmail.com",
     "discountPercent": 20,
     "upgradeNotes": "Wants to make yellow flower",
     "notes": "Canceled class, wants refune\nImported payment info: paid 1: 130 on 6/3/19, class cost: 208.\nClass #8 for this student, per source sheet.",
@@ -6878,6 +7495,7 @@ module.exports =
     "customerId": 2515,
     "firstName": "Sybil",
     "lastName": "Soderberg",
+    "email": "sybil.soderberg@gmail.com",
     "notes": "upgrade 18x22\nImported payment info: paid 1: 130 on 7/15/19, paid 2: 210, class cost: 260, upgrade/AlC incl. tax: 80.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2019-07-15"
   },
@@ -6888,6 +7506,7 @@ module.exports =
     "customerId": 2070,
     "firstName": "Peggy",
     "lastName": "Estela",
+    "email": "peggyestela@hotmail.com",
     "discountPercent": 20,
     "notes": "Does not owe anymore\nImported payment info: paid 1: 130 on 7/28/19, paid 2: 0, class cost: 130.\nClass #4 for this student, per source sheet.",
     "enrolledOn": "2019-07-28"
@@ -6898,6 +7517,7 @@ module.exports =
     "status": "completed",
     "firstName": "Kris",
     "lastName": "Benvenuto",
+    "email": "krisandrich2001@yahoo.com",
     "notes": "24x28 rectangle\nImported payment info: paid 1: 260 on 7/28/19, paid 2: 185, class cost: 260, upgrade/AlC incl. tax: 185.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2019-07-28"
   },
@@ -6908,6 +7528,7 @@ module.exports =
     "customerId": 971,
     "firstName": "Jacqueline",
     "lastName": "Gosschalk",
+    "email": "jackie.gosschalk@gmail.com",
     "discountPercent": 20,
     "notes": "Did not sign up online/165 leaf upgrade... paid 190 on website. Total class price 340 - 150 (gift card)\nImported payment info: paid 1: 340 on 9/28/19, class cost: 208, upgrade/AlC incl. tax: 132.\nClass #7 for this student, per source sheet.",
     "enrolledOn": "2019-09-28"
@@ -6919,6 +7540,7 @@ module.exports =
     "customerId": 2087,
     "firstName": "Phyllis",
     "lastName": "Akmal",
+    "email": "prakmal@sbcglobal.net",
     "upgradeNotes": "30\" Round gold/reds/oranges/yellows/turquoise/aqua",
     "notes": "Class #1 for this student, per source sheet.",
     "enrolledOn": "2019-09-14"
@@ -6930,6 +7552,7 @@ module.exports =
     "customerId": 524,
     "firstName": "Cyndy",
     "lastName": "Barton",
+    "email": "cbandcb@aol.com",
     "upgradeNotes": "19\" Round",
     "notes": "Class #1 for this student, per source sheet.",
     "enrolledOn": "2019-09-14"
@@ -6941,6 +7564,7 @@ module.exports =
     "customerId": 2602,
     "firstName": "Troy",
     "lastName": "Benthall",
+    "email": "tbenthall@sbcglobal.net",
     "upgradeNotes": "19\" Round silver/autumn colors",
     "notes": "Class #1 for this student, per source sheet.",
     "enrolledOn": "2019-09-14"
@@ -6951,6 +7575,7 @@ module.exports =
     "status": "completed",
     "firstName": "Carolyn",
     "lastName": "Griffith",
+    "email": "carolyn.griffith@tyson.com",
     "upgradeNotes": "19\" Round silver/purple/green",
     "notes": "Class #1 for this student, per source sheet.",
     "enrolledOn": "2019-09-14"
@@ -6962,6 +7587,7 @@ module.exports =
     "customerId": 1590,
     "firstName": "Liz",
     "lastName": "Jesse",
+    "email": "lizjesse@bellsouth.net",
     "upgradeNotes": "24\"x28\" Rect gold/orange/grays",
     "notes": "Class #1 for this student, per source sheet.",
     "enrolledOn": "2019-09-14"
@@ -6973,6 +7599,7 @@ module.exports =
     "customerId": 228,
     "firstName": "Heather",
     "lastName": "Kruger",
+    "email": "hekruger@gmail.com",
     "upgradeNotes": "19\" Round moody opulence",
     "notes": "Class #1 for this student, per source sheet.",
     "enrolledOn": "2019-09-14"
@@ -6984,6 +7611,7 @@ module.exports =
     "customerId": 1902,
     "firstName": "Monica",
     "lastName": "Meadows",
+    "email": "monicaforthecure@gmail.com",
     "upgradeNotes": "24\" Round gold/orange/blue/turquoise",
     "notes": "Class #1 for this student, per source sheet.",
     "enrolledOn": "2019-09-14"
@@ -6995,6 +7623,7 @@ module.exports =
     "customerId": 687,
     "firstName": "Dianne",
     "lastName": "Sonnenberg",
+    "email": "diannes@mac.com",
     "upgradeNotes": "24\" gold/Bordeaux brick red/turquoise/deep reds/mahogany/aventurine browns",
     "notes": "Class #1 for this student, per source sheet.",
     "enrolledOn": "2019-09-14"
@@ -7006,6 +7635,7 @@ module.exports =
     "customerId": 1580,
     "firstName": "Lisa",
     "lastName": "Tritico",
+    "email": "lisa.tritico@yahoo.com",
     "upgradeNotes": "19\" turquoise/rust/deep coral/gold/silver",
     "notes": "Class #1 for this student, per source sheet.",
     "enrolledOn": "2019-09-14"
@@ -7017,6 +7647,7 @@ module.exports =
     "customerId": 1974,
     "firstName": "Nora",
     "lastName": "Wilson",
+    "email": "noramwilson@gmail.com",
     "upgradeNotes": "24\" silver/soft blues/grays/tans",
     "notes": "Class #1 for this student, per source sheet.",
     "enrolledOn": "2019-09-14"
@@ -7028,6 +7659,7 @@ module.exports =
     "customerId": 965,
     "firstName": "Jackie",
     "lastName": "Zurkammer",
+    "email": "jackiez1@me.com",
     "upgradeNotes": "18\"x22\" Oval blues/greens/beige/iridescent/purple/magenta",
     "notes": "Class #1 for this student, per source sheet.",
     "enrolledOn": "2019-09-14"
@@ -7039,6 +7671,7 @@ module.exports =
     "customerId": 2057,
     "firstName": "Paula",
     "lastName": "Levihn-Coon",
+    "email": "levihncoon@gmail.com",
     "upgradeNotes": "18\"x27\" Rect gold/purples/teals/metallic golds",
     "notes": "Class #1 for this student, per source sheet.",
     "enrolledOn": "2019-09-14"
@@ -7050,6 +7683,7 @@ module.exports =
     "customerId": 1880,
     "firstName": "Michelle",
     "lastName": "Lese",
+    "email": "mssoigne@hotmail.com",
     "upgradeNotes": "25\"x35\" Rectangle",
     "notes": "Imported payment info: paid 1: 260 on 7/18/19, class cost: 260, upgrade/AlC incl. tax: 275.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2019-07-18"
@@ -7061,6 +7695,7 @@ module.exports =
     "customerId": 1102,
     "firstName": "Jessica",
     "lastName": "Ganska",
+    "email": "jessganska@gmail.com",
     "upgradeNotes": "18\"x22\" Oval; picture frame",
     "notes": "Imported payment info: paid 1: 260 on 3/16/19, class cost: 195, upgrade/AlC incl. tax: 95.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2019-03-16"
@@ -7072,6 +7707,7 @@ module.exports =
     "customerId": 1274,
     "firstName": "Karen",
     "lastName": "Williams",
+    "email": "kjhwilliams7530@gmail.com",
     "notes": "Imported payment info: paid 1: 130 on 3/6/19, class cost: 260.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2019-03-06"
   },
@@ -7082,6 +7718,7 @@ module.exports =
     "customerId": 919,
     "firstName": "Holly",
     "lastName": "Yoder",
+    "email": "heidilay@aol.com",
     "notes": "Heidi Lay paid class fee\nSpecial: 8/5/19\nImported payment info: paid 1: 260 on 5/11/19, paid 2: 30, class cost: 260, upgrade/AlC incl. tax: 30.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2019-05-11"
   },
@@ -7092,6 +7729,7 @@ module.exports =
     "customerId": 919,
     "firstName": "Heidi",
     "lastName": "Lay",
+    "email": "heidilay@aol.com",
     "notes": "Imported payment info: paid 1: 260 on 5/11/19, class cost: 260.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2019-05-11"
   },
@@ -7102,6 +7740,7 @@ module.exports =
     "customerId": 1880,
     "firstName": "Michelle",
     "lastName": "Lese",
+    "email": "mssoigne@hotmail.com",
     "notes": "Trading original mirror for class\nImported payment info: paid 1: 650 on 7/18/19, class cost: 260, upgrade/AlC incl. tax: 390.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2019-07-18"
   },
@@ -7112,6 +7751,7 @@ module.exports =
     "customerId": 757,
     "firstName": "Elizabeth",
     "lastName": "Nakashima",
+    "email": "enakashima@comcast.net",
     "discountPercent": 20,
     "upgradeNotes": "22\"x28\" Oval",
     "notes": "Imported payment info: paid 1: 130 on 7/25/19, class cost: 208, upgrade/AlC incl. tax: 132.\nClass #7 for this student, per source sheet.",
@@ -7124,6 +7764,7 @@ module.exports =
     "customerId": 587,
     "firstName": "Deanna",
     "lastName": "Nakashima",
+    "email": "dknakashima@hotmail.com",
     "upgradeNotes": "23\"x25\" Leaf",
     "notes": "From source sheet: Daughter\nDeanna paid\nImported payment info: paid 1: 130 on 3/14/19, paid 2: 78, class cost: 208, upgrade/AlC incl. tax: 170.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2019-03-14"
@@ -7135,6 +7776,7 @@ module.exports =
     "customerId": 587,
     "firstName": "Deanna",
     "lastName": "Nakashima",
+    "email": "dknakashima@hotmail.com",
     "discountPercent": 20,
     "upgradeNotes": "23\"x25\" Leaf",
     "notes": "Imported payment info: paid 1: 130 on 3/14/19, paid 2: 78, class cost: 208, upgrade/AlC incl. tax: 170.\nClass #5 for this student, per source sheet.",
@@ -7147,6 +7789,7 @@ module.exports =
     "customerId": 1389,
     "firstName": "Kimberly",
     "lastName": "Burns",
+    "email": "khwashingtongirl@hotmail.com",
     "notes": "Imported payment info: paid 1: 260 on 5/2/19, class cost: 260.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2019-05-02"
   },
@@ -7157,6 +7800,7 @@ module.exports =
     "customerId": 243,
     "firstName": "Barbara",
     "lastName": "Olson",
+    "email": "bj.olson_44@yahoo.com",
     "notes": "Imported payment info: paid 1: 260 on 4/11/19, class cost: 260.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2019-04-11"
   },
@@ -7167,6 +7811,7 @@ module.exports =
     "customerId": 2632,
     "firstName": "Victoria",
     "lastName": "Coen",
+    "email": "vlcoen@yahoo.com",
     "discountPercent": 20,
     "upgradeNotes": "18\"x22\" Oval; votive",
     "notes": "Imported payment info: paid 1: 260 on 4/3/19, class cost: 208, upgrade/AlC incl. tax: 90.\nClass #5 for this student, per source sheet.",
@@ -7179,6 +7824,7 @@ module.exports =
     "customerId": 2070,
     "firstName": "Peggy",
     "lastName": "Estela",
+    "email": "peggyestela@hotmail.com",
     "notes": "From source sheet: Friend\nPeggy paid\nSpecial: 7/28/19\nImported payment info: paid 1: 130 on 3/20/19, paid 2: 130, class cost: 260.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2019-03-20"
   },
@@ -7189,6 +7835,7 @@ module.exports =
     "customerId": 2070,
     "firstName": "Peggy",
     "lastName": "Estela",
+    "email": "peggyestela@hotmail.com",
     "upgradeNotes": "30\"x33\" Leaf",
     "notes": "Special: 3/20/19\nImported payment info: paid 1: 130 on 2/25/19, paid 2: 130, class cost: 260, upgrade/AlC incl. tax: 185.\nClass #3 for this student, per source sheet.",
     "enrolledOn": "2019-02-25"
@@ -7200,6 +7847,7 @@ module.exports =
     "customerId": 2515,
     "firstName": "Sybil",
     "lastName": "Soderberg",
+    "email": "sybil.soderberg@gmail.com",
     "notes": "Special: 7/14/19\nImported payment info: paid 1: 260 on 5/27/19, paid 2: 90, class cost: 350.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2019-05-27"
   },
@@ -7210,6 +7858,7 @@ module.exports =
     "customerId": 2624,
     "firstName": "Victoria",
     "lastName": "Paradis",
+    "email": "vpar4219@yahoo.com",
     "discountPercent": 20,
     "notes": "12\"x15\" Blank, Tile Sheets\nSpecial: 5/14/19\nImported payment info: paid 1: 50 on 11/18/19, paid 2: 130, class cost: 195, upgrade/AlC incl. tax: 75.\nClass #24 for this student, per source sheet.",
     "enrolledOn": "2019-11-18"
@@ -7221,6 +7870,7 @@ module.exports =
     "customerId": 504,
     "firstName": "Cora",
     "lastName": "O'Connell",
+    "email": "cora_o@comcast.net",
     "upgradeNotes": "18\"x22\" Oval",
     "notes": "Imported payment info: paid 1: 260 on 4/22/19, class cost: 260, upgrade/AlC incl. tax: 80.\nClass #3 for this student, per source sheet.",
     "enrolledOn": "2019-04-22"
@@ -7232,6 +7882,7 @@ module.exports =
     "customerId": 1520,
     "firstName": "Linda",
     "lastName": "Carroll",
+    "email": "linda@bccomms.com",
     "notes": "3x 10\" blanks, 2x 13\" blanks, 2x Drops\nSpecial: 7/13/19\nImported payment info: paid 1: 130 on 7/5/19, paid 2: 152, class cost: 260, upgrade/AlC incl. tax: 181.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2019-07-05"
   },
@@ -7241,6 +7892,7 @@ module.exports =
     "status": "completed",
     "firstName": "Nicola",
     "lastName": "Davies",
+    "email": "nid@nicolajane.net",
     "discountPercent": 20,
     "upgradeNotes": "24\" Circle",
     "notes": "Gold chain\nImported payment info: paid 1: 260 on 7/11/19, class cost: 208, upgrade/AlC incl. tax: 64.\nClass #5 for this student, per source sheet.",
@@ -7253,6 +7905,7 @@ module.exports =
     "customerId": 1342,
     "firstName": "Keli",
     "lastName": "Williams",
+    "email": "keli.williams75@gmail.com",
     "notes": "Cost of materials only\nImported payment info: class cost: 0, upgrade/AlC incl. tax: 66.06.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2019-07-13"
   },
@@ -7263,6 +7916,7 @@ module.exports =
     "customerId": 971,
     "firstName": "Jacqueline",
     "lastName": "Gosschalk",
+    "email": "jackie.gosschalk@gmail.com",
     "discountPercent": 20,
     "notes": "Imported payment info: class cost: 208.\nClass #6 for this student, per source sheet.",
     "enrolledOn": "2019-07-13"
@@ -7274,6 +7928,7 @@ module.exports =
     "customerId": 152,
     "firstName": "Angela",
     "lastName": "Vitense",
+    "email": "vitense.angela@gmail.com",
     "upgradeNotes": "24\" Circle",
     "notes": "Special: 5/25/19\nImported payment info: paid 1: 130 on 4/3/19, paid 2: 130, class cost: 260, upgrade/AlC incl. tax: 80.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2019-04-03"
@@ -7285,6 +7940,7 @@ module.exports =
     "customerId": 476,
     "firstName": "Cintra",
     "lastName": "Rene",
+    "email": "cintra@destinationtiki.com",
     "discountPercent": 20,
     "upgradeNotes": "23\"x25\" Leaf",
     "notes": "Special: 5/25/19\nImported payment info: paid 1: 130 on 3/5/19, paid 2: 78, class cost: 208, upgrade/AlC incl. tax: 132.\nClass #4 for this student, per source sheet.",
@@ -7297,6 +7953,7 @@ module.exports =
     "customerId": 2022,
     "firstName": "Patricia",
     "lastName": "Castoreno",
+    "email": "pcastore@starbucks.com",
     "upgradeNotes": "extra mirror",
     "notes": "Special: 5/25/19\nImported payment info: paid 1: 130 on 3/5/19, paid 2: 130, class cost: 260, upgrade/AlC incl. tax: 110.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2019-03-05"
@@ -7307,6 +7964,7 @@ module.exports =
     "status": "completed",
     "firstName": "Deborah",
     "lastName": "Harlow",
+    "email": "dharlow55@comcast.net",
     "upgradeNotes": "alc 10\" mirror",
     "notes": "Imported payment info: paid 1: 260 on 3/5/19, class cost: 260, upgrade/AlC incl. tax: 35.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2019-03-05"
@@ -7318,6 +7976,7 @@ module.exports =
     "customerId": 564,
     "firstName": "Darlene",
     "lastName": "Galaviz",
+    "email": "darlenesayler@hotmail.com",
     "notes": "From source sheet: Friend\nPaid by Darlene Galaviz\nSpecial: 5/19/19\nImported payment info: paid 1: 130 on 12/31/19, paid 2: 130, class cost: 260.\nClass #3 for this student, per source sheet.",
     "enrolledOn": "2019-12-31"
   },
@@ -7328,6 +7987,7 @@ module.exports =
     "customerId": 564,
     "firstName": "Darlene",
     "lastName": "Galaviz",
+    "email": "darlenesayler@hotmail.com",
     "notes": "From source sheet: Friend\nPaid by Darlene Galaviz\nSpecial: 5/19/19\nImported payment info: paid 1: 130 on 12/31/19, paid 2: 130, class cost: 260.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2019-12-31"
   },
@@ -7338,6 +7998,7 @@ module.exports =
     "customerId": 564,
     "firstName": "Darlene",
     "lastName": "Galaviz",
+    "email": "darlenesayler@hotmail.com",
     "upgradeNotes": "22\"x28\" Oval",
     "notes": "From source sheet: Friend\nPaid by Darlene Galaviz\nSpecial: 5/19/19\nImported payment info: paid 1: 130 on 12/31/19, paid 2: 130, class cost: 260, upgrade/AlC incl. tax: 163.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2019-12-31"
@@ -7349,6 +8010,7 @@ module.exports =
     "customerId": 564,
     "firstName": "Darlene",
     "lastName": "Galaviz",
+    "email": "darlenesayler@hotmail.com",
     "discountPercent": 20,
     "upgradeNotes": "23\"x25\" Leaf",
     "notes": "Special: 5/19/19\nImported payment info: paid 1: 130 on 12/31/19, paid 2: 78, class cost: 208, upgrade/AlC incl. tax: 132.\nClass #7 for this student, per source sheet.",
@@ -7361,6 +8023,7 @@ module.exports =
     "customerId": 872,
     "firstName": "Kathy",
     "lastName": "Woodruff",
+    "email": "vbrightwell@icloud.com",
     "upgradeNotes": "18\"x22\" Oval",
     "notes": "Deposit Paid by Virginia Brightwell\nSpecial: 5/18/19\nImported payment info: paid 1: 130 on 9/28/18, paid 2: 130, class cost: 260, upgrade/AlC incl. tax: 80.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2018-09-28"
@@ -7372,6 +8035,7 @@ module.exports =
     "customerId": 872,
     "firstName": "Linda",
     "lastName": "Simpson",
+    "email": "vbrightwell@icloud.com",
     "upgradeNotes": "18\"x22\" Oval",
     "notes": "Deposit Paid by Virginia Brightwell\nSpecial: 5/18/19\nImported payment info: paid 1: 130 on 9/28/18, paid 2: 130, class cost: 260, upgrade/AlC incl. tax: 80.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2018-09-28"
@@ -7383,6 +8047,7 @@ module.exports =
     "customerId": 872,
     "firstName": "Virginia",
     "lastName": "Brightwell",
+    "email": "vbrightwell@icloud.com",
     "upgradeNotes": "18\"x22\" Oval",
     "notes": "Special: 5/18/19\nImported payment info: paid 1: 130 on 9/28/18, paid 2: 130, class cost: 260, upgrade/AlC incl. tax: 80.\nClass #3 for this student, per source sheet.",
     "enrolledOn": "2018-09-28"
@@ -7394,6 +8059,7 @@ module.exports =
     "customerId": 2581,
     "firstName": "Toni",
     "lastName": "Wolcott",
+    "email": "toniwolcott@gmail.com",
     "notes": "Imported payment info: class cost: 0.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2019-04-01"
   },
@@ -7404,6 +8070,7 @@ module.exports =
     "customerId": 2511,
     "firstName": "Swati",
     "lastName": "Jain",
+    "email": "swatijainshah@yahoo.com",
     "upgradeNotes": "22\"x28\" Oval",
     "notes": "Special: 4/1/19\nImported payment info: paid 1: 130 on 3/20/19, paid 2: 130, class cost: 260, upgrade/AlC incl. tax: 164.75.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2019-03-20"
@@ -7415,6 +8082,7 @@ module.exports =
     "customerId": 1741,
     "firstName": "Marsha",
     "lastName": "Hudson",
+    "email": "marsha@griffyn.us",
     "discountPercent": 20,
     "notes": "Imported payment info: paid 1: 260 on 3/14/19, class cost: 260.\nClass #30 for this student, per source sheet.",
     "enrolledOn": "2019-03-14"
@@ -7426,6 +8094,7 @@ module.exports =
     "customerId": 459,
     "firstName": "Christine",
     "lastName": "Wheeler-Sinclair",
+    "email": "cwsmsw@yahoo.com",
     "notes": "Imported payment info: paid 1: 130 on 2/27/19, class cost: 260.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2019-02-27"
   },
@@ -7436,6 +8105,7 @@ module.exports =
     "customerId": 2585,
     "firstName": "Tracy",
     "lastName": "Alberts",
+    "email": "trixiracer@comcast.net",
     "upgradeNotes": "24\" Round",
     "notes": "Imported payment info: paid 1: 260 on 1/14/19, class cost: 260, upgrade/AlC incl. tax: 80.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2019-01-14"
@@ -7447,6 +8117,7 @@ module.exports =
     "customerId": 2632,
     "firstName": "Victoria",
     "lastName": "Coen",
+    "email": "vlcoen@yahoo.com",
     "discountPercent": 20,
     "upgradeNotes": "14\"x20\" Oval",
     "notes": "Imported payment info: paid 1: 208 on 3/23/19, class cost: 208, upgrade/AlC incl. tax: 25.\nClass #4 for this student, per source sheet.",
@@ -7459,6 +8130,7 @@ module.exports =
     "customerId": 1961,
     "firstName": "Nicola",
     "lastName": "Davies",
+    "email": "njd@nicolajane.net",
     "discountPercent": 20,
     "upgradeNotes": "24\" Round",
     "notes": "Imported payment info: paid 1: 208 on 8/6/18, class cost: 208, upgrade/AlC incl. tax: 54.\nClass #4 for this student, per source sheet.",
@@ -7471,6 +8143,7 @@ module.exports =
     "customerId": 865,
     "firstName": "Giana",
     "lastName": "O'Shaughnessy",
+    "email": "giana.nicole.o@gmail.com",
     "upgradeNotes": "22\"x28\" Oval",
     "notes": "Imported payment info: paid 1: 130 on 1/16/19, class cost: 260, upgrade/AlC incl. tax: 165.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2019-01-16"
@@ -7492,6 +8165,7 @@ module.exports =
     "customerId": 665,
     "firstName": "Diane",
     "lastName": "Decker",
+    "email": "Ddeck62@comcast.net",
     "upgradeNotes": "24\" Round",
     "notes": "Imported payment info: paid 1: 260 on 1/12/19, class cost: 260, upgrade/AlC incl. tax: 80.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2019-01-12"
@@ -7503,6 +8177,7 @@ module.exports =
     "customerId": 2671,
     "firstName": "Wendy",
     "lastName": "Stockholm",
+    "email": "stockholm.wendy@gmail.com",
     "notes": "Dep credit offset a la carte items\nImported payment info: paid 1: 130 on 12/26/18, class cost: 125, upgrade/AlC incl. tax: 93.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2018-12-26"
   },
@@ -7513,6 +8188,7 @@ module.exports =
     "customerId": 278,
     "firstName": "Bette",
     "lastName": "Horishige",
+    "email": "viewmont@comcast.net",
     "notes": "Dep credit offset a la carte items\nImported payment info: paid 1: 130 on 12/21/19, class cost: 125, upgrade/AlC incl. tax: 83.\nClass #3 for this student, per source sheet.",
     "enrolledOn": "2019-12-21"
   },
@@ -7523,6 +8199,7 @@ module.exports =
     "customerId": 2406,
     "firstName": "Stephanie",
     "lastName": "Woolley",
+    "email": "teewoolley@gmail.com",
     "notes": "From source sheet: Friend\nDep paid by Stephanie Woolley\nImported payment info: paid 1: 130 on 12/9/18, class cost: 260.\nClass #3 for this student, per source sheet.",
     "enrolledOn": "2018-12-09"
   },
@@ -7533,6 +8210,7 @@ module.exports =
     "customerId": 2406,
     "firstName": "Stephanie",
     "lastName": "Woolley",
+    "email": "teewoolley@gmail.com",
     "discountPercent": 20,
     "notes": "Imported payment info: paid 1: 130 on 12/8/18, class cost: 208.\nClass #9 for this student, per source sheet.",
     "enrolledOn": "2018-12-08"
@@ -7544,6 +8222,7 @@ module.exports =
     "customerId": 564,
     "firstName": "Darlene",
     "lastName": "Galaviz",
+    "email": "darlenesayler@hotmail.com",
     "discountPercent": 20,
     "notes": "Imported payment info: class cost: 208.\nClass #6 for this student, per source sheet.",
     "enrolledOn": "2019-03-02"
@@ -7555,6 +8234,7 @@ module.exports =
     "customerId": 2340,
     "firstName": "Shelley",
     "lastName": "Jaye",
+    "email": "shelleyjaye@gmail.com",
     "notes": "Imported payment info: class cost: 260.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2019-03-02"
   },
@@ -7565,6 +8245,7 @@ module.exports =
     "customerId": 2632,
     "firstName": "Victoria",
     "lastName": "Coen",
+    "email": "vlcoen@yahoo.com",
     "notes": "Imported payment info: class cost: 260.\nClass #3 for this student, per source sheet.",
     "enrolledOn": "2019-03-02"
   },
@@ -7585,6 +8266,7 @@ module.exports =
     "customerId": 1807,
     "firstName": "Maureen",
     "lastName": "O'Shaughnessy",
+    "email": "maureensmail7@yahoo.com",
     "discountPercent": 20,
     "notes": "Imported payment info: class cost: 208.\nClass #4 for this student, per source sheet.",
     "enrolledOn": "2019-03-02"
@@ -7596,6 +8278,7 @@ module.exports =
     "customerId": 391,
     "firstName": "Catherine",
     "lastName": "Mesick",
+    "email": "lemzoo@comcast.net",
     "notes": "Imported payment info: class cost: 260.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2019-02-25"
   },
@@ -7606,6 +8289,7 @@ module.exports =
     "customerId": 971,
     "firstName": "Jacqueline",
     "lastName": "Gosschalk",
+    "email": "jackie.gosschalk@gmail.com",
     "discountPercent": 20,
     "notes": "Special: 2/26/19\nImported payment info: paid 1: 104 on 11/17/18, paid 2: 104, class cost: 208.\nClass #5 for this student, per source sheet.",
     "enrolledOn": "2018-11-17"
@@ -7617,6 +8301,7 @@ module.exports =
     "customerId": 1741,
     "firstName": "Marsha",
     "lastName": "Hudson",
+    "email": "marsha@griffyn.us",
     "discountPercent": 20,
     "notes": "Imported payment info: class cost: 208.\nClass #29 for this student, per source sheet.",
     "enrolledOn": "2019-02-25"
@@ -7628,6 +8313,7 @@ module.exports =
     "customerId": 2622,
     "firstName": "Vicki",
     "lastName": "Denka",
+    "email": "vdenk@whidbey.net",
     "upgradeNotes": "22\"x28\" Oval",
     "notes": "Imported payment info: class cost: 260.\nClass #3 for this student, per source sheet.",
     "enrolledOn": "2019-02-25"
@@ -7639,6 +8325,7 @@ module.exports =
     "customerId": 1961,
     "firstName": "Nicola",
     "lastName": "Davies",
+    "email": "njd@nicolajane.net",
     "notes": "Imported payment info: paid 1: 260 on 8/6/18, class cost: 260.\nClass #3 for this student, per source sheet.",
     "enrolledOn": "2018-08-06"
   },
@@ -7649,6 +8336,7 @@ module.exports =
     "customerId": 2070,
     "firstName": "Peggy",
     "lastName": "Estela",
+    "email": "peggyestela@hotmail.com",
     "notes": "Imported payment info: class cost: 260.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2019-02-25"
   },
@@ -7659,6 +8347,7 @@ module.exports =
     "customerId": 1297,
     "firstName": "Katherine",
     "lastName": "Cleland",
+    "email": "tkcleland@yahoo.com",
     "notes": "Imported payment info: class cost: 260.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2019-02-25"
   },
@@ -7669,6 +8358,7 @@ module.exports =
     "customerId": 1389,
     "firstName": "Kimberly",
     "lastName": "Burns",
+    "email": "khwashingtongirl@hotmail.com",
     "notes": "Imported payment info: paid 1: 260 on 1/3/19, class cost: 260.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2019-01-03"
   },
@@ -7679,6 +8369,7 @@ module.exports =
     "customerId": 2145,
     "firstName": "Rebecca",
     "lastName": "Nissen",
+    "email": "becknissen@gmail.com",
     "notes": "Imported payment info: class cost: 260.\nClass #3 for this student, per source sheet.",
     "enrolledOn": "2019-01-19"
   },
@@ -7689,6 +8380,7 @@ module.exports =
     "customerId": 2164,
     "firstName": "Rhondi",
     "lastName": "Smith",
+    "email": "idnohr@gmail.com",
     "notes": "Imported payment info: paid 1: 130 on 11/5/18, class cost: 260.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2018-11-05"
   },
@@ -7699,6 +8391,7 @@ module.exports =
     "customerId": 1129,
     "firstName": "Jo",
     "lastName": "Strand",
+    "email": "mfs50jas@gmail.com",
     "notes": "Imported payment info: class cost: 260.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2019-01-19"
   },
@@ -7709,6 +8402,7 @@ module.exports =
     "customerId": 971,
     "firstName": "Jacqueline",
     "lastName": "Gosschalk",
+    "email": "jackie.gosschalk@gmail.com",
     "discountPercent": 20,
     "upgradeNotes": "19\" Round",
     "notes": "Special: 1/19/19\nImported payment info: paid 1: 125 on 11/17/18, paid 2: 125, class cost: 250, upgrade/AlC incl. tax: 30.\nClass #4 for this student, per source sheet.",
@@ -7721,6 +8415,7 @@ module.exports =
     "customerId": 2391,
     "firstName": "Stacy",
     "lastName": "Nissen",
+    "email": "stacy.nissen@gmail.com",
     "discountPercent": 20,
     "upgradeNotes": "23\"x25\" Leaf",
     "notes": "Imported payment info: class cost: 208.\nClass #5 for this student, per source sheet.",
@@ -7733,6 +8428,7 @@ module.exports =
     "customerId": 2033,
     "firstName": "Patricia",
     "lastName": "Ricard",
+    "email": "ricard4@msn.com",
     "discountPercent": 20,
     "notes": "Imported payment info: class cost: 208.\nClass #4 for this student, per source sheet.",
     "enrolledOn": "2019-01-19"
@@ -7744,6 +8440,7 @@ module.exports =
     "customerId": 658,
     "firstName": "Diana",
     "lastName": "Cheairs",
+    "email": "djoyc8@yahoo.com",
     "notes": "Imported payment info: class cost: 260.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2019-01-19"
   },
@@ -7754,6 +8451,7 @@ module.exports =
     "customerId": 1053,
     "firstName": "Jeannie",
     "lastName": "Yablonsky",
+    "email": "jeanniewy@comcast.net",
     "notes": "Imported payment info: class cost: 260.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2019-01-19"
   },
@@ -7764,6 +8462,7 @@ module.exports =
     "customerId": 1441,
     "firstName": "Laura",
     "lastName": "Fromm",
+    "email": "lafromm@yahoo.com",
     "notes": "Imported payment info: class cost: 260.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2019-01-12"
   },
@@ -7774,6 +8473,7 @@ module.exports =
     "customerId": 564,
     "firstName": "Darlene",
     "lastName": "Galaviz",
+    "email": "darlenesayler@hotmail.com",
     "discountPercent": 20,
     "notes": "Imported payment info: class cost: 208.\nClass #5 for this student, per source sheet.",
     "enrolledOn": "2019-01-12"
@@ -7784,6 +8484,7 @@ module.exports =
     "status": "completed",
     "firstName": "Deborah",
     "lastName": "Harlow",
+    "email": "dharlow55@comcast.net",
     "notes": "Imported payment info: class cost: 260.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2019-01-12"
   },
@@ -7794,6 +8495,7 @@ module.exports =
     "customerId": 476,
     "firstName": "Cintra",
     "lastName": "Rene",
+    "email": "cintra@destinationtiki.com",
     "notes": "Imported payment info: paid 1: 106 on 1/12/19, class cost: 106.\nClass #3 for this student, per source sheet.",
     "enrolledOn": "2019-01-12"
   },
@@ -7804,6 +8506,7 @@ module.exports =
     "customerId": 504,
     "firstName": "Cora",
     "lastName": "O'Connell",
+    "email": "cora_o@comcast.net",
     "notes": "Susan Boyd paid\nImported payment info: class cost: 260.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2019-01-12"
   },
@@ -7814,6 +8517,7 @@ module.exports =
     "customerId": 2440,
     "firstName": "Susan",
     "lastName": "Boyd",
+    "email": "boyd9501@comcast.net",
     "notes": "Imported payment info: class cost: 260.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2019-01-12"
   },
@@ -7824,6 +8528,7 @@ module.exports =
     "customerId": 1204,
     "firstName": "Julie",
     "lastName": "Cowen",
+    "email": "jewels@fidalgo.net",
     "notes": "Imported payment info: class cost: 260.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2019-01-12"
   },
@@ -7834,6 +8539,7 @@ module.exports =
     "customerId": 1559,
     "firstName": "Lisa",
     "lastName": "Christensen",
+    "email": "lisachristensen05@comcast.net",
     "notes": "Imported payment info: class cost: 125.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2018-12-08"
   },
@@ -7844,6 +8550,7 @@ module.exports =
     "customerId": 1449,
     "firstName": "Laurel",
     "lastName": "Nehl",
+    "email": "laurel@laureltreedesigns.com",
     "discountPercent": 20,
     "notes": "Imported payment info: paid 1: 125 on 9/25/18, class cost: 100.\nClass #7 for this student, per source sheet.",
     "enrolledOn": "2018-09-25"
@@ -7855,6 +8562,7 @@ module.exports =
     "customerId": 1092,
     "firstName": "Jennifer",
     "lastName": "Sommer",
+    "email": "jenn_sommer12@yahoo.com",
     "upgradeNotes": "Jewelry Box",
     "notes": "Imported payment info: class cost: 125.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2018-12-08"
@@ -7866,6 +8574,7 @@ module.exports =
     "customerId": 2406,
     "firstName": "Stephanie",
     "lastName": "Woolley",
+    "email": "teewoolley@gmail.com",
     "discountPercent": 20,
     "notes": "Imported payment info: paid 1: 125 on 8/12/18, class cost: 100.\nClass #8 for this student, per source sheet.",
     "enrolledOn": "2018-08-12"
@@ -7886,6 +8595,7 @@ module.exports =
     "customerId": 458,
     "firstName": "Christine",
     "lastName": "Upchurch",
+    "email": "christineupchurch@hotmail.com",
     "notes": "Imported payment info: paid 1: 130 on 9/17/18, class cost: 125.\nClass #3 for this student, per source sheet.",
     "enrolledOn": "2018-09-17"
   },
@@ -7896,6 +8606,7 @@ module.exports =
     "customerId": 2684,
     "firstName": "Yadira",
     "lastName": "Herrera",
+    "email": "yadivaniisa@hotmail.com",
     "upgradeNotes": "24\"x28\" Rectangle",
     "notes": "From source sheet: Mom: Virginia\nImported payment info: paid 1: 125 on 12/6/18, class cost: 125, upgrade/AlC incl. tax: 310.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2018-12-06"
@@ -7907,6 +8618,7 @@ module.exports =
     "customerId": 1710,
     "firstName": "Maria",
     "lastName": "Berardo",
+    "email": "berardomi@hotmail.com",
     "discountPercent": 20,
     "notes": "Imported payment info: class cost: 100.\nClass #4 for this student, per source sheet.",
     "enrolledOn": "2018-12-01"
@@ -7918,6 +8630,7 @@ module.exports =
     "customerId": 1492,
     "firstName": "Leslie",
     "lastName": "Eder",
+    "email": "ederleslie@gmail.com",
     "notes": "Imported payment info: class cost: 125.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2018-12-01"
   },
@@ -7928,6 +8641,7 @@ module.exports =
     "customerId": 2621,
     "firstName": "Vera",
     "lastName": "Patterson",
+    "email": "patterson.vera5@gmail.com",
     "notes": "Imported payment info: class cost: 125.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2018-12-01"
   },
@@ -7938,6 +8652,7 @@ module.exports =
     "customerId": 125,
     "firstName": "Amy",
     "lastName": "Ruble",
+    "email": "amyruble@hotmail.com",
     "upgradeNotes": "24\" Round",
     "notes": "Imported payment info: class cost: 125.\nClass #3 for this student, per source sheet.",
     "enrolledOn": "2018-12-01"
@@ -7949,6 +8664,7 @@ module.exports =
     "customerId": 313,
     "firstName": "Brenda",
     "lastName": "Radford",
+    "email": "floknitter@aol.com",
     "notes": "Imported payment info: class cost: 125.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2018-12-01"
   },
@@ -7959,6 +8675,7 @@ module.exports =
     "customerId": 2033,
     "firstName": "Patricia",
     "lastName": "Ricard",
+    "email": "ricard4@msn.com",
     "notes": "Imported payment info: class cost: 125.\nClass #3 for this student, per source sheet.",
     "enrolledOn": "2018-12-01"
   },
@@ -7969,6 +8686,7 @@ module.exports =
     "customerId": 476,
     "firstName": "Cintra",
     "lastName": "Rene",
+    "email": "cintra@destinationtiki.com",
     "notes": "Imported payment info: paid 1: 125 on 7/18/18, class cost: 125.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2018-07-18"
   },
@@ -7979,6 +8697,7 @@ module.exports =
     "customerId": 564,
     "firstName": "Darlene",
     "lastName": "Galaviz",
+    "email": "darlenesayler@hotmail.com",
     "discountPercent": 20,
     "notes": "Imported payment info: class cost: 100.\nClass #4 for this student, per source sheet.",
     "enrolledOn": "2018-12-01"
@@ -7990,6 +8709,7 @@ module.exports =
     "customerId": 2624,
     "firstName": "Victoria",
     "lastName": "Paradis",
+    "email": "vpar4219@yahoo.com",
     "discountPercent": 20,
     "notes": "Imported payment info: class cost: 200.\nClass #23 for this student, per source sheet.",
     "enrolledOn": "2018-11-17"
@@ -8001,6 +8721,7 @@ module.exports =
     "customerId": 564,
     "firstName": "Darlene",
     "lastName": "Galaviz",
+    "email": "darlenesayler@hotmail.com",
     "notes": "Imported payment info: class cost: 250.\nClass #3 for this student, per source sheet.",
     "enrolledOn": "2018-11-17"
   },
@@ -8011,6 +8732,7 @@ module.exports =
     "customerId": 1185,
     "firstName": "Judith",
     "lastName": "Popky",
+    "email": "judypopky@gmail.com",
     "discountPercent": 20,
     "notes": "Imported payment info: class cost: 250.\nClass #4 for this student, per source sheet.",
     "enrolledOn": "2018-11-17"
@@ -8022,6 +8744,7 @@ module.exports =
     "customerId": 743,
     "firstName": "Elaine",
     "lastName": "Alhadeff",
+    "email": "beedldy@comcast.net",
     "notes": "Imported payment info: class cost: 250.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2018-11-17"
   },
@@ -8032,6 +8755,7 @@ module.exports =
     "customerId": 864,
     "firstName": "Geri",
     "lastName": "Alhadeff",
+    "email": "galhadeff@hotmail.com",
     "notes": "Imported payment info: class cost: 250.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2018-11-17"
   },
@@ -8042,6 +8766,7 @@ module.exports =
     "customerId": 757,
     "firstName": "Elizabeth",
     "lastName": "Nakashima",
+    "email": "enakashima@comcast.net",
     "discountPercent": 20,
     "notes": "5x Picture Frame\nSpecial: 11/17/18\nImported payment info: paid 1: 125 on 8/22/18, paid 2: 47, class cost: 100, upgrade/AlC incl. tax: 72.\nClass #6 for this student, per source sheet.",
     "enrolledOn": "2018-08-22"
@@ -8053,6 +8778,7 @@ module.exports =
     "customerId": 2684,
     "firstName": "Yadira",
     "lastName": "Herrera",
+    "email": "yadivaniisa@hotmail.com",
     "discountPercent": 20,
     "notes": "Imported payment info: paid 1: 125 on 11/10/18, class cost: 100, upgrade/AlC incl. tax: 67.2.\nClass #5 for this student, per source sheet.",
     "enrolledOn": "2018-11-10"
@@ -8064,6 +8790,7 @@ module.exports =
     "customerId": 971,
     "firstName": "Jacqueline",
     "lastName": "Gosschalk",
+    "email": "jackie.gosschalk@gmail.com",
     "notes": "Imported payment info: paid 1: 125 on 10/24/18, class cost: 125.\nClass #3 for this student, per source sheet.",
     "enrolledOn": "2018-10-24"
   },
@@ -8074,6 +8801,7 @@ module.exports =
     "customerId": 2391,
     "firstName": "Stacy",
     "lastName": "Nissen",
+    "email": "stacy.nissen@gmail.com",
     "discountPercent": 20,
     "upgradeNotes": "23\"x25\" Leaf",
     "notes": "Imported payment info: class cost: 200.\nClass #4 for this student, per source sheet.",
@@ -8086,6 +8814,7 @@ module.exports =
     "customerId": 446,
     "firstName": "Christine",
     "lastName": "Bradbury",
+    "email": "bradburyc1414@yahoo.com",
     "notes": "Imported payment info: class cost: 250.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2018-10-27"
   },
@@ -8096,6 +8825,7 @@ module.exports =
     "customerId": 2033,
     "firstName": "Patricia",
     "lastName": "Ricard",
+    "email": "ricard4@msn.com",
     "upgradeNotes": "Guitar",
     "notes": "Imported payment info: class cost: 250.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2018-10-27"
@@ -8107,6 +8837,7 @@ module.exports =
     "customerId": 2145,
     "firstName": "Rebecca",
     "lastName": "Nissen",
+    "email": "becknissen@gmail.com",
     "upgradeNotes": "24\"x28\" Rect",
     "notes": "Imported payment info: class cost: 250.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2018-10-27"
@@ -8118,6 +8849,7 @@ module.exports =
     "customerId": 2171,
     "firstName": "Robbin",
     "lastName": "Lynch",
+    "email": "robbinlynch@hotmail.com",
     "upgradeNotes": "24\"x28\" Rect",
     "notes": "Imported payment info: class cost: 250.\nClass #3 for this student, per source sheet.",
     "enrolledOn": "2018-10-27"
@@ -8138,6 +8870,7 @@ module.exports =
     "customerId": 1355,
     "firstName": "Kerry",
     "lastName": "Harthcock",
+    "email": "kharthcock@charter.net",
     "notes": "Imported payment info: class cost: 250.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2018-10-27"
   },
@@ -8148,6 +8881,7 @@ module.exports =
     "customerId": 564,
     "firstName": "Darlene",
     "lastName": "Galaviz",
+    "email": "darlenesayler@hotmail.com",
     "notes": "Imported payment info: class cost: 250.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2018-10-27"
   },
@@ -8158,6 +8892,7 @@ module.exports =
     "customerId": 668,
     "firstName": "Diane",
     "lastName": "Fletcher",
+    "email": "dfletcher@olypen.com",
     "upgradeNotes": "17\" Round",
     "notes": "Imported payment info: class cost: 250.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2018-10-23"
@@ -8169,6 +8904,7 @@ module.exports =
     "customerId": 1741,
     "firstName": "Marsha",
     "lastName": "Hudson",
+    "email": "marsha@griffyn.us",
     "discountPercent": 20,
     "upgradeNotes": "Flowers",
     "notes": "Imported payment info: class cost: 200.\nClass #28 for this student, per source sheet.",
@@ -8181,6 +8917,7 @@ module.exports =
     "customerId": 1527,
     "firstName": "Linda",
     "lastName": "Giddens",
+    "email": "lindagiddens30@gmail.com",
     "discountPercent": 20,
     "notes": "Imported payment info: class cost: 200.\nClass #4 for this student, per source sheet.",
     "enrolledOn": "2018-10-23"
@@ -8192,6 +8929,7 @@ module.exports =
     "customerId": 1273,
     "firstName": "Karen",
     "lastName": "Wickstrom",
+    "email": "karen.wickstrom@gmail.com",
     "discountPercent": 20,
     "upgradeNotes": "24\"x28\" Rect, Jewelry Box, Picture Frames",
     "notes": "Imported payment info: class cost: 200.\nClass #6 for this student, per source sheet.",
@@ -8204,6 +8942,7 @@ module.exports =
     "customerId": 89,
     "firstName": "Barbara",
     "lastName": "Lickiss",
+    "email": "ablickiss80@comcast.net",
     "discountPercent": 20,
     "notes": "Imported payment info: class cost: 200.\nClass #6 for this student, per source sheet.",
     "enrolledOn": "2018-10-23"
@@ -8224,6 +8963,7 @@ module.exports =
     "customerId": 971,
     "firstName": "Jacqueline",
     "lastName": "Gosschalk",
+    "email": "jackie.gosschalk@gmail.com",
     "upgradeNotes": "24\" Round",
     "notes": "Special: 10/23/18\nImported payment info: paid 1: 125 on 10/1/18, paid 2: 125, class cost: 250, upgrade/AlC incl. tax: 80.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2018-10-01"
@@ -8235,6 +8975,7 @@ module.exports =
     "customerId": 2322,
     "firstName": "Shauna",
     "lastName": "Nolan",
+    "email": "shaunanolan2@hotmail.com",
     "notes": "Imported payment info: class cost: 250.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2018-09-29"
   },
@@ -8245,6 +8986,7 @@ module.exports =
     "customerId": 1795,
     "firstName": "Mary",
     "lastName": "Woodbury",
+    "email": "segalegirl53@gmail.com",
     "notes": "Imported payment info: class cost: 250.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2018-09-29"
   },
@@ -8255,6 +8997,7 @@ module.exports =
     "customerId": 1831,
     "firstName": "Mindy",
     "lastName": "Daeley",
+    "email": "mindyjj@hotmail.com",
     "upgradeNotes": "18\"x22\" Oval",
     "notes": "Imported payment info: class cost: 250.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2018-09-29"
@@ -8275,6 +9018,7 @@ module.exports =
     "customerId": 647,
     "firstName": "Denise",
     "lastName": "Bjorling",
+    "email": "denisebjorling@comcast.net",
     "notes": "Imported payment info: class cost: 250.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2018-09-29"
   },
@@ -8284,6 +9028,7 @@ module.exports =
     "status": "completed",
     "firstName": "Dacia",
     "lastName": "Emmel",
+    "email": "dlemmel@icloudd.com",
     "notes": "Imported payment info: class cost: 250.\nClass #3 for this student, per source sheet.",
     "enrolledOn": "2018-09-29"
   },
@@ -8294,6 +9039,7 @@ module.exports =
     "customerId": 1877,
     "firstName": "Michelle",
     "lastName": "Husby",
+    "email": "stitcher_71@yahoo.com",
     "notes": "Imported payment info: class cost: 250.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2018-09-22"
   },
@@ -8304,6 +9050,7 @@ module.exports =
     "customerId": 458,
     "firstName": "Christine",
     "lastName": "Upchurch",
+    "email": "christineupchurch@hotmail.com",
     "notes": "Imported payment info: class cost: 250.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2018-09-22"
   },
@@ -8314,6 +9061,7 @@ module.exports =
     "customerId": 1327,
     "firstName": "Kathy",
     "lastName": "Gusdorf",
+    "email": "kvg78@comcast.net",
     "notes": "Imported payment info: class cost: 250.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2018-09-22"
   },
@@ -8324,6 +9072,7 @@ module.exports =
     "customerId": 476,
     "firstName": "Cintra",
     "lastName": "Rene",
+    "email": "cintra@destinationtiki.com",
     "upgradeNotes": "23\"x25\" Leaf",
     "notes": "Imported payment info: paid 1: 250 on 7/18/18, class cost: 250, upgrade/AlC incl. tax: 95.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2018-07-18"
@@ -8335,6 +9084,7 @@ module.exports =
     "customerId": 971,
     "firstName": "Jacqueline",
     "lastName": "Gosschalk",
+    "email": "jackie.gosschalk@gmail.com",
     "upgradeNotes": "22\"x28\" Oval",
     "notes": "Special: 9/22/18\nImported payment info: paid 1: 125 on 7/13/18, paid 2: 125, class cost: 250, upgrade/AlC incl. tax: 160.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2018-07-13"
@@ -8346,6 +9096,7 @@ module.exports =
     "customerId": 636,
     "firstName": "Debra",
     "lastName": "Pawlak",
+    "email": "allurestore@aol.com",
     "upgradeNotes": "24\" Round",
     "notes": "Imported payment info: paid 1: 250 on 7/12/18, class cost: 250, upgrade/AlC incl. tax: 70.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2018-07-12"
@@ -8357,6 +9108,7 @@ module.exports =
     "customerId": 2070,
     "firstName": "Peggy",
     "lastName": "Estela",
+    "email": "peggyestela@hotmail.com",
     "notes": "Imported payment info: class cost: 250.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2018-09-22"
   },
@@ -8367,6 +9119,7 @@ module.exports =
     "customerId": 1527,
     "firstName": "Linda",
     "lastName": "Giddens",
+    "email": "lindagiddens30@gmail.com",
     "upgradeNotes": "24\" Round",
     "notes": "Imported payment info: class cost: 250.\nClass #3 for this student, per source sheet.",
     "enrolledOn": "2018-09-22"
@@ -8378,6 +9131,7 @@ module.exports =
     "customerId": 1026,
     "firstName": "Jan",
     "lastName": "Haptonstall",
+    "email": "jancheth@yahoo.com",
     "upgradeNotes": "18\"x22\" Oval silver/turquoise/light green/purple/dark blue",
     "notes": "Class #1 for this student, per source sheet.",
     "enrolledOn": "2018-09-07"
@@ -8389,6 +9143,7 @@ module.exports =
     "customerId": 1295,
     "firstName": "Kate",
     "lastName": "Pryor",
+    "email": "kpryor9@msn.com",
     "upgradeNotes": "24\" Round gold/cool colors/blues/greens/purples/turquoise",
     "notes": "Class #1 for this student, per source sheet.",
     "enrolledOn": "2018-09-07"
@@ -8400,6 +9155,7 @@ module.exports =
     "customerId": 1925,
     "firstName": "Nancy",
     "lastName": "Callanan",
+    "email": "nccallanan@gmail.com",
     "upgradeNotes": "22\"x28\" gold/cream/white",
     "notes": "Class #1 for this student, per source sheet.",
     "enrolledOn": "2018-09-07"
@@ -8411,6 +9167,7 @@ module.exports =
     "customerId": 2469,
     "firstName": "Susan",
     "lastName": "Marvos",
+    "email": "bill-susie@sbcglobal.net",
     "upgradeNotes": "19\" Round gold/autumn colors",
     "notes": "Class #1 for this student, per source sheet.",
     "enrolledOn": "2018-09-07"
@@ -8422,6 +9179,7 @@ module.exports =
     "customerId": 244,
     "firstName": "Barb",
     "lastName": "Jennings",
+    "email": "quebarbara@gmail.com",
     "upgradeNotes": "18\"x22\" Oval gold",
     "notes": "Class #1 for this student, per source sheet.",
     "enrolledOn": "2018-09-07"
@@ -8433,6 +9191,7 @@ module.exports =
     "customerId": 139,
     "firstName": "Andrea",
     "lastName": "Gootnick",
+    "email": "joy4andreag@gmail.com",
     "upgradeNotes": "22\"x28\" Oval silver",
     "notes": "Class #1 for this student, per source sheet.",
     "enrolledOn": "2018-09-07"
@@ -8444,6 +9203,7 @@ module.exports =
     "customerId": 2261,
     "firstName": "Sanoo",
     "lastName": "Katrak",
+    "email": "sanookatrak@yahoo.com",
     "upgradeNotes": "24\" Round silver",
     "notes": "Class #1 for this student, per source sheet.",
     "enrolledOn": "2018-09-07"
@@ -8455,6 +9215,7 @@ module.exports =
     "customerId": 73,
     "firstName": "Aleisa",
     "lastName": "Pfau",
+    "email": "aleisa.pfau@gmail.com",
     "upgradeNotes": "24\"x28\" Rect gold/oranges/corals/turquoise/aqua/b&w",
     "notes": "Class #1 for this student, per source sheet.",
     "enrolledOn": "2018-09-07"
@@ -8466,6 +9227,7 @@ module.exports =
     "customerId": 564,
     "firstName": "Darlene",
     "lastName": "Galaviz",
+    "email": "darlenesayler@hotmail.com",
     "notes": "Imported payment info: class cost: 250.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2018-08-11"
   },
@@ -8476,6 +9238,7 @@ module.exports =
     "customerId": 2391,
     "firstName": "Stacy",
     "lastName": "Nissen",
+    "email": "stacy.nissen@gmail.com",
     "notes": "Imported payment info: class cost: 250.\nClass #3 for this student, per source sheet.",
     "enrolledOn": "2018-08-11"
   },
@@ -8486,6 +9249,7 @@ module.exports =
     "customerId": 2624,
     "firstName": "Victoria",
     "lastName": "Paradis",
+    "email": "vpar4219@yahoo.com",
     "discountPercent": 20,
     "notes": "Imported payment info: class cost: 200.\nClass #22 for this student, per source sheet.",
     "enrolledOn": "2018-08-11"
@@ -8497,6 +9261,7 @@ module.exports =
     "customerId": 1449,
     "firstName": "Laurel",
     "lastName": "Nehl",
+    "email": "laurel@laureltreedesigns.com",
     "discountPercent": 20,
     "notes": "Imported payment info: class cost: 200.\nClass #6 for this student, per source sheet.",
     "enrolledOn": "2018-08-11"
@@ -8508,6 +9273,7 @@ module.exports =
     "customerId": 2406,
     "firstName": "Stephanie",
     "lastName": "Woolley",
+    "email": "teewoolley@gmail.com",
     "discountPercent": 20,
     "notes": "Imported payment info: class cost: 250.\nClass #7 for this student, per source sheet.",
     "enrolledOn": "2018-08-11"
@@ -8519,6 +9285,7 @@ module.exports =
     "customerId": 2145,
     "firstName": "Rebecca",
     "lastName": "Nissen",
+    "email": "becknissen@gmail.com",
     "notes": "Imported payment info: class cost: 250.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2018-08-11"
   },
@@ -8529,6 +9296,7 @@ module.exports =
     "customerId": 2033,
     "firstName": "Patricia",
     "lastName": "Ricard",
+    "email": "ricard4@msn.com",
     "notes": "Imported payment info: class cost: 250.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2018-08-11"
   },
@@ -8539,6 +9307,7 @@ module.exports =
     "customerId": 806,
     "firstName": "Erin",
     "lastName": "Foy",
+    "email": "erinegg96@gmail.com",
     "notes": "Imported payment info: class cost: 250.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2018-08-11"
   },
@@ -8549,6 +9318,7 @@ module.exports =
     "customerId": 894,
     "firstName": "Gwen",
     "lastName": "Burks",
+    "email": "burksfamily4@msn.com",
     "upgradeNotes": "30\"x33\" Leaf",
     "notes": "Imported payment info: class cost: 250.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2018-08-04"
@@ -8560,6 +9330,7 @@ module.exports =
     "customerId": 2129,
     "firstName": "Ramona",
     "lastName": "Nakashima",
+    "email": "amona.nakashima@northwestu.edu",
     "upgradeNotes": "18\"x60\" Rect",
     "notes": "Imported payment info: class cost: 250.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2018-08-04"
@@ -8571,6 +9342,7 @@ module.exports =
     "customerId": 757,
     "firstName": "Elizabeth",
     "lastName": "Nakashima",
+    "email": "enakashima@comcast.net",
     "discountPercent": 20,
     "upgradeNotes": "11\"x55\" Rect",
     "notes": "Imported payment info: class cost: 200.\nClass #5 for this student, per source sheet.",
@@ -8583,6 +9355,7 @@ module.exports =
     "customerId": 2076,
     "firstName": "Penelope",
     "lastName": "Browder",
+    "email": "penebrowder@hotmail.com",
     "notes": "Imported payment info: class cost: 250.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2018-08-04"
   },
@@ -8602,6 +9375,7 @@ module.exports =
     "customerId": 587,
     "firstName": "Deanna",
     "lastName": "Nakashima",
+    "email": "dknakashima@hotmail.com",
     "discountPercent": 20,
     "notes": "Imported payment info: class cost: 200.\nClass #4 for this student, per source sheet.",
     "enrolledOn": "2018-08-04"
@@ -8613,6 +9387,7 @@ module.exports =
     "customerId": 1229,
     "firstName": "Kaila",
     "lastName": "Gruici",
+    "email": "mamagruici@gmail.com",
     "notes": "Imported payment info: class cost: 250.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2018-07-21"
   },
@@ -8623,6 +9398,7 @@ module.exports =
     "customerId": 682,
     "firstName": "Diane",
     "lastName": "Schachter",
+    "email": "dschach001@gmail.com",
     "upgradeNotes": "24\"x30\" Rect",
     "notes": "Imported payment info: class cost: 250, upgrade/AlC incl. tax: 195.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2018-07-21"
@@ -8634,6 +9410,7 @@ module.exports =
     "customerId": 1961,
     "firstName": "Nicola",
     "lastName": "Davies",
+    "email": "njd@nicolajane.net",
     "notes": "Imported payment info: class cost: 250.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2018-07-21"
   },
@@ -8644,6 +9421,7 @@ module.exports =
     "customerId": 982,
     "firstName": "James",
     "lastName": "Collier",
+    "email": "jrajcollier@comcast.net",
     "notes": "Imported payment info: class cost: 250.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2018-07-21"
   },
@@ -8654,6 +9432,7 @@ module.exports =
     "customerId": 2624,
     "firstName": "Victoria",
     "lastName": "Paradis",
+    "email": "vpar4219@yahoo.com",
     "discountPercent": 20,
     "notes": "Imported payment info: class cost: 200.\nClass #21 for this student, per source sheet.",
     "enrolledOn": "2018-07-21"
@@ -8665,6 +9444,7 @@ module.exports =
     "customerId": 1927,
     "firstName": "Nancy",
     "lastName": "Champagne",
+    "email": "ntchampagne@msn.com",
     "notes": "Imported payment info: class cost: 250.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2018-07-21"
   },
@@ -8685,6 +9465,7 @@ module.exports =
     "customerId": 1680,
     "firstName": "Marcella",
     "lastName": "Stansberry",
+    "email": "mstansberry@embarqmail.com",
     "upgradeNotes": "24\" Round",
     "notes": "Imported payment info: class cost: 250.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2018-07-21"
@@ -8696,6 +9477,7 @@ module.exports =
     "customerId": 1505,
     "firstName": "Libby",
     "lastName": "Lewis",
+    "email": "llewis@n-forge.com",
     "notes": "Imported payment info: class cost: 250.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2018-07-14"
   },
@@ -8706,6 +9488,7 @@ module.exports =
     "customerId": 482,
     "firstName": "Claudia",
     "lastName": "Joines",
+    "email": "claudiajoines@hotmail.com",
     "notes": "Imported payment info: class cost: 125.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2018-07-14"
   },
@@ -8716,6 +9499,7 @@ module.exports =
     "customerId": 2322,
     "firstName": "Shauna",
     "lastName": "Nolan",
+    "email": "shaunanolan2@hotmail.com",
     "notes": "Imported payment info: class cost: 250.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2018-07-14"
   },
@@ -8726,6 +9510,7 @@ module.exports =
     "customerId": 647,
     "firstName": "Denise",
     "lastName": "Bjorling",
+    "email": "denisebjorling@comcast.net",
     "notes": "Imported payment info: class cost: 250.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2018-07-14"
   },
@@ -8736,6 +9521,7 @@ module.exports =
     "customerId": 2312,
     "firstName": "Sharon",
     "lastName": "Gillespie",
+    "email": "smgillespie1@gmail.com",
     "notes": "Imported payment info: class cost: 250.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2018-07-14"
   },
@@ -8746,6 +9532,7 @@ module.exports =
     "customerId": 1795,
     "firstName": "Mary",
     "lastName": "Woodbury",
+    "email": "segalegirl53@gmail.com",
     "notes": "Imported payment info: class cost: 250.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2018-07-14"
   },
@@ -8756,6 +9543,7 @@ module.exports =
     "customerId": 872,
     "firstName": "Virginia",
     "lastName": "Brightwell",
+    "email": "vbrightwell@icloud.com",
     "upgradeNotes": "24\" Round",
     "notes": "Imported payment info: class cost: 200.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2018-07-14"
@@ -8766,6 +9554,7 @@ module.exports =
     "status": "completed",
     "firstName": "Dacia",
     "lastName": "Emmel",
+    "email": "dlemmel@icloudd.com",
     "notes": "Imported payment info: class cost: 200.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2018-07-14"
   },
@@ -8776,6 +9565,7 @@ module.exports =
     "customerId": 84,
     "firstName": "Alison",
     "lastName": "Elafros",
+    "email": "aelafros@gmail.com",
     "discountPercent": 20,
     "notes": "250+278 - 20%\nImported payment info: class cost: 250.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2018-05-26"
@@ -8787,6 +9577,7 @@ module.exports =
     "customerId": 224,
     "firstName": "Ashley",
     "lastName": "Gilbrough",
+    "email": "agilbrough@gmail.com",
     "upgradeNotes": "10\" Round",
     "notes": "Imported payment info: class cost: 250.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2018-05-26"
@@ -8798,6 +9589,7 @@ module.exports =
     "customerId": 2624,
     "firstName": "Victoria",
     "lastName": "Paradis",
+    "email": "vpar4219@yahoo.com",
     "discountPercent": 20,
     "notes": "Imported payment info: class cost: 200.\nClass #20 for this student, per source sheet.",
     "enrolledOn": "2018-05-26"
@@ -8809,6 +9601,7 @@ module.exports =
     "customerId": 1998,
     "firstName": "Pamela",
     "lastName": "Elliot",
+    "email": "pkb1313@comcast.net",
     "notes": "Imported payment info: class cost: 250.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2018-05-26"
   },
@@ -8819,6 +9612,7 @@ module.exports =
     "customerId": 2632,
     "firstName": "Victoria",
     "lastName": "Coen",
+    "email": "vlcoen@yahoo.com",
     "notes": "Imported payment info: class cost: 250.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2018-05-26"
   },
@@ -8829,6 +9623,7 @@ module.exports =
     "customerId": 445,
     "firstName": "Christina",
     "lastName": "Lee",
+    "email": "christinalee77@gmail.com",
     "discountPercent": 20,
     "upgradeNotes": "2x 18\"x22\" Oval",
     "notes": "Imported payment info: class cost: 200.\nClass #5 for this student, per source sheet.",
@@ -8841,6 +9636,7 @@ module.exports =
     "customerId": 2622,
     "firstName": "Vicki",
     "lastName": "Denka",
+    "email": "vdenk@whidbey.net",
     "upgradeNotes": "16\" Round table top",
     "notes": "Imported payment info: class cost: 250.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2018-04-21"
@@ -8852,6 +9648,7 @@ module.exports =
     "customerId": 1343,
     "firstName": "Kelly",
     "lastName": "Brannock",
+    "email": "ksbrannock@gmail.com",
     "upgradeNotes": "19\" Round",
     "notes": "Imported payment info: class cost: 250.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2018-04-21"
@@ -8863,6 +9660,7 @@ module.exports =
     "customerId": 224,
     "firstName": "Ashley",
     "lastName": "Gilbrough",
+    "email": "agilbrough@gmail.com",
     "upgradeNotes": "14\"x20\" Oval",
     "notes": "Imported payment info: class cost: 250.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2018-04-21"
@@ -8874,6 +9672,7 @@ module.exports =
     "customerId": 668,
     "firstName": "Diane",
     "lastName": "Fletcher",
+    "email": "dfletcher@olypen.com",
     "notes": "Imported payment info: class cost: 250.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2018-04-21"
   },
@@ -8884,6 +9683,7 @@ module.exports =
     "customerId": 1273,
     "firstName": "Karen",
     "lastName": "Wickstrom",
+    "email": "karen.wickstrom@gmail.com",
     "discountPercent": 20,
     "notes": "Imported payment info: class cost: 200.\nClass #5 for this student, per source sheet.",
     "enrolledOn": "2018-04-21"
@@ -8895,6 +9695,7 @@ module.exports =
     "customerId": 249,
     "firstName": "Barbara",
     "lastName": "Lickiss",
+    "email": "wild_4ever@comcast.net",
     "discountPercent": 20,
     "upgradeNotes": "Jewelry Box, Picture Frame, 13\" Round",
     "notes": "Imported payment info: class cost: 200.\nClass #5 for this student, per source sheet.",
@@ -8907,6 +9708,7 @@ module.exports =
     "customerId": 2406,
     "firstName": "Stephanie",
     "lastName": "Woolley",
+    "email": "teewoolley@gmail.com",
     "discountPercent": 20,
     "notes": "Imported payment info: class cost: 360.\nClass #6 for this student, per source sheet.",
     "enrolledOn": "2018-04-21"
@@ -8918,6 +9720,7 @@ module.exports =
     "customerId": 2622,
     "firstName": "Vicki",
     "lastName": "Denka",
+    "email": "vdenk@whidbey.net",
     "notes": "Imported payment info: class cost: 250.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2018-03-10"
   },
@@ -8928,6 +9731,7 @@ module.exports =
     "customerId": 1741,
     "firstName": "Marsha",
     "lastName": "Hudson",
+    "email": "marsha@griffyn.us",
     "discountPercent": 20,
     "notes": "Imported payment info: class cost: 200.\nClass #27 for this student, per source sheet.",
     "enrolledOn": "2018-03-10"
@@ -8948,6 +9752,7 @@ module.exports =
     "customerId": 1807,
     "firstName": "Maureen",
     "lastName": "O'Shaughnessy",
+    "email": "maureensmail7@yahoo.com",
     "discountPercent": 20,
     "notes": "From source sheet: Friend: Jadrian\nImported payment info: class cost: 200.\nClass #4 for this student, per source sheet.",
     "enrolledOn": "2018-03-10"
@@ -8959,6 +9764,7 @@ module.exports =
     "customerId": 562,
     "firstName": "Danielle",
     "lastName": "MacLean",
+    "email": "dmaclean@kitsapcu.org",
     "upgradeNotes": "judypopky@gmail.com",
     "notes": "Imported payment info: class cost: 250.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2018-03-10"
@@ -8970,6 +9776,7 @@ module.exports =
     "customerId": 2445,
     "firstName": "Susan",
     "lastName": "Kay",
+    "email": "susankay@wavecable.com",
     "notes": "Imported payment info: class cost: 250.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2018-03-10"
   },
@@ -8989,6 +9796,7 @@ module.exports =
     "customerId": 2313,
     "firstName": "Sharon",
     "lastName": "Green",
+    "email": "sharong3867@yahoo.com",
     "notes": "Imported payment info: class cost: 250.\nClass #3 for this student, per source sheet.",
     "enrolledOn": "2018-03-10"
   },
@@ -8999,6 +9807,7 @@ module.exports =
     "customerId": 2537,
     "firstName": "Teresa",
     "lastName": "White",
+    "email": "gardenheartz@hotmail.com",
     "notes": "Imported payment info: class cost: 360.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2018-03-03"
   },
@@ -9008,6 +9817,7 @@ module.exports =
     "status": "completed",
     "firstName": "Roslyn",
     "lastName": "Ericksen",
+    "email": "roslyn.ericksen@thehartford.com",
     "notes": "Imported payment info: class cost: 360.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2018-03-03"
   },
@@ -9018,6 +9828,7 @@ module.exports =
     "customerId": 1185,
     "firstName": "Judith",
     "lastName": "Popky",
+    "email": "judypopky@gmail.com",
     "notes": "Special: 3/3/18\nImported payment info: paid 1: 180 on 10/17/17, paid 2: 180, class cost: 360.\nClass #3 for this student, per source sheet.",
     "enrolledOn": "2017-10-17"
   },
@@ -9028,6 +9839,7 @@ module.exports =
     "customerId": 2353,
     "firstName": "Sherri",
     "lastName": "Robbins",
+    "email": "sherrologist@gmail.com",
     "notes": "Imported payment info: class cost: 360.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2018-03-03"
   },
@@ -9038,6 +9850,7 @@ module.exports =
     "customerId": 1741,
     "firstName": "Marsha",
     "lastName": "Hudson",
+    "email": "marsha@griffyn.us",
     "discountPercent": 20,
     "notes": "Imported payment info: class cost: 288.\nClass #26 for this student, per source sheet.",
     "enrolledOn": "2018-03-03"
@@ -9049,6 +9862,7 @@ module.exports =
     "customerId": 458,
     "firstName": "Christine",
     "lastName": "Upchurch",
+    "email": "christineupchurch@hotmail.com",
     "notes": "Imported payment info: class cost: 250.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2018-02-03"
   },
@@ -9059,6 +9873,7 @@ module.exports =
     "customerId": 1031,
     "firstName": "Janice",
     "lastName": "Sowa",
+    "email": "marypoppins22@comcast.net",
     "notes": "Imported payment info: class cost: 250.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2018-02-03"
   },
@@ -9069,6 +9884,7 @@ module.exports =
     "customerId": 1093,
     "firstName": "Jennifer",
     "lastName": "Walker",
+    "email": "missmammoth1@yahoo.com",
     "notes": "Imported payment info: class cost: 250.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2018-02-03"
   },
@@ -9088,6 +9904,7 @@ module.exports =
     "customerId": 1167,
     "firstName": "Joyce",
     "lastName": "Goehring",
+    "email": "joyce.goehring@gmail.com",
     "notes": "Imported payment info: class cost: 250.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2018-02-03"
   },
@@ -9098,6 +9915,7 @@ module.exports =
     "customerId": 2171,
     "firstName": "Robbin",
     "lastName": "Lynch",
+    "email": "robbinlynch@hotmail.com",
     "notes": "Imported payment info: class cost: 250.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2018-02-03"
   },
@@ -9108,6 +9926,7 @@ module.exports =
     "customerId": 2440,
     "firstName": "Susan",
     "lastName": "Boyd",
+    "email": "boyd9501@comcast.net",
     "notes": "Imported payment info: class cost: 250.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2018-01-13"
   },
@@ -9118,6 +9937,7 @@ module.exports =
     "customerId": 504,
     "firstName": "Cora",
     "lastName": "O'Connell",
+    "email": "cora_o@comcast.net",
     "notes": "Imported payment info: class cost: 250.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2018-01-13"
   },
@@ -9146,6 +9966,7 @@ module.exports =
     "customerId": 2194,
     "firstName": "Robin",
     "lastName": "Thome",
+    "email": "thomefam@comcast.net",
     "notes": "Imported payment info: class cost: 250.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2018-01-13"
   },
@@ -9156,6 +9977,7 @@ module.exports =
     "customerId": 741,
     "firstName": "Eileen",
     "lastName": "Walters-Karas",
+    "email": "kinderei2@comcast.net",
     "notes": "Imported payment info: class cost: 250.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2018-01-13"
   },
@@ -9166,6 +9988,7 @@ module.exports =
     "customerId": 1273,
     "firstName": "Karen",
     "lastName": "Wickstrom",
+    "email": "karen.wickstrom@gmail.com",
     "discountPercent": 20,
     "notes": "Imported payment info: class cost: 100.\nClass #4 for this student, per source sheet.",
     "enrolledOn": "2017-12-16"
@@ -9177,6 +10000,7 @@ module.exports =
     "customerId": 249,
     "firstName": "Barbara",
     "lastName": "Lickiss",
+    "email": "wild_4ever@comcast.net",
     "discountPercent": 20,
     "notes": "Imported payment info: class cost: 100.\nClass #4 for this student, per source sheet.",
     "enrolledOn": "2017-12-16"
@@ -9188,6 +10012,7 @@ module.exports =
     "customerId": 354,
     "firstName": "Carol",
     "lastName": "Malama",
+    "email": "camalamac@gmail.com",
     "notes": "Imported payment info: class cost: 125.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2017-12-16"
   },
@@ -9207,6 +10032,7 @@ module.exports =
     "status": "completed",
     "firstName": "Yadira",
     "lastName": "Herrera",
+    "email": "yadirahm@outlook.com",
     "discountPercent": 20,
     "notes": "Imported payment info: class cost: 100.\nClass #4 for this student, per source sheet.",
     "enrolledOn": "2017-12-16"
@@ -9218,6 +10044,7 @@ module.exports =
     "customerId": 2632,
     "firstName": "Victoria",
     "lastName": "Coen",
+    "email": "vlcoen@yahoo.com",
     "notes": "Imported payment info: class cost: 125.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2017-12-16"
   },
@@ -9228,6 +10055,7 @@ module.exports =
     "customerId": 1133,
     "firstName": "Joan",
     "lastName": "Durtschi",
+    "email": "jmdurt@gmail.com",
     "notes": "Imported payment info: class cost: 125.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2017-12-16"
   },
@@ -9238,6 +10066,7 @@ module.exports =
     "customerId": 1185,
     "firstName": "Judith",
     "lastName": "Popky",
+    "email": "judypopky@gmail.com",
     "notes": "Imported payment info: paid 1: 125 on 10/24/17, class cost: 125.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2017-10-24"
   },
@@ -9257,6 +10086,7 @@ module.exports =
     "customerId": 399,
     "firstName": "Cathy",
     "lastName": "Geddis",
+    "email": "trash2treasures@comcast.net",
     "notes": "Imported payment info: class cost: 125.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2017-12-09"
   },
@@ -9267,6 +10097,7 @@ module.exports =
     "customerId": 1232,
     "firstName": "Anne",
     "lastName": "Ryan",
+    "email": "speldale@aol.com",
     "discountPercent": 20,
     "notes": "Imported payment info: class cost: 100.\nClass #14 for this student, per source sheet.",
     "enrolledOn": "2017-12-09"
@@ -9287,6 +10118,7 @@ module.exports =
     "customerId": 757,
     "firstName": "Elizabeth",
     "lastName": "Nakashima",
+    "email": "enakashima@comcast.net",
     "discountPercent": 20,
     "notes": "Imported payment info: class cost: 100.\nClass #4 for this student, per source sheet.",
     "enrolledOn": "2017-12-09"
@@ -9298,6 +10130,7 @@ module.exports =
     "customerId": 587,
     "firstName": "Deanna",
     "lastName": "Nakashima",
+    "email": "dknakashima@hotmail.com",
     "notes": "Imported payment info: class cost: 125.\nClass #3 for this student, per source sheet.",
     "enrolledOn": "2017-12-09"
   },
@@ -9317,6 +10150,7 @@ module.exports =
     "customerId": 2453,
     "firstName": "Susan",
     "lastName": "Feng",
+    "email": "susan_feng@yahoo.com",
     "notes": "Imported payment info: class cost: 125.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2017-12-09"
   },
@@ -9327,6 +10161,7 @@ module.exports =
     "customerId": 1273,
     "firstName": "Karen",
     "lastName": "Wickstrom",
+    "email": "karen.wickstrom@gmail.com",
     "upgradeNotes": "Birdhouse",
     "notes": "Imported payment info: class cost: 125.\nClass #3 for this student, per source sheet.",
     "enrolledOn": "2017-11-18"
@@ -9338,6 +10173,7 @@ module.exports =
     "customerId": 249,
     "firstName": "Barbara",
     "lastName": "Lickiss",
+    "email": "wild_4ever@comcast.net",
     "notes": "Imported payment info: class cost: 125.\nClass #3 for this student, per source sheet.",
     "enrolledOn": "2017-11-18"
   },
@@ -9348,6 +10184,7 @@ module.exports =
     "customerId": 498,
     "firstName": "Connie",
     "lastName": "Flores",
+    "email": "connieflores@hotmail.com",
     "discountPercent": 20,
     "notes": "Imported payment info: class cost: 100.\nClass #4 for this student, per source sheet.",
     "enrolledOn": "2017-11-18"
@@ -9359,6 +10196,7 @@ module.exports =
     "customerId": 278,
     "firstName": "Bette",
     "lastName": "Horishige",
+    "email": "viewmont@comcast.net",
     "notes": "Imported payment info: class cost: 125.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2017-11-18"
   },
@@ -9368,6 +10206,7 @@ module.exports =
     "status": "completed",
     "firstName": "Amy",
     "lastName": "Galbavy",
+    "email": "amy.galbavy@comcast.net",
     "notes": "Imported payment info: class cost: 125.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2017-11-18"
   },
@@ -9378,6 +10217,7 @@ module.exports =
     "customerId": 2567,
     "firstName": "Tia",
     "lastName": "Kurtz",
+    "email": "tiakurtz@comcast.net",
     "discountPercent": 20,
     "upgradeNotes": "10\"x16\" Gothic or 11\"x18\" Chapel",
     "notes": "Imported payment info: class cost: 100.\nClass #4 for this student, per source sheet.",
@@ -9390,6 +10230,7 @@ module.exports =
     "customerId": 2046,
     "firstName": "Patty",
     "lastName": "McClane",
+    "email": "pmcclane@wavecable.com",
     "discountPercent": 20,
     "notes": "Imported payment info: class cost: 100.\nClass #4 for this student, per source sheet.",
     "enrolledOn": "2017-11-18"
@@ -9401,6 +10242,7 @@ module.exports =
     "customerId": 1789,
     "firstName": "Mary",
     "lastName": "Sullivan",
+    "email": "sullivandoyle@msn.com",
     "notes": "Imported payment info: class cost: 125.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2017-11-18"
   },
@@ -9410,6 +10252,7 @@ module.exports =
     "status": "completed",
     "firstName": "Ramona",
     "lastName": "Nakashima",
+    "email": "ramona.nakashima@northwestu.edi",
     "notes": "Imported payment info: class cost: 250.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2017-10-28"
   },
@@ -9429,6 +10272,7 @@ module.exports =
     "customerId": 2540,
     "firstName": "Teri",
     "lastName": "Spencer",
+    "email": "teri1212@hotmail.com",
     "notes": "Imported payment info: class cost: 225.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2017-10-28"
   },
@@ -9439,6 +10283,7 @@ module.exports =
     "customerId": 445,
     "firstName": "Christina",
     "lastName": "Lee",
+    "email": "christinalee77@gmail.com",
     "discountPercent": 20,
     "notes": "Imported payment info: class cost: 200.\nClass #4 for this student, per source sheet.",
     "enrolledOn": "2017-10-28"
@@ -9450,6 +10295,7 @@ module.exports =
     "customerId": 2171,
     "firstName": "Robbin",
     "lastName": "Lynch",
+    "email": "robbinlynch@hotmail.com",
     "notes": "Imported payment info: class cost: 250.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2017-10-28"
   },
@@ -9460,6 +10306,7 @@ module.exports =
     "customerId": 757,
     "firstName": "Elizabeth",
     "lastName": "Nakashima",
+    "email": "enakashima@comcast.net",
     "notes": "Imported payment info: paid 1: 125 on 10/7/17, class cost: 250.\nClass #3 for this student, per source sheet.",
     "enrolledOn": "2017-10-07"
   },
@@ -9470,6 +10317,7 @@ module.exports =
     "customerId": 587,
     "firstName": "Deanna",
     "lastName": "Nakashima",
+    "email": "dknakashima@hotmail.com",
     "notes": "Imported payment info: class cost: 250.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2017-10-28"
   },
@@ -9480,6 +10328,7 @@ module.exports =
     "customerId": 1073,
     "firstName": "Jennifer",
     "lastName": "Dahl",
+    "email": "lincolnpk2@gmail.com",
     "notes": "Imported payment info: class cost: 250.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2017-10-28"
   },
@@ -9490,6 +10339,7 @@ module.exports =
     "customerId": 2300,
     "firstName": "Shanon",
     "lastName": "Stathers",
+    "email": "shanoneileen@gmail.com",
     "notes": "Imported payment info: class cost: 250.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2017-10-14"
   },
@@ -9500,6 +10350,7 @@ module.exports =
     "customerId": 781,
     "firstName": "Ellen",
     "lastName": "Smyth",
+    "email": "ellenrsmyth@comcast.net",
     "notes": "Imported payment info: class cost: 250.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2017-10-14"
   },
@@ -9510,6 +10361,7 @@ module.exports =
     "customerId": 125,
     "firstName": "Amy",
     "lastName": "Ruble",
+    "email": "amyruble@hotmail.com",
     "notes": "Imported payment info: class cost: 250.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2017-10-14"
   },
@@ -9529,6 +10381,7 @@ module.exports =
     "customerId": 906,
     "firstName": "Harriette",
     "lastName": "Leitman",
+    "email": "redhsw1@hotmail.com",
     "notes": "Imported payment info: class cost: 250.\nClass #3 for this student, per source sheet.",
     "enrolledOn": "2017-10-14"
   },
@@ -9539,6 +10392,7 @@ module.exports =
     "customerId": 1110,
     "firstName": "Jill",
     "lastName": "Andrews",
+    "email": "jilyand@yahoo.com",
     "upgradeNotes": "30\" Round",
     "notes": "Imported payment info: class cost: 250.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2017-09-30"
@@ -9550,6 +10404,7 @@ module.exports =
     "customerId": 2624,
     "firstName": "Victoria",
     "lastName": "Paradis",
+    "email": "vpar4219@yahoo.com",
     "discountPercent": 20,
     "notes": "Imported payment info: class cost: 200.\nClass #19 for this student, per source sheet.",
     "enrolledOn": "2017-09-30"
@@ -9561,6 +10416,7 @@ module.exports =
     "customerId": 872,
     "firstName": "Virginia",
     "lastName": "Brightwell",
+    "email": "vbrightwell@icloud.com",
     "notes": "Imported payment info: class cost: 250.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2017-09-30"
   },
@@ -9571,6 +10427,7 @@ module.exports =
     "customerId": 542,
     "firstName": "Dacia",
     "lastName": "Emmel",
+    "email": "daciawpf@gmail.com",
     "notes": "Imported payment info: class cost: 250.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2017-09-30"
   },
@@ -9581,6 +10438,7 @@ module.exports =
     "customerId": 2313,
     "firstName": "Sharon",
     "lastName": "Green",
+    "email": "sharong3867@yahoo.com",
     "upgradeNotes": "19\" Round",
     "notes": "From source sheet: Friend\nImported payment info: class cost: 250.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2017-09-30"
@@ -9592,6 +10450,7 @@ module.exports =
     "customerId": 2313,
     "firstName": "Sharon",
     "lastName": "Green",
+    "email": "sharong3867@yahoo.com",
     "upgradeNotes": "19\" Round",
     "notes": "Imported payment info: class cost: 250.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2017-09-30"
@@ -9613,6 +10472,7 @@ module.exports =
     "customerId": 2492,
     "firstName": "Susan",
     "lastName": "Mantyla",
+    "email": "susi.mantyla@gmail.com",
     "upgradeNotes": "18\"x22\" Oval",
     "notes": "Imported payment info: class cost: 250.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2017-09-30"
@@ -9624,6 +10484,7 @@ module.exports =
     "customerId": 1253,
     "firstName": "Karen",
     "lastName": "Hadac",
+    "email": "karenhadac@comcast.net",
     "notes": "Imported payment info: class cost: 250.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2017-09-09"
   },
@@ -9634,6 +10495,7 @@ module.exports =
     "customerId": 1199,
     "firstName": "Julie",
     "lastName": "Terrell",
+    "email": "ltltomato@aol.com",
     "notes": "Imported payment info: class cost: 250.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2017-09-09"
   },
@@ -9644,6 +10506,7 @@ module.exports =
     "customerId": 1961,
     "firstName": "Nicola",
     "lastName": "Davies",
+    "email": "njd@nicolajane.net",
     "notes": "Imported payment info: class cost: 250.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2017-09-09"
   },
@@ -9654,6 +10517,7 @@ module.exports =
     "customerId": 1631,
     "firstName": "Luana",
     "lastName": "Doulas",
+    "email": "lkdoulas@gmail.com",
     "notes": "Imported payment info: class cost: 250.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2017-09-09"
   },
@@ -9664,6 +10528,7 @@ module.exports =
     "customerId": 2636,
     "firstName": "Vikki",
     "lastName": "Signorelli",
+    "email": "okiesig@hotmail.com",
     "notes": "Imported payment info: class cost: 250.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2017-08-12"
   },
@@ -9674,6 +10539,7 @@ module.exports =
     "customerId": 388,
     "firstName": "Catherine",
     "lastName": "Grundy",
+    "email": "grund@att.net",
     "notes": "Imported payment info: class cost: 250.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2017-08-12"
   },
@@ -9684,6 +10550,7 @@ module.exports =
     "customerId": 2624,
     "firstName": "Victoria",
     "lastName": "Paradis",
+    "email": "vpar4219@yahoo.com",
     "discountPercent": 20,
     "notes": "Imported payment info: class cost: 200.\nClass #18 for this student, per source sheet.",
     "enrolledOn": "2017-08-12"
@@ -9695,6 +10562,7 @@ module.exports =
     "customerId": 1031,
     "firstName": "Janice",
     "lastName": "Sowa",
+    "email": "marypoppins22@comcast.net",
     "notes": "Imported payment info: class cost: 250.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2017-08-12"
   },
@@ -9714,6 +10582,7 @@ module.exports =
     "customerId": 1185,
     "firstName": "Judith",
     "lastName": "Popky",
+    "email": "judypopky@gmail.com",
     "notes": "Imported payment info: paid 1: 250 on 6/18/17, class cost: 250.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2017-06-18"
   },
@@ -9723,6 +10592,7 @@ module.exports =
     "status": "completed",
     "firstName": "Jeanne",
     "lastName": "Cost",
+    "email": "shopping@edgmand.com",
     "notes": "Imported payment info: class cost: 250.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2017-08-12"
   },
@@ -9733,6 +10603,7 @@ module.exports =
     "customerId": 804,
     "firstName": "Erin",
     "lastName": "Bruce",
+    "email": "geraldhamilton@comcast.net",
     "upgradeNotes": "18\"x27\" Rect",
     "notes": "Imported payment info: class cost: 250.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2017-06-03"
@@ -9744,6 +10615,7 @@ module.exports =
     "customerId": 2046,
     "firstName": "Patty",
     "lastName": "McClane",
+    "email": "pmcclane@wavecable.com",
     "notes": "Imported payment info: class cost: 250.\nClass #3 for this student, per source sheet.",
     "enrolledOn": "2017-06-03"
   },
@@ -9754,6 +10626,7 @@ module.exports =
     "customerId": 2567,
     "firstName": "Tia",
     "lastName": "Kurtz",
+    "email": "tiakurtz@comcast.net",
     "notes": "Imported payment info: class cost: 250.\nClass #3 for this student, per source sheet.",
     "enrolledOn": "2017-06-03"
   },
@@ -9764,6 +10637,7 @@ module.exports =
     "customerId": 2669,
     "firstName": "Wendy",
     "lastName": "Ross",
+    "email": "porcelaingarden@frontier.com",
     "notes": "Imported payment info: class cost: 250.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2017-06-03"
   },
@@ -9783,6 +10657,7 @@ module.exports =
     "customerId": 2313,
     "firstName": "Sharon",
     "lastName": "Green",
+    "email": "sharong3867@yahoo.com",
     "notes": "Imported payment info: class cost: 250.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2017-06-03"
   },
@@ -9793,6 +10668,7 @@ module.exports =
     "customerId": 2146,
     "firstName": "Rebecca",
     "lastName": "Olin",
+    "email": "rebecca_olin@hotmail.com",
     "discountPercent": 20,
     "notes": "Imported payment info: class cost: 200.\nClass #15 for this student, per source sheet.",
     "enrolledOn": "2017-04-01"
@@ -9804,6 +10680,7 @@ module.exports =
     "customerId": 2029,
     "firstName": "Patricia",
     "lastName": "Neil",
+    "email": "dianeil@me.com",
     "notes": "Imported payment info: class cost: 250.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2017-04-01"
   },
@@ -9814,6 +10691,7 @@ module.exports =
     "customerId": 555,
     "firstName": "Dana",
     "lastName": "Smith",
+    "email": "aquaiz9734@aol.com",
     "notes": "Imported payment info: class cost: 250.\nClass #3 for this student, per source sheet.",
     "enrolledOn": "2017-04-01"
   },
@@ -9824,6 +10702,7 @@ module.exports =
     "customerId": 1741,
     "firstName": "Marsha",
     "lastName": "Hudson",
+    "email": "marsha@griffyn.us",
     "discountPercent": 20,
     "notes": "Imported payment info: class cost: 200.\nClass #25 for this student, per source sheet.",
     "enrolledOn": "2017-04-01"
@@ -9835,6 +10714,7 @@ module.exports =
     "customerId": 143,
     "firstName": "Andrea",
     "lastName": "Morton",
+    "email": "andreasundahl@gmail.com",
     "discountPercent": 20,
     "notes": "Imported payment info: class cost: 200.\nClass #4 for this student, per source sheet.",
     "enrolledOn": "2017-04-01"
@@ -9846,6 +10726,7 @@ module.exports =
     "customerId": 1247,
     "firstName": "Karen",
     "lastName": "Everson",
+    "email": "jkeverson625@comcast.net",
     "notes": "Imported payment info: class cost: 250.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2017-04-01"
   },
@@ -9856,6 +10737,7 @@ module.exports =
     "customerId": 1622,
     "firstName": "Lori",
     "lastName": "Sundahl",
+    "email": "lorisundahl@comcast.net",
     "notes": "Imported payment info: class cost: 250.\nClass #3 for this student, per source sheet.",
     "enrolledOn": "2017-04-01"
   },
@@ -9866,6 +10748,7 @@ module.exports =
     "customerId": 275,
     "firstName": "Elizabeth",
     "lastName": "Nilson",
+    "email": "bknilson@outlook.com",
     "notes": "Imported payment info: class cost: 250.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2017-04-01"
   },
@@ -9876,6 +10759,7 @@ module.exports =
     "customerId": 445,
     "firstName": "Christina",
     "lastName": "Lee",
+    "email": "christinalee77@gmail.com",
     "notes": "Imported payment info: class cost: 250.\nClass #3 for this student, per source sheet.",
     "enrolledOn": "2017-03-11"
   },
@@ -9896,6 +10780,7 @@ module.exports =
     "customerId": 2069,
     "firstName": "Peggy",
     "lastName": "Connell",
+    "email": "pegs0901@aol.com",
     "notes": "Imported payment info: class cost: 250.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2017-03-11"
   },
@@ -9915,6 +10800,7 @@ module.exports =
     "customerId": 2267,
     "firstName": "Sarah",
     "lastName": "Eichhorn",
+    "email": "sarah@kitsaprealestategroup.net",
     "notes": "Imported payment info: class cost: 250.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2017-03-11"
   },
@@ -9925,6 +10811,7 @@ module.exports =
     "customerId": 1600,
     "firstName": "Loraine",
     "lastName": "Martinez",
+    "email": "loraine.martinez@live.com",
     "notes": "Imported payment info: class cost: 250.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2017-03-11"
   },
@@ -9935,6 +10822,7 @@ module.exports =
     "customerId": 2077,
     "firstName": "Pennie",
     "lastName": "Hardwick",
+    "email": "pennie4@gmail.com",
     "notes": "From source sheet: Friend\nImported payment info: class cost: 250.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2017-03-11"
   },
@@ -9945,6 +10833,7 @@ module.exports =
     "customerId": 2077,
     "firstName": "Pennie",
     "lastName": "Hardwick",
+    "email": "pennie4@gmail.com",
     "notes": "Imported payment info: class cost: 250.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2017-03-11"
   },
@@ -9963,6 +10852,7 @@ module.exports =
     "customerId": 1807,
     "firstName": "Maureen",
     "lastName": "O'Shaughnessy",
+    "email": "maureensmail7@yahoo.com",
     "notes": "From source sheet: Friend: Jadrian\nImported payment info: class cost: 250.\nClass #3 for this student, per source sheet.",
     "enrolledOn": "2017-02-11"
   },
@@ -9973,6 +10863,7 @@ module.exports =
     "customerId": 1449,
     "firstName": "Laurel",
     "lastName": "Nehl",
+    "email": "laurel@laureltreedesigns.com",
     "discountPercent": 20,
     "notes": "Imported payment info: class cost: 200.\nClass #5 for this student, per source sheet.",
     "enrolledOn": "2017-02-11"
@@ -9984,6 +10875,7 @@ module.exports =
     "customerId": 2406,
     "firstName": "Stephanie",
     "lastName": "Woolley",
+    "email": "teewoolley@gmail.com",
     "discountPercent": 20,
     "notes": "Imported payment info: class cost: 200.\nClass #5 for this student, per source sheet.",
     "enrolledOn": "2017-02-11"
@@ -9995,6 +10887,7 @@ module.exports =
     "customerId": 1232,
     "firstName": "Anne",
     "lastName": "Ryan",
+    "email": "speldale@aol.com",
     "discountPercent": 20,
     "notes": "Imported payment info: class cost: 200.\nClass #13 for this student, per source sheet.",
     "enrolledOn": "2017-02-11"
@@ -10015,6 +10908,7 @@ module.exports =
     "customerId": 1491,
     "firstName": "Leslie",
     "lastName": "Chivers",
+    "email": "slachivers@comcast.net",
     "notes": "Imported payment info: class cost: 250.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2017-02-11"
   },
@@ -10022,8 +10916,10 @@ module.exports =
     "id": 920,
     "liveClassId": 104,
     "status": "completed",
+    "customerId": 555,
     "firstName": "Dana",
     "lastName": "Smith",
+    "email": "Aquaiz9734@aol.Com",
     "notes": "Imported payment info: class cost: 250.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2017-01-14"
   },
@@ -10043,6 +10939,7 @@ module.exports =
     "customerId": 1247,
     "firstName": "Karen",
     "lastName": "Everson",
+    "email": "jkeverson625@comcast.net",
     "notes": "Imported payment info: paid 1: 100 on 10/18/16, class cost: 250.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2016-10-18"
   },
@@ -10053,6 +10950,7 @@ module.exports =
     "customerId": 1622,
     "firstName": "Lori",
     "lastName": "Sundahl",
+    "email": "lorisundahl@comcast.net",
     "notes": "Imported payment info: paid 1: 100 on 10/17/16, class cost: 250.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2016-10-17"
   },
@@ -10063,6 +10961,7 @@ module.exports =
     "customerId": 143,
     "firstName": "Andrea",
     "lastName": "Morton",
+    "email": "Andreasundahl@gmail.com",
     "notes": "Imported payment info: class cost: 250.\nClass #3 for this student, per source sheet.",
     "enrolledOn": "2017-01-14"
   },
@@ -10073,6 +10972,7 @@ module.exports =
     "customerId": 581,
     "firstName": "Dawn",
     "lastName": "Wright",
+    "email": "nadahalo@gmail.com",
     "discountPercent": 20,
     "notes": "Imported payment info: class cost: 80.\nClass #4 for this student, per source sheet.",
     "enrolledOn": "2016-12-10"
@@ -10093,6 +10993,7 @@ module.exports =
     "customerId": 757,
     "firstName": "Elizabeth",
     "lastName": "Nakashima",
+    "email": "enakashima@comcast.net",
     "notes": "Imported payment info: class cost: 100.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2016-12-10"
   },
@@ -10103,6 +11004,7 @@ module.exports =
     "customerId": 2406,
     "firstName": "Stephanie",
     "lastName": "Woolley",
+    "email": "teewoolley@gmail.com",
     "discountPercent": 20,
     "notes": "Imported payment info: class cost: 80.\nClass #4 for this student, per source sheet.",
     "enrolledOn": "2016-12-10"
@@ -10123,6 +11025,7 @@ module.exports =
     "customerId": 587,
     "firstName": "Deanna",
     "lastName": "Nakashima",
+    "email": "dknakashima@hotmail.com",
     "notes": "Imported payment info: class cost: 100.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2016-12-10"
   },
@@ -10133,6 +11036,7 @@ module.exports =
     "customerId": 1449,
     "firstName": "Laurel",
     "lastName": "Nehl",
+    "email": "laurel@laureltreedesigns.com",
     "discountPercent": 20,
     "notes": "Imported payment info: class cost: 80.\nClass #4 for this student, per source sheet.",
     "enrolledOn": "2016-12-10"
@@ -10144,6 +11048,7 @@ module.exports =
     "customerId": 555,
     "firstName": "Dana",
     "lastName": "Smith",
+    "email": "aquaiz9734@aol.com",
     "notes": "Imported payment info: class cost: 100.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2016-12-04"
   },
@@ -10153,6 +11058,7 @@ module.exports =
     "status": "completed",
     "firstName": "Betsy",
     "lastName": "Nilson",
+    "email": "bknilson1@hotmail.com",
     "discountPercent": 20,
     "notes": "Imported payment info: paid 1: 100 on 11/1/16, class cost: 80.\nClass #4 for this student, per source sheet.",
     "enrolledOn": "2016-11-01"
@@ -10164,6 +11070,7 @@ module.exports =
     "customerId": 2247,
     "firstName": "Sandra",
     "lastName": "Houska",
+    "email": "sandra.houska@homestreet.com",
     "notes": "Imported payment info: class cost: 100.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2016-12-04"
   },
@@ -10183,6 +11090,7 @@ module.exports =
     "customerId": 643,
     "firstName": "Delinda",
     "lastName": "Sowder",
+    "email": "DELINDA.SOWDER@GMAIL.COM",
     "notes": "Imported payment info: class cost: 100.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2016-12-04"
   },
@@ -10193,6 +11101,7 @@ module.exports =
     "customerId": 143,
     "firstName": "Andrea",
     "lastName": "Morton",
+    "email": "Andreasundahl@gmail.com",
     "notes": "Imported payment info: class cost: 100.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2016-12-04"
   },
@@ -10203,6 +11112,7 @@ module.exports =
     "customerId": 1622,
     "firstName": "Lori",
     "lastName": "Sundahl",
+    "email": "lorisundahl@comcast.net",
     "notes": "Imported payment info: paid 1: 100 on 10/17/16, class cost: 100.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2016-10-17"
   },
@@ -10213,6 +11123,7 @@ module.exports =
     "customerId": 1741,
     "firstName": "Marsha",
     "lastName": "Hudson",
+    "email": "marsha@griffyn.us",
     "discountPercent": 20,
     "notes": "Imported payment info: class cost: 180.\nClass #24 for this student, per source sheet.",
     "enrolledOn": "2016-12-01"
@@ -10224,6 +11135,7 @@ module.exports =
     "customerId": 2624,
     "firstName": "Victoria",
     "lastName": "Paradis",
+    "email": "vpar4219@yahoo.com",
     "discountPercent": 20,
     "notes": "Imported payment info: class cost: 180.\nClass #17 for this student, per source sheet.",
     "enrolledOn": "2016-12-01"
@@ -10243,6 +11155,7 @@ module.exports =
     "status": "completed",
     "firstName": "Yadira",
     "lastName": "Herrera",
+    "email": "yadirahm@outlook.com",
     "notes": "Imported payment info: class cost: 225.\nClass #3 for this student, per source sheet.",
     "enrolledOn": "2016-12-01"
   },
@@ -10253,6 +11166,7 @@ module.exports =
     "customerId": 1232,
     "firstName": "Kaitlin",
     "lastName": "Ryan",
+    "email": "speldale@aol.com",
     "notes": "Anne paid\nImported payment info: paid 1: 100 on 11/15/16, class cost: 100.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2016-11-15"
   },
@@ -10263,6 +11177,7 @@ module.exports =
     "customerId": 1232,
     "firstName": "Anne",
     "lastName": "Ryan",
+    "email": "speldale@aol.com",
     "discountPercent": 20,
     "notes": "Imported payment info: paid 1: 100 on 11/15/16, class cost: 80.\nClass #12 for this student, per source sheet.",
     "enrolledOn": "2016-11-15"
@@ -10274,6 +11189,7 @@ module.exports =
     "customerId": 2567,
     "firstName": "Tia",
     "lastName": "Kurtz",
+    "email": "tiakurtz@comcast.net",
     "notes": "Imported payment info: class cost: 225.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2016-12-01"
   },
@@ -10284,6 +11200,7 @@ module.exports =
     "customerId": 2046,
     "firstName": "Patty",
     "lastName": "McClane",
+    "email": "pmcclane@wavecable.com",
     "notes": "Imported payment info: class cost: 225.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2016-12-01"
   },
@@ -10294,6 +11211,7 @@ module.exports =
     "customerId": 1232,
     "firstName": "Kaitlin",
     "lastName": "Ryan",
+    "email": "speldale@aol.com",
     "notes": "Anne Ryan paid\nImported payment info: paid 1: 100 on 10/11/16, class cost: 225.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2016-10-11"
   },
@@ -10304,6 +11222,7 @@ module.exports =
     "customerId": 941,
     "firstName": "Ilene",
     "lastName": "Grome",
+    "email": "Igrome@msn.com",
     "notes": "Imported payment info: class cost: 225.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2016-11-19"
   },
@@ -10314,6 +11233,7 @@ module.exports =
     "customerId": 1807,
     "firstName": "Maureen",
     "lastName": "O'Shaughnessy",
+    "email": "maureensmail7@yahoo.com",
     "notes": "From source sheet: Friend: Jadrian\nImported payment info: paid 1: 225 on 8/21/16, class cost: 225.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2016-08-21"
   },
@@ -10324,6 +11244,7 @@ module.exports =
     "customerId": 1807,
     "firstName": "Maureen",
     "lastName": "O'Shaughnessy",
+    "email": "maureensmail7@yahoo.com",
     "notes": "Imported payment info: paid 1: 225 on 8/21/16, class cost: 225.\nClass #3 for this student, per source sheet.",
     "enrolledOn": "2016-08-21"
   },
@@ -10334,6 +11255,7 @@ module.exports =
     "customerId": 978,
     "firstName": "Jaimi",
     "lastName": "Messmer",
+    "email": "jaimilt@gmail.com",
     "notes": "Imported payment info: paid 1: 225 on 8/23/16, class cost: 225.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2016-08-23"
   },
@@ -10344,6 +11266,7 @@ module.exports =
     "customerId": 1737,
     "firstName": "Marlo",
     "lastName": "Klein",
+    "email": "marloklein@hotmail.com",
     "notes": "Imported payment info: paid 1: 100 on 9/5/16, class cost: 225.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2016-09-05"
   },
@@ -10354,6 +11277,7 @@ module.exports =
     "customerId": 2537,
     "firstName": "Teresa",
     "lastName": "White",
+    "email": "gardenheartz@hotmail.com",
     "notes": "Imported payment info: paid 1: 100 on 9/9/16, class cost: 225.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2016-09-09"
   },
@@ -10364,6 +11288,7 @@ module.exports =
     "customerId": 1885,
     "firstName": "Michelle",
     "lastName": "Shober",
+    "email": "MMShoberInc@Rockisland.com",
     "notes": "Imported payment info: class cost: 225.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2016-11-19"
   },
@@ -10374,6 +11299,7 @@ module.exports =
     "customerId": 1741,
     "firstName": "Marsha",
     "lastName": "Hudson",
+    "email": "marsha@griffyn.us",
     "discountPercent": 20,
     "notes": "Imported payment info: class cost: 180.\nClass #23 for this student, per source sheet.",
     "enrolledOn": "2016-10-29"
@@ -10385,6 +11311,7 @@ module.exports =
     "customerId": 701,
     "firstName": "Donna",
     "lastName": "Murphy",
+    "email": "donnamurphy@msn.com",
     "discountPercent": 20,
     "notes": "Imported payment info: class cost: 180.\nClass #9 for this student, per source sheet.",
     "enrolledOn": "2016-10-29"
@@ -10396,6 +11323,7 @@ module.exports =
     "customerId": 2624,
     "firstName": "Victoria",
     "lastName": "Paradis",
+    "email": "vpar4219@yahoo.com",
     "discountPercent": 20,
     "notes": "Imported payment info: class cost: 180.\nClass #16 for this student, per source sheet.",
     "enrolledOn": "2016-10-29"
@@ -10407,6 +11335,7 @@ module.exports =
     "customerId": 2046,
     "firstName": "Patty",
     "lastName": "McClane",
+    "email": "pmcclane@wavecable.com",
     "notes": "Imported payment info: class cost: 225.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2016-10-29"
   },
@@ -10417,6 +11346,7 @@ module.exports =
     "customerId": 2567,
     "firstName": "Tia",
     "lastName": "Kurtz",
+    "email": "tiakurtz@comcast.net",
     "notes": "Imported payment info: class cost: 225.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2016-10-29"
   },
@@ -10427,6 +11357,7 @@ module.exports =
     "customerId": 2267,
     "firstName": "Sarah",
     "lastName": "Eichhorn",
+    "email": "sarah@kitsaprealestategroup.net",
     "notes": "From source sheet: Friend\nImported payment info: class cost: 225.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2016-10-29"
   },
@@ -10437,6 +11368,7 @@ module.exports =
     "customerId": 2267,
     "firstName": "Sarah",
     "lastName": "Eichhorn",
+    "email": "sarah@kitsaprealestategroup.net",
     "notes": "Imported payment info: class cost: 225.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2016-10-29"
   },
@@ -10447,6 +11379,7 @@ module.exports =
     "customerId": 1232,
     "firstName": "Anne",
     "lastName": "Ryan",
+    "email": "speldale@aol.com",
     "discountPercent": 20,
     "notes": "Imported payment info: class cost: 180.\nClass #11 for this student, per source sheet.",
     "enrolledOn": "2016-10-08"
@@ -10467,6 +11400,7 @@ module.exports =
     "customerId": 143,
     "firstName": "Andrea",
     "lastName": "Morton",
+    "email": "andreasundahl@gmail.com",
     "notes": "Imported payment info: class cost: 225.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2016-10-08"
   },
@@ -10477,6 +11411,7 @@ module.exports =
     "customerId": 1651,
     "firstName": "Dawn",
     "lastName": "Wright",
+    "email": "lynnlbrandli@gmail.com",
     "notes": "Imported payment info: paid 1: 100 on 10/8/16, class cost: 225.\nClass #3 for this student, per source sheet.",
     "enrolledOn": "2016-10-08"
   },
@@ -10487,6 +11422,7 @@ module.exports =
     "customerId": 1651,
     "firstName": "Lynn",
     "lastName": "Brandli",
+    "email": "lynnlbrandli@gmail.com",
     "discountPercent": 20,
     "notes": "Imported payment info: paid 1: 100 on 10/8/16, class cost: 180.\nClass #4 for this student, per source sheet.",
     "enrolledOn": "2016-10-08"
@@ -10498,6 +11434,7 @@ module.exports =
     "customerId": 1449,
     "firstName": "Laurel",
     "lastName": "Nehl",
+    "email": "laurel@laureltreedesigns.com",
     "notes": "Imported payment info: class cost: 225.\nClass #3 for this student, per source sheet.",
     "enrolledOn": "2016-10-08"
   },
@@ -10508,6 +11445,7 @@ module.exports =
     "customerId": 2406,
     "firstName": "Stephanie",
     "lastName": "Woolley",
+    "email": "teewoolley@gmail.com",
     "notes": "From source sheet: Friend\nImported payment info: class cost: 225.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2016-10-08"
   },
@@ -10518,6 +11456,7 @@ module.exports =
     "customerId": 2406,
     "firstName": "Stephanie",
     "lastName": "Woolley",
+    "email": "teewoolley@gmail.com",
     "notes": "Imported payment info: class cost: 225.\nClass #3 for this student, per source sheet.",
     "enrolledOn": "2016-10-08"
   },
@@ -10528,6 +11467,7 @@ module.exports =
     "customerId": 2525,
     "firstName": "Tanya",
     "lastName": "Ruckstuhl",
+    "email": "TanyaRuckstuhl@gmail.com",
     "notes": "Imported payment info: class cost: 225.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2016-09-17"
   },
@@ -10538,6 +11478,7 @@ module.exports =
     "customerId": 2236,
     "firstName": "Sam",
     "lastName": "Christensen",
+    "email": "sam.chris@comcast.net",
     "discountPercent": 20,
     "notes": "Imported payment info: paid 1: 100 on 8/10/16, class cost: 180.\nClass #9 for this student, per source sheet.",
     "enrolledOn": "2016-08-10"
@@ -10549,6 +11490,7 @@ module.exports =
     "customerId": 275,
     "firstName": "Betsy",
     "lastName": "Nilson",
+    "email": "bknilson@outlook.com",
     "notes": "Imported payment info: paid 1: 225 on 6/11/16, class cost: 225.\nClass #3 for this student, per source sheet.",
     "enrolledOn": "2016-06-11"
   },
@@ -10559,6 +11501,7 @@ module.exports =
     "customerId": 1528,
     "firstName": "Linda",
     "lastName": "Gilmartin",
+    "email": "lpgilmartin@comcast.net",
     "notes": "Imported payment info: class cost: 225.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2016-09-17"
   },
@@ -10569,6 +11512,7 @@ module.exports =
     "customerId": 368,
     "firstName": "Carole",
     "lastName": "Sobrio",
+    "email": "utahteacher@hotmail.com",
     "upgradeNotes": "18\"x22\" Oval",
     "notes": "Imported payment info: class cost: 225.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2016-09-17"
@@ -10580,6 +11524,7 @@ module.exports =
     "customerId": 1252,
     "firstName": "Karen",
     "lastName": "Gurnett",
+    "email": "kGurnett@juno.com",
     "notes": "Imported payment info: class cost: 225.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2016-09-17"
   },
@@ -10590,6 +11535,7 @@ module.exports =
     "customerId": 941,
     "firstName": "Ilene",
     "lastName": "Grome",
+    "email": "Igrome@msn.com",
     "notes": "Imported payment info: class cost: 225.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2016-09-17"
   },
@@ -10600,6 +11546,7 @@ module.exports =
     "customerId": 2194,
     "firstName": "Robin",
     "lastName": "Thome",
+    "email": "thomefam@comcast.net",
     "notes": "Imported payment info: class cost: 225.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2016-08-20"
   },
@@ -10619,6 +11566,7 @@ module.exports =
     "customerId": 473,
     "firstName": "Cindy",
     "lastName": "Stark",
+    "email": "starkcindy@aol.com",
     "notes": "Imported payment info: class cost: 225.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2016-08-20"
   },
@@ -10629,6 +11577,7 @@ module.exports =
     "customerId": 1741,
     "firstName": "Marsha",
     "lastName": "Hudson",
+    "email": "marsha@griffyn.us",
     "discountPercent": 20,
     "notes": "Imported payment info: class cost: 180.\nClass #22 for this student, per source sheet.",
     "enrolledOn": "2016-08-20"
@@ -10640,6 +11589,7 @@ module.exports =
     "customerId": 1789,
     "firstName": "Mary",
     "lastName": "Sullivan",
+    "email": "sullivandoyle@msn.com",
     "notes": "Imported payment info: class cost: 225.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2016-08-20"
   },
@@ -10650,6 +11600,7 @@ module.exports =
     "customerId": 1742,
     "firstName": "Marsha",
     "lastName": "Nilson",
+    "email": "marshanilson@msn.com",
     "notes": "Imported payment info: class cost: 225.\nClass #3 for this student, per source sheet.",
     "enrolledOn": "2016-08-20"
   },
@@ -10669,6 +11620,7 @@ module.exports =
     "customerId": 1807,
     "firstName": "Maureen",
     "lastName": "O'Shaughnessy",
+    "email": "maureensmail7@yahoo.com",
     "notes": "Imported payment info: paid 1: 100 on 4/15/16, class cost: 225.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2016-04-15"
   },
@@ -10679,6 +11631,7 @@ module.exports =
     "customerId": 906,
     "firstName": "Harriette",
     "lastName": "Leitman",
+    "email": "redhsw1@hotmail.com",
     "notes": "Imported payment info: paid 1: 225 on 2/26/16, class cost: 225.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2016-02-26"
   },
@@ -10689,6 +11642,7 @@ module.exports =
     "customerId": 532,
     "firstName": "Cynthia",
     "lastName": "Meyer",
+    "email": "cynthia221@hotmail.com",
     "discountPercent": 20,
     "notes": "Imported payment info: paid 1: 225 on 5/26/16, class cost: 180.\nClass #4 for this student, per source sheet.",
     "enrolledOn": "2016-05-26"
@@ -10700,6 +11654,7 @@ module.exports =
     "customerId": 1723,
     "firstName": "Marianne",
     "lastName": "Welling",
+    "email": "Wellingm09@gmail.com",
     "notes": "Imported payment info: class cost: 225.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2016-06-11"
   },
@@ -10710,6 +11665,7 @@ module.exports =
     "customerId": 1741,
     "firstName": "Marsha",
     "lastName": "Hudson",
+    "email": "marsha@griffyn.us",
     "discountPercent": 20,
     "notes": "Imported payment info: paid 1: 168.75 on 3/2/16, class cost: 168.75.\nClass #21 for this student, per source sheet.",
     "enrolledOn": "2016-03-02"
@@ -10721,6 +11677,7 @@ module.exports =
     "customerId": 1878,
     "firstName": "Michelle",
     "lastName": "Kuster",
+    "email": "mak@seanet.com",
     "notes": "Harriette paid\nImported payment info: paid 1: 225 on 2/26/16, class cost: 225.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2016-02-26"
   },
@@ -10731,6 +11688,7 @@ module.exports =
     "customerId": 2453,
     "firstName": "Susan",
     "lastName": "Feng",
+    "email": "susan_feng@yahoo.com",
     "notes": "Harriette paid deposit\nImported payment info: paid 1: 100 on 2/26/16, class cost: 225.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2016-02-26"
   },
@@ -10741,6 +11699,7 @@ module.exports =
     "customerId": 1251,
     "firstName": "Karen",
     "lastName": "Grose",
+    "email": "klgrose0@msn.com",
     "notes": "Harriette paid\nImported payment info: paid 1: 225 on 2/26/16, class cost: 225.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2016-02-26"
   },
@@ -10751,6 +11710,7 @@ module.exports =
     "customerId": 1232,
     "firstName": "Anne",
     "lastName": "Ryan",
+    "email": "speldale@aol.com",
     "discountPercent": 20,
     "notes": "Imported payment info: paid 1: 100 on 2/29/16, class cost: 180.\nClass #10 for this student, per source sheet.",
     "enrolledOn": "2016-02-29"
@@ -10762,6 +11722,7 @@ module.exports =
     "customerId": 2347,
     "firstName": "Sheral",
     "lastName": "Burkey",
+    "email": "sherryburkey24@gmail.com",
     "notes": "Imported payment info: class cost: 225.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2016-06-04"
   },
@@ -10772,6 +11733,7 @@ module.exports =
     "customerId": 1673,
     "firstName": "Majken",
     "lastName": "Ryherd",
+    "email": "Majken.ryherd@gmail.com",
     "notes": "Imported payment info: class cost: 225.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2016-06-04"
   },
@@ -10782,6 +11744,7 @@ module.exports =
     "customerId": 174,
     "firstName": "Ann",
     "lastName": "Ryherd",
+    "email": "daley52@comcast.net",
     "notes": "Imported payment info: class cost: 225.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2016-06-04"
   },
@@ -10792,6 +11755,7 @@ module.exports =
     "customerId": 2236,
     "firstName": "Sam",
     "lastName": "Christensen",
+    "email": "sam.chris@comcast.net",
     "discountPercent": 20,
     "notes": "Imported payment info: paid 1: 100 on 2/24/16, class cost: 180.\nClass #8 for this student, per source sheet.",
     "enrolledOn": "2016-02-24"
@@ -10803,6 +11767,7 @@ module.exports =
     "customerId": 2624,
     "firstName": "Victoria",
     "lastName": "Paradis",
+    "email": "vpar4219@yahoo.com",
     "discountPercent": 20,
     "notes": "Imported payment info: class cost: 180.\nClass #15 for this student, per source sheet.",
     "enrolledOn": "2016-06-04"
@@ -10814,6 +11779,7 @@ module.exports =
     "customerId": 1449,
     "firstName": "Laurel",
     "lastName": "Nehl",
+    "email": "Laurel@laureltreedesigns.com",
     "notes": "Imported payment info: class cost: 225.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2016-05-28"
   },
@@ -10824,6 +11790,7 @@ module.exports =
     "customerId": 1966,
     "firstName": "Nikki",
     "lastName": "Dalton",
+    "email": "pinkmonk33s@hotmail.com",
     "notes": "Imported payment info: class cost: 225.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2016-05-28"
   },
@@ -10834,6 +11801,7 @@ module.exports =
     "customerId": 1466,
     "firstName": "Laurie",
     "lastName": "Dalton",
+    "email": "laurie_dalton@yahoo.com",
     "notes": "Imported payment info: class cost: 225.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2016-05-28"
   },
@@ -10844,6 +11812,7 @@ module.exports =
     "customerId": 90,
     "firstName": "Allie",
     "lastName": "Castrejon",
+    "email": "allieelainecastrejon@gmail.com",
     "notes": "Imported payment info: class cost: 225.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2016-05-28"
   },
@@ -10854,6 +11823,7 @@ module.exports =
     "customerId": 1092,
     "firstName": "Jennifer",
     "lastName": "Sommer",
+    "email": "jenn_sommer12@yahoo.com",
     "notes": "Imported payment info: class cost: 225.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2016-05-28"
   },
@@ -10864,6 +11834,7 @@ module.exports =
     "customerId": 2406,
     "firstName": "Stephanie",
     "lastName": "Woolley",
+    "email": "teewoolley@gmail.com",
     "notes": "Imported payment info: class cost: 225.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2016-05-28"
   },
@@ -10874,6 +11845,7 @@ module.exports =
     "customerId": 2563,
     "firstName": "Theresa",
     "lastName": "Garrison",
+    "email": "garrisonwestberg@gmail.com",
     "notes": "From source sheet: Friend\nImported payment info: class cost: 225.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2016-05-14"
   },
@@ -10884,6 +11856,7 @@ module.exports =
     "customerId": 2563,
     "firstName": "Theresa",
     "lastName": "Garrison",
+    "email": "garrisonwestberg@gmail.com",
     "notes": "Imported payment info: class cost: 225.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2016-05-14"
   },
@@ -10894,6 +11867,7 @@ module.exports =
     "customerId": 2194,
     "firstName": "Robin",
     "lastName": "Bystrak-Thome",
+    "email": "thomefam@comcast.net",
     "notes": "Imported payment info: class cost: 225.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2016-05-14"
   },
@@ -10904,6 +11878,7 @@ module.exports =
     "customerId": 2626,
     "firstName": "Vicki",
     "lastName": "Thompson",
+    "email": "vicki@il-rifugio.com",
     "notes": "From source sheet: Husband\nImported payment info: class cost: 225.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2016-05-14"
   },
@@ -10914,6 +11889,7 @@ module.exports =
     "customerId": 2626,
     "firstName": "Vicki",
     "lastName": "Thompson",
+    "email": "vicki@il-rifugio.com",
     "discountPercent": 20,
     "notes": "Imported payment info: class cost: 180.\nClass #7 for this student, per source sheet.",
     "enrolledOn": "2016-05-14"
@@ -10925,6 +11901,7 @@ module.exports =
     "customerId": 1650,
     "firstName": "Lynn",
     "lastName": "Brandli",
+    "email": "lynnb@arcreports.com",
     "notes": "Imported payment info: paid 1: 225 on 2/21/16, class cost: 225.\nClass #3 for this student, per source sheet.",
     "enrolledOn": "2016-02-21"
   },
@@ -10935,6 +11912,7 @@ module.exports =
     "customerId": 1635,
     "firstName": "Lucy",
     "lastName": "Brown",
+    "email": "lucybrown1@me.com",
     "discountPercent": 20,
     "notes": "Imported payment info: paid 1: 100 on 2/22/16, class cost: 180.\nClass #7 for this student, per source sheet.",
     "enrolledOn": "2016-02-22"
@@ -10946,6 +11924,7 @@ module.exports =
     "customerId": 1741,
     "firstName": "Marsha",
     "lastName": "Hudson",
+    "email": "marsha@griffyn.us",
     "discountPercent": 20,
     "notes": "Imported payment info: paid 1: 168.75 on 2/22/16, class cost: 168.75.\nClass #20 for this student, per source sheet.",
     "enrolledOn": "2016-02-22"
@@ -10966,6 +11945,7 @@ module.exports =
     "customerId": 1632,
     "firstName": "Luanne",
     "lastName": "Alvord",
+    "email": "ljalvord1@frontier.com",
     "notes": "Imported payment info: paid 1: 225 on 4/30/16, class cost: 225.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2016-04-30"
   },
@@ -10985,6 +11965,7 @@ module.exports =
     "customerId": 1449,
     "firstName": "Laurel",
     "lastName": "Nehl",
+    "email": "Laurel@laureltreedesigns.com",
     "notes": "Special: 4/30/16\nImported payment info: paid 1: 100 on 3/10/16, paid 2: 125, class cost: 225.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2016-03-10"
   },
@@ -10995,6 +11976,7 @@ module.exports =
     "customerId": 2406,
     "firstName": "Stephanie",
     "lastName": "Woolley",
+    "email": "teewoolley@gmail.com",
     "notes": "From source sheet: Friend\nStephanie paid\nSpecial: 4/30/16\nImported payment info: paid 1: 100 on 3/23/16, paid 2: 125, class cost: 225.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2016-03-23"
   },
@@ -11005,6 +11987,7 @@ module.exports =
     "customerId": 2406,
     "firstName": "Stephanie",
     "lastName": "Woolley",
+    "email": "teewoolley@gmail.com",
     "notes": "Special: 4/30/16\nImported payment info: paid 1: 100 on 3/23/16, paid 2: 125, class cost: 225.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2016-03-23"
   },
@@ -11015,6 +11998,7 @@ module.exports =
     "customerId": 2621,
     "firstName": "Vera",
     "lastName": "Patterson",
+    "email": "patterson.vera5@gmail.com",
     "notes": "Imported payment info: paid 1: 100 on 3/4/16, class cost: 225.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2016-03-04"
   },
@@ -11025,6 +12009,7 @@ module.exports =
     "customerId": 414,
     "firstName": "Charusheela",
     "lastName": "Kasbekar",
+    "email": "charukasbekar@gmail.com",
     "notes": "Imported payment info: paid 1: 225 on 3/7/16, class cost: 225.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2016-03-07"
   },
@@ -11035,6 +12020,7 @@ module.exports =
     "customerId": 2624,
     "firstName": "Victoria",
     "lastName": "Paradis",
+    "email": "vpar4219@yahoo.com",
     "discountPercent": 20,
     "notes": "Imported payment info: class cost: 180.\nClass #14 for this student, per source sheet.",
     "enrolledOn": "2016-04-02"
@@ -11046,6 +12032,7 @@ module.exports =
     "customerId": 1807,
     "firstName": "Maureen",
     "lastName": "O'Shaughnessy",
+    "email": "maureensmail7@yahoo.com",
     "notes": "Imported payment info: paid 1: 225 on 2/2/16, class cost: 225.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2016-02-02"
   },
@@ -11056,6 +12043,7 @@ module.exports =
     "customerId": 1886,
     "firstName": "Michelle",
     "lastName": "Smith",
+    "email": "michellesmith1189@comcast.net",
     "upgradeNotes": "22\"x28\" Oval",
     "notes": "Imported payment info: class cost: 147.5, upgrade/AlC incl. tax: 140.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2016-03-19"
@@ -11067,6 +12055,7 @@ module.exports =
     "customerId": 1250,
     "firstName": "Karen",
     "lastName": "Gary",
+    "email": "kgary58@live.com",
     "upgradeNotes": "22\"x28\" Oval",
     "notes": "Imported payment info: class cost: 147.5, upgrade/AlC incl. tax: 140.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2016-03-19"
@@ -11078,6 +12067,7 @@ module.exports =
     "customerId": 2156,
     "firstName": "Rene",
     "lastName": "Rushing",
+    "email": "brand4jays@att.net",
     "upgradeNotes": "22\"x28\" Oval",
     "notes": "Imported payment info: class cost: 147.5, upgrade/AlC incl. tax: 140.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2016-03-19"
@@ -11089,6 +12079,7 @@ module.exports =
     "customerId": 597,
     "firstName": "Debbi",
     "lastName": "Blanco",
+    "email": "debiblanco@aol.com",
     "upgradeNotes": "24\"x28\" Rectangle",
     "notes": "Imported payment info: class cost: 147.5, upgrade/AlC incl. tax: 140.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2016-03-19"
@@ -11100,6 +12091,7 @@ module.exports =
     "customerId": 2693,
     "firstName": "Zoe",
     "lastName": "McCormick",
+    "email": "alexand875@sbcglobal.net",
     "upgradeNotes": "24\"x28\" Rectangle",
     "notes": "Imported payment info: class cost: 147.5, upgrade/AlC incl. tax: 140.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2016-03-19"
@@ -11111,6 +12103,7 @@ module.exports =
     "customerId": 847,
     "firstName": "Gail",
     "lastName": "Giolli",
+    "email": "ggiolli@comcast.net",
     "upgradeNotes": "18\"x22\" Oval",
     "notes": "Imported payment info: class cost: 147.5, upgrade/AlC incl. tax: 100.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2016-03-19"
@@ -11122,6 +12115,7 @@ module.exports =
     "customerId": 1075,
     "firstName": "Jennifer",
     "lastName": "Edwards",
+    "email": "edwardsjennee@aol.com",
     "upgradeNotes": "19\" Round",
     "notes": "Imported payment info: class cost: 147.5, upgrade/AlC incl. tax: 70.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2016-03-18"
@@ -11133,6 +12127,7 @@ module.exports =
     "customerId": 2200,
     "firstName": "Ron",
     "lastName": "Baxter",
+    "email": "ronbax@sbcglobal.net",
     "upgradeNotes": "22\"x28\" Oval",
     "notes": "Imported payment info: class cost: 147.5, upgrade/AlC incl. tax: 140.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2016-03-19"
@@ -11144,6 +12139,7 @@ module.exports =
     "customerId": 1328,
     "firstName": "Cybele",
     "lastName": "Pugliese",
+    "email": "kathy.krusen@gmail.com",
     "upgradeNotes": "19\" Round",
     "notes": "Imported payment info: class cost: 147.5, upgrade/AlC incl. tax: 70.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2016-03-19"
@@ -11155,6 +12151,7 @@ module.exports =
     "customerId": 1374,
     "firstName": "Kim",
     "lastName": "Khoe",
+    "email": "kimpk@sbcglobal.net",
     "upgradeNotes": "18\"x22\" Oval",
     "notes": "Imported payment info: class cost: 147.5, upgrade/AlC incl. tax: 100.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2016-03-19"
@@ -11166,6 +12163,7 @@ module.exports =
     "customerId": 1328,
     "firstName": "Samantha",
     "lastName": "Kostick",
+    "email": "kathy.krusen@gmail.com",
     "upgradeNotes": "18\"x22\" Oval",
     "notes": "Imported payment info: class cost: 147.5, upgrade/AlC incl. tax: 100.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2016-03-19"
@@ -11177,6 +12175,7 @@ module.exports =
     "customerId": 1328,
     "firstName": "Kathy",
     "lastName": "Krusen",
+    "email": "kathy.krusen@gmail.com",
     "upgradeNotes": "22\"x28\" Oval",
     "notes": "Imported payment info: class cost: 147.5, upgrade/AlC incl. tax: 140.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2016-03-19"
@@ -11188,6 +12187,7 @@ module.exports =
     "customerId": 1581,
     "firstName": "Lisa",
     "lastName": "Twardowski",
+    "email": "lisa@twardowski.org",
     "upgradeNotes": "24\" Round",
     "notes": "Imported payment info: class cost: 147.5, upgrade/AlC incl. tax: 120.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2016-03-19"
@@ -11199,6 +12199,7 @@ module.exports =
     "customerId": 652,
     "firstName": "Denise",
     "lastName": "Foster",
+    "email": "edenisefoster@gmail.com",
     "upgradeNotes": "19\" Round",
     "notes": "Imported payment info: class cost: 147.5, upgrade/AlC incl. tax: 70.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2016-03-19"
@@ -11210,6 +12211,7 @@ module.exports =
     "customerId": 197,
     "firstName": "April",
     "lastName": "Bobin",
+    "email": "thebobinfamily@gmail.com",
     "notes": "Imported payment info: paid 1: 100 on 2/14/16, class cost: 225.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2016-02-14"
   },
@@ -11220,6 +12222,7 @@ module.exports =
     "customerId": 499,
     "firstName": "Connie",
     "lastName": "Hutchinson",
+    "email": "hutchison22915@gmail.com",
     "notes": "Imported payment info: class cost: 225.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2016-03-05"
   },
@@ -11230,6 +12233,7 @@ module.exports =
     "customerId": 1232,
     "firstName": "Anne",
     "lastName": "Ryan",
+    "email": "speldale@aol.com",
     "discountPercent": 20,
     "notes": "Imported payment info: paid 1: 100 on 2/29/16, class cost: 180.\nClass #9 for this student, per source sheet.",
     "enrolledOn": "2016-02-29"
@@ -11241,6 +12245,7 @@ module.exports =
     "customerId": 451,
     "firstName": "Christine",
     "lastName": "Jordan",
+    "email": "Cjjordan97303@gmail.com",
     "notes": "Imported payment info: class cost: 225.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2016-01-23"
   },
@@ -11250,6 +12255,7 @@ module.exports =
     "status": "completed",
     "firstName": "Roslyn",
     "lastName": "Ericksen",
+    "email": "roslyn.ericksen@thehartford.com",
     "notes": "Imported payment info: class cost: 225.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2016-01-23"
   },
@@ -11260,6 +12266,7 @@ module.exports =
     "customerId": 2254,
     "firstName": "Sandra",
     "lastName": "Turek",
+    "email": "Sandyturek@icloud.com",
     "notes": "Imported payment info: class cost: 225.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2016-01-23"
   },
@@ -11270,6 +12277,7 @@ module.exports =
     "customerId": 1174,
     "firstName": "Judith",
     "lastName": "Craig",
+    "email": "JudithMC@frontier.com",
     "notes": "Imported payment info: class cost: 225.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2016-01-23"
   },
@@ -11280,6 +12288,7 @@ module.exports =
     "customerId": 1720,
     "firstName": "Marianna",
     "lastName": "Riutta",
+    "email": "criutta@comcast.net",
     "notes": "Imported payment info: paid 1: 100 on 10/12/15, class cost: 225.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2015-10-12"
   },
@@ -11290,6 +12299,7 @@ module.exports =
     "customerId": 2092,
     "firstName": "Phyllis",
     "lastName": "Warman",
+    "email": "info@phylliswarmanjewelry.com",
     "upgradeNotes": "19\" Round",
     "notes": "From source sheet: Friend\nPhyllis paid\nSpecial: 1/16/16\nImported payment info: paid 1: 100 on 12/11/15, paid 2: 125, class cost: 225, upgrade/AlC incl. tax: 65.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2015-12-11"
@@ -11301,6 +12311,7 @@ module.exports =
     "customerId": 2092,
     "firstName": "Phyllis",
     "lastName": "Warman",
+    "email": "info@phylliswarmanjewelry.com",
     "upgradeNotes": "19\" Round",
     "notes": "From source sheet: Friend\nPhyllis paid\nSpecial: 1/16/16\nImported payment info: paid 1: 100 on 12/11/15, paid 2: 125, class cost: 225, upgrade/AlC incl. tax: 65.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2015-12-11"
@@ -11312,6 +12323,7 @@ module.exports =
     "customerId": 2092,
     "firstName": "Phyllis",
     "lastName": "Warman",
+    "email": "info@phylliswarmanjewelry.com",
     "upgradeNotes": "14\"x20\" Oval",
     "notes": "Special: 1/16/16\nImported payment info: paid 1: 100 on 12/11/15, paid 2: 125, class cost: 225, upgrade/AlC incl. tax: 25.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2015-12-11"
@@ -11323,6 +12335,7 @@ module.exports =
     "customerId": 2236,
     "firstName": "Sam",
     "lastName": "Christensen",
+    "email": "sam.chris@comcast.net",
     "discountPercent": 20,
     "notes": "Imported payment info: paid 1: 100 on 12/21/15, class cost: 180.\nClass #7 for this student, per source sheet.",
     "enrolledOn": "2015-12-21"
@@ -11334,6 +12347,7 @@ module.exports =
     "customerId": 444,
     "firstName": "Christin",
     "lastName": "Marshall",
+    "email": "claruept@aol.com",
     "notes": "Imported payment info: class cost: 225.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2016-01-02"
   },
@@ -11344,6 +12358,7 @@ module.exports =
     "customerId": 2300,
     "firstName": "Shannon",
     "lastName": "Stathers",
+    "email": "shanoneileen@gmail.com",
     "notes": "Imported payment info: class cost: 225.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2016-01-02"
   },
@@ -11354,6 +12369,7 @@ module.exports =
     "customerId": 1728,
     "firstName": "Marilyn",
     "lastName": "Mayers",
+    "email": "mayersmarilyn@gmail.com",
     "upgradeNotes": "30\" Round",
     "notes": "Imported payment info: class cost: 225.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2016-01-02"
@@ -11365,6 +12381,7 @@ module.exports =
     "customerId": 1723,
     "firstName": "Marianne",
     "lastName": "Welling",
+    "email": "Wellingm09@gmail.com",
     "notes": "Imported payment info: class cost: 225.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2016-01-02"
   },
@@ -11375,6 +12392,7 @@ module.exports =
     "customerId": 2624,
     "firstName": "Victoria",
     "lastName": "Paradis",
+    "email": "vpar4219@yahoo.com",
     "discountPercent": 20,
     "notes": "Imported payment info: class cost: 80.\nClass #13 for this student, per source sheet.",
     "enrolledOn": "2015-12-12"
@@ -11386,6 +12404,7 @@ module.exports =
     "customerId": 757,
     "firstName": "Elizabeth",
     "lastName": "Nakashima",
+    "email": "enakashima@comcast.net",
     "notes": "Imported payment info: class cost: 100.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2015-12-12"
   },
@@ -11396,6 +12415,7 @@ module.exports =
     "customerId": 354,
     "firstName": "Carol",
     "lastName": "Malama",
+    "email": "camalamac@gmail.com",
     "notes": "Imported payment info: class cost: 100.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2015-12-12"
   },
@@ -11406,6 +12426,7 @@ module.exports =
     "customerId": 278,
     "firstName": "Bette",
     "lastName": "Horishige",
+    "email": "viewmont@comcast.net",
     "notes": "Imported payment info: class cost: 100.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2015-12-12"
   },
@@ -11425,6 +12446,7 @@ module.exports =
     "customerId": 2684,
     "firstName": "Yadira",
     "lastName": "Herrera",
+    "email": "yadivaniisa@hotmail.com",
     "notes": "Imported payment info: class cost: 100.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2015-12-12"
   },
@@ -11435,6 +12457,7 @@ module.exports =
     "customerId": 2236,
     "firstName": "Sam",
     "lastName": "Christensen",
+    "email": "sam.chris@comcast.net",
     "discountPercent": 20,
     "notes": "Imported payment info: paid 1: 100 on 10/17/15, class cost: 80.\nClass #6 for this student, per source sheet.",
     "enrolledOn": "2015-10-17"
@@ -11446,6 +12469,7 @@ module.exports =
     "customerId": 1710,
     "firstName": "Maria",
     "lastName": "Berardo",
+    "email": "berardomi@hotmail.com",
     "notes": "Imported payment info: class cost: 100.\nClass #3 for this student, per source sheet.",
     "enrolledOn": "2015-11-21"
   },
@@ -11455,7 +12479,7 @@ module.exports =
     "status": "completed",
     "firstName": "Carrie",
     "lastName": "Kraning",
-    "notes": "Imported payment info: class cost: 100.\nClass #1 for this student, per source sheet.",
+    "notes": "Email column (not a valid address): registered by Linda\nImported payment info: class cost: 100.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2015-11-21"
   },
   {
@@ -11464,7 +12488,7 @@ module.exports =
     "status": "completed",
     "firstName": "Synthia",
     "lastName": "Carlisle",
-    "notes": "Imported payment info: class cost: 100.\nClass #1 for this student, per source sheet.",
+    "notes": "Email column (not a valid address): registered by Linda\nImported payment info: class cost: 100.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2015-11-21"
   },
   {
@@ -11473,7 +12497,7 @@ module.exports =
     "status": "completed",
     "firstName": "Karen",
     "lastName": "Flinchbaugh",
-    "notes": "Imported payment info: class cost: 100.\nClass #1 for this student, per source sheet.",
+    "notes": "Email column (not a valid address): registered by Linda\nImported payment info: class cost: 100.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2015-11-21"
   },
   {
@@ -11483,6 +12507,7 @@ module.exports =
     "customerId": 1516,
     "firstName": "Linda",
     "lastName": "Baker",
+    "email": "gelrBaker@frontier.com",
     "notes": "Imported payment info: class cost: 100.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2015-11-21"
   },
@@ -11493,6 +12518,7 @@ module.exports =
     "customerId": 2641,
     "firstName": "Virginia",
     "lastName": "Ballou",
+    "email": "ginnyballou@yahoo.com",
     "notes": "Imported payment info: class cost: 100.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2015-11-21"
   },
@@ -11502,6 +12528,7 @@ module.exports =
     "status": "completed",
     "firstName": "Christina",
     "lastName": "Lee",
+    "email": "chrlee77@gmail.com",
     "notes": "Imported payment info: class cost: 100.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2015-11-21"
   },
@@ -11512,6 +12539,7 @@ module.exports =
     "customerId": 1741,
     "firstName": "Marsha",
     "lastName": "Hudson",
+    "email": "marsha@griffyn.us",
     "discountPercent": 20,
     "notes": "Imported payment info: class cost: 180.\nClass #19 for this student, per source sheet.",
     "enrolledOn": "2015-11-07"
@@ -11532,6 +12560,7 @@ module.exports =
     "customerId": 2684,
     "firstName": "Yadira",
     "lastName": "Herrera",
+    "email": "yadivaniisa@hotmail.com",
     "notes": "Imported payment info: class cost: 100.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2015-11-07"
   },
@@ -11551,6 +12580,7 @@ module.exports =
     "customerId": 1232,
     "firstName": "Anne",
     "lastName": "Ryan",
+    "email": "speldale@aol.com",
     "discountPercent": 20,
     "notes": "Imported payment info: paid 1: 100, class cost: 180.\nClass #8 for this student, per source sheet.",
     "enrolledOn": "2015-11-07"
@@ -11562,6 +12592,7 @@ module.exports =
     "customerId": 701,
     "firstName": "Donna",
     "lastName": "Murphy",
+    "email": "donnamurphy@msn.com",
     "discountPercent": 20,
     "notes": "Imported payment info: class cost: 180.\nClass #8 for this student, per source sheet.",
     "enrolledOn": "2015-11-07"
@@ -11573,6 +12604,7 @@ module.exports =
     "customerId": 1288,
     "firstName": "Karyn",
     "lastName": "Dambach",
+    "email": "karynmike@bctonline.com",
     "notes": "Imported payment info: paid 1: 225, class cost: 225.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2015-11-07"
   },
@@ -11592,6 +12624,7 @@ module.exports =
     "customerId": 2176,
     "firstName": "Robert",
     "lastName": "Savino",
+    "email": "rlsavino@gmail.com",
     "notes": "Imported payment info: class cost: 225.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2015-10-17"
   },
@@ -11611,6 +12644,7 @@ module.exports =
     "customerId": 2501,
     "firstName": "Suzanne",
     "lastName": "Apodaca",
+    "email": "apodaca.com@gmail.com",
     "notes": "Imported payment info: class cost: 225.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2015-10-17"
   },
@@ -11621,6 +12655,7 @@ module.exports =
     "customerId": 2624,
     "firstName": "Victoria",
     "lastName": "Paradis",
+    "email": "vpar4219@yahoo.com",
     "discountPercent": 20,
     "notes": "Imported payment info: paid 1: 80 on 9/25/15, class cost: 180.\nClass #12 for this student, per source sheet.",
     "enrolledOn": "2015-09-25"
@@ -11632,6 +12667,7 @@ module.exports =
     "customerId": 1741,
     "firstName": "Marsha",
     "lastName": "Hudson",
+    "email": "marsha@griffyn.us",
     "discountPercent": 20,
     "notes": "Imported payment info: paid 1: 80 on 4/15/15, class cost: 180.\nClass #18 for this student, per source sheet.",
     "enrolledOn": "2015-04-15"
@@ -11659,6 +12695,7 @@ module.exports =
     "customerId": 1635,
     "firstName": "Lucy",
     "lastName": "Brown",
+    "email": "lucybrown1@me.com",
     "discountPercent": 20,
     "notes": "Imported payment info: paid 1: 100 on 9/1/15, class cost: 180.\nClass #6 for this student, per source sheet.",
     "enrolledOn": "2015-09-01"
@@ -11670,6 +12707,7 @@ module.exports =
     "customerId": 1426,
     "firstName": "Kyle",
     "lastName": "Winslow",
+    "email": "Kjwinslow@comcast.net",
     "notes": "Imported payment info: class cost: 225.\nClass #3 for this student, per source sheet.",
     "enrolledOn": "2015-09-26"
   },
@@ -11680,6 +12718,7 @@ module.exports =
     "customerId": 2092,
     "firstName": "Phyllis",
     "lastName": "Warman",
+    "email": "info@phylliswarmanjewelry.com",
     "upgradeNotes": "22\"x28\" Oval",
     "notes": "Imported payment info: paid 1: 100 on 8/31/15, class cost: 225.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2015-08-31"
@@ -11691,6 +12730,7 @@ module.exports =
     "customerId": 1142,
     "firstName": "Joanne",
     "lastName": "Rodd",
+    "email": "roddj@comcast.net",
     "notes": "Imported payment info: class cost: 225.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2015-09-19"
   },
@@ -11701,6 +12741,7 @@ module.exports =
     "customerId": 1887,
     "firstName": "Michelle",
     "lastName": "Thompson",
+    "email": "mmb@whidbey.com",
     "notes": "Imported payment info: class cost: 225.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2015-09-19"
   },
@@ -11711,6 +12752,7 @@ module.exports =
     "customerId": 701,
     "firstName": "Donna",
     "lastName": "Murphy",
+    "email": "donnamurphy@msn.com",
     "discountPercent": 20,
     "notes": "Imported payment info: class cost: 180.\nClass #7 for this student, per source sheet.",
     "enrolledOn": "2015-09-19"
@@ -11722,6 +12764,7 @@ module.exports =
     "customerId": 1741,
     "firstName": "Marsha",
     "lastName": "Hudson",
+    "email": "marsha@griffyn.us",
     "discountPercent": 20,
     "upgradeNotes": "18\"x22\" Oval",
     "notes": "Imported payment info: paid 1: 80 on 4/15/15, paid 2: 176, class cost: 180, upgrade/AlC incl. tax: 76.\nClass #17 for this student, per source sheet.",
@@ -11734,6 +12777,7 @@ module.exports =
     "customerId": 2436,
     "firstName": "Susan",
     "lastName": "Akers-Smith",
+    "email": "sakers6279@yahoo.com",
     "notes": "Imported payment info: class cost: 225.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2015-08-22"
   },
@@ -11744,6 +12788,7 @@ module.exports =
     "customerId": 2159,
     "firstName": "Rheanon",
     "lastName": "Hudson",
+    "email": "rrobertson78@hotmail.com",
     "upgradeNotes": "24\" Round",
     "notes": "Imported payment info: class cost: 225.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2015-08-22"
@@ -11755,6 +12800,7 @@ module.exports =
     "customerId": 1490,
     "firstName": "Lesley",
     "lastName": "Lambert",
+    "email": "lal127@cableone.net",
     "notes": "Imported payment info: paid 1: 225 on 8/3/15, class cost: 225.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2015-08-03"
   },
@@ -11765,6 +12811,7 @@ module.exports =
     "customerId": 1431,
     "firstName": "Lakshmi",
     "lastName": "Vasisht",
+    "email": "lakshmi_gurpurna@hotmail.com",
     "upgradeNotes": "24\"x28\" Rect",
     "notes": "Imported payment info: class cost: 225.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2015-08-22"
@@ -11776,6 +12823,7 @@ module.exports =
     "customerId": 922,
     "firstName": "Hema",
     "lastName": "Rajalakshmi",
+    "email": "hemanarayan@hotmail.com",
     "notes": "Imported payment info: paid 1: 225 on 7/22/15, class cost: 225.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2015-07-22"
   },
@@ -11786,6 +12834,7 @@ module.exports =
     "customerId": 1038,
     "firstName": "Jayne",
     "lastName": "Stigers",
+    "email": "rockinmom40@hotmail.com",
     "notes": "Imported payment info: class cost: 225.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2015-08-22"
   },
@@ -11796,6 +12845,7 @@ module.exports =
     "customerId": 1903,
     "firstName": "Monica",
     "lastName": "Sanders",
+    "email": "Monicasanders62@hotmail.com",
     "discountPercent": 20,
     "notes": "Imported payment info: class cost: 180.\nClass #11 for this student, per source sheet.",
     "enrolledOn": "2015-08-22"
@@ -11807,6 +12857,7 @@ module.exports =
     "customerId": 2303,
     "firstName": "Shari",
     "lastName": "Cole",
+    "email": "shari_cole@hotmail.com",
     "discountPercent": 20,
     "upgradeNotes": "2x 24\"x28\" Rect",
     "notes": "Imported payment info: class cost: 180.\nClass #13 for this student, per source sheet.",
@@ -11819,6 +12870,7 @@ module.exports =
     "customerId": 666,
     "firstName": "Diane",
     "lastName": "Denton",
+    "email": "cusugar@hotmail.com",
     "upgradeNotes": "14\"x20\" Oval",
     "notes": "Imported payment info: class cost: 225.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2015-06-27"
@@ -11830,6 +12882,7 @@ module.exports =
     "customerId": 2597,
     "firstName": "Trina",
     "lastName": "Johnson",
+    "email": "trinamjohnson@gmail.com",
     "notes": "Imported payment info: class cost: 225.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2015-06-27"
   },
@@ -11839,6 +12892,7 @@ module.exports =
     "status": "completed",
     "firstName": "Chrys",
     "lastName": "Bertolotto",
+    "email": "sitka.periwinkle@gmail.com",
     "notes": "Imported payment info: class cost: 225.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2015-06-27"
   },
@@ -11849,6 +12903,7 @@ module.exports =
     "customerId": 145,
     "firstName": "Rhondi",
     "lastName": "Smith",
+    "email": "andreasipe@gmail.com",
     "notes": "Andrea paid\nImported payment info: paid 1: 100 on 5/7/15, class cost: 225.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2015-05-07"
   },
@@ -11859,6 +12914,7 @@ module.exports =
     "customerId": 145,
     "firstName": "Stacy",
     "lastName": "Nissen",
+    "email": "andreasipe@gmail.com",
     "notes": "Imported payment info: paid 1: 100 on 5/7/15, class cost: 225.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2015-05-07"
   },
@@ -11869,6 +12925,7 @@ module.exports =
     "customerId": 145,
     "firstName": "Andrea",
     "lastName": "Sipe",
+    "email": "andreasipe@gmail.com",
     "notes": "Imported payment info: paid 1: 100 on 5/7/15, class cost: 225.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2015-05-07"
   },
@@ -11879,6 +12936,7 @@ module.exports =
     "customerId": 2501,
     "firstName": "Suzanne",
     "lastName": "Apodaca",
+    "email": "apodaca.com@gmail.com",
     "notes": "Imported payment info: class cost: 225.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2015-06-27"
   },
@@ -11889,6 +12947,7 @@ module.exports =
     "customerId": 1741,
     "firstName": "Marsha",
     "lastName": "Hudson",
+    "email": "marsha@griffyn.us",
     "discountPercent": 20,
     "notes": "Imported payment info: paid 1: 80 on 4/15/15, class cost: 180.\nClass #16 for this student, per source sheet.",
     "enrolledOn": "2015-04-15"
@@ -11900,6 +12959,7 @@ module.exports =
     "customerId": 532,
     "firstName": "Cynthia",
     "lastName": "Meyer",
+    "email": "cynthia221@hotmail.com",
     "notes": "Imported payment info: class cost: 225.\nClass #3 for this student, per source sheet.",
     "enrolledOn": "2015-06-27"
   },
@@ -11910,6 +12970,7 @@ module.exports =
     "customerId": 701,
     "firstName": "Donna",
     "lastName": "Murphy",
+    "email": "donnamurphy@msn.com",
     "discountPercent": 20,
     "notes": "Imported payment info: class cost: 180.\nClass #6 for this student, per source sheet.",
     "enrolledOn": "2015-04-11"
@@ -11921,6 +12982,7 @@ module.exports =
     "customerId": 1903,
     "firstName": "Monica",
     "lastName": "Sanders",
+    "email": "Monicasanders62@hotmail.com",
     "discountPercent": 20,
     "notes": "Imported payment info: class cost: 180.\nClass #10 for this student, per source sheet.",
     "enrolledOn": "2015-04-11"
@@ -11932,6 +12994,7 @@ module.exports =
     "customerId": 1741,
     "firstName": "Marsha",
     "lastName": "Hudson",
+    "email": "marsha@griffyn.us",
     "discountPercent": 20,
     "notes": "Imported payment info: class cost: 180.\nClass #15 for this student, per source sheet.",
     "enrolledOn": "2015-04-11"
@@ -11943,6 +13006,7 @@ module.exports =
     "customerId": 2303,
     "firstName": "Shari",
     "lastName": "Cole",
+    "email": "shari_cole@hotmail.com",
     "discountPercent": 20,
     "notes": "Imported payment info: class cost: 180.\nClass #12 for this student, per source sheet.",
     "enrolledOn": "2015-04-11"
@@ -11954,6 +13018,7 @@ module.exports =
     "customerId": 1635,
     "firstName": "Lucy",
     "lastName": "Brown",
+    "email": "lucybrown1@me.com",
     "discountPercent": 20,
     "notes": "Imported payment info: paid 1: 80 on 3/2/15, class cost: 180.\nClass #5 for this student, per source sheet.",
     "enrolledOn": "2015-03-02"
@@ -11965,6 +13030,7 @@ module.exports =
     "customerId": 232,
     "firstName": "Bairavi",
     "lastName": "Vijay",
+    "email": "bhairavijay@hotmail.com",
     "notes": "Imported payment info: class cost: 225.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2015-03-21"
   },
@@ -11975,6 +13041,7 @@ module.exports =
     "customerId": 1212,
     "firstName": "Julie",
     "lastName": "Logan",
+    "email": "juliemlo@hotmail.com",
     "notes": "Imported payment info: paid 1: 225 on 2/23/15, class cost: 225.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2015-02-23"
   },
@@ -11985,6 +13052,7 @@ module.exports =
     "customerId": 2217,
     "firstName": "Ruby",
     "lastName": "Childs",
+    "email": "rubyjchilds@gmail.com",
     "notes": "Imported payment info: class cost: 225.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2015-03-21"
   },
@@ -11995,6 +13063,7 @@ module.exports =
     "customerId": 778,
     "firstName": "Ellen",
     "lastName": "Mack",
+    "email": "emack55@comcast.net",
     "upgradeNotes": "18\"x22\" Oval",
     "notes": "Imported payment info: class cost: 165, upgrade/AlC incl. tax: 100.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2015-03-07"
@@ -12005,6 +13074,7 @@ module.exports =
     "status": "completed",
     "firstName": "Zoe",
     "lastName": "McCormick",
+    "email": "zoemc98@yahoo.com",
     "upgradeNotes": "19\" Round",
     "notes": "Imported payment info: class cost: 165, upgrade/AlC incl. tax: 70.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2015-03-07"
@@ -12016,6 +13086,7 @@ module.exports =
     "customerId": 1641,
     "firstName": "Lyde",
     "lastName": "Fowler",
+    "email": "lyde@pacbell.net",
     "upgradeNotes": "19\" Round",
     "notes": "Imported payment info: class cost: 165, upgrade/AlC incl. tax: 70.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2015-03-07"
@@ -12027,6 +13098,7 @@ module.exports =
     "customerId": 1605,
     "firstName": "Lori",
     "lastName": "Beffa",
+    "email": "lbeffa@hotmail.com",
     "upgradeNotes": "22\"x28\" Oval",
     "notes": "Imported payment info: class cost: 165, upgrade/AlC incl. tax: 140.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2015-03-07"
@@ -12038,6 +13110,7 @@ module.exports =
     "customerId": 1761,
     "firstName": "Mary Ellen",
     "lastName": "Presta",
+    "email": "mepresta@gmail.com",
     "upgradeNotes": "19\" Round",
     "notes": "Imported payment info: class cost: 165, upgrade/AlC incl. tax: 70.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2015-03-07"
@@ -12049,6 +13122,7 @@ module.exports =
     "customerId": 1328,
     "firstName": "Kathy",
     "lastName": "Krusen",
+    "email": "kathy.krusen@gmail.com",
     "notes": "Imported payment info: class cost: 165.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2015-03-07"
   },
@@ -12059,6 +13133,7 @@ module.exports =
     "customerId": 1903,
     "firstName": "Monica",
     "lastName": "Sanders",
+    "email": "Monicasanders62@hotmail.com",
     "discountPercent": 20,
     "notes": "Imported payment info: class cost: 180.\nClass #9 for this student, per source sheet.",
     "enrolledOn": "2015-02-28"
@@ -12070,6 +13145,7 @@ module.exports =
     "customerId": 1008,
     "firstName": "Jane",
     "lastName": "Matthews",
+    "email": "jemcando@aol.com",
     "upgradeNotes": "14\"x20\" Oval",
     "notes": "Imported payment info: class cost: 225.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2015-02-28"
@@ -12081,6 +13157,7 @@ module.exports =
     "customerId": 1635,
     "firstName": "Lucy",
     "lastName": "Brown",
+    "email": "lucybrown1@me.com",
     "discountPercent": 20,
     "notes": "Imported payment info: paid 1: 100 on 2/1/14, class cost: 180.\nClass #4 for this student, per source sheet.",
     "enrolledOn": "2014-02-01"
@@ -12092,6 +13169,7 @@ module.exports =
     "customerId": 701,
     "firstName": "Donna",
     "lastName": "Murphy",
+    "email": "donnamurphy@msn.com",
     "discountPercent": 20,
     "notes": "Imported payment info: class cost: 180.\nClass #5 for this student, per source sheet.",
     "enrolledOn": "2015-02-28"
@@ -12103,6 +13181,7 @@ module.exports =
     "customerId": 1741,
     "firstName": "Marsha",
     "lastName": "Hudson",
+    "email": "marsha@griffyn.us",
     "discountPercent": 20,
     "notes": "Imported payment info: class cost: 180.\nClass #14 for this student, per source sheet.",
     "enrolledOn": "2015-02-28"
@@ -12114,6 +13193,7 @@ module.exports =
     "customerId": 1650,
     "firstName": "Lynn",
     "lastName": "Brandli",
+    "email": "lynnb@arcreports.com",
     "notes": "Imported payment info: paid 1: 225 on 12/10/14, class cost: 225.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2014-12-10"
   },
@@ -12124,6 +13204,7 @@ module.exports =
     "customerId": 581,
     "firstName": "Dawn",
     "lastName": "Wright",
+    "email": "nadahalo@gmail.com",
     "notes": "Imported payment info: paid 1: 225 on 12/10/14, class cost: 225.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2014-12-10"
   },
@@ -12134,6 +13215,7 @@ module.exports =
     "customerId": 2303,
     "firstName": "Shari",
     "lastName": "Cole",
+    "email": "shari_cole@hotmail.com",
     "discountPercent": 20,
     "notes": "Imported payment info: class cost: 180.\nClass #11 for this student, per source sheet.",
     "enrolledOn": "2015-02-28"
@@ -12145,6 +13227,7 @@ module.exports =
     "customerId": 1186,
     "firstName": "Judy",
     "lastName": "Simon",
+    "email": "judysimon206@gmail.com",
     "upgradeNotes": "14\"x20\" Oval",
     "notes": "Imported payment info: class cost: 225.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2015-02-07"
@@ -12156,6 +13239,7 @@ module.exports =
     "customerId": 1741,
     "firstName": "Marsha",
     "lastName": "Hudson",
+    "email": "marsha@griffyn.us",
     "discountPercent": 20,
     "upgradeNotes": "14\"x48\" Rect, 6\"x18\" Plaque",
     "notes": "Imported payment info: class cost: 180.\nClass #13 for this student, per source sheet.",
@@ -12168,6 +13252,7 @@ module.exports =
     "customerId": 2624,
     "firstName": "Victoria",
     "lastName": "Paradis",
+    "email": "vpar4219@yahoo.com",
     "discountPercent": 20,
     "notes": "Imported payment info: class cost: 180.\nClass #11 for this student, per source sheet.",
     "enrolledOn": "2015-02-07"
@@ -12179,6 +13264,7 @@ module.exports =
     "customerId": 2146,
     "firstName": "Rebecca",
     "lastName": "Olin",
+    "email": "rebecca_olin@hotmail.com",
     "discountPercent": 20,
     "upgradeNotes": "Table top",
     "notes": "Imported payment info: class cost: 180.\nClass #14 for this student, per source sheet.",
@@ -12191,6 +13277,7 @@ module.exports =
     "customerId": 1782,
     "firstName": "Mary",
     "lastName": "Olin",
+    "email": "kmrolin@aol.com",
     "discountPercent": 20,
     "upgradeNotes": "Vase",
     "notes": "Imported payment info: class cost: 180.\nClass #13 for this student, per source sheet.",
@@ -12203,6 +13290,7 @@ module.exports =
     "customerId": 2105,
     "firstName": "Priscilla",
     "lastName": "Parr",
+    "email": "priscillaparr@hotmail.com",
     "discountPercent": 20,
     "notes": "Imported payment info: class cost: 180.\nClass #4 for this student, per source sheet.",
     "enrolledOn": "2015-02-07"
@@ -12214,6 +13302,7 @@ module.exports =
     "customerId": 2165,
     "firstName": "Rickie",
     "lastName": "Anderson",
+    "email": "runtis3@comcast.net",
     "notes": "Imported payment info: class cost: 225.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2015-02-07"
   },
@@ -12224,6 +13313,7 @@ module.exports =
     "customerId": 445,
     "firstName": "Christina",
     "lastName": "Lee",
+    "email": "christinalee77@gmail.com",
     "upgradeNotes": "2x 13\" Round, 1x 17\" Round",
     "notes": "Imported payment info: paid 1: 100 on 10/27/14, class cost: 225.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2014-10-27"
@@ -12235,6 +13325,7 @@ module.exports =
     "customerId": 2303,
     "firstName": "Shari",
     "lastName": "Cole",
+    "email": "shari_cole@hotmail.com",
     "discountPercent": 20,
     "notes": "Imported payment info: class cost: 180.\nClass #10 for this student, per source sheet.",
     "enrolledOn": "2015-01-03"
@@ -12246,6 +13337,7 @@ module.exports =
     "customerId": 343,
     "firstName": "Carla",
     "lastName": "Hartnell",
+    "email": "Cdhartnell@comcast.net",
     "notes": "Imported payment info: class cost: 225.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2015-01-03"
   },
@@ -12256,6 +13348,7 @@ module.exports =
     "customerId": 1830,
     "firstName": "Melinda",
     "lastName": "Creed",
+    "email": "melindacreed@gmail.com",
     "notes": "Special: 1/1/15\nImported payment info: paid 1: 100 on 12/28/14, paid 2: 125, class cost: 225.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2014-12-28"
   },
@@ -12266,6 +13359,7 @@ module.exports =
     "customerId": 498,
     "firstName": "Connie",
     "lastName": "Flores",
+    "email": "connieflores@hotmail.com",
     "upgradeNotes": "17\" Round",
     "notes": "Imported payment info: class cost: 225.\nClass #3 for this student, per source sheet.",
     "enrolledOn": "2015-01-03"
@@ -12277,6 +13371,7 @@ module.exports =
     "customerId": 675,
     "firstName": "Diane",
     "lastName": "Groendyke",
+    "email": "dianegroendyke@hotmail.com",
     "notes": "Imported payment info: paid 1: 225 on 11/23/14, class cost: 225.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2014-11-23"
   },
@@ -12287,6 +13382,7 @@ module.exports =
     "customerId": 1015,
     "firstName": "Janell",
     "lastName": "Correll",
+    "email": "crewin47s@gmail.com",
     "notes": "Imported payment info: class cost: 225.\nClass #3 for this student, per source sheet.",
     "enrolledOn": "2015-01-03"
   },
@@ -12297,6 +13393,7 @@ module.exports =
     "customerId": 1244,
     "firstName": "Karen",
     "lastName": "Correll",
+    "email": "karenac@me.com",
     "notes": "Imported payment info: class cost: 225.\nClass #3 for this student, per source sheet.",
     "enrolledOn": "2015-01-03"
   },
@@ -12307,6 +13404,7 @@ module.exports =
     "customerId": 518,
     "firstName": "Cristine",
     "lastName": "Naylor",
+    "email": "ccnaylor@live.com",
     "notes": "Imported payment info: paid 1: 100 on 11/13/14, class cost: 225.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2014-11-13"
   },
@@ -12317,6 +13415,7 @@ module.exports =
     "customerId": 2105,
     "firstName": "Priscilla",
     "lastName": "Parr",
+    "email": "priscillaparr@hotmail.com",
     "notes": "Imported payment info: paid 1: 100 on 10/14/14, class cost: 225.\nClass #3 for this student, per source sheet.",
     "enrolledOn": "2014-10-14"
   },
@@ -12326,6 +13425,7 @@ module.exports =
     "status": "completed",
     "firstName": "Paige",
     "lastName": "Benson",
+    "email": "benson-ranch@me.com",
     "notes": "Jennifer paid\nSpecial: 12/10/14\nImported payment info: paid 1: 60 on 9/11/14, paid 2: 125, class cost: 185.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2014-09-11"
   },
@@ -12335,6 +13435,7 @@ module.exports =
     "status": "completed",
     "firstName": "Kelli",
     "lastName": "Benson",
+    "email": "benson-ranch@me.com",
     "notes": "Jennifer paid\nSpecial: 12/10/14\nImported payment info: paid 1: 60 on 9/11/14, paid 2: 125, class cost: 185.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2014-09-11"
   },
@@ -12345,6 +13446,7 @@ module.exports =
     "customerId": 968,
     "firstName": "Jacque",
     "lastName": "Hudson",
+    "email": "jacquehudson@centurylink.net",
     "notes": "Jennifer paid\nSpecial: 12/10/14\nImported payment info: paid 1: 60 on 9/11/14, paid 2: 125, class cost: 185.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2014-09-11"
   },
@@ -12355,6 +13457,7 @@ module.exports =
     "customerId": 1140,
     "firstName": "Joanna",
     "lastName": "Mumford",
+    "email": "joanna.mumford@me.com",
     "notes": "Jennifer paid\nSpecial: 12/10/14\nImported payment info: paid 1: 60 on 9/11/14, paid 2: 125, class cost: 185.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2014-09-11"
   },
@@ -12365,6 +13468,7 @@ module.exports =
     "customerId": 1460,
     "firstName": "Lauren",
     "lastName": "Picardo",
+    "email": "laurenpicardo@gmail.com",
     "notes": "Jennifer paid\nSpecial: 12/10/14\nImported payment info: paid 1: 60 on 9/11/14, paid 2: 125, class cost: 185.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2014-09-11"
   },
@@ -12375,6 +13479,7 @@ module.exports =
     "customerId": 1086,
     "firstName": "Jennifer",
     "lastName": "Picardo",
+    "email": "jennpicardo@nventure.com",
     "notes": "Imported payment info: class cost: 0.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2014-12-29"
   },
@@ -12385,6 +13490,7 @@ module.exports =
     "customerId": 1650,
     "firstName": "Lynn",
     "lastName": "Brandli",
+    "email": "lynnb@arcreports.com",
     "notes": "Imported payment info: paid 1: 100 on 9/26/14, class cost: 100, upgrade/AlC incl. tax: 141.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2014-09-26"
   },
@@ -12395,6 +13501,7 @@ module.exports =
     "customerId": 581,
     "firstName": "Dawn",
     "lastName": "Wright",
+    "email": "nadahalo@gmail.com",
     "notes": "Imported payment info: paid 1: 100 on 9/26/14, class cost: 100.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2014-09-26"
   },
@@ -12405,6 +13512,7 @@ module.exports =
     "customerId": 1741,
     "firstName": "Marsha",
     "lastName": "Hudson",
+    "email": "marsha@griffyn.us",
     "notes": "From source sheet: Cousin\nImported payment info: class cost: 100.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2014-12-06"
   },
@@ -12415,6 +13523,7 @@ module.exports =
     "customerId": 701,
     "firstName": "Donna",
     "lastName": "Murphy",
+    "email": "donnamurphy@msn.com",
     "discountPercent": 20,
     "notes": "Special: 12/6/14\nImported payment info: paid 2: 60, class cost: 80.\nClass #4 for this student, per source sheet.",
     "enrolledOn": "2014-12-06"
@@ -12426,6 +13535,7 @@ module.exports =
     "customerId": 1741,
     "firstName": "Marsha",
     "lastName": "Hudson",
+    "email": "marsha@griffyn.us",
     "discountPercent": 20,
     "upgradeNotes": "Acoustic guitar base",
     "notes": "Imported payment info: class cost: 80.\nClass #12 for this student, per source sheet.",
@@ -12438,6 +13548,7 @@ module.exports =
     "customerId": 2303,
     "firstName": "Shari",
     "lastName": "Cole",
+    "email": "shari_cole@hotmail.com",
     "discountPercent": 20,
     "notes": "Special: 12/6/0114\nImported payment info: paid 2: 450, class cost: 80.\nClass #9 for this student, per source sheet.",
     "enrolledOn": "2014-12-06"
@@ -12449,6 +13560,7 @@ module.exports =
     "customerId": 1903,
     "firstName": "Monica",
     "lastName": "Sanders",
+    "email": "Monicasanders62@hotmail.com",
     "discountPercent": 20,
     "notes": "Special: 12/6/14\nImported payment info: paid 2: 70, class cost: 80.\nClass #8 for this student, per source sheet.",
     "enrolledOn": "2014-12-06"
@@ -12460,6 +13572,7 @@ module.exports =
     "customerId": 2547,
     "firstName": "Terry",
     "lastName": "Gallagher",
+    "email": "tlkrem@aol.com",
     "notes": "Special: 12/6/14\nImported payment info: paid 2: 100, class cost: 100.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2014-12-06"
   },
@@ -12470,6 +13583,7 @@ module.exports =
     "customerId": 2303,
     "firstName": "Shari",
     "lastName": "Cole",
+    "email": "shari_cole@hotmail.com",
     "discountPercent": 20,
     "upgradeNotes": "24\" Round",
     "notes": "Imported payment info: class cost: 180.\nClass #8 for this student, per source sheet.",
@@ -12482,6 +13596,7 @@ module.exports =
     "customerId": 1903,
     "firstName": "Monica",
     "lastName": "Sanders",
+    "email": "Monicasanders62@hotmail.com",
     "discountPercent": 20,
     "notes": "Imported payment info: class cost: 180.\nClass #7 for this student, per source sheet.",
     "enrolledOn": "2014-11-22"
@@ -12493,6 +13608,7 @@ module.exports =
     "customerId": 2165,
     "firstName": "Rickie",
     "lastName": "Anderson",
+    "email": "runtis3@comcast.net",
     "notes": "Imported payment info: class cost: 225.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2014-11-22"
   },
@@ -12503,6 +13619,7 @@ module.exports =
     "customerId": 2105,
     "firstName": "Priscilla",
     "lastName": "Parr",
+    "email": "priscillaparr@hotmail.com",
     "notes": "Imported payment info: paid 1: 100 on 10/27/14, class cost: 225.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2014-10-27"
   },
@@ -12513,6 +13630,7 @@ module.exports =
     "customerId": 2624,
     "firstName": "Victoria",
     "lastName": "Paradis",
+    "email": "vpar4219@yahoo.com",
     "discountPercent": 20,
     "notes": "Imported payment info: class cost: 180.\nClass #10 for this student, per source sheet.",
     "enrolledOn": "2014-11-22"
@@ -12524,6 +13642,7 @@ module.exports =
     "customerId": 2146,
     "firstName": "Rebecca",
     "lastName": "Olin",
+    "email": "rebecca_olin@hotmail.com",
     "discountPercent": 20,
     "notes": "Imported payment info: class cost: 180.\nClass #13 for this student, per source sheet.",
     "enrolledOn": "2014-11-22"
@@ -12535,6 +13654,7 @@ module.exports =
     "customerId": 1782,
     "firstName": "Mary",
     "lastName": "Olin",
+    "email": "kmrolin@aol.com",
     "discountPercent": 20,
     "notes": "Imported payment info: class cost: 180.\nClass #12 for this student, per source sheet.",
     "enrolledOn": "2014-11-22"
@@ -12546,6 +13666,7 @@ module.exports =
     "customerId": 2540,
     "firstName": "Teri",
     "lastName": "Spencer",
+    "email": "teri1212@hotmail.com",
     "notes": "From source sheet: Friend\nTeri pad\nImported payment info: paid 1: 100 on 9/5/14, class cost: 225.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2014-09-05"
   },
@@ -12556,6 +13677,7 @@ module.exports =
     "customerId": 2540,
     "firstName": "Teri",
     "lastName": "Spencer",
+    "email": "teri1212@hotmail.com",
     "notes": "Imported payment info: paid 1: 100 on 9/5/14, class cost: 225.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2014-09-05"
   },
@@ -12566,6 +13688,7 @@ module.exports =
     "customerId": 969,
     "firstName": "Jacque",
     "lastName": "Mesplay",
+    "email": "jacque.mesplay@att.net",
     "upgradeNotes": "18\"x27\" Rect",
     "notes": "Imported payment info: class cost: 225.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2014-11-08"
@@ -12577,6 +13700,7 @@ module.exports =
     "customerId": 1122,
     "firstName": "Jill",
     "lastName": "Walser",
+    "email": "jillmail@gmail.com",
     "notes": "Special: 11/8/14\nImported payment info: paid 1: 100 on 9/5/14, paid 2: 220, class cost: 225.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2014-09-05"
   },
@@ -12587,6 +13711,7 @@ module.exports =
     "customerId": 2592,
     "firstName": "Tradeen",
     "lastName": "Goold",
+    "email": "tratrag@hotmail.com",
     "notes": "Special: 11/9/14\nImported payment info: paid 2: 65, class cost: 225.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2014-11-08"
   },
@@ -12597,6 +13722,7 @@ module.exports =
     "customerId": 2303,
     "firstName": "Shari",
     "lastName": "Cole",
+    "email": "shari_cole@hotmail.com",
     "discountPercent": 20,
     "notes": "Special: 11/8/14\nImported payment info: paid 2: 110, class cost: 180.\nClass #7 for this student, per source sheet.",
     "enrolledOn": "2014-11-08"
@@ -12608,6 +13734,7 @@ module.exports =
     "customerId": 1903,
     "firstName": "Monica",
     "lastName": "Sanders",
+    "email": "Monicasanders62@hotmail.com",
     "discountPercent": 20,
     "notes": "Imported payment info: class cost: 180.\nClass #6 for this student, per source sheet.",
     "enrolledOn": "2014-11-08"
@@ -12619,6 +13746,7 @@ module.exports =
     "customerId": 2641,
     "firstName": "Virginia",
     "lastName": "Ballou",
+    "email": "ginnyballou@yahoo.com",
     "notes": "Imported payment info: paid 1: 100 on 7/28/14, class cost: 100.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2014-07-28"
   },
@@ -12629,6 +13757,7 @@ module.exports =
     "customerId": 2624,
     "firstName": "Victoria",
     "lastName": "Paradis",
+    "email": "vpar4219@yahoo.com",
     "discountPercent": 20,
     "notes": "Special: 10/26/14\nImported payment info: paid 2: 155.93, class cost: 80, upgrade/AlC incl. tax: 155.93.\nClass #9 for this student, per source sheet.",
     "enrolledOn": "2014-10-25"
@@ -12640,6 +13769,7 @@ module.exports =
     "customerId": 2146,
     "firstName": "Rebecca",
     "lastName": "Olin",
+    "email": "rebecca_olin@hotmail.com",
     "discountPercent": 20,
     "notes": "Special: 10/26/14\nImported payment info: paid 2: 148, class cost: 80, upgrade/AlC incl. tax: 148.\nClass #12 for this student, per source sheet.",
     "enrolledOn": "2014-10-25"
@@ -12651,6 +13781,7 @@ module.exports =
     "customerId": 1782,
     "firstName": "Mary",
     "lastName": "Olin",
+    "email": "kmrolin@aol.com",
     "discountPercent": 20,
     "notes": "Imported payment info: class cost: 80.\nClass #11 for this student, per source sheet.",
     "enrolledOn": "2014-10-25"
@@ -12662,6 +13793,7 @@ module.exports =
     "customerId": 1741,
     "firstName": "Marsha",
     "lastName": "Hudson",
+    "email": "marsha@griffyn.us",
     "discountPercent": 20,
     "notes": "Imported payment info: paid 1: 80 on 7/27/14, class cost: 80.\nClass #11 for this student, per source sheet.",
     "enrolledOn": "2014-07-27"
@@ -12673,6 +13805,7 @@ module.exports =
     "customerId": 1516,
     "firstName": "Linda",
     "lastName": "Baker",
+    "email": "gelrBaker@frontier.com",
     "notes": "From source sheet: Friend\nSpecial: 10/26/14\nImported payment info: paid 2: 281.69, class cost: 100, upgrade/AlC incl. tax: 281.69.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2014-10-25"
   },
@@ -12683,6 +13816,7 @@ module.exports =
     "customerId": 1516,
     "firstName": "Linda",
     "lastName": "Baker",
+    "email": "gelrBaker@frontier.com",
     "notes": "From source sheet: Friend\nSpecial: 10/26/14\nImported payment info: paid 2: 195, class cost: 100, upgrade/AlC incl. tax: 195.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2014-10-25"
   },
@@ -12693,6 +13827,7 @@ module.exports =
     "customerId": 1516,
     "firstName": "Linda",
     "lastName": "Baker",
+    "email": "gelrBaker@frontier.com",
     "notes": "Special: 10/26/14\nImported payment info: paid 2: 232, class cost: 100, upgrade/AlC incl. tax: 232.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2014-10-25"
   },
@@ -12702,6 +13837,7 @@ module.exports =
     "status": "completed",
     "firstName": "Joan",
     "lastName": "Delehanty",
+    "email": "joand@jps.net",
     "upgradeNotes": "19\" Round",
     "notes": "Imported payment info: class cost: 225.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2014-10-11"
@@ -12713,6 +13849,7 @@ module.exports =
     "customerId": 501,
     "firstName": "Connie",
     "lastName": "Sheldon",
+    "email": "trinkethut@comcast.net",
     "upgradeNotes": "24\" Round",
     "notes": "Imported payment info: class cost: 225.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2014-10-11"
@@ -12724,6 +13861,7 @@ module.exports =
     "customerId": 145,
     "firstName": "Andrea",
     "lastName": "Sipe",
+    "email": "andreasipe@gmail.com",
     "upgradeNotes": "30\" Round",
     "notes": "Imported payment info: class cost: 225.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2014-10-11"
@@ -12735,6 +13873,7 @@ module.exports =
     "customerId": 1312,
     "firstName": "Kathleen",
     "lastName": "Taylor",
+    "email": "kathyhtaylor@comcast.net",
     "upgradeNotes": "24\"x28\" Rect",
     "notes": "Imported payment info: class cost: 225.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2014-10-11"
@@ -12746,6 +13885,7 @@ module.exports =
     "customerId": 2391,
     "firstName": "Stacy",
     "lastName": "Nissen",
+    "email": "stacy.nissen@gmail.com",
     "upgradeNotes": "18\"x22\" Oval",
     "notes": "Imported payment info: class cost: 225.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2014-10-11"
@@ -12757,6 +13897,7 @@ module.exports =
     "customerId": 1673,
     "firstName": "Majken",
     "lastName": "Ryherd",
+    "email": "majken.ryherd@gmail.com",
     "upgradeNotes": "22\"x28\" Oval",
     "notes": "Imported payment info: class cost: 225.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2014-10-11"
@@ -12768,6 +13909,7 @@ module.exports =
     "customerId": 125,
     "firstName": "Amy",
     "lastName": "Ruble",
+    "email": "amyruble@hotmail.com",
     "upgradeNotes": "19\" Round",
     "notes": "Imported payment info: class cost: 225.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2014-10-11"
@@ -12779,6 +13921,7 @@ module.exports =
     "customerId": 1187,
     "firstName": "Judy",
     "lastName": "Stoehr",
+    "email": "jsstoehr@comcast.net",
     "upgradeNotes": "19\" Round",
     "notes": "Imported payment info: class cost: 225.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2014-10-11"
@@ -12790,6 +13933,7 @@ module.exports =
     "customerId": 2105,
     "firstName": "Priscilla",
     "lastName": "Parr",
+    "email": "priscillaparr@hotmail.com",
     "upgradeNotes": "22\"x28\" Oval",
     "notes": "Imported payment info: paid 1: 100 on 10/14/19, class cost: 225, upgrade/AlC incl. tax: 125.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2019-10-14"
@@ -12801,6 +13945,7 @@ module.exports =
     "customerId": 2506,
     "firstName": "Suzanne",
     "lastName": "Engelberg",
+    "email": "suzaeng@gmail.com",
     "notes": "Imported payment info: class cost: 225.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2014-09-20"
   },
@@ -12811,6 +13956,7 @@ module.exports =
     "customerId": 1635,
     "firstName": "Lucy",
     "lastName": "Brown",
+    "email": "lucybrown1@me.com",
     "notes": "Imported payment info: paid 1: 100 on 7/15/14, class cost: 225.\nClass #3 for this student, per source sheet.",
     "enrolledOn": "2014-07-15"
   },
@@ -12821,6 +13967,7 @@ module.exports =
     "customerId": 1426,
     "firstName": "Kyle",
     "lastName": "Winslow",
+    "email": "kjwinslow@comcast.net",
     "notes": "Imported payment info: class cost: 225.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2014-09-20"
   },
@@ -12831,6 +13978,7 @@ module.exports =
     "customerId": 1445,
     "firstName": "Laura",
     "lastName": "Ichikawa",
+    "email": "ichihowl@gmail.com",
     "notes": "Imported payment info: class cost: 225.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2014-09-20"
   },
@@ -12841,6 +13989,7 @@ module.exports =
     "customerId": 1769,
     "firstName": "Mary",
     "lastName": "Horvitz",
+    "email": "maryhorvitz@hotmail.com",
     "notes": "Imported payment info: paid 1: 100 on 9/15/14, class cost: 225.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2014-09-15"
   },
@@ -12851,6 +14000,7 @@ module.exports =
     "customerId": 98,
     "firstName": "Amanda",
     "lastName": "Nguyen",
+    "email": "amandagt_n@hotmail.com",
     "notes": "Imported payment info: paid 1: 100 on 7/14/14, class cost: 225.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2014-07-14"
   },
@@ -12861,6 +14011,7 @@ module.exports =
     "customerId": 373,
     "firstName": "Carolyn",
     "lastName": "Fung",
+    "email": "fungcarolyn2003@hotmail.com",
     "upgradeNotes": "19\" Round",
     "notes": "Imported payment info: class cost: 225.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2014-09-13"
@@ -12872,6 +14023,7 @@ module.exports =
     "customerId": 1312,
     "firstName": "Kathleen",
     "lastName": "Taylor",
+    "email": "kathyhtaylor@comcast.net",
     "upgradeNotes": "30\" Round",
     "notes": "Imported payment info: paid 1: 100 on 8/9/14, class cost: 225.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2014-08-09"
@@ -12883,6 +14035,7 @@ module.exports =
     "customerId": 1015,
     "firstName": "Janell",
     "lastName": "Correll",
+    "email": "crewin47s@gmail.com",
     "upgradeNotes": "22\"x34\" Oval",
     "notes": "Imported payment info: class cost: 225.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2014-09-13"
@@ -12894,6 +14047,7 @@ module.exports =
     "customerId": 1244,
     "firstName": "Karen",
     "lastName": "Correll",
+    "email": "karenac@me.com",
     "upgradeNotes": "17\" Round",
     "notes": "Imported payment info: class cost: 225.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2014-09-13"
@@ -12905,6 +14059,7 @@ module.exports =
     "customerId": 1741,
     "firstName": "Marsha",
     "lastName": "Hudson",
+    "email": "marsha@griffyn.us",
     "discountPercent": 20,
     "notes": "Imported payment info: paid 1: 80 on 6/27/14, class cost: 180.\nClass #10 for this student, per source sheet.",
     "enrolledOn": "2014-06-27"
@@ -12916,6 +14071,7 @@ module.exports =
     "customerId": 2303,
     "firstName": "Shari",
     "lastName": "Cole",
+    "email": "shari_cole@hotmail.com",
     "discountPercent": 20,
     "upgradeNotes": "22\"x28\" Oval",
     "notes": "Imported payment info: class cost: 180.\nClass #6 for this student, per source sheet.",
@@ -12928,6 +14084,7 @@ module.exports =
     "customerId": 1903,
     "firstName": "Monica",
     "lastName": "Sanders",
+    "email": "Monicasanders62@hotmail.com",
     "discountPercent": 20,
     "upgradeNotes": "22-3/8\"x21-3/8\" Rect",
     "notes": "Imported payment info: class cost: 180.\nClass #5 for this student, per source sheet.",
@@ -12940,6 +14097,7 @@ module.exports =
     "customerId": 1390,
     "firstName": "Kimberly",
     "lastName": "Dye",
+    "email": "dyenamicmovement@comcast.net",
     "notes": "Imported payment info: class cost: 225.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2014-08-23"
   },
@@ -12950,6 +14108,7 @@ module.exports =
     "customerId": 1086,
     "firstName": "Jennifer",
     "lastName": "Picardo",
+    "email": "jennpicardo@nventure.com",
     "notes": "Imported payment info: paid 1: 225 on 8/12/14, class cost: 225.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2014-08-12"
   },
@@ -12960,6 +14119,7 @@ module.exports =
     "customerId": 1291,
     "firstName": "Kate",
     "lastName": "Madson",
+    "email": "kmadson@q.com",
     "notes": "Imported payment info: class cost: 225.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2014-08-23"
   },
@@ -12970,6 +14130,7 @@ module.exports =
     "customerId": 2547,
     "firstName": "Terry",
     "lastName": "Gallagher",
+    "email": "tlkrem@aol.com",
     "notes": "Imported payment info: class cost: 225.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2014-08-23"
   },
@@ -12980,6 +14141,7 @@ module.exports =
     "customerId": 1245,
     "firstName": "Karen",
     "lastName": "DeVoe",
+    "email": "kdevoe@comcast.net",
     "notes": "Imported payment info: class cost: 225.\nClass #3 for this student, per source sheet.",
     "enrolledOn": "2014-08-23"
   },
@@ -12990,6 +14152,7 @@ module.exports =
     "customerId": 701,
     "firstName": "Donna",
     "lastName": "Murphy",
+    "email": "donnamurphy@msn.com",
     "notes": "Imported payment info: class cost: 225.\nClass #3 for this student, per source sheet.",
     "enrolledOn": "2014-08-23"
   },
@@ -13000,6 +14163,7 @@ module.exports =
     "customerId": 2303,
     "firstName": "Shari",
     "lastName": "Cole",
+    "email": "shari_cole@hotmail.com",
     "discountPercent": 20,
     "upgradeNotes": "24\" Round",
     "notes": "Imported payment info: class cost: 180.\nClass #5 for this student, per source sheet.",
@@ -13012,6 +14176,7 @@ module.exports =
     "customerId": 1903,
     "firstName": "Monica",
     "lastName": "Sanders",
+    "email": "Monicasanders62@hotmail.com",
     "discountPercent": 20,
     "upgradeNotes": "Clear glass",
     "notes": "Imported payment info: class cost: 180.\nClass #4 for this student, per source sheet.",
@@ -13024,6 +14189,7 @@ module.exports =
     "customerId": 1244,
     "firstName": "Karen",
     "lastName": "Correll",
+    "email": "karenac@me.com",
     "notes": "Imported payment info: class cost: 225.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2014-06-07"
   },
@@ -13034,6 +14200,7 @@ module.exports =
     "customerId": 701,
     "firstName": "Donna",
     "lastName": "Murphy",
+    "email": "donnamurphy@msn.com",
     "notes": "Imported payment info: paid 1: 225 on 4/15/14, class cost: 225.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2014-04-15"
   },
@@ -13044,6 +14211,7 @@ module.exports =
     "customerId": 1015,
     "firstName": "Janell",
     "lastName": "Correll",
+    "email": "crewin47s@gmail.com",
     "notes": "Imported payment info: class cost: 225.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2014-06-07"
   },
@@ -13054,6 +14222,7 @@ module.exports =
     "customerId": 2303,
     "firstName": "Shari",
     "lastName": "Cole",
+    "email": "shari_cole@hotmail.com",
     "discountPercent": 20,
     "upgradeNotes": "22\"x28\" Oval",
     "notes": "Imported payment info: paid 1: 225 on 2/10/14, class cost: 180.\nClass #4 for this student, per source sheet.",
@@ -13066,6 +14235,7 @@ module.exports =
     "customerId": 1903,
     "firstName": "Monica",
     "lastName": "Sanders",
+    "email": "Monicasanders62@hotmail.com",
     "notes": "Imported payment info: paid 1: 225 on 2/10/14, class cost: 225.\nClass #3 for this student, per source sheet.",
     "enrolledOn": "2014-02-10"
   },
@@ -13076,6 +14246,7 @@ module.exports =
     "customerId": 996,
     "firstName": "Jana",
     "lastName": "Dean",
+    "email": "jdean@reachone.com",
     "notes": "Special: 4/26/14\nImported payment info: paid 1: 100 on 3/27/14, paid 2: 125, class cost: 225.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2014-03-27"
   },
@@ -13086,6 +14257,7 @@ module.exports =
     "customerId": 1104,
     "firstName": "Jessica",
     "lastName": "Wieser",
+    "email": "jbcwart@aol.com",
     "notes": "Imported payment info: paid 1: 100 on 3/16/14, class cost: 225.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2014-03-16"
   },
@@ -13096,6 +14268,7 @@ module.exports =
     "customerId": 2524,
     "firstName": "Tammy",
     "lastName": "Thomas",
+    "email": "tammyspamperedpaws@gmail.com",
     "notes": "Imported payment info: paid 1: 100 on 3/23/14, class cost: 225.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2014-03-23"
   },
@@ -13106,6 +14279,7 @@ module.exports =
     "customerId": 701,
     "firstName": "Donna",
     "lastName": "Murphy",
+    "email": "donnamurphy@msn.com",
     "notes": "Imported payment info: class cost: 225.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2014-04-12"
   },
@@ -13116,6 +14290,7 @@ module.exports =
     "customerId": 2353,
     "firstName": "Sherri",
     "lastName": "Robbins",
+    "email": "sherrologist@gmail.com",
     "notes": "Imported payment info: paid 1: 100 on 2/14/14, class cost: 225.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2014-02-14"
   },
@@ -13126,6 +14301,7 @@ module.exports =
     "customerId": 2303,
     "firstName": "Shari",
     "lastName": "Cole",
+    "email": "shari_cole@hotmail.com",
     "upgradeNotes": "24\"x28\" Rect",
     "notes": "Imported payment info: paid 1: 225 on 2/10/14, class cost: 225, upgrade/AlC incl. tax: 140.\nClass #3 for this student, per source sheet.",
     "enrolledOn": "2014-02-10"
@@ -13137,6 +14313,7 @@ module.exports =
     "customerId": 1682,
     "firstName": "Marcia",
     "lastName": "Caldwell",
+    "email": "msctacald@aol.com",
     "discountPercent": 20,
     "notes": "Imported payment info: class cost: 180.\nClass #4 for this student, per source sheet.",
     "enrolledOn": "2014-04-12"
@@ -13148,6 +14325,7 @@ module.exports =
     "customerId": 1741,
     "firstName": "Marsha",
     "lastName": "Hudson",
+    "email": "marsha@griffyn.us",
     "discountPercent": 20,
     "notes": "Imported payment info: class cost: 180.\nClass #9 for this student, per source sheet.",
     "enrolledOn": "2014-04-12"
@@ -13159,6 +14337,7 @@ module.exports =
     "customerId": 1206,
     "firstName": "Julie",
     "lastName": "Friesen",
+    "email": "jewels.2@sbcglobal.net",
     "upgradeNotes": "22\"x28\" Oval",
     "notes": "Imported payment info: paid 1: 165 on 4/2/14, class cost: 165, upgrade/AlC incl. tax: 140.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2014-04-02"
@@ -13170,6 +14349,7 @@ module.exports =
     "customerId": 410,
     "firstName": "Charla",
     "lastName": "Gabert",
+    "email": "charlagabert@yahoo.com",
     "upgradeNotes": "24\"x28\" Rectangle",
     "notes": "Special: 3/22/14\nImported payment info: paid 1: 165 on 4/2/14, paid 2: 140, class cost: 165, upgrade/AlC incl. tax: 140.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2014-04-02"
@@ -13181,6 +14361,7 @@ module.exports =
     "customerId": 1266,
     "firstName": "Karen",
     "lastName": "Phillips",
+    "email": "vedagal23@yahoo.com",
     "upgradeNotes": "18\"x22\" Oval",
     "notes": "Imported payment info: paid 1: 165 on 4/2/14, class cost: 165, upgrade/AlC incl. tax: 100.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2014-04-02"
@@ -13192,6 +14373,7 @@ module.exports =
     "customerId": 1935,
     "firstName": "Nancy",
     "lastName": "Lovelady",
+    "email": "Jwnsl@sbcglobal.net",
     "upgradeNotes": "22\"x28\" Oval",
     "notes": "Imported payment info: paid 1: 165 on 4/2/14, class cost: 165, upgrade/AlC incl. tax: 140.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2014-04-02"
@@ -13203,6 +14385,7 @@ module.exports =
     "customerId": 2685,
     "firstName": "Yasumi",
     "lastName": "Sunako",
+    "email": "yasumisunako@gmail.com",
     "upgradeNotes": "24\"x28\" Rectangle",
     "notes": "Special: 3/22/14\nImported payment info: paid 1: 165 on 4/2/14, paid 2: 140, class cost: 165, upgrade/AlC incl. tax: 140.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2014-04-02"
@@ -13214,6 +14397,7 @@ module.exports =
     "customerId": 1916,
     "firstName": "Nagisa",
     "lastName": "Sunako",
+    "email": "nagisasunako@gmail.com",
     "upgradeNotes": "19\" Round",
     "notes": "Special: 3/22/14\nImported payment info: paid 1: 165 on 4/2/14, paid 2: 70, class cost: 165, upgrade/AlC incl. tax: 70.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2014-04-02"
@@ -13225,6 +14409,7 @@ module.exports =
     "customerId": 553,
     "firstName": "Dana",
     "lastName": "Sheridan",
+    "email": "dansheridan@comcast.net",
     "upgradeNotes": "18\"x22\" Oval",
     "notes": "Imported payment info: paid 1: 165 on 4/2/14, class cost: 165, upgrade/AlC incl. tax: 100.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2014-04-02"
@@ -13236,6 +14421,7 @@ module.exports =
     "customerId": 2381,
     "firstName": "Sophia",
     "lastName": "Cordoni",
+    "email": "sophia@instituteofmosaicart.com",
     "upgradeNotes": "19\" Round",
     "notes": "Imported payment info: paid 1: 165 on 4/2/14, class cost: 165, upgrade/AlC incl. tax: 70.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2014-04-02"
@@ -13247,6 +14433,7 @@ module.exports =
     "customerId": 532,
     "firstName": "Cynthia",
     "lastName": "Kearn",
+    "email": "cynthia221@hotmail.com",
     "upgradeNotes": "24\"x28\" Rectangle",
     "notes": "Imported payment info: paid 1: 165 on 4/2/14, class cost: 165, upgrade/AlC incl. tax: 140.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2014-04-02"
@@ -13258,6 +14445,7 @@ module.exports =
     "customerId": 1846,
     "firstName": "Merry",
     "lastName": "Gilmer",
+    "email": "mgilmer11@gmail.com",
     "upgradeNotes": "24\"x28\" Rectangle",
     "notes": "Imported payment info: paid 1: 165 on 4/2/14, class cost: 165, upgrade/AlC incl. tax: 140.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2014-04-02"
@@ -13269,6 +14457,7 @@ module.exports =
     "customerId": 749,
     "firstName": "Elisa",
     "lastName": "Gibson",
+    "email": "dagibson1@charter.net",
     "upgradeNotes": "22\"x28\" Oval, 24\" Round blank",
     "notes": "Imported payment info: paid 1: 165 on 4/2/14, class cost: 165, upgrade/AlC incl. tax: 205.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2014-04-02"
@@ -13280,6 +14469,7 @@ module.exports =
     "customerId": 749,
     "firstName": "April",
     "lastName": "Townley",
+    "email": "dagibson1@charter.net",
     "upgradeNotes": "24\" Round",
     "notes": "Imported payment info: paid 1: 165 on 4/2/14, class cost: 165, upgrade/AlC incl. tax: 120.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2014-04-02"
@@ -13291,6 +14481,7 @@ module.exports =
     "customerId": 604,
     "firstName": "Debbie",
     "lastName": "Hogan",
+    "email": "debbieloveslife123@yahoo.com",
     "notes": "Imported payment info: class cost: 225.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2014-03-01"
   },
@@ -13301,6 +14492,7 @@ module.exports =
     "customerId": 2303,
     "firstName": "Shari",
     "lastName": "Cole",
+    "email": "shari_cole@hotmail.com",
     "upgradeNotes": "24\"x28\" Rect",
     "notes": "Imported payment info: class cost: 225.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2014-03-01"
@@ -13312,6 +14504,7 @@ module.exports =
     "customerId": 1903,
     "firstName": "Monica",
     "lastName": "Sanders",
+    "email": "Monicasanders62@hotmail.com",
     "notes": "Shari paid\nImported payment info: paid 1: 225 on 2/10/14, class cost: 225.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2014-02-10"
   },
@@ -13322,6 +14515,7 @@ module.exports =
     "customerId": 390,
     "firstName": "Cathryn",
     "lastName": "McCarthy",
+    "email": "catherinmac@aol.com",
     "upgradeNotes": "17\" Round",
     "notes": "Imported payment info: class cost: 225.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2014-03-01"
@@ -13333,6 +14527,7 @@ module.exports =
     "customerId": 1044,
     "firstName": "Jean",
     "lastName": "Zwick",
+    "email": "jbzwick@gmail.com",
     "notes": "Imported payment info: paid 1: 225 on 1/21/14, class cost: 225.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2014-01-21"
   },
@@ -13343,6 +14538,7 @@ module.exports =
     "customerId": 528,
     "firstName": "Cynthia",
     "lastName": "Finan",
+    "email": "cafinan@msn.com",
     "upgradeNotes": "24\"x28\" Rect",
     "notes": "Special: 2/8/14\nImported payment info: paid 1: 100 on 1/26/14, paid 2: 125, class cost: 225.\nClass #3 for this student, per source sheet.",
     "enrolledOn": "2014-01-26"
@@ -13354,6 +14550,7 @@ module.exports =
     "customerId": 1682,
     "firstName": "Marcia",
     "lastName": "Caldwell",
+    "email": "msctacald@aol.com",
     "upgradeNotes": "24\"x28\" Rect",
     "notes": "Imported payment info: class cost: 225.\nClass #3 for this student, per source sheet.",
     "enrolledOn": "2014-02-08"
@@ -13365,6 +14562,7 @@ module.exports =
     "customerId": 1456,
     "firstName": "Lauren",
     "lastName": "Constantino",
+    "email": "constantino.lauren@gmail.com",
     "notes": "Imported payment info: class cost: 225.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2014-02-08"
   },
@@ -13374,6 +14572,7 @@ module.exports =
     "status": "completed",
     "firstName": "Monica",
     "lastName": "Sanders",
+    "email": "Monicasanders6@hotmail.com",
     "upgradeNotes": "24\"x28\" Rect",
     "notes": "Imported payment info: class cost: 225.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2014-02-08"
@@ -13385,6 +14584,7 @@ module.exports =
     "customerId": 2303,
     "firstName": "Shari",
     "lastName": "Cole",
+    "email": "shari_cole@hotmail.com",
     "upgradeNotes": "24\"x28\" Rect",
     "notes": "Imported payment info: class cost: 225.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2014-02-08"
@@ -13396,6 +14596,7 @@ module.exports =
     "customerId": 259,
     "firstName": "Barry",
     "lastName": "Bennett",
+    "email": "bbennett@segaleproperties.com",
     "notes": "Imported payment info: paid 1: 165 on 10/25/13, class cost: 165.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2013-10-25"
   },
@@ -13406,6 +14607,7 @@ module.exports =
     "customerId": 259,
     "firstName": "Barry",
     "lastName": "Bennett",
+    "email": "bbennett@segaleproperties.com",
     "notes": "Imported payment info: paid 1: 165 on 10/25/13, class cost: 165.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2013-10-25"
   },
@@ -13416,6 +14618,7 @@ module.exports =
     "customerId": 429,
     "firstName": "Cheryl",
     "lastName": "Smith",
+    "email": "cherylsmith@live.com",
     "upgradeNotes": "17\" Round",
     "notes": "Imported payment info: class cost: 225.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2014-02-08"
@@ -13427,6 +14630,7 @@ module.exports =
     "customerId": 1778,
     "firstName": "Mary",
     "lastName": "Longhurst",
+    "email": "longhurstmary@yahoo.com",
     "notes": "Imported payment info: class cost: 165.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2013-12-14"
   },
@@ -13437,6 +14641,7 @@ module.exports =
     "customerId": 192,
     "firstName": "Annette",
     "lastName": "Oneil",
+    "email": "oneilar@hotmail.com",
     "notes": "Imported payment info: class cost: 165.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2013-12-14"
   },
@@ -13447,6 +14652,7 @@ module.exports =
     "customerId": 1632,
     "firstName": "Luanne",
     "lastName": "Alvord",
+    "email": "ljalvord1@frontier.com",
     "upgradeNotes": "17\" Round",
     "notes": "Imported payment info: class cost: 165.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2013-12-14"
@@ -13458,6 +14664,7 @@ module.exports =
     "customerId": 1544,
     "firstName": "Linda",
     "lastName": "Olson",
+    "email": "Lindakayolson@comcast.net",
     "notes": "Imported payment info: class cost: 165.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2013-12-14"
   },
@@ -13468,6 +14675,7 @@ module.exports =
     "customerId": 2563,
     "firstName": "Theresa",
     "lastName": "Garrison",
+    "email": "garrisonwestberg@gmail.com",
     "upgradeNotes": "22\"x28\" Oval",
     "notes": "Imported payment info: class cost: 165.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2013-12-14"
@@ -13479,6 +14687,7 @@ module.exports =
     "customerId": 642,
     "firstName": "Delette",
     "lastName": "Lofstrom",
+    "email": "dee.lofstrom@gmail.com",
     "upgradeNotes": "18\"x22\" Oval",
     "notes": "Imported payment info: class cost: 165.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2013-11-16"
@@ -13490,6 +14699,7 @@ module.exports =
     "customerId": 1448,
     "firstName": "Laura",
     "lastName": "Quandt",
+    "email": "quandt4@comcast.net",
     "notes": "Imported payment info: class cost: 165.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2013-11-16"
   },
@@ -13500,6 +14710,7 @@ module.exports =
     "customerId": 1232,
     "firstName": "Anne",
     "lastName": "Ryan",
+    "email": "speldale@aol.com",
     "discountPercent": 20,
     "notes": "Imported payment info: paid 1: 80 on 10/22/13, class cost: 165.\nClass #7 for this student, per source sheet.",
     "enrolledOn": "2013-10-22"
@@ -13511,6 +14722,7 @@ module.exports =
     "customerId": 1021,
     "firstName": "Janet",
     "lastName": "Neary",
+    "email": "herschelthecat@hotmail.com",
     "notes": "Imported payment info: class cost: 165.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2013-11-16"
   },
@@ -13520,6 +14732,7 @@ module.exports =
     "status": "completed",
     "firstName": "Amy",
     "lastName": "Galbavy",
+    "email": "amy@sassyglassonline.com",
     "upgradeNotes": "17\" Round",
     "notes": "Imported payment info: class cost: 165.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2013-11-16"
@@ -13531,6 +14744,7 @@ module.exports =
     "customerId": 803,
     "firstName": "Erin",
     "lastName": "Branigan",
+    "email": "braniganerin@yahoo.com",
     "upgradeNotes": "Arch",
     "notes": "Imported payment info: class cost: 165.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2013-11-16"
@@ -13542,6 +14756,7 @@ module.exports =
     "customerId": 2524,
     "firstName": "Tammy",
     "lastName": "Thomas",
+    "email": "tammyspamperedpaws@gmail.com",
     "upgradeNotes": "18\"x22\" Oval",
     "notes": "Imported payment info: paid 1: 80 on 8/13/13, class cost: 165, upgrade/AlC incl. tax: 80.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2013-08-13"
@@ -13553,6 +14768,7 @@ module.exports =
     "customerId": 2071,
     "firstName": "Peggy",
     "lastName": "Ford",
+    "email": "peggyaford47@gmail.com",
     "upgradeNotes": "19\" Round",
     "notes": "Imported payment info: paid 1: 80 on 8/30/13, class cost: 165.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2013-08-30"
@@ -13573,6 +14789,7 @@ module.exports =
     "customerId": 1432,
     "firstName": "Lalitha",
     "lastName": "Gadde",
+    "email": "gaddelalitha@yahoo.com",
     "notes": "Imported payment info: class cost: 80.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2013-11-02"
   },
@@ -13583,6 +14800,7 @@ module.exports =
     "customerId": 1682,
     "firstName": "Marcia",
     "lastName": "Caldwell",
+    "email": "msctacald@aol.com",
     "notes": "Imported payment info: class cost: 80.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2013-11-02"
   },
@@ -13593,6 +14811,7 @@ module.exports =
     "customerId": 528,
     "firstName": "Cynthia",
     "lastName": "Finan",
+    "email": "cafinan@msn.com",
     "notes": "Imported payment info: paid 1: 80 on 9/16/13, class cost: 80.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2013-09-16"
   },
@@ -13603,6 +14822,7 @@ module.exports =
     "customerId": 955,
     "firstName": "Ivonne",
     "lastName": "Bandy",
+    "email": "ivonnezumba@gmail.com",
     "notes": "Imported payment info: class cost: 80.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2013-11-02"
   },
@@ -13613,6 +14833,7 @@ module.exports =
     "customerId": 136,
     "firstName": "Andrea",
     "lastName": "Becker",
+    "email": "beckera75@gmail.com",
     "notes": "Imported payment info: class cost: 80.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2013-11-02"
   },
@@ -13623,6 +14844,7 @@ module.exports =
     "customerId": 1782,
     "firstName": "Rebecca",
     "lastName": "Olin",
+    "email": "kmrolin@aol.com",
     "discountPercent": 20,
     "notes": "Imported payment info: class cost: 80.\nClass #11 for this student, per source sheet.",
     "enrolledOn": "2013-11-02"
@@ -13634,6 +14856,7 @@ module.exports =
     "customerId": 1782,
     "firstName": "Mary",
     "lastName": "Olin",
+    "email": "kmrolin@aol.com",
     "discountPercent": 20,
     "notes": "Imported payment info: class cost: 80.\nClass #10 for this student, per source sheet.",
     "enrolledOn": "2013-11-02"
@@ -13645,6 +14868,7 @@ module.exports =
     "customerId": 1548,
     "firstName": "Linda",
     "lastName": "Wiemer",
+    "email": "lwiemer@comcast.net",
     "notes": "Imported payment info: class cost: 185.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2013-10-26"
   },
@@ -13655,6 +14879,7 @@ module.exports =
     "customerId": 1780,
     "firstName": "Mary",
     "lastName": "Mancini",
+    "email": "clarenpat@comcast.net",
     "notes": "Imported payment info: class cost: 185.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2013-10-26"
   },
@@ -13665,6 +14890,7 @@ module.exports =
     "customerId": 1426,
     "firstName": "Kyle",
     "lastName": "Winslow",
+    "email": "Kjwinslow@comcast.net",
     "notes": "Imported payment info: class cost: 185.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2013-10-26"
   },
@@ -13675,6 +14901,7 @@ module.exports =
     "customerId": 98,
     "firstName": "Amanda",
     "lastName": "Nguyen",
+    "email": "amandagt_n@hotmail.com",
     "notes": "Imported payment info: paid 1: 80 on 9/30/13, class cost: 185.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2013-09-30"
   },
@@ -13685,6 +14912,7 @@ module.exports =
     "customerId": 2465,
     "firstName": "Susan",
     "lastName": "Lee",
+    "email": "mail@susanlee.org",
     "notes": "Imported payment info: class cost: 185.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2013-10-26"
   },
@@ -13695,6 +14923,7 @@ module.exports =
     "customerId": 1769,
     "firstName": "Mary",
     "lastName": "Horvitz",
+    "email": "maryhorvitz@hotmail.com",
     "notes": "Imported payment info: class cost: 185.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2013-10-26"
   },
@@ -13705,6 +14934,7 @@ module.exports =
     "customerId": 1635,
     "firstName": "Lucy",
     "lastName": "Brown",
+    "email": "lucybrown1@me.com",
     "notes": "Imported payment info: paid 1: 80 on 9/21/13, class cost: 185.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2013-09-21"
   },
@@ -13715,6 +14945,7 @@ module.exports =
     "customerId": 2192,
     "firstName": "Robin",
     "lastName": "Smith",
+    "email": "rsmith1116@gmail.com",
     "notes": "Imported payment info: class cost: 165.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2013-10-05"
   },
@@ -13734,6 +14965,7 @@ module.exports =
     "customerId": 2624,
     "firstName": "Victoria",
     "lastName": "Paradis",
+    "email": "vpar4219@yahoo.com",
     "discountPercent": 20,
     "upgradeNotes": "19\" Round",
     "notes": "Imported payment info: class cost: 165.\nClass #8 for this student, per source sheet.",
@@ -13746,6 +14978,7 @@ module.exports =
     "customerId": 163,
     "firstName": "Anita",
     "lastName": "Montgomery",
+    "email": "montgomery.anita@comcast.net",
     "notes": "From source sheet: Friend\nImported payment info: class cost: 165.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2013-10-05"
   },
@@ -13756,6 +14989,7 @@ module.exports =
     "customerId": 163,
     "firstName": "Anita",
     "lastName": "Montgomery",
+    "email": "montgomery.anita@comcast.net",
     "notes": "Imported payment info: class cost: 165.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2013-10-05"
   },
@@ -13766,6 +15000,7 @@ module.exports =
     "customerId": 1804,
     "firstName": "Maureen",
     "lastName": "Carr",
+    "email": "mrncarr@gmail.com",
     "upgradeNotes": "17\" Round",
     "notes": "Imported payment info: paid 1: 80 on 6/25/13, class cost: 165.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2013-06-25"
@@ -13777,6 +15012,7 @@ module.exports =
     "customerId": 180,
     "firstName": "Anne",
     "lastName": "Huddleston",
+    "email": "annech@cinci.rr.com",
     "upgradeNotes": "17\" Round",
     "notes": "Imported payment info: class cost: 165.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2013-10-05"
@@ -13788,6 +15024,7 @@ module.exports =
     "customerId": 2451,
     "firstName": "Susan",
     "lastName": "Farrington",
+    "email": "farrington1977@gmail.com",
     "upgradeNotes": "18\"x27\" Rect",
     "notes": "Imported payment info: class cost: 245.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2013-09-14"
@@ -13799,6 +15036,7 @@ module.exports =
     "customerId": 1991,
     "firstName": "Pam",
     "lastName": "Nykos",
+    "email": "pamnyikos888@msn.com",
     "upgradeNotes": "18\"x22\" Oval",
     "notes": "Imported payment info: class cost: 245.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2013-09-14"
@@ -13810,6 +15048,7 @@ module.exports =
     "customerId": 1465,
     "firstName": "Laurie",
     "lastName": "Allen",
+    "email": "Laurieallen9@shaw.ca",
     "notes": "Imported payment info: class cost: 245.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2013-09-14"
   },
@@ -13820,6 +15059,7 @@ module.exports =
     "customerId": 1965,
     "firstName": "Niki",
     "lastName": "Green",
+    "email": "nikig566@gmail.com",
     "notes": "Imported payment info: class cost: 245.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2013-09-14"
   },
@@ -13830,6 +15070,7 @@ module.exports =
     "customerId": 1682,
     "firstName": "Marcia",
     "lastName": "Caldwell",
+    "email": "msctacald@aol.com",
     "upgradeNotes": "18\"x27\" Rect",
     "notes": "Imported payment info: class cost: 245.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2013-09-14"
@@ -13841,6 +15082,7 @@ module.exports =
     "customerId": 528,
     "firstName": "Cynthia",
     "lastName": "Finan",
+    "email": "cafinan@msn.com",
     "upgradeNotes": "18\"x27\" Rect",
     "notes": "Imported payment info: class cost: 245.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2013-09-14"
@@ -13852,6 +15094,7 @@ module.exports =
     "customerId": 2624,
     "firstName": "Victoria",
     "lastName": "Paradis",
+    "email": "vpar4219@yahoo.com",
     "discountPercent": 20,
     "notes": "Imported payment info: class cost: 245.\nClass #7 for this student, per source sheet.",
     "enrolledOn": "2013-09-14"
@@ -13863,6 +15106,7 @@ module.exports =
     "customerId": 627,
     "firstName": "Deborah",
     "lastName": "Price",
+    "email": "deborahprice@msn.com",
     "upgradeNotes": "18\"x27\" Rect",
     "notes": "Imported payment info: class cost: 245.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2013-09-14"
@@ -13874,6 +15118,7 @@ module.exports =
     "customerId": 788,
     "firstName": "Emily",
     "lastName": "Fox",
+    "email": "emilytfox@gmail.com",
     "upgradeNotes": "24\" Round",
     "notes": "Imported payment info: class cost: 245.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2013-09-14"
@@ -13885,6 +15130,7 @@ module.exports =
     "customerId": 386,
     "firstName": "Casey",
     "lastName": "Shelley",
+    "email": "cajeshel@gmail.com",
     "notes": "Imported payment info: class cost: 245.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2013-09-14"
   },
@@ -13895,6 +15141,7 @@ module.exports =
     "customerId": 1087,
     "firstName": "Jennifer",
     "lastName": "Pomeroy",
+    "email": "pompom4@msn.com",
     "upgradeNotes": "18\"x22\" Oval",
     "notes": "Imported payment info: class cost: 245.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2013-09-14"
@@ -13906,6 +15153,7 @@ module.exports =
     "customerId": 1584,
     "firstName": "Lisette",
     "lastName": "Scabar",
+    "email": "lisette@lizzyleeandme.com",
     "notes": "Imported payment info: class cost: 245.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2013-09-14"
   },
@@ -13916,6 +15164,7 @@ module.exports =
     "customerId": 1741,
     "firstName": "Marsha",
     "lastName": "Hudson",
+    "email": "marsha@griffyn.us",
     "discountPercent": 20,
     "upgradeNotes": "22\"x28\" Oval",
     "notes": "Imported payment info: class cost: 245.\nClass #8 for this student, per source sheet.",
@@ -13928,6 +15177,7 @@ module.exports =
     "customerId": 1635,
     "firstName": "Lucy",
     "lastName": "Brown",
+    "email": "lucybrown1@me.com",
     "upgradeNotes": "22\"x28\" Oval",
     "notes": "Imported payment info: class cost: 245.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2013-09-14"
@@ -13939,6 +15189,7 @@ module.exports =
     "customerId": 1193,
     "firstName": "Julia",
     "lastName": "Goltz",
+    "email": "golartz@cet.com",
     "notes": "Imported payment info: class cost: 245.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2013-09-14"
   },
@@ -13949,6 +15200,7 @@ module.exports =
     "customerId": 2624,
     "firstName": "Victoria",
     "lastName": "Paradis",
+    "email": "vpar4219@yahoo.com",
     "discountPercent": 20,
     "notes": "Imported payment info: class cost: ???.\nClass #6 for this student, per source sheet.",
     "enrolledOn": "2013-06-29"
@@ -13959,6 +15211,7 @@ module.exports =
     "status": "completed",
     "firstName": "Anne",
     "lastName": "Ryan",
+    "email": "anne.ryan@swedish.org",
     "discountPercent": 20,
     "notes": "Imported payment info: class cost: ???.\nClass #6 for this student, per source sheet.",
     "enrolledOn": "2013-06-29"
@@ -13970,6 +15223,7 @@ module.exports =
     "customerId": 1741,
     "firstName": "Marsha",
     "lastName": "Hudson",
+    "email": "marsha@griffyn.us",
     "discountPercent": 20,
     "notes": "Imported payment info: class cost: ???.\nClass #7 for this student, per source sheet.",
     "enrolledOn": "2013-06-29"
@@ -13980,6 +15234,7 @@ module.exports =
     "status": "completed",
     "firstName": "Rhonda",
     "lastName": "Milam",
+    "email": "cnsd_ccrn@yahoo.com",
     "notes": "Imported payment info: paid 1: 80 on 5/5/13, class cost: 165.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2013-05-05"
   },
@@ -13990,6 +15245,7 @@ module.exports =
     "customerId": 2446,
     "firstName": "Susan",
     "lastName": "Dennis",
+    "email": "susandennis@gmail.com",
     "notes": "Imported payment info: class cost: 165.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2013-05-18"
   },
@@ -14000,6 +15256,7 @@ module.exports =
     "customerId": 1245,
     "firstName": "Karen",
     "lastName": "DeVoe",
+    "email": "kdevoe@comcast.net",
     "notes": "Imported payment info: class cost: 165.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2013-05-18"
   },
@@ -14010,6 +15267,7 @@ module.exports =
     "customerId": 961,
     "firstName": "Jackie",
     "lastName": "Bailey",
+    "email": "jtbaileyfleur@msn.com",
     "notes": "Imported payment info: class cost: 165.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2013-05-18"
   },
@@ -14020,6 +15278,7 @@ module.exports =
     "customerId": 1899,
     "firstName": "Monica",
     "lastName": "Cassidy",
+    "email": "monicac@longpainting.com",
     "notes": "Imported payment info: class cost: 165.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2013-05-18"
   },
@@ -14030,6 +15289,7 @@ module.exports =
     "customerId": 547,
     "firstName": "Dana",
     "lastName": "Chiles",
+    "email": "cranberrycrow2@yahoo.com",
     "notes": "Imported payment info: class cost: 165.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2013-04-27"
   },
@@ -14040,6 +15300,7 @@ module.exports =
     "customerId": 611,
     "firstName": "Debby",
     "lastName": "Williamson",
+    "email": "fabulousskinnow@gmail.com",
     "notes": "Imported payment info: class cost: 165.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2013-04-27"
   },
@@ -14050,6 +15311,7 @@ module.exports =
     "customerId": 1183,
     "firstName": "Judy",
     "lastName": "Morgan",
+    "email": "modernj@mindspring.com",
     "notes": "Imported payment info: class cost: 165.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2013-04-27"
   },
@@ -14060,6 +15322,7 @@ module.exports =
     "customerId": 791,
     "firstName": "Emily",
     "lastName": "Hickman",
+    "email": "ehickmandesigns@hotmail.com",
     "notes": "Imported payment info: class cost: 165.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2013-04-27"
   },
@@ -14070,6 +15333,7 @@ module.exports =
     "customerId": 642,
     "firstName": "Delette",
     "lastName": "Lofstrom",
+    "email": "dee.lofstrom@gmail.com",
     "notes": "Imported payment info: class cost: 165.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2013-04-27"
   },
@@ -14080,6 +15344,7 @@ module.exports =
     "customerId": 1122,
     "firstName": "Jill",
     "lastName": "Walser",
+    "email": "jillmail@gmail.com",
     "notes": "Imported payment info: paid 1: 80 on 2/1/13, class cost: 165.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2013-02-01"
   },
@@ -14090,6 +15355,7 @@ module.exports =
     "customerId": 1562,
     "firstName": "Lisa",
     "lastName": "Gould",
+    "email": "twogoulds@comcast.net",
     "notes": "Imported payment info: class cost: 165.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2013-04-27"
   },
@@ -14100,6 +15366,7 @@ module.exports =
     "customerId": 1562,
     "firstName": "Mark",
     "lastName": "Gould",
+    "email": "twogoulds@comcast.net",
     "notes": "Imported payment info: class cost: 165.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2013-04-27"
   },
@@ -14110,6 +15377,7 @@ module.exports =
     "customerId": 2626,
     "firstName": "Vicki",
     "lastName": "Thompson",
+    "email": "vicki@il-rifugio.com",
     "discountPercent": 20,
     "notes": "Imported payment info: class cost: ???.\nClass #6 for this student, per source sheet.",
     "enrolledOn": "2013-03-09"
@@ -14121,6 +15389,7 @@ module.exports =
     "customerId": 1741,
     "firstName": "Marsha",
     "lastName": "Hudson",
+    "email": "marsha@griffyn.us",
     "discountPercent": 20,
     "notes": "Imported payment info: class cost: ???.\nClass #6 for this student, per source sheet.",
     "enrolledOn": "2013-03-09"
@@ -14132,6 +15401,7 @@ module.exports =
     "customerId": 2236,
     "firstName": "Sam",
     "lastName": "Christensen",
+    "email": "sam.chris@comcast.net",
     "discountPercent": 20,
     "notes": "Imported payment info: class cost: ???.\nClass #5 for this student, per source sheet.",
     "enrolledOn": "2013-03-09"
@@ -14143,6 +15413,7 @@ module.exports =
     "customerId": 2146,
     "firstName": "Rebecca",
     "lastName": "Olin",
+    "email": "rebecca_olin@hotmail.com",
     "discountPercent": 20,
     "notes": "Imported payment info: class cost: ???.\nClass #10 for this student, per source sheet.",
     "enrolledOn": "2013-03-09"
@@ -14154,6 +15425,7 @@ module.exports =
     "customerId": 1782,
     "firstName": "Mary",
     "lastName": "Olin",
+    "email": "kmrolin@aol.com",
     "discountPercent": 20,
     "notes": "Imported payment info: class cost: ???.\nClass #9 for this student, per source sheet.",
     "enrolledOn": "2013-03-09"
@@ -14164,6 +15436,7 @@ module.exports =
     "status": "completed",
     "firstName": "Anne",
     "lastName": "Ryan",
+    "email": "anne.ryan@swedish.org",
     "discountPercent": 20,
     "notes": "Imported payment info: class cost: ???.\nClass #5 for this student, per source sheet.",
     "enrolledOn": "2013-03-09"
@@ -14175,6 +15448,7 @@ module.exports =
     "customerId": 917,
     "firstName": "Heidi",
     "lastName": "Horwitz",
+    "email": "heidihorwitz@comcast.net",
     "upgradeNotes": "18\"x22\" Oval",
     "notes": "Imported payment info: class cost: 185.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2013-02-23"
@@ -14195,6 +15469,7 @@ module.exports =
     "customerId": 1311,
     "firstName": "Kathy",
     "lastName": "Goodman",
+    "email": "kmzgoodman@gmail.com",
     "notes": "Imported payment info: class cost: 185.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2013-02-23"
   },
@@ -14214,6 +15489,7 @@ module.exports =
     "customerId": 1960,
     "firstName": "Nicki",
     "lastName": "Thomaier",
+    "email": "dannickithomaier@hotmail.com",
     "notes": "Imported payment info: class cost: 185.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2013-02-23"
   },
@@ -14224,6 +15500,7 @@ module.exports =
     "customerId": 1068,
     "firstName": "Jennifer",
     "lastName": "Burke",
+    "email": "jb.snowfish@gmail.com",
     "upgradeNotes": "18\"x22\" Oval",
     "notes": "Imported payment info: class cost: 185.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2013-02-23"
@@ -14235,6 +15512,7 @@ module.exports =
     "customerId": 2297,
     "firstName": "Shannon",
     "lastName": "Claeson",
+    "email": "shannon@collbett.org",
     "upgradeNotes": "18\"x22\" Oval",
     "notes": "Imported payment info: class cost: 185.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2013-02-23"
@@ -14246,6 +15524,7 @@ module.exports =
     "customerId": 532,
     "firstName": "Cynthia",
     "lastName": "Meyer",
+    "email": "cynthia221@hotmail.com",
     "upgradeNotes": "24\" Round",
     "notes": "Imported payment info: class cost: 185.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2013-02-23"
@@ -14257,6 +15536,7 @@ module.exports =
     "customerId": 2626,
     "firstName": "Vicki",
     "lastName": "Thompson",
+    "email": "vicki@il-rifugio.com",
     "discountPercent": 20,
     "notes": "Imported payment info: class cost: 185.\nClass #5 for this student, per source sheet.",
     "enrolledOn": "2013-01-26"
@@ -14268,6 +15548,7 @@ module.exports =
     "customerId": 1234,
     "firstName": "Kalindi",
     "lastName": "Thompson",
+    "email": "kalindi.thompson@gmail.com",
     "notes": "Imported payment info: class cost: 185.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2013-01-26"
   },
@@ -14278,6 +15559,7 @@ module.exports =
     "customerId": 2236,
     "firstName": "Sam",
     "lastName": "Christensen",
+    "email": "sam.chris@comcast.net",
     "discountPercent": 20,
     "notes": "Imported payment info: class cost: 185.\nClass #4 for this student, per source sheet.",
     "enrolledOn": "2013-01-26"
@@ -14289,6 +15571,7 @@ module.exports =
     "customerId": 1232,
     "firstName": "Anne",
     "lastName": "Ryan",
+    "email": "speldale@aol.com",
     "discountPercent": 20,
     "notes": "Imported payment info: paid 1: 80 on 12/9/12, class cost: 185.\nClass #4 for this student, per source sheet.",
     "enrolledOn": "2012-12-09"
@@ -14300,6 +15583,7 @@ module.exports =
     "customerId": 1077,
     "firstName": "Jennifer",
     "lastName": "Graham",
+    "email": "jenng159@gmail.com",
     "notes": "Imported payment info: paid 1: 80 on 11/25/12, class cost: 185.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2012-11-25"
   },
@@ -14310,6 +15594,7 @@ module.exports =
     "customerId": 1011,
     "firstName": "Jane",
     "lastName": "Swanson",
+    "email": "jane.swanson@costcotravel.com",
     "notes": "Imported payment info: class cost: 185.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2013-01-26"
   },
@@ -14320,6 +15605,7 @@ module.exports =
     "customerId": 1741,
     "firstName": "Marsha",
     "lastName": "Hudson",
+    "email": "marsha@griffyn.us",
     "discountPercent": 20,
     "notes": "Imported payment info: class cost: 185.\nClass #5 for this student, per source sheet.",
     "enrolledOn": "2013-01-26"
@@ -14340,6 +15626,7 @@ module.exports =
     "customerId": 2626,
     "firstName": "Vicki",
     "lastName": "Thompson",
+    "email": "vicki@il-rifugio.com",
     "discountPercent": 20,
     "notes": "Imported payment info: class cost: 80.\nClass #4 for this student, per source sheet.",
     "enrolledOn": "2012-12-08"
@@ -14351,6 +15638,7 @@ module.exports =
     "customerId": 707,
     "firstName": "Donna",
     "lastName": "Smith",
+    "email": "smithdonna61@gmail.com",
     "notes": "Imported payment info: class cost: 80.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2012-12-08"
   },
@@ -14361,6 +15649,7 @@ module.exports =
     "customerId": 2236,
     "firstName": "Sam",
     "lastName": "Christensen",
+    "email": "sam.chris@comcast.net",
     "notes": "Imported payment info: paid 1: 80 on 9/25/12, class cost: 80.\nClass #3 for this student, per source sheet.",
     "enrolledOn": "2012-09-25"
   },
@@ -14370,6 +15659,7 @@ module.exports =
     "status": "completed",
     "firstName": "Anne",
     "lastName": "Ryan",
+    "email": "anne.ryan@swedish.org",
     "notes": "Imported payment info: class cost: 80.\nClass #3 for this student, per source sheet.",
     "enrolledOn": "2012-12-08"
   },
@@ -14380,6 +15670,7 @@ module.exports =
     "customerId": 1289,
     "firstName": "Kasey",
     "lastName": "Johnson",
+    "email": "carson82403@hotmail.com",
     "notes": "Imported payment info: paid 1: 80 on 8/29/12, class cost: 80.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2012-08-29"
   },
@@ -14390,6 +15681,7 @@ module.exports =
     "customerId": 2131,
     "firstName": "Randi",
     "lastName": "Barrett",
+    "email": "rbarrettrn@gmail.com",
     "notes": "Imported payment info: class cost: 80.\nClass #3 for this student, per source sheet.",
     "enrolledOn": "2012-12-08"
   },
@@ -14400,6 +15692,7 @@ module.exports =
     "customerId": 67,
     "firstName": "Aiko",
     "lastName": "Vail",
+    "email": "aiko.vail@hotmail.com",
     "notes": "Imported payment info: class cost: 80.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2012-12-08"
   },
@@ -14410,6 +15703,7 @@ module.exports =
     "customerId": 2048,
     "firstName": "Patty",
     "lastName": "Roberts",
+    "email": "lpr3@earthlink.net",
     "notes": "Imported payment info: class cost: 80.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2012-11-17"
   },
@@ -14420,6 +15714,7 @@ module.exports =
     "customerId": 2626,
     "firstName": "Vicki",
     "lastName": "Thompson",
+    "email": "vicki@il-rifugio.com",
     "notes": "Imported payment info: class cost: 80.\nClass #3 for this student, per source sheet.",
     "enrolledOn": "2012-11-17"
   },
@@ -14430,6 +15725,7 @@ module.exports =
     "customerId": 1550,
     "firstName": "Lindsey",
     "lastName": "Burgess",
+    "email": "lindsey411@gmail.com",
     "notes": "Imported payment info: class cost: 80.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2012-11-17"
   },
@@ -14458,6 +15754,7 @@ module.exports =
     "customerId": 2614,
     "firstName": "Uzma",
     "lastName": "Siddiqi",
+    "email": "uzma@mcsid.com",
     "discountPercent": 20,
     "notes": "Imported payment info: class cost: 80.\nClass #4 for this student, per source sheet.",
     "enrolledOn": "2012-11-17"
@@ -14468,6 +15765,7 @@ module.exports =
     "status": "completed",
     "firstName": "Betsy",
     "lastName": "Nilson",
+    "email": "bknilson1@hotmail.com",
     "notes": "Imported payment info: paid 1: 80 on 9/24/12, class cost: 80.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2012-09-24"
   },
@@ -14478,6 +15776,7 @@ module.exports =
     "customerId": 1679,
     "firstName": "Marcella",
     "lastName": "Pascualy",
+    "email": "pascualy@comcast.net",
     "notes": "Imported payment info: class cost: 80.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2012-11-10"
   },
@@ -14488,6 +15787,7 @@ module.exports =
     "customerId": 1013,
     "firstName": "Jane",
     "lastName": "Tiffany",
+    "email": "jytiffany@aol.com",
     "notes": "Imported payment info: paid 1: 80 on 7/24/12, class cost: 80.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2012-07-24"
   },
@@ -14498,6 +15798,7 @@ module.exports =
     "customerId": 2043,
     "firstName": "Patty",
     "lastName": "Buckingham",
+    "email": "pjeng@blarg.net",
     "notes": "Imported payment info: class cost: 80.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2012-11-10"
   },
@@ -14508,6 +15809,7 @@ module.exports =
     "customerId": 441,
     "firstName": "Chrissie",
     "lastName": "Diller",
+    "email": "chrissie.diller@gmail.com",
     "discountPercent": 20,
     "notes": "Imported payment info: class cost: 80.\nClass #4 for this student, per source sheet.",
     "enrolledOn": "2012-11-10"
@@ -14519,6 +15821,7 @@ module.exports =
     "customerId": 2358,
     "firstName": "Sheryl",
     "lastName": "Winskill",
+    "email": "sywinskill@gmail.com",
     "notes": "Imported payment info: paid 1: 80 on 5/9/12, class cost: 80.\nClass #3 for this student, per source sheet.",
     "enrolledOn": "2012-05-09"
   },
@@ -14529,6 +15832,7 @@ module.exports =
     "customerId": 737,
     "firstName": "Eileen",
     "lastName": "Collen",
+    "email": "glenetc@comcast.net",
     "notes": "Imported payment info: class cost: 80.\nClass #3 for this student, per source sheet.",
     "enrolledOn": "2012-11-10"
   },
@@ -14539,6 +15843,7 @@ module.exports =
     "customerId": 1254,
     "firstName": "Karen",
     "lastName": "Harley",
+    "email": "itskmh@comcast.net",
     "notes": "Imported payment info: class cost: 80.\nClass #3 for this student, per source sheet.",
     "enrolledOn": "2012-11-10"
   },
@@ -14549,6 +15854,7 @@ module.exports =
     "customerId": 664,
     "firstName": "Diane",
     "lastName": "Davis",
+    "email": "dianendavis@hotmail.com",
     "notes": "Imported payment info: class cost: 80.\nClass #3 for this student, per source sheet.",
     "enrolledOn": "2012-11-10"
   },
@@ -14559,6 +15865,7 @@ module.exports =
     "customerId": 1579,
     "firstName": "Lisa",
     "lastName": "Stillman",
+    "email": "stillmanlisa@aol.com",
     "notes": "Imported payment info: class cost: 160.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2012-10-27"
   },
@@ -14569,6 +15876,7 @@ module.exports =
     "customerId": 2194,
     "firstName": "Robin",
     "lastName": "Bystrak-Thome",
+    "email": "thomefam@comcast.net",
     "notes": "Imported payment info: class cost: 160.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2012-10-27"
   },
@@ -14579,6 +15887,7 @@ module.exports =
     "customerId": 1012,
     "firstName": "Jane",
     "lastName": "Swanson",
+    "email": "jane.swanson@me.com",
     "upgradeNotes": "18\"x22\" Oval",
     "notes": "Imported payment info: paid 1: 160 on 7/28/12, class cost: 160, upgrade/AlC incl. tax: 80.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2012-07-28"
@@ -14590,6 +15899,7 @@ module.exports =
     "customerId": 1741,
     "firstName": "Marsha",
     "lastName": "Hudson",
+    "email": "marsha@griffyn.us",
     "discountPercent": 20,
     "notes": "Imported payment info: class cost: 160.\nClass #4 for this student, per source sheet.",
     "enrolledOn": "2012-10-27"
@@ -14601,6 +15911,7 @@ module.exports =
     "customerId": 1588,
     "firstName": "Liz",
     "lastName": "Bethune",
+    "email": "e.bethune@comcast.net",
     "notes": "Imported payment info: class cost: 160.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2012-10-27"
   },
@@ -14611,6 +15922,7 @@ module.exports =
     "customerId": 1696,
     "firstName": "Margaret",
     "lastName": "Law",
+    "email": "mtlseattle@gmail.com",
     "notes": "Imported payment info: paid 1: 80 on 4/25/12, class cost: 160.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2012-04-25"
   },
@@ -14621,6 +15933,7 @@ module.exports =
     "customerId": 951,
     "firstName": "Iris",
     "lastName": "Martin",
+    "email": "irisnsofie@yahoo.com",
     "notes": "Imported payment info: class cost: 80.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2012-10-13"
   },
@@ -14631,6 +15944,7 @@ module.exports =
     "customerId": 756,
     "firstName": "Elizabeth",
     "lastName": "Midwinter",
+    "email": "emidwinter@aol.com",
     "notes": "Imported payment info: paid 1: 80 on 8/6/12, class cost: 80.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2012-08-06"
   },
@@ -14641,6 +15955,7 @@ module.exports =
     "customerId": 2624,
     "firstName": "Victoria",
     "lastName": "Paradis",
+    "email": "vpar4219@yahoo.com",
     "discountPercent": 20,
     "notes": "Imported payment info: class cost: 80.\nClass #5 for this student, per source sheet.",
     "enrolledOn": "2012-10-13"
@@ -14652,6 +15967,7 @@ module.exports =
     "customerId": 1782,
     "firstName": "Mary",
     "lastName": "Olin",
+    "email": "kmrolin@aol.com",
     "discountPercent": 20,
     "notes": "Imported payment info: class cost: 80.\nClass #8 for this student, per source sheet.",
     "enrolledOn": "2012-10-13"
@@ -14663,6 +15979,7 @@ module.exports =
     "customerId": 2146,
     "firstName": "Rebecca",
     "lastName": "Olin",
+    "email": "rebecca_olin@hotmail.com",
     "discountPercent": 20,
     "notes": "Imported payment info: class cost: 80.\nClass #9 for this student, per source sheet.",
     "enrolledOn": "2012-10-13"
@@ -14674,6 +15991,7 @@ module.exports =
     "customerId": 2614,
     "firstName": "Uzma",
     "lastName": "Siddiqi",
+    "email": "uzma@mcsid.com",
     "notes": "Imported payment info: class cost: 165.\nClass #3 for this student, per source sheet.",
     "enrolledOn": "2012-09-22"
   },
@@ -14684,6 +16002,7 @@ module.exports =
     "customerId": 987,
     "firstName": "Jamie",
     "lastName": "Davis",
+    "email": "jaimedavis2007@cox.net",
     "notes": "Imported payment info: class cost: 165.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2012-09-22"
   },
@@ -14694,6 +16013,7 @@ module.exports =
     "customerId": 1550,
     "firstName": "Lindsey",
     "lastName": "Burgess",
+    "email": "lindsey411@gmail.com",
     "notes": "Imported payment info: class cost: 165.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2012-09-22"
   },
@@ -14703,6 +16023,7 @@ module.exports =
     "status": "completed",
     "firstName": "Betsy",
     "lastName": "Nilson",
+    "email": "bknilson1@hotmail.com",
     "notes": "Imported payment info: class cost: 165.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2012-09-22"
   },
@@ -14713,6 +16034,7 @@ module.exports =
     "customerId": 2449,
     "firstName": "Susan",
     "lastName": "Engman",
+    "email": "susanmengman@comcast.net",
     "notes": "Imported payment info: class cost: 165.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2012-09-22"
   },
@@ -14723,6 +16045,7 @@ module.exports =
     "customerId": 2107,
     "firstName": "Priscilla",
     "lastName": "Wiltshire-Bland",
+    "email": "priscillawiltshire@gmail.com",
     "notes": "Imported payment info: class cost: 165.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2012-09-22"
   },
@@ -14733,6 +16056,7 @@ module.exports =
     "customerId": 967,
     "firstName": "Jaclynn",
     "lastName": "Beltz",
+    "email": "jaclynnbeltz@comcast.net",
     "notes": "Imported payment info: class cost: 165.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2012-09-22"
   },
@@ -14743,6 +16067,7 @@ module.exports =
     "customerId": 460,
     "firstName": "Christy",
     "lastName": "Jones",
+    "email": "jones@jaredandchristy.com",
     "notes": "Imported payment info: class cost: 165.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2012-05-19"
   },
@@ -14753,6 +16078,7 @@ module.exports =
     "customerId": 1303,
     "firstName": "Kathleen",
     "lastName": "Appleyard",
+    "email": "kappleyard20612@comcast.net",
     "notes": "Imported payment info: paid 1: 165 on 5/1/12, class cost: 165.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2012-05-01"
   },
@@ -14763,6 +16089,7 @@ module.exports =
     "customerId": 2624,
     "firstName": "Victoria",
     "lastName": "Paradis",
+    "email": "vpar4219@yahoo.com",
     "discountPercent": 20,
     "notes": "Imported payment info: class cost: 165.\nClass #4 for this student, per source sheet.",
     "enrolledOn": "2012-05-19"
@@ -14774,6 +16101,7 @@ module.exports =
     "customerId": 1710,
     "firstName": "Maria",
     "lastName": "Berardo",
+    "email": "berardomi@hotmail.com",
     "notes": "Imported payment info: class cost: 165.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2012-05-19"
   },
@@ -14784,6 +16112,7 @@ module.exports =
     "customerId": 1948,
     "firstName": "Natalie",
     "lastName": "Dalrymple",
+    "email": "glassart1@yahoo.com",
     "notes": "Imported payment info: class cost: 165.\nClass #3 for this student, per source sheet.",
     "enrolledOn": "2012-05-19"
   },
@@ -14794,6 +16123,7 @@ module.exports =
     "customerId": 762,
     "firstName": "Elizabeth",
     "lastName": "Sanders",
+    "email": "elizsanders@yahoo.com",
     "notes": "Imported payment info: class cost: 165.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2012-05-19"
   },
@@ -14804,6 +16134,7 @@ module.exports =
     "customerId": 2158,
     "firstName": "Renuka",
     "lastName": "Gretchell",
+    "email": "renukakg@gmail.com",
     "notes": "Imported payment info: class cost: 165.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2012-05-19"
   },
@@ -14814,6 +16145,7 @@ module.exports =
     "customerId": 1527,
     "firstName": "Linda",
     "lastName": "Giddens",
+    "email": "lindagiddens30@gmail.com",
     "notes": "Imported payment info: class cost: 165.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2012-04-14"
   },
@@ -14824,6 +16156,7 @@ module.exports =
     "customerId": 1383,
     "firstName": "Kim",
     "lastName": "Trulson",
+    "email": "kimtrulson@comcast.net",
     "notes": "Imported payment info: class cost: 165.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2012-04-14"
   },
@@ -14834,6 +16167,7 @@ module.exports =
     "customerId": 626,
     "firstName": "Deborah",
     "lastName": "Mazza",
+    "email": "Debbie@mazzafamily.com",
     "notes": "Imported payment info: class cost: 165.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2012-04-14"
   },
@@ -14844,6 +16178,7 @@ module.exports =
     "customerId": 249,
     "firstName": "Barbara",
     "lastName": "Lickiss",
+    "email": "wild_4ever@comcast.net",
     "notes": "Imported payment info: class cost: 165.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2012-04-14"
   },
@@ -14854,6 +16189,7 @@ module.exports =
     "customerId": 1273,
     "firstName": "Karen",
     "lastName": "Wickstrom",
+    "email": "karen.wickstrom@gmail.com",
     "notes": "Imported payment info: paid 1: 80 on 2/13/12, class cost: 165.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2012-02-13"
   },
@@ -14873,6 +16209,7 @@ module.exports =
     "customerId": 2626,
     "firstName": "Vicki",
     "lastName": "Thompson",
+    "email": "vicki@il-rifugio.com",
     "notes": "Imported payment info: class cost: 165.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2012-04-14"
   },
@@ -14883,6 +16220,7 @@ module.exports =
     "customerId": 1842,
     "firstName": "Melody",
     "lastName": "Payne",
+    "email": "manderso@fhcrc.org",
     "notes": "Imported payment info: class cost: 165.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2012-03-24"
   },
@@ -14893,6 +16231,7 @@ module.exports =
     "customerId": 2551,
     "firstName": "Teryl",
     "lastName": "Payne",
+    "email": "melodyandmarcus@hotmail.com",
     "notes": "Imported payment info: class cost: 165.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2012-03-24"
   },
@@ -14903,6 +16242,7 @@ module.exports =
     "customerId": 1211,
     "firstName": "Julie",
     "lastName": "Kim",
+    "email": "jkimbriggs@hotmail.com",
     "notes": "Imported payment info: class cost: 165.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2012-03-24"
   },
@@ -14913,6 +16253,7 @@ module.exports =
     "customerId": 767,
     "firstName": "Elizabeth",
     "lastName": "Verger",
+    "email": "la_elizabetta@yahoo.it",
     "notes": "Imported payment info: class cost: 165.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2012-03-24"
   },
@@ -14923,6 +16264,7 @@ module.exports =
     "customerId": 1741,
     "firstName": "Marsha",
     "lastName": "Hudson",
+    "email": "marsha@griffyn.us",
     "notes": "Imported payment info: class cost: 165.\nClass #3 for this student, per source sheet.",
     "enrolledOn": "2012-03-24"
   },
@@ -14933,6 +16275,7 @@ module.exports =
     "customerId": 1710,
     "firstName": "Maria",
     "lastName": "Berardo",
+    "email": "berardomi@hotmail.com",
     "notes": "Imported payment info: class cost: 165.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2012-03-24"
   },
@@ -14943,6 +16286,7 @@ module.exports =
     "customerId": 2242,
     "firstName": "Sandie",
     "lastName": "Young",
+    "email": "sandieyoung@gmail.com",
     "notes": "Imported payment info: class cost: 165.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2012-03-24"
   },
@@ -14953,6 +16297,7 @@ module.exports =
     "customerId": 1782,
     "firstName": "Mary",
     "lastName": "Olin",
+    "email": "kmrolin@aol.com",
     "discountPercent": 20,
     "notes": "Imported payment info: class cost: 165.\nClass #7 for this student, per source sheet.",
     "enrolledOn": "2012-03-03"
@@ -14964,6 +16309,7 @@ module.exports =
     "customerId": 2146,
     "firstName": "Rebecca",
     "lastName": "Olin",
+    "email": "rebecca_olin@hotmail.com",
     "discountPercent": 20,
     "notes": "Imported payment info: class cost: 165.\nClass #8 for this student, per source sheet.",
     "enrolledOn": "2012-03-03"
@@ -14975,6 +16321,7 @@ module.exports =
     "customerId": 1499,
     "firstName": "Leslie",
     "lastName": "Van Wassenhove",
+    "email": "lchu03@yahoo.com",
     "notes": "Imported payment info: class cost: 165.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2012-03-03"
   },
@@ -14985,6 +16332,7 @@ module.exports =
     "customerId": 2624,
     "firstName": "Victoria",
     "lastName": "Paradis",
+    "email": "vpar4219@yahoo.com",
     "notes": "Imported payment info: class cost: 165.\nClass #3 for this student, per source sheet.",
     "enrolledOn": "2012-03-03"
   },
@@ -14995,6 +16343,7 @@ module.exports =
     "customerId": 270,
     "firstName": "Elizabeth",
     "lastName": "Anderson",
+    "email": "mindzeyefusedglass@comcast.net",
     "notes": "Imported payment info: class cost: 165.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2012-03-03"
   },
@@ -15005,6 +16354,7 @@ module.exports =
     "customerId": 172,
     "firstName": "Ann",
     "lastName": "Kading",
+    "email": "kakading@comcast.net",
     "notes": "Imported payment info: class cost: 165.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2012-03-03"
   },
@@ -15015,6 +16365,7 @@ module.exports =
     "customerId": 2131,
     "firstName": "Randi",
     "lastName": "Barrett",
+    "email": "rbarrettrn@gmail.com",
     "notes": "Imported payment info: class cost: 165.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2012-03-03"
   },
@@ -15025,6 +16376,7 @@ module.exports =
     "customerId": 140,
     "firstName": "Andrea",
     "lastName": "Hunter",
+    "email": "AndreaHunter@bellsouth.net",
     "notes": "Imported payment info: class cost: 165.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2012-02-11"
   },
@@ -15035,6 +16387,7 @@ module.exports =
     "customerId": 1413,
     "firstName": "Kristi",
     "lastName": "Holliman",
+    "email": "kholliman@xsp.com",
     "notes": "Imported payment info: class cost: 165.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2012-02-11"
   },
@@ -15045,6 +16398,7 @@ module.exports =
     "customerId": 249,
     "firstName": "Barbara",
     "lastName": "Lickiss",
+    "email": "wild_4ever@comcast.net",
     "notes": "Imported payment info: class cost: 165.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2012-02-11"
   },
@@ -15055,6 +16409,7 @@ module.exports =
     "customerId": 1273,
     "firstName": "Karen",
     "lastName": "Wickstrom",
+    "email": "karen.wickstrom@gmail.com",
     "notes": "Imported payment info: class cost: 165.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2012-02-11"
   },
@@ -15065,6 +16420,7 @@ module.exports =
     "customerId": 1747,
     "firstName": "Martha",
     "lastName": "Gizinski",
+    "email": "mgski@gizinski.net",
     "notes": "Imported payment info: class cost: 165.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2012-02-11"
   },
@@ -15075,6 +16431,7 @@ module.exports =
     "customerId": 1765,
     "firstName": "Mary",
     "lastName": "Gizinski",
+    "email": "mkgizinski@msn.com",
     "notes": "Imported payment info: class cost: 165.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2012-02-11"
   },
@@ -15084,6 +16441,7 @@ module.exports =
     "status": "completed",
     "firstName": "Cynthia",
     "lastName": "Meyer",
+    "email": "cynthiameyer@atblaw.net",
     "notes": "Imported payment info: class cost: 165.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2012-02-11"
   },
@@ -15094,6 +16452,7 @@ module.exports =
     "customerId": 2624,
     "firstName": "Victoria",
     "lastName": "Paradis",
+    "email": "vpar4219@yahoo.com",
     "notes": "Imported payment info: class cost: 165.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2012-02-11"
   },
@@ -15104,6 +16463,7 @@ module.exports =
     "customerId": 478,
     "firstName": "Claire",
     "lastName": "Dillion",
+    "email": "cdillon@hackergroup.com",
     "notes": "Imported payment info: class cost: 50.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2011-11-12"
   },
@@ -15114,6 +16474,7 @@ module.exports =
     "customerId": 2626,
     "firstName": "Vicki",
     "lastName": "Thompson",
+    "email": "vicki@il-rifugio.com",
     "notes": "Imported payment info: class cost: 50.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2011-11-12"
   },
@@ -15123,6 +16484,7 @@ module.exports =
     "status": "completed",
     "firstName": "Ivonne",
     "lastName": "Bandy",
+    "email": "miebandauli@comcast.net",
     "notes": "Imported payment info: class cost: 50.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2011-11-12"
   },
@@ -15133,6 +16495,7 @@ module.exports =
     "customerId": 1741,
     "firstName": "Marsha",
     "lastName": "Hudson",
+    "email": "marsha@griffyn.us",
     "notes": "Imported payment info: class cost: 50.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2011-11-12"
   },
@@ -15143,6 +16506,7 @@ module.exports =
     "customerId": 280,
     "firstName": "Betty",
     "lastName": "Poffenbarger",
+    "email": "milo@wavecable.com",
     "notes": "Imported payment info: class cost: 50.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2011-11-12"
   },
@@ -15153,6 +16517,7 @@ module.exports =
     "customerId": 123,
     "firstName": "Amy",
     "lastName": "Poffenbarger",
+    "email": "amy_poff@comcast.net",
     "notes": "Imported payment info: class cost: 50.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2011-11-12"
   },
@@ -15172,6 +16537,7 @@ module.exports =
     "customerId": 2614,
     "firstName": "Uzma",
     "lastName": "Siddiqi",
+    "email": "uzma@mcsid.com",
     "notes": "Imported payment info: class cost: 50.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2011-11-12"
   },
@@ -15182,6 +16548,7 @@ module.exports =
     "customerId": 1782,
     "firstName": "Mary",
     "lastName": "Olin",
+    "email": "kmrolin@aol.com",
     "discountPercent": 20,
     "notes": "Imported payment info: class cost: 50.\nClass #6 for this student, per source sheet.",
     "enrolledOn": "2011-11-11"
@@ -15193,6 +16560,7 @@ module.exports =
     "customerId": 2146,
     "firstName": "Rebecca",
     "lastName": "Olin",
+    "email": "rebecca_olin@hotmail.com",
     "discountPercent": 20,
     "notes": "Imported payment info: class cost: 50.\nClass #7 for this student, per source sheet.",
     "enrolledOn": "2011-11-11"
@@ -15204,6 +16572,7 @@ module.exports =
     "customerId": 441,
     "firstName": "Chrissie",
     "lastName": "Diller",
+    "email": "chrissie.diller@gmail.com",
     "notes": "Imported payment info: class cost: 50.\nClass #3 for this student, per source sheet.",
     "enrolledOn": "2011-11-11"
   },
@@ -15223,6 +16592,7 @@ module.exports =
     "customerId": 1812,
     "firstName": "Maureen",
     "lastName": "Seeley",
+    "email": "maureens@gmail.com",
     "notes": "Imported payment info: class cost: 50.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2011-11-11"
   },
@@ -15233,6 +16603,7 @@ module.exports =
     "customerId": 1834,
     "firstName": "Melissa",
     "lastName": "Armstrong",
+    "email": "mbarmstrong4@yahoo.com",
     "notes": "Imported payment info: class cost: 50.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2011-10-15"
   },
@@ -15243,6 +16614,7 @@ module.exports =
     "customerId": 1457,
     "firstName": "Lauren",
     "lastName": "Gray",
+    "email": "Lgray@belluvueinsurancegroup.com",
     "notes": "Imported payment info: class cost: 50.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2011-10-15"
   },
@@ -15253,6 +16625,7 @@ module.exports =
     "customerId": 1782,
     "firstName": "Mary",
     "lastName": "Olin",
+    "email": "kmrolin@aol.com",
     "discountPercent": 20,
     "notes": "Imported payment info: class cost: 50.\nClass #5 for this student, per source sheet.",
     "enrolledOn": "2011-10-15"
@@ -15264,6 +16637,7 @@ module.exports =
     "customerId": 2146,
     "firstName": "Rebecca",
     "lastName": "Olin",
+    "email": "rebecca_olin@hotmail.com",
     "discountPercent": 20,
     "notes": "Imported payment info: class cost: 50.\nClass #6 for this student, per source sheet.",
     "enrolledOn": "2011-10-15"
@@ -15275,6 +16649,7 @@ module.exports =
     "customerId": 1323,
     "firstName": "Kathy",
     "lastName": "Feuerberg",
+    "email": "kathy8722@comcast.net",
     "notes": "Imported payment info: class cost: 50.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2011-10-15"
   },
@@ -15285,6 +16660,7 @@ module.exports =
     "customerId": 2448,
     "firstName": "Susan",
     "lastName": "Edwards",
+    "email": "susanedwardshome@msn.com",
     "notes": "Imported payment info: class cost: 50.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2011-10-15"
   },
@@ -15295,6 +16671,7 @@ module.exports =
     "customerId": 1366,
     "firstName": "Kim",
     "lastName": "Carey",
+    "email": "kimberly.carey@hotmail.com",
     "notes": "Imported payment info: class cost: 50.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2011-10-15"
   },
@@ -15305,6 +16682,7 @@ module.exports =
     "customerId": 1002,
     "firstName": "Jane",
     "lastName": "Cristallo",
+    "email": "janecristallo@comcast.net",
     "notes": "Imported payment info: class cost: 50.\nClass #3 for this student, per source sheet.",
     "enrolledOn": "2011-10-15"
   },
@@ -15315,6 +16693,7 @@ module.exports =
     "customerId": 742,
     "firstName": "Elaine",
     "lastName": "Albers",
+    "email": "shredbettywannabe@hotmail.com",
     "notes": "Imported payment info: class cost: 50.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2011-10-01"
   },
@@ -15325,6 +16704,7 @@ module.exports =
     "customerId": 2216,
     "firstName": "Ruanne",
     "lastName": "McQuarrie",
+    "email": "ruanne.mcquarrie@hdsupply.com",
     "notes": "Imported payment info: class cost: 50.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2011-10-01"
   },
@@ -15335,6 +16715,7 @@ module.exports =
     "customerId": 2060,
     "firstName": "Paula",
     "lastName": "Stout",
+    "email": "stouts1234@gmail.com",
     "notes": "Imported payment info: class cost: 50.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2011-10-01"
   },
@@ -15345,6 +16726,7 @@ module.exports =
     "customerId": 1322,
     "firstName": "Kathy",
     "lastName": "Croteau",
+    "email": "kacroteau@gmail.com",
     "notes": "Imported payment info: class cost: 50.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2011-10-01"
   },
@@ -15355,6 +16737,7 @@ module.exports =
     "customerId": 1111,
     "firstName": "Jill",
     "lastName": "Anway",
+    "email": "jaanway@comcast.net",
     "notes": "Imported payment info: class cost: 50.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2011-10-01"
   },
@@ -15365,6 +16748,7 @@ module.exports =
     "customerId": 677,
     "firstName": "Diane",
     "lastName": "Heutmaker",
+    "email": "dheutmaker@comcast.net",
     "notes": "Imported payment info: class cost: 50.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2011-10-01"
   },
@@ -15375,6 +16759,7 @@ module.exports =
     "customerId": 239,
     "firstName": "Barbara",
     "lastName": "Castrow",
+    "email": "barbaracastrow@comcast.net",
     "notes": "Imported payment info: class cost: 50.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2011-10-01"
   },
@@ -15385,6 +16770,7 @@ module.exports =
     "customerId": 452,
     "firstName": "Christine",
     "lastName": "Korzeniecki",
+    "email": "ongomom@comcast.net",
     "notes": "Imported payment info: class cost: 50.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2011-10-01"
   },
@@ -15395,6 +16781,7 @@ module.exports =
     "customerId": 1688,
     "firstName": "Maren",
     "lastName": "Schnebeck",
+    "email": "mschnebeck@comcast.net",
     "notes": "Imported payment info: class cost: 165.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2011-09-17"
   },
@@ -15405,6 +16792,7 @@ module.exports =
     "customerId": 409,
     "firstName": "Chandra",
     "lastName": "Bornstein",
+    "email": "cbornstein@hotmail.com",
     "notes": "Imported payment info: class cost: 165.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2011-09-17"
   },
@@ -15415,6 +16803,7 @@ module.exports =
     "customerId": 2624,
     "firstName": "Victoria",
     "lastName": "Paradis",
+    "email": "vpar4219@yahoo.com",
     "notes": "Imported payment info: class cost: 165.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2011-09-17"
   },
@@ -15425,6 +16814,7 @@ module.exports =
     "customerId": 1741,
     "firstName": "Marsha",
     "lastName": "Hudson",
+    "email": "marsha@griffyn.us",
     "notes": "Imported payment info: class cost: 165.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2011-09-17"
   },
@@ -15435,6 +16825,7 @@ module.exports =
     "customerId": 2131,
     "firstName": "Randi",
     "lastName": "Barrett",
+    "email": "rbarrettrn@gmail.com",
     "notes": "Imported payment info: class cost: 125.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2011-09-17"
   },
@@ -15445,6 +16836,7 @@ module.exports =
     "customerId": 2117,
     "firstName": "Rachel",
     "lastName": "Brombaugh",
+    "email": "rhbrombaugh@yahoo.com",
     "notes": "Imported payment info: class cost: 125.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2011-08-27"
   },
@@ -15455,6 +16847,7 @@ module.exports =
     "customerId": 722,
     "firstName": "Dulce",
     "lastName": "Heinrich",
+    "email": "dulceheinrich@hotmail.com",
     "notes": "Imported payment info: class cost: 0.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2011-08-27"
   },
@@ -15465,6 +16858,7 @@ module.exports =
     "customerId": 2645,
     "firstName": "Virginia",
     "lastName": "Reilly",
+    "email": "VirginiaReilly@aol.com",
     "notes": "Imported payment info: class cost: 165.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2011-08-27"
   },
@@ -15484,6 +16878,7 @@ module.exports =
     "customerId": 2311,
     "firstName": "Sharon",
     "lastName": "Freese-Pettibon",
+    "email": "spettibon@pettibonsystem.com",
     "notes": "Imported payment info: class cost: 165.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2011-08-27"
   },
@@ -15494,6 +16889,7 @@ module.exports =
     "customerId": 1882,
     "firstName": "Michelle",
     "lastName": "Miller",
+    "email": "michellewild@comcast.net",
     "notes": "Imported payment info: class cost: 165.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2011-06-11"
   },
@@ -15504,6 +16900,7 @@ module.exports =
     "customerId": 2273,
     "firstName": "Sari",
     "lastName": "Dahl",
+    "email": "sarirat@mac.com",
     "notes": "Imported payment info: class cost: 165.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2011-06-11"
   },
@@ -15513,6 +16910,7 @@ module.exports =
     "status": "completed",
     "firstName": "Cathy",
     "lastName": "Geddis",
+    "email": "clgeddis@comcast.net",
     "notes": "Imported payment info: class cost: 165.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2011-06-11"
   },
@@ -15523,6 +16921,7 @@ module.exports =
     "customerId": 1782,
     "firstName": "Mary",
     "lastName": "Olin",
+    "email": "kmrolin@aol.com",
     "discountPercent": 20,
     "notes": "Imported payment info: class cost: 165.\nClass #4 for this student, per source sheet.",
     "enrolledOn": "2011-06-11"
@@ -15534,6 +16933,7 @@ module.exports =
     "customerId": 2146,
     "firstName": "Rebecca",
     "lastName": "Olin",
+    "email": "rebecca_olin@hotmail.com",
     "discountPercent": 20,
     "notes": "Imported payment info: class cost: 165.\nClass #5 for this student, per source sheet.",
     "enrolledOn": "2011-06-11"
@@ -15545,6 +16945,7 @@ module.exports =
     "customerId": 803,
     "firstName": "Erin",
     "lastName": "Branigan",
+    "email": "braniganerin@yahoo.com",
     "notes": "Imported payment info: class cost: 165.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2011-06-11"
   },
@@ -15555,6 +16956,7 @@ module.exports =
     "customerId": 1684,
     "firstName": "Marcia",
     "lastName": "Wiley",
+    "email": "mwiley@igc.org",
     "upgradeNotes": "House numbers",
     "notes": "Imported payment info: class cost: 0.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2011-06-11"
@@ -15566,6 +16968,7 @@ module.exports =
     "customerId": 2635,
     "firstName": "Victoria",
     "lastName": "Meader",
+    "email": "vmeader@hotmail.com",
     "notes": "Imported payment info: class cost: 125.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2011-05-14"
   },
@@ -15576,6 +16979,7 @@ module.exports =
     "customerId": 1591,
     "firstName": "Liz",
     "lastName": "Jones",
+    "email": "lizard0317@hotmail.com",
     "notes": "Imported payment info: class cost: 125.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2011-05-14"
   },
@@ -15586,6 +16990,7 @@ module.exports =
     "customerId": 498,
     "firstName": "Connie",
     "lastName": "Flores",
+    "email": "connieflores@hotmail.com",
     "notes": "Imported payment info: class cost: 125.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2011-05-14"
   },
@@ -15596,6 +17001,7 @@ module.exports =
     "customerId": 1245,
     "firstName": "Karen",
     "lastName": "DeVoe",
+    "email": "kdevoe@comcast.net",
     "notes": "Imported payment info: class cost: 125.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2011-05-14"
   },
@@ -15606,6 +17012,7 @@ module.exports =
     "customerId": 221,
     "firstName": "Ashayrah",
     "lastName": "Himadra",
+    "email": "ashayrahhimadra@me.com",
     "notes": "Imported payment info: class cost: 125.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2011-05-14"
   },
@@ -15616,6 +17023,7 @@ module.exports =
     "customerId": 1120,
     "firstName": "Jill",
     "lastName": "Schwenke",
+    "email": "jillschwenke@yahoo.com",
     "notes": "Imported payment info: class cost: 125.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2011-05-14"
   },
@@ -15626,6 +17034,7 @@ module.exports =
     "customerId": 484,
     "firstName": "Claudia",
     "lastName": "Prusak",
+    "email": "cprusak@shaw.ca",
     "notes": "Imported payment info: class cost: 125.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2011-05-14"
   },
@@ -15636,6 +17045,7 @@ module.exports =
     "customerId": 285,
     "firstName": "Beverly",
     "lastName": "Fry",
+    "email": "beverlyfrye@comcast.net",
     "notes": "Imported payment info: class cost: 125.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2011-04-30"
   },
@@ -15646,6 +17056,7 @@ module.exports =
     "customerId": 2146,
     "firstName": "Rebecca",
     "lastName": "Olin",
+    "email": "rebecca_olin@hotmail.com",
     "discountPercent": 20,
     "notes": "Imported payment info: class cost: 125.\nClass #4 for this student, per source sheet.",
     "enrolledOn": "2011-04-30"
@@ -15657,6 +17068,7 @@ module.exports =
     "customerId": 1782,
     "firstName": "Mary",
     "lastName": "Olin",
+    "email": "kmrolin@aol.com",
     "notes": "Imported payment info: class cost: 125.\nClass #3 for this student, per source sheet.",
     "enrolledOn": "2011-04-30"
   },
@@ -15676,6 +17088,7 @@ module.exports =
     "customerId": 527,
     "firstName": "Lindsay",
     "lastName": "White",
+    "email": "whitehouse2437@yahoo.com",
     "notes": "Imported payment info: class cost: 125.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2011-04-30"
   },
@@ -15686,6 +17099,7 @@ module.exports =
     "customerId": 2184,
     "firstName": "Robin",
     "lastName": "Bodhi",
+    "email": "robinbodhi@gmail.com",
     "notes": "Imported payment info: class cost: 125.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2011-04-30"
   },
@@ -15696,6 +17110,7 @@ module.exports =
     "customerId": 2486,
     "firstName": "Susan",
     "lastName": "Staat",
+    "email": "susan@spiritone.com",
     "notes": "Imported payment info: class cost: 125.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2011-04-30"
   },
@@ -15706,6 +17121,7 @@ module.exports =
     "customerId": 1254,
     "firstName": "Karen",
     "lastName": "Harley",
+    "email": "itskmh@comcast.net",
     "notes": "Imported payment info: class cost: 125.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2011-04-09"
   },
@@ -15715,6 +17131,7 @@ module.exports =
     "status": "completed",
     "firstName": "Eileen",
     "lastName": "Collen",
+    "email": "harboretc@gmail.com",
     "notes": "Imported payment info: class cost: 125.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2011-04-09"
   },
@@ -15724,6 +17141,7 @@ module.exports =
     "status": "completed",
     "firstName": "Diane",
     "lastName": "Davis",
+    "email": "clarkjdavis@comcast.net",
     "notes": "Imported payment info: class cost: 125.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2011-04-09"
   },
@@ -15734,6 +17152,7 @@ module.exports =
     "customerId": 2359,
     "firstName": "Sheryl",
     "lastName": "Winskill",
+    "email": "sywinskill@hotmail.com",
     "notes": "Imported payment info: class cost: 125.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2011-04-09"
   },
@@ -15744,6 +17163,7 @@ module.exports =
     "customerId": 262,
     "firstName": "Beck",
     "lastName": "Royer",
+    "email": "beckbar2004@yahoo.com",
     "notes": "Imported payment info: class cost: 125.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2011-04-09"
   },
@@ -15754,6 +17174,7 @@ module.exports =
     "customerId": 2013,
     "firstName": "Pat",
     "lastName": "Burke",
+    "email": "PBurke@highlinemedical.org",
     "notes": "Imported payment info: class cost: 125.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2011-04-09"
   },
@@ -15764,6 +17185,7 @@ module.exports =
     "customerId": 2497,
     "firstName": "Susie",
     "lastName": "Shea",
+    "email": "susieshea@hotmail.com",
     "notes": "Imported payment info: class cost: 125.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2011-03-26"
   },
@@ -15774,6 +17196,7 @@ module.exports =
     "customerId": 1487,
     "firstName": "Leita",
     "lastName": "Bain",
+    "email": "maya@nwlink.com",
     "notes": "Imported payment info: class cost: 125.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2011-03-26"
   },
@@ -15784,6 +17207,7 @@ module.exports =
     "customerId": 2432,
     "firstName": "Sullivan",
     "lastName": "Hester",
+    "email": "sullivanh@comcast.net",
     "notes": "Imported payment info: class cost: 125.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2011-03-26"
   },
@@ -15794,6 +17218,7 @@ module.exports =
     "customerId": 157,
     "firstName": "Angie",
     "lastName": "Johnson",
+    "email": "owllynwoods@yahoo.com",
     "notes": "Imported payment info: class cost: 125.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2011-03-26"
   },
@@ -15804,6 +17229,7 @@ module.exports =
     "customerId": 577,
     "firstName": "Dawn",
     "lastName": "Offerein",
+    "email": "car-mike@hotmail.com",
     "notes": "Imported payment info: class cost: 125.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2011-03-12"
   },
@@ -15814,6 +17240,7 @@ module.exports =
     "customerId": 1299,
     "firstName": "Katherine",
     "lastName": "Wiggins",
+    "email": "wigsters@msn.com",
     "notes": "Imported payment info: class cost: 125.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2011-03-12"
   },
@@ -15823,6 +17250,7 @@ module.exports =
     "status": "completed",
     "firstName": "Jan",
     "lastName": "Vigdor",
+    "email": "jan.vigdor@swedish.org",
     "notes": "Imported payment info: class cost: 125.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2011-03-12"
   },
@@ -15833,6 +17261,7 @@ module.exports =
     "customerId": 1405,
     "firstName": "Kris",
     "lastName": "Burnham",
+    "email": "Kris.Burnham@swedish.org",
     "notes": "Imported payment info: class cost: 125.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2011-03-12"
   },
@@ -15843,6 +17272,7 @@ module.exports =
     "customerId": 248,
     "firstName": "Barbara",
     "lastName": "Kusler",
+    "email": "Barbara.Kusler@swedish.org",
     "notes": "Imported payment info: class cost: 125.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2011-03-12"
   },
@@ -15853,6 +17283,7 @@ module.exports =
     "customerId": 2478,
     "firstName": "Susan",
     "lastName": "Pottschulte",
+    "email": "susanpotts@msn.com",
     "notes": "Imported payment info: class cost: 125.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2011-02-26"
   },
@@ -15863,6 +17294,7 @@ module.exports =
     "customerId": 1254,
     "firstName": "Karen",
     "lastName": "Harley",
+    "email": "itskmh@comcast.net",
     "notes": "Imported payment info: class cost: 125.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2011-02-26"
   },
@@ -15872,6 +17304,7 @@ module.exports =
     "status": "completed",
     "firstName": "Eileen",
     "lastName": "Collen",
+    "email": "harboretc@gmail.com",
     "notes": "Imported payment info: class cost: 125.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2011-02-26"
   },
@@ -15881,6 +17314,7 @@ module.exports =
     "status": "completed",
     "firstName": "Diane",
     "lastName": "Davis",
+    "email": "clarkjdavis@comcast.net",
     "notes": "Imported payment info: class cost: 125.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2011-02-26"
   },
@@ -15891,6 +17325,7 @@ module.exports =
     "customerId": 2359,
     "firstName": "Sheryl",
     "lastName": "Winskill",
+    "email": "sywinskill@hotmail.com",
     "notes": "Imported payment info: class cost: 125.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2011-02-26"
   },
@@ -15901,6 +17336,7 @@ module.exports =
     "customerId": 1036,
     "firstName": "Jayne",
     "lastName": "Ash",
+    "email": "cougarmt6@aol.com",
     "notes": "Imported payment info: class cost: 125.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2011-02-26"
   },
@@ -15911,6 +17347,7 @@ module.exports =
     "customerId": 1782,
     "firstName": "Mary",
     "lastName": "Olin",
+    "email": "kmrolin@aol.com",
     "notes": "Imported payment info: class cost: 50.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2011-02-05"
   },
@@ -15921,6 +17358,7 @@ module.exports =
     "customerId": 2419,
     "firstName": "Sue",
     "lastName": "Carroll",
+    "email": "suecarroll9@comcast.net",
     "discountPercent": 20,
     "notes": "Imported payment info: class cost: 50.\nClass #7 for this student, per source sheet.",
     "enrolledOn": "2011-02-05"
@@ -15932,6 +17370,7 @@ module.exports =
     "customerId": 1555,
     "firstName": "Lisa",
     "lastName": "Baughman",
+    "email": "darrenlisa@hotmail.com",
     "notes": "Imported payment info: class cost: 50.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2011-02-05"
   },
@@ -15942,6 +17381,7 @@ module.exports =
     "customerId": 2146,
     "firstName": "Rebecca",
     "lastName": "Olin",
+    "email": "rebecca_olin@hotmail.com",
     "notes": "Imported payment info: class cost: 50.\nClass #3 for this student, per source sheet.",
     "enrolledOn": "2011-02-05"
   },
@@ -15952,6 +17392,7 @@ module.exports =
     "customerId": 1591,
     "firstName": "Liz",
     "lastName": "Jones",
+    "email": "lizard0317@hotmail.com",
     "notes": "Imported payment info: class cost: 50.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2011-02-05"
   },
@@ -15962,6 +17403,7 @@ module.exports =
     "customerId": 1251,
     "firstName": "Karen",
     "lastName": "Grose",
+    "email": "Klgrose0@msn.com",
     "notes": "Imported payment info: class cost: 50.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2011-02-05"
   },
@@ -15972,6 +17414,7 @@ module.exports =
     "customerId": 906,
     "firstName": "Harriette",
     "lastName": "Leitman",
+    "email": "redhsw1@hotmail.com",
     "notes": "Imported payment info: class cost: 50.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2011-02-05"
   },
@@ -15982,6 +17425,7 @@ module.exports =
     "customerId": 1812,
     "firstName": "Maureen",
     "lastName": "Seeley",
+    "email": "maureens@gmail.com",
     "notes": "Imported payment info: class cost: 125.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2011-01-29"
   },
@@ -15992,6 +17436,7 @@ module.exports =
     "customerId": 127,
     "firstName": "Amy",
     "lastName": "Shaftel",
+    "email": "shaftela@aol.com",
     "notes": "Imported payment info: class cost: 125.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2011-01-29"
   },
@@ -16002,6 +17447,7 @@ module.exports =
     "customerId": 498,
     "firstName": "Connie",
     "lastName": "Flores",
+    "email": "connieflores@hotmail.com",
     "notes": "Imported payment info: class cost: 125.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2011-01-29"
   },
@@ -16012,6 +17458,7 @@ module.exports =
     "customerId": 372,
     "firstName": "Carolyn",
     "lastName": "Barton",
+    "email": "carolynbarton@live.com",
     "notes": "Imported payment info: class cost: 125.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2011-01-29"
   },
@@ -16022,6 +17469,7 @@ module.exports =
     "customerId": 1356,
     "firstName": "Kerry",
     "lastName": "Sturgill",
+    "email": "Kerry.Sturgill@swedish.org",
     "notes": "Imported payment info: class cost: 125.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2011-01-29"
   },
@@ -16032,6 +17480,7 @@ module.exports =
     "customerId": 1112,
     "firstName": "Jill",
     "lastName": "Bliss",
+    "email": "jbliss@hsblawyers.com",
     "notes": "Imported payment info: class cost: 125.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2010-12-11"
   },
@@ -16041,7 +17490,7 @@ module.exports =
     "status": "completed",
     "firstName": "Anne",
     "lastName": "Ryan",
-    "notes": "From source sheet: Niece\nImported payment info: class cost: 125.\nClass #1 for this student, per source sheet.",
+    "notes": "From source sheet: Niece\nEmail column (not a valid address): via Anne Ryan\nImported payment info: class cost: 125.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2010-12-11"
   },
   {
@@ -16051,6 +17500,7 @@ module.exports =
     "customerId": 506,
     "firstName": "Corinne",
     "lastName": "Woo",
+    "email": "corinnewoo@yahoo.com",
     "notes": "Imported payment info: class cost: 125.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2010-12-11"
   },
@@ -16070,6 +17520,7 @@ module.exports =
     "customerId": 437,
     "firstName": "Chris",
     "lastName": "Heinen",
+    "email": "mheinen@comcast.net",
     "notes": "Imported payment info: class cost: 125.\nClass #3 for this student, per source sheet.",
     "enrolledOn": "2010-12-11"
   },
@@ -16080,6 +17531,7 @@ module.exports =
     "customerId": 1284,
     "firstName": "Karla",
     "lastName": "Kreger",
+    "email": "tooth340@aol.com",
     "notes": "Imported payment info: class cost: 125.\nClass #3 for this student, per source sheet.",
     "enrolledOn": "2010-12-11"
   },
@@ -16090,6 +17542,7 @@ module.exports =
     "customerId": 711,
     "firstName": "Donna",
     "lastName": "Wold",
+    "email": "chickeemamaKar@comcast.net",
     "notes": "Imported payment info: class cost: 125.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2010-12-11"
   },
@@ -16100,6 +17553,7 @@ module.exports =
     "customerId": 1948,
     "firstName": "Natalie",
     "lastName": "Dalrymple",
+    "email": "glassart1@yahoo.com",
     "notes": "Imported payment info: class cost: 125.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2010-11-20"
   },
@@ -16110,6 +17564,7 @@ module.exports =
     "customerId": 441,
     "firstName": "Chrissie",
     "lastName": "Diller",
+    "email": "chrissie.diller@gmail.com",
     "notes": "Imported payment info: class cost: 125.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2010-11-20"
   },
@@ -16119,6 +17574,7 @@ module.exports =
     "status": "completed",
     "firstName": "Anne",
     "lastName": "Ryan",
+    "email": "anne.Ryan@swedish.org",
     "notes": "Imported payment info: class cost: 125.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2010-11-20"
   },
@@ -16129,6 +17585,7 @@ module.exports =
     "customerId": 2146,
     "firstName": "Rebecca",
     "lastName": "Olin",
+    "email": "rebecca_olin@hotmail.com",
     "notes": "Imported payment info: class cost: 125.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2010-11-20"
   },
@@ -16148,6 +17605,7 @@ module.exports =
     "customerId": 1530,
     "firstName": "Linda",
     "lastName": "Harter",
+    "email": "linda.harter@yahoo.com",
     "discountPercent": 20,
     "notes": "Imported payment info: class cost: 125.\nClass #4 for this student, per source sheet.",
     "enrolledOn": "2010-11-20"
@@ -16159,6 +17617,7 @@ module.exports =
     "customerId": 2236,
     "firstName": "Sam",
     "lastName": "Christensen",
+    "email": "sam.chris@comcast.net",
     "notes": "Imported payment info: class cost: 125.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2010-11-20"
   },
@@ -16169,6 +17628,7 @@ module.exports =
     "customerId": 1612,
     "firstName": "Lori",
     "lastName": "Johnson",
+    "email": "loriajohnson@frontier.com",
     "notes": "Imported payment info: class cost: 125.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2010-10-23"
   },
@@ -16179,6 +17639,7 @@ module.exports =
     "customerId": 1299,
     "firstName": "Katherine",
     "lastName": "Wiggins",
+    "email": "wigsters@msn.com",
     "notes": "Imported payment info: class cost: 125.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2010-10-23"
   },
@@ -16189,6 +17650,7 @@ module.exports =
     "customerId": 2419,
     "firstName": "Sue",
     "lastName": "Carroll",
+    "email": "suecarroll9@comcast.net",
     "discountPercent": 20,
     "notes": "Imported payment info: class cost: 125.\nClass #6 for this student, per source sheet.",
     "enrolledOn": "2010-10-23"
@@ -16200,6 +17662,7 @@ module.exports =
     "customerId": 2614,
     "firstName": "Uzma",
     "lastName": "Siddiqi",
+    "email": "uzma@mcsid.com",
     "notes": "Imported payment info: class cost: 125.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2010-10-23"
   },
@@ -16210,6 +17673,7 @@ module.exports =
     "customerId": 1948,
     "firstName": "Natalie",
     "lastName": "Dalrymple",
+    "email": "glassart1@yahoo.com",
     "notes": "Imported payment info: class cost: 125.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2010-10-23"
   },
@@ -16220,6 +17684,7 @@ module.exports =
     "customerId": 1112,
     "firstName": "Jill",
     "lastName": "Bliss",
+    "email": "jbliss@hsblawyers.com",
     "notes": "Imported payment info: class cost: 125.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2010-10-23"
   },
@@ -16230,6 +17695,7 @@ module.exports =
     "customerId": 254,
     "firstName": "Barbara",
     "lastName": "Ross",
+    "email": "Ross.Barbara@epamail.epa.gov",
     "notes": "Imported payment info: class cost: 125.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2010-10-09"
   },
@@ -16240,6 +17706,7 @@ module.exports =
     "customerId": 1079,
     "firstName": "Jennifer",
     "lastName": "Hernon",
+    "email": "jhernon@hotmail.com",
     "notes": "Imported payment info: class cost: 125.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2010-10-09"
   },
@@ -16250,6 +17717,7 @@ module.exports =
     "customerId": 2203,
     "firstName": "Ronnel",
     "lastName": "Betts",
+    "email": "Ronnelb@msn.com",
     "notes": "Imported payment info: class cost: 125.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2010-10-09"
   },
@@ -16260,6 +17728,7 @@ module.exports =
     "customerId": 704,
     "firstName": "Donna",
     "lastName": "Rodgers",
+    "email": "donnasr@live.com",
     "notes": "Imported payment info: class cost: 125.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2010-10-09"
   },
@@ -16270,6 +17739,7 @@ module.exports =
     "customerId": 1716,
     "firstName": "Marian",
     "lastName": "Ullman",
+    "email": "marian1004@comcast.net",
     "notes": "Imported payment info: class cost: 125.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2010-10-09"
   },
@@ -16280,6 +17750,7 @@ module.exports =
     "customerId": 790,
     "firstName": "Emily",
     "lastName": "Harper",
+    "email": "harper.emily@gmail.com",
     "notes": "Imported payment info: class cost: 125.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2010-10-09"
   },
@@ -16299,6 +17770,7 @@ module.exports =
     "customerId": 2591,
     "firstName": "Tracy",
     "lastName": "Wilson",
+    "email": "tracypwilson@comcast.net",
     "notes": "Imported payment info: class cost: 125.\nClass #3 for this student, per source sheet.",
     "enrolledOn": "2010-09-25"
   },
@@ -16326,6 +17798,7 @@ module.exports =
     "customerId": 2500,
     "firstName": "Susy",
     "lastName": "Shea",
+    "email": "susyshea@verizon.net",
     "notes": "Imported payment info: class cost: 125.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2010-09-25"
   },
@@ -16336,6 +17809,7 @@ module.exports =
     "customerId": 2419,
     "firstName": "Sue",
     "lastName": "Carroll",
+    "email": "suecarroll9@comcast.net",
     "discountPercent": 20,
     "notes": "Imported payment info: class cost: 125.\nClass #5 for this student, per source sheet.",
     "enrolledOn": "2010-09-25"
@@ -16347,6 +17821,7 @@ module.exports =
     "customerId": 441,
     "firstName": "Chrissie",
     "lastName": "Diller",
+    "email": "chrissie.diller@gmail.com",
     "notes": "Imported payment info: class cost: 125.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2010-08-28"
   },
@@ -16357,6 +17832,7 @@ module.exports =
     "customerId": 1255,
     "firstName": "Karen",
     "lastName": "Healy",
+    "email": "kathealy@comcast.net",
     "notes": "Imported payment info: class cost: 125.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2010-08-28"
   },
@@ -16367,6 +17843,7 @@ module.exports =
     "customerId": 2236,
     "firstName": "Sam",
     "lastName": "Christensen",
+    "email": "sam.chris@comcast.net",
     "notes": "Imported payment info: class cost: 125.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2010-08-28"
   },
@@ -16377,6 +17854,7 @@ module.exports =
     "customerId": 1017,
     "firstName": "Janet",
     "lastName": "Askew",
+    "email": "groulette@hotmail.com",
     "notes": "Imported payment info: class cost: 125.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2010-08-28"
   },
@@ -16387,6 +17865,7 @@ module.exports =
     "customerId": 97,
     "firstName": "Amanda",
     "lastName": "Lange",
+    "email": "amanda.lange@varolii.com",
     "notes": "Imported payment info: class cost: 125.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2010-08-28"
   },
@@ -16396,6 +17875,7 @@ module.exports =
     "status": "completed",
     "firstName": "Anne",
     "lastName": "Ryan",
+    "email": "Anne.Ryan@swedish.org",
     "notes": "Imported payment info: class cost: 125.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2010-08-28"
   },
@@ -16406,6 +17886,7 @@ module.exports =
     "customerId": 1782,
     "firstName": "Mary",
     "lastName": "Olin",
+    "email": "kmrolin@aol.com",
     "notes": "Imported payment info: class cost: 125.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2010-06-26"
   },
@@ -16416,6 +17897,7 @@ module.exports =
     "customerId": 2146,
     "firstName": "Rebecca",
     "lastName": "Olin",
+    "email": "rebecca_olin@hotmail.com",
     "notes": "Imported payment info: class cost: 125.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2010-06-26"
   },
@@ -16426,6 +17908,7 @@ module.exports =
     "customerId": 437,
     "firstName": "Chris",
     "lastName": "Heinen",
+    "email": "mheinen@comcast.net",
     "notes": "Imported payment info: class cost: 125.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2010-06-26"
   },
@@ -16436,6 +17919,7 @@ module.exports =
     "customerId": 609,
     "firstName": "Debbie",
     "lastName": "Steiner",
+    "email": "debbiesteiner@msn.com",
     "notes": "Imported payment info: class cost: 125.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2010-06-26"
   },
@@ -16446,6 +17930,7 @@ module.exports =
     "customerId": 1323,
     "firstName": "Kathy",
     "lastName": "Feuerberg",
+    "email": "kathy8722@comcast.net",
     "notes": "Imported payment info: class cost: 125.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2010-06-26"
   },
@@ -16456,6 +17941,7 @@ module.exports =
     "customerId": 1002,
     "firstName": "Jane",
     "lastName": "Cristallo",
+    "email": "janecristallo@comcast.net",
     "notes": "Imported payment info: class cost: 125.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2010-06-26"
   },
@@ -16466,6 +17952,7 @@ module.exports =
     "customerId": 2395,
     "firstName": "Stefanie",
     "lastName": "Finkelstein",
+    "email": "stefanie.f@comcast.net",
     "notes": "Imported payment info: class cost: 125.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2010-05-22"
   },
@@ -16476,6 +17963,7 @@ module.exports =
     "customerId": 282,
     "firstName": "Bev",
     "lastName": "Byrnes-Laird",
+    "email": "bbyrneslaird@yahoo.com",
     "notes": "Imported payment info: class cost: 125.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2010-05-22"
   },
@@ -16494,7 +17982,7 @@ module.exports =
     "status": "completed",
     "firstName": "Jessica",
     "lastName": "Ebner",
-    "notes": "Imported payment info: class cost: 125.\nClass #1 for this student, per source sheet.",
+    "notes": "Email column (not a valid address): via Marsha\nImported payment info: class cost: 125.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2010-05-22"
   },
   {
@@ -16504,6 +17992,7 @@ module.exports =
     "customerId": 1303,
     "firstName": "Kathleen",
     "lastName": "Appleyard",
+    "email": "Kappleyard20612@comcast.net",
     "notes": "Imported payment info: class cost: 125.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2010-05-22"
   },
@@ -16513,6 +18002,7 @@ module.exports =
     "status": "completed",
     "firstName": "Marsha",
     "lastName": "Nilson",
+    "email": "Marsha.Nilson@wellsfargo.com",
     "notes": "Imported payment info: class cost: 125.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2010-05-22"
   },
@@ -16523,6 +18013,7 @@ module.exports =
     "customerId": 2197,
     "firstName": "Rochelle",
     "lastName": "Peschek",
+    "email": "Rochelle.Peschek@wellsfargo.com",
     "notes": "Imported payment info: class cost: 125.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2010-05-22"
   },
@@ -16533,6 +18024,7 @@ module.exports =
     "customerId": 970,
     "firstName": "Jacqueline",
     "lastName": "Drumheller",
+    "email": "Jacqueline.Drumheller@alaskaair.com",
     "notes": "Imported payment info: class cost: 125.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2010-05-01"
   },
@@ -16543,6 +18035,7 @@ module.exports =
     "customerId": 1008,
     "firstName": "Jane",
     "lastName": "Matthews",
+    "email": "JEMcando@aol.com",
     "notes": "Imported payment info: class cost: 125.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2010-05-01"
   },
@@ -16553,6 +18046,7 @@ module.exports =
     "customerId": 1614,
     "firstName": "Lori",
     "lastName": "King",
+    "email": "loriking62@hotmail.com",
     "notes": "Imported payment info: class cost: 125.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2010-05-01"
   },
@@ -16563,6 +18057,7 @@ module.exports =
     "customerId": 1002,
     "firstName": "Jane",
     "lastName": "Cristallo",
+    "email": "janecristallo@comcast.net",
     "notes": "Imported payment info: class cost: 125.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2010-05-01"
   },
@@ -16573,6 +18068,7 @@ module.exports =
     "customerId": 2094,
     "firstName": "Pilar",
     "lastName": "Bueno",
+    "email": "buenopil@gmail.com",
     "notes": "Imported payment info: class cost: 125.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2010-05-01"
   },
@@ -16583,6 +18079,7 @@ module.exports =
     "customerId": 2591,
     "firstName": "Tracy",
     "lastName": "Wilson",
+    "email": "tracypwilson@comcast.net",
     "notes": "Imported payment info: class cost: 125.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2010-05-01"
   },
@@ -16602,6 +18099,7 @@ module.exports =
     "customerId": 1208,
     "firstName": "Julie",
     "lastName": "Galliani",
+    "email": "jgmanso@msn.com",
     "notes": "Imported payment info: class cost: 125.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2010-04-10"
   },
@@ -16612,6 +18110,7 @@ module.exports =
     "customerId": 2024,
     "firstName": "Patricia",
     "lastName": "Fey",
+    "email": "patriciaf821@msn.com",
     "notes": "Imported payment info: class cost: 125.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2010-04-10"
   },
@@ -16622,6 +18121,7 @@ module.exports =
     "customerId": 1279,
     "firstName": "Karen",
     "lastName": "Ziegler",
+    "email": "k.m.ziegler@comcast.net",
     "notes": "Imported payment info: class cost: 125.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2010-04-10"
   },
@@ -16632,6 +18132,7 @@ module.exports =
     "customerId": 974,
     "firstName": "Jacqueline",
     "lastName": "Rivas",
+    "email": "jackierivas@comcast.net",
     "notes": "Imported payment info: class cost: 125.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2010-04-10"
   },
@@ -16642,6 +18143,7 @@ module.exports =
     "customerId": 2370,
     "firstName": "Sienna",
     "lastName": "Rivas",
+    "email": "sienna@rivasstudios.com",
     "notes": "Imported payment info: class cost: 125.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2010-04-10"
   },
@@ -16652,6 +18154,7 @@ module.exports =
     "customerId": 673,
     "firstName": "Diane",
     "lastName": "Graham",
+    "email": "brierdiane@comcast.net",
     "notes": "Imported payment info: class cost: 125.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2010-03-27"
   },
@@ -16662,6 +18165,7 @@ module.exports =
     "customerId": 1435,
     "firstName": "Lara",
     "lastName": "Coffin",
+    "email": "larasherbin@hotmail.com",
     "notes": "Imported payment info: class cost: 125.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2010-03-27"
   },
@@ -16672,6 +18176,7 @@ module.exports =
     "customerId": 2419,
     "firstName": "Sue",
     "lastName": "Carroll",
+    "email": "suecarroll9@comcast.net",
     "discountPercent": 20,
     "notes": "Imported payment info: class cost: 125.\nClass #4 for this student, per source sheet.",
     "enrolledOn": "2010-03-27"
@@ -16683,6 +18188,7 @@ module.exports =
     "customerId": 2500,
     "firstName": "Susy",
     "lastName": "Shea",
+    "email": "susyshea@verizon.net",
     "notes": "Imported payment info: class cost: 125.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2010-03-27"
   },
@@ -16693,6 +18199,7 @@ module.exports =
     "customerId": 427,
     "firstName": "Cheryl",
     "lastName": "Ross",
+    "email": "cheryljrossmail@yahoo.com",
     "notes": "Imported payment info: class cost: 125.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2010-03-27"
   },
@@ -16702,6 +18209,7 @@ module.exports =
     "status": "completed",
     "firstName": "Linda",
     "lastName": "Giddens",
+    "email": "giddy1@verizon.net",
     "notes": "Imported payment info: class cost: 125.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2010-03-27"
   },
@@ -16712,6 +18220,7 @@ module.exports =
     "customerId": 402,
     "firstName": "Cathy",
     "lastName": "Stanford",
+    "email": "dcstanman@comcast.net",
     "notes": "Imported payment info: class cost: 125.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2010-03-13"
   },
@@ -16722,6 +18231,7 @@ module.exports =
     "customerId": 1284,
     "firstName": "Karla",
     "lastName": "Kreger",
+    "email": "tooth340@aol.com",
     "notes": "Imported payment info: class cost: 125.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2010-03-13"
   },
@@ -16732,6 +18242,7 @@ module.exports =
     "customerId": 1614,
     "firstName": "Lori",
     "lastName": "King",
+    "email": "loriking62@hotmail.com",
     "notes": "Imported payment info: class cost: 125.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2010-03-13"
   },
@@ -16742,6 +18253,7 @@ module.exports =
     "customerId": 437,
     "firstName": "Chris",
     "lastName": "Heinen",
+    "email": "mheinen@comcast.net",
     "notes": "Imported payment info: class cost: 125.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2010-03-13"
   },
@@ -16752,6 +18264,7 @@ module.exports =
     "customerId": 1758,
     "firstName": "Mary",
     "lastName": "Cho",
+    "email": "maryc5005@comcast.net",
     "notes": "Imported payment info: class cost: 125.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2010-03-13"
   },
@@ -16762,6 +18275,7 @@ module.exports =
     "customerId": 2419,
     "firstName": "Sue",
     "lastName": "Carroll",
+    "email": "suecarroll9@comcast.net",
     "notes": "Imported payment info: class cost: 125.\nClass #3 for this student, per source sheet.",
     "enrolledOn": "2010-03-13"
   },
@@ -16772,6 +18286,7 @@ module.exports =
     "customerId": 1530,
     "firstName": "Linda",
     "lastName": "Harter",
+    "email": "linda.harter@yahoo.com",
     "notes": "Imported payment info: class cost: 125.\nClass #3 for this student, per source sheet.",
     "enrolledOn": "2010-02-06"
   },
@@ -16791,6 +18306,7 @@ module.exports =
     "customerId": 2395,
     "firstName": "Stefanie",
     "lastName": "Finkelstein",
+    "email": "stefanie.f@comcast.net",
     "notes": "Imported payment info: class cost: 125.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2010-02-06"
   },
@@ -16801,6 +18317,7 @@ module.exports =
     "customerId": 1813,
     "firstName": "Maureen",
     "lastName": "Sullivan",
+    "email": "maureen.sullivan5@amedd.army.mil",
     "notes": "Imported payment info: class cost: 125.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2010-02-06"
   },
@@ -16811,6 +18328,7 @@ module.exports =
     "customerId": 2591,
     "firstName": "Tracy",
     "lastName": "Wilson",
+    "email": "tracypwilson@comcast.net",
     "notes": "Imported payment info: class cost: 125.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2010-02-06"
   },
@@ -16821,6 +18339,7 @@ module.exports =
     "customerId": 2094,
     "firstName": "Pilar",
     "lastName": "Bueno",
+    "email": "buenopil@gmail.com",
     "notes": "Imported payment info: class cost: 125.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2010-02-06"
   },
@@ -16831,6 +18350,7 @@ module.exports =
     "customerId": 2419,
     "firstName": "Sue",
     "lastName": "Carroll",
+    "email": "suecarroll9@comcast.net",
     "notes": "Imported payment info: class cost: 125.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2010-01-16"
   },
@@ -16841,6 +18361,7 @@ module.exports =
     "customerId": 2475,
     "firstName": "Susan",
     "lastName": "Murphy",
+    "email": "susan.seattle@hotmail.com",
     "notes": "Imported payment info: class cost: 125.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2010-01-16"
   },
@@ -16859,6 +18380,7 @@ module.exports =
     "customerId": 1284,
     "firstName": "Karla",
     "lastName": "Kreger",
+    "email": "tooth340@aol.com",
     "notes": "Imported payment info: class cost: 125.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2010-01-16"
   },
@@ -16869,6 +18391,7 @@ module.exports =
     "customerId": 1992,
     "firstName": "Pam",
     "lastName": "Rabe",
+    "email": "pam_rabe@hotmail.com",
     "notes": "Imported payment info: class cost: 125.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2010-01-16"
   },
@@ -16879,6 +18402,7 @@ module.exports =
     "customerId": 939,
     "firstName": "Ian",
     "lastName": "Ford",
+    "email": "susan.cooke@usdoj.gov",
     "notes": "Imported payment info: class cost: 125.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2010-01-16"
   },
@@ -16889,6 +18413,7 @@ module.exports =
     "customerId": 1408,
     "firstName": "Krista",
     "lastName": "Beirne",
+    "email": "krista.beirne@homestreet.com",
     "notes": "Imported payment info: class cost: 125.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2009-12-26"
   },
@@ -16899,6 +18424,7 @@ module.exports =
     "customerId": 1530,
     "firstName": "Linda",
     "lastName": "Harter",
+    "email": "linda.harter@yahoo.com",
     "notes": "Imported payment info: class cost: 125.\nClass #2 for this student, per source sheet.",
     "enrolledOn": "2009-12-26"
   },
@@ -16909,6 +18435,7 @@ module.exports =
     "customerId": 2274,
     "firstName": "Saskia",
     "lastName": "Inskip",
+    "email": "saskiared76@hotmail.com",
     "notes": "Imported payment info: class cost: 125.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2009-12-26"
   },
@@ -16919,6 +18446,7 @@ module.exports =
     "customerId": 1742,
     "firstName": "Marsha",
     "lastName": "Nilson",
+    "email": "marshanilson@msn.com",
     "notes": "Imported payment info: class cost: 125.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2009-12-26"
   },
@@ -16929,6 +18457,7 @@ module.exports =
     "customerId": 2419,
     "firstName": "Sue",
     "lastName": "Carroll",
+    "email": "suecarroll9@comcast.net",
     "notes": "Imported payment info: class cost: 125.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2009-11-07"
   },
@@ -16939,6 +18468,7 @@ module.exports =
     "customerId": 679,
     "firstName": "Diane",
     "lastName": "Keck",
+    "email": "halewolf@uswest.net",
     "notes": "Imported payment info: class cost: 125.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2009-11-07"
   },
@@ -16949,6 +18479,7 @@ module.exports =
     "customerId": 1219,
     "firstName": "Julie",
     "lastName": "Rosenberg",
+    "email": "jfrosenberg@yahoo.com",
     "notes": "Imported payment info: class cost: 125.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2009-11-07"
   },
@@ -16977,6 +18508,7 @@ module.exports =
     "customerId": 1530,
     "firstName": "Linda",
     "lastName": "Harter",
+    "email": "linda.harter@yahoo.com",
     "notes": "Imported payment info: class cost: 125.\nClass #1 for this student, per source sheet.",
     "enrolledOn": "2009-11-07"
   }

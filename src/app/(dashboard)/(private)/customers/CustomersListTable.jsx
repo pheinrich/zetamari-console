@@ -38,17 +38,28 @@ const DEFAULT_VIEW = {
   sorting: [],
   pagination: {pageIndex: 0, pageSize: 10},
   globalFilter: '',
-  filters: {type: '', student: '', marketing: ''},
+  filters: {type: '', marketing: '', orders: '', classes: ''},
 }
 
 // The 'name' column is the one meaningfully free-text searched - rank
-// against name + email + phone together (same "special-case the one
-// display column" approach as products/ProductListTable.jsx's SKU
-// search), since a person is just as likely to be looked up by email or
-// phone as by name here.
+// against name + email + phone + company + address together (same
+// "special-case the one display column" approach as
+// products/ProductListTable.jsx's SKU search), since a person is just as
+// likely to be looked up by email, phone, company, or city as by name
+// here. All other columns explicitly opt out of global filtering below
+// (enableGlobalFilter: false) so TanStack's default
+// getColumnCanGlobalFilter heuristic - which only inspects the FIRST
+// row's value and silently drops a column from matching entirely if that
+// value isn't a string/number - can't accidentally exclude a column (e.g.
+// 'phone' when the first seeded customer has none) for every row.
 const fuzzyFilter = (row, columnId, value, addMeta) => {
+  const c = row.original
+
   const target = 'name' === columnId
-    ? `${customerDisplayName( row.original )} ${row.original.email ?? ''} ${row.original.phone ?? ''}`
+    ? [
+      customerDisplayName( c ), c.email, c.phone, c.company,
+      c.street1, c.street2, c.city, c.state, c.postalCode, c.country,
+    ].filter( Boolean ).join( ' ' )
     : row.getValue( columnId )
 
   const itemRank = rankItem( target, value )
@@ -119,33 +130,39 @@ export default function CustomersListTable( {customerData} )
               {row.original.email && <Typography variant='body2'>{row.original.email}</Typography>}
             </div>
           </div>
-        )
+        ),
+        enableGlobalFilter: true
       } ),
       columnHelper.accessor( 'type', {
         header: 'Type',
         cell: ({ row }) => row.original.type
           ? <Chip label={row.original.type === 'wholesale' ? 'Wholesale' : 'Retail'} variant='tonal' size='small' />
-          : <Typography color='text.secondary'>—</Typography>
+          : <Typography color='text.secondary'>—</Typography>,
+        enableGlobalFilter: false
       } ),
       columnHelper.accessor( 'phone', {
         header: 'Phone',
-        cell: ({ row }) => <Typography>{row.original.phone || '—'}</Typography>
+        cell: ({ row }) => <Typography>{row.original.phone || '—'}</Typography>,
+        enableGlobalFilter: false
       } ),
       columnHelper.accessor( 'orderCount', {
         header: 'Orders',
         cell: ({ row }) => (
           <Chip label={row.original.orderCount} variant='tonal' color={row.original.orderCount ? 'primary' : 'secondary'} size='small' />
-        )
+        ),
+        enableGlobalFilter: false
       } ),
       columnHelper.accessor( 'classCount', {
         header: 'Classes',
         cell: ({ row }) => (
           <Chip label={row.original.classCount} variant='tonal' color={row.original.classCount ? 'success' : 'secondary'} size='small' />
-        )
+        ),
+        enableGlobalFilter: false
       } ),
       columnHelper.accessor( 'createdOn', {
         header: 'Created',
-        cell: ({ row }) => <Typography>{row.original.createdOn || '—'}</Typography>
+        cell: ({ row }) => <Typography>{row.original.createdOn || '—'}</Typography>,
+        enableGlobalFilter: false
       } ),
       columnHelper.accessor( 'actions', {
         header: 'Actions',
@@ -159,7 +176,8 @@ export default function CustomersListTable( {customerData} )
             </IconButton>
           </div>
         ),
-        enableSorting: false
+        enableSorting: false,
+        enableGlobalFilter: false
       } ),
     ],
     // eslint-disable-next-line react-hooks/exhaustive-deps
