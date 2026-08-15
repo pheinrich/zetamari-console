@@ -3,40 +3,57 @@
 // Seeds LiveClass from the "Zetamari Students - Attendance" spreadsheet's
 // Attendance tab (1,636 usable rows spanning 2009-2026). One LiveClass per
 // distinct Class Date in the sheet, per Angie's instruction to group by
-// date - note this means a multi-day event logged under more than one
-// Class Date (e.g. the October 2024 Mandala Retreat, spread across four
-// consecutive days) becomes that many separate LiveClass rows rather than
-// one row with a startDate/endDate span; merge them by hand if a single
-// multi-day record is preferred.
+// date - note this still means a multi-day event logged under more than
+// one Class Date becomes that many separate LiveClass rows rather than
+// one row with a startDate/endDate span, EXCEPT for the two specific
+// date-typo cases called out below, which really were meant to be a
+// single date.
 //
 // name: the sheet's "Class Type" text for that date, taking the single
 // most common value when a date has more than one (ties broken by
-// whichever appeared first in the source rows) - per instruction, copied
-// directly rather than reformatted.
+// whichever appeared first in the source rows) - copied directly rather
+// than reformatted, aside from one straightforward capitalization typo
+// ("MIrror" -> "Mirror", ids 218-220).
 //
 // locationName/locationAddress: resolved from keywords in the class
-// name(s) on that date, per Angie's mapping:
-//   Orlando / LMA          -> Luna Mosaic Arts, 813 Virginia Dr, Orlando, FL 32803
-//   Deer Island / Portland  -> 64535 Columbia River Hwy, Deer Island, OR 97054
-//   (also October 2024 retreats specifically, regardless of name)
-//   Oakland / Berkeley      -> 2020 Dennison Street, Oakland, CA (2025+)
-//                              805 Allston Way, Berkeley, CA 94710 (earlier)
-//   Spokane                 -> 823 N Crestline St, Spokane, WA 99202
-//   Santa Barbara           -> 4223 State St, Santa Barbara, CA 93105
-//   Austin (2019)           -> The Commune Annex, 5212 Avenue F, Austin, TX 78751
-//   SMA (not Santa Barbara) -> Seattle Mosaic Arts, 1325 N 46th St, Seattle, WA 98103
-//   everything else         -> 503 N 62nd St, Seattle, WA 98103 (the studio)
-// Every date resolved to exactly one consistent address across all of
-// that date's class-name variants - none needed the ambiguous-match
-// fallback (which would otherwise default to the studio address with a
-// review note).
+// name(s) on that date, per Angie's original mapping, then further
+// refined with venue-specific display names once she reviewed the
+// result:
+//   IMA Berkeley             -> Institute of Mosaic Art (Berkeley), 805 Allston Way, Berkeley, CA 94710
+//   SMA Santa Barbara        -> SB School of Mosaic Art (Santa Barbara), 4223 State St, Santa Barbara, CA 93105
+//   SMA Austin               -> The Commune Annex (Austin), 5212 Avenue F, Austin, TX 78751
+//   Orlando / LMA            -> Luna Mosaic Arts (Orlando), 813 Virginia Dr, Orlando, FL 32803
+//   Deer Island / Portland Mandala / Mandala Retreat
+//                            -> Marvelous Mosaic Fine Art (Portland), 64535 Columbia River Hwy, Deer Island, OR 97054
+//   Spokane (2025)           -> 2nd Sight Workspace, 823 N Crestline St, Spokane, WA 99202
+//   Oakland                  -> Studio 9, 2020 Dennison Street, Oakland, CA
+//   Nancy's Class            -> Nancy Callanan's Home, 785 Quintana Rd #442, Morro Bay, CA 93442
+//   everything else          -> 503 N 62nd St, Seattle, WA 98103 (the studio)
 //
-// locationType is 'in_person' throughout - no class name in this sheet
-// indicated an online/Zoom session.
+// locationType/locationName: every class with a startDate from
+// 2020-04-05 through 2021-09-25 (inclusive) is switched to
+// locationType 'online', locationName "Angie's Studio (Zoom)" - the
+// pandemic-era window when Angie's classes moved to Zoom - EXCEPT the
+// "Private Mirror" class starting 2021-08-16, which stayed in person
+// despite falling inside that window.
+//
+// endDate: startDate + 2 days for any class whose name mentions
+// "mandala" or "birdhouse" (multi-day workshops) or is explicitly
+// labeled "3-day" (the Orlando 3-day class); startDate + 1 day for
+// everything else, including the Orlando "2-day" class.
+//
+// Two date-typo corrections (the sheet logged what was really one
+// multi-day event as several different Class Dates a day apart, when a
+// single-day-later or later-day header stuck): id 88 (IMA Berkeley,
+// 2016-03-18) was eliminated in favor of id 89 (2016-03-19, the same
+// class); ids 205-207 (Mandala Retreat, 2024-10-26 through 10-28) were
+// eliminated in favor of id 204 (2024-10-25), which now carries the
+// retreat's full multi-day endDate instead. Any LiveClassAttendee rows
+// that pointed at the eliminated ids were repointed to the surviving one
+// - see 20260814030000-live-class-attendees.js.
 //
 // cost is deliberately left unset on every row, per instruction - Angie
-// will fill in class pricing herself later. endDate is also left unset
-// (the sheet has no distinct end date per class).
+// will fill in class pricing herself later.
 module.exports =
 {
   async up( queryInterface, Sequelize )
@@ -48,7 +65,8 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2009-11-07"
+    "startDate": "2009-11-07",
+    "endDate": "2009-11-08"
   },
   {
     "id": 2,
@@ -56,7 +74,8 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2009-12-26"
+    "startDate": "2009-12-26",
+    "endDate": "2009-12-27"
   },
   {
     "id": 3,
@@ -64,7 +83,8 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2010-01-16"
+    "startDate": "2010-01-16",
+    "endDate": "2010-01-17"
   },
   {
     "id": 4,
@@ -72,7 +92,8 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2010-02-06"
+    "startDate": "2010-02-06",
+    "endDate": "2010-02-07"
   },
   {
     "id": 5,
@@ -80,7 +101,8 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2010-03-13"
+    "startDate": "2010-03-13",
+    "endDate": "2010-03-14"
   },
   {
     "id": 6,
@@ -88,7 +110,8 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2010-03-27"
+    "startDate": "2010-03-27",
+    "endDate": "2010-03-28"
   },
   {
     "id": 7,
@@ -96,7 +119,8 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2010-04-10"
+    "startDate": "2010-04-10",
+    "endDate": "2010-04-11"
   },
   {
     "id": 8,
@@ -104,7 +128,8 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2010-05-01"
+    "startDate": "2010-05-01",
+    "endDate": "2010-05-02"
   },
   {
     "id": 9,
@@ -112,7 +137,8 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2010-05-22"
+    "startDate": "2010-05-22",
+    "endDate": "2010-05-23"
   },
   {
     "id": 10,
@@ -120,7 +146,8 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2010-06-26"
+    "startDate": "2010-06-26",
+    "endDate": "2010-06-27"
   },
   {
     "id": 11,
@@ -128,7 +155,8 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2010-08-28"
+    "startDate": "2010-08-28",
+    "endDate": "2010-08-29"
   },
   {
     "id": 12,
@@ -136,7 +164,8 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2010-09-25"
+    "startDate": "2010-09-25",
+    "endDate": "2010-09-26"
   },
   {
     "id": 13,
@@ -144,7 +173,8 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2010-10-09"
+    "startDate": "2010-10-09",
+    "endDate": "2010-10-10"
   },
   {
     "id": 14,
@@ -152,7 +182,8 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2010-10-23"
+    "startDate": "2010-10-23",
+    "endDate": "2010-10-24"
   },
   {
     "id": 15,
@@ -160,7 +191,8 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2010-11-20"
+    "startDate": "2010-11-20",
+    "endDate": "2010-11-21"
   },
   {
     "id": 16,
@@ -168,7 +200,8 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2010-12-11"
+    "startDate": "2010-12-11",
+    "endDate": "2010-12-12"
   },
   {
     "id": 17,
@@ -176,7 +209,8 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2011-01-29"
+    "startDate": "2011-01-29",
+    "endDate": "2011-01-30"
   },
   {
     "id": 18,
@@ -184,7 +218,8 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2011-02-05"
+    "startDate": "2011-02-05",
+    "endDate": "2011-02-06"
   },
   {
     "id": 19,
@@ -192,7 +227,8 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2011-02-26"
+    "startDate": "2011-02-26",
+    "endDate": "2011-02-27"
   },
   {
     "id": 20,
@@ -200,7 +236,8 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2011-03-12"
+    "startDate": "2011-03-12",
+    "endDate": "2011-03-13"
   },
   {
     "id": 21,
@@ -208,7 +245,8 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2011-03-26"
+    "startDate": "2011-03-26",
+    "endDate": "2011-03-27"
   },
   {
     "id": 22,
@@ -216,7 +254,8 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2011-04-09"
+    "startDate": "2011-04-09",
+    "endDate": "2011-04-10"
   },
   {
     "id": 23,
@@ -224,7 +263,8 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2011-04-30"
+    "startDate": "2011-04-30",
+    "endDate": "2011-05-01"
   },
   {
     "id": 24,
@@ -232,7 +272,8 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2011-05-14"
+    "startDate": "2011-05-14",
+    "endDate": "2011-05-15"
   },
   {
     "id": 25,
@@ -240,7 +281,8 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2011-06-11"
+    "startDate": "2011-06-11",
+    "endDate": "2011-06-12"
   },
   {
     "id": 26,
@@ -248,7 +290,8 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2011-08-27"
+    "startDate": "2011-08-27",
+    "endDate": "2011-08-28"
   },
   {
     "id": 27,
@@ -256,7 +299,8 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2011-09-17"
+    "startDate": "2011-09-17",
+    "endDate": "2011-09-18"
   },
   {
     "id": 28,
@@ -264,7 +308,8 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2011-10-01"
+    "startDate": "2011-10-01",
+    "endDate": "2011-10-02"
   },
   {
     "id": 29,
@@ -272,7 +317,8 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2011-10-15"
+    "startDate": "2011-10-15",
+    "endDate": "2011-10-16"
   },
   {
     "id": 30,
@@ -280,7 +326,8 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2011-11-11"
+    "startDate": "2011-11-11",
+    "endDate": "2011-11-12"
   },
   {
     "id": 31,
@@ -288,7 +335,8 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2011-11-12"
+    "startDate": "2011-11-12",
+    "endDate": "2011-11-13"
   },
   {
     "id": 32,
@@ -296,7 +344,8 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2012-02-11"
+    "startDate": "2012-02-11",
+    "endDate": "2012-02-12"
   },
   {
     "id": 33,
@@ -304,7 +353,8 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2012-03-03"
+    "startDate": "2012-03-03",
+    "endDate": "2012-03-04"
   },
   {
     "id": 34,
@@ -312,7 +362,8 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2012-03-24"
+    "startDate": "2012-03-24",
+    "endDate": "2012-03-25"
   },
   {
     "id": 35,
@@ -320,7 +371,8 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2012-04-14"
+    "startDate": "2012-04-14",
+    "endDate": "2012-04-15"
   },
   {
     "id": 36,
@@ -328,7 +380,8 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2012-05-19"
+    "startDate": "2012-05-19",
+    "endDate": "2012-05-20"
   },
   {
     "id": 37,
@@ -336,7 +389,8 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2012-09-22"
+    "startDate": "2012-09-22",
+    "endDate": "2012-09-23"
   },
   {
     "id": 38,
@@ -344,7 +398,8 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2012-10-13"
+    "startDate": "2012-10-13",
+    "endDate": "2012-10-14"
   },
   {
     "id": 39,
@@ -352,7 +407,8 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2012-10-27"
+    "startDate": "2012-10-27",
+    "endDate": "2012-10-28"
   },
   {
     "id": 40,
@@ -360,7 +416,8 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2012-11-10"
+    "startDate": "2012-11-10",
+    "endDate": "2012-11-11"
   },
   {
     "id": 41,
@@ -368,7 +425,8 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2012-11-17"
+    "startDate": "2012-11-17",
+    "endDate": "2012-11-18"
   },
   {
     "id": 42,
@@ -376,7 +434,8 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2012-12-08"
+    "startDate": "2012-12-08",
+    "endDate": "2012-12-09"
   },
   {
     "id": 43,
@@ -384,7 +443,8 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2013-01-26"
+    "startDate": "2013-01-26",
+    "endDate": "2013-01-27"
   },
   {
     "id": 44,
@@ -392,7 +452,8 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2013-02-23"
+    "startDate": "2013-02-23",
+    "endDate": "2013-02-24"
   },
   {
     "id": 45,
@@ -400,7 +461,8 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2013-03-09"
+    "startDate": "2013-03-09",
+    "endDate": "2013-03-10"
   },
   {
     "id": 46,
@@ -408,7 +470,8 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2013-04-27"
+    "startDate": "2013-04-27",
+    "endDate": "2013-04-28"
   },
   {
     "id": 47,
@@ -416,7 +479,8 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2013-05-18"
+    "startDate": "2013-05-18",
+    "endDate": "2013-05-19"
   },
   {
     "id": 48,
@@ -424,7 +488,8 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2013-06-29"
+    "startDate": "2013-06-29",
+    "endDate": "2013-06-30"
   },
   {
     "id": 49,
@@ -432,7 +497,8 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Seattle Mosaic Arts",
     "locationAddress": "1325 N 46th St, Seattle, WA 98103",
-    "startDate": "2013-09-14"
+    "startDate": "2013-09-14",
+    "endDate": "2013-09-15"
   },
   {
     "id": 50,
@@ -440,7 +506,8 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2013-10-05"
+    "startDate": "2013-10-05",
+    "endDate": "2013-10-06"
   },
   {
     "id": 51,
@@ -448,7 +515,8 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2013-10-26"
+    "startDate": "2013-10-26",
+    "endDate": "2013-10-27"
   },
   {
     "id": 52,
@@ -456,7 +524,8 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2013-11-02"
+    "startDate": "2013-11-02",
+    "endDate": "2013-11-03"
   },
   {
     "id": 53,
@@ -464,7 +533,8 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2013-11-16"
+    "startDate": "2013-11-16",
+    "endDate": "2013-11-17"
   },
   {
     "id": 54,
@@ -472,7 +542,8 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2013-12-14"
+    "startDate": "2013-12-14",
+    "endDate": "2013-12-15"
   },
   {
     "id": 55,
@@ -480,7 +551,8 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2014-02-08"
+    "startDate": "2014-02-08",
+    "endDate": "2014-02-09"
   },
   {
     "id": 56,
@@ -488,15 +560,17 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2014-03-01"
+    "startDate": "2014-03-01",
+    "endDate": "2014-03-02"
   },
   {
     "id": 57,
     "name": "IMA Berkeley",
     "locationType": "in_person",
-    "locationName": "Berkeley Studio",
+    "locationName": "Institute of Mosaic Art (Berkeley)",
     "locationAddress": "805 Allston Way, Berkeley, CA 94710",
-    "startDate": "2014-03-22"
+    "startDate": "2014-03-22",
+    "endDate": "2014-03-23"
   },
   {
     "id": 58,
@@ -504,7 +578,8 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2014-04-12"
+    "startDate": "2014-04-12",
+    "endDate": "2014-04-13"
   },
   {
     "id": 59,
@@ -512,7 +587,8 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2014-04-26"
+    "startDate": "2014-04-26",
+    "endDate": "2014-04-27"
   },
   {
     "id": 60,
@@ -520,7 +596,8 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2014-06-07"
+    "startDate": "2014-06-07",
+    "endDate": "2014-06-08"
   },
   {
     "id": 61,
@@ -528,7 +605,8 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2014-08-23"
+    "startDate": "2014-08-23",
+    "endDate": "2014-08-24"
   },
   {
     "id": 62,
@@ -536,7 +614,8 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2014-09-13"
+    "startDate": "2014-09-13",
+    "endDate": "2014-09-14"
   },
   {
     "id": 63,
@@ -544,7 +623,8 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2014-09-20"
+    "startDate": "2014-09-20",
+    "endDate": "2014-09-21"
   },
   {
     "id": 64,
@@ -552,7 +632,8 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2014-10-11"
+    "startDate": "2014-10-11",
+    "endDate": "2014-10-12"
   },
   {
     "id": 65,
@@ -560,7 +641,8 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2014-10-25"
+    "startDate": "2014-10-25",
+    "endDate": "2014-10-26"
   },
   {
     "id": 66,
@@ -568,7 +650,8 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2014-11-08"
+    "startDate": "2014-11-08",
+    "endDate": "2014-11-09"
   },
   {
     "id": 67,
@@ -576,7 +659,8 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2014-11-22"
+    "startDate": "2014-11-22",
+    "endDate": "2014-11-23"
   },
   {
     "id": 68,
@@ -584,7 +668,8 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2014-12-06"
+    "startDate": "2014-12-06",
+    "endDate": "2014-12-07"
   },
   {
     "id": 69,
@@ -592,7 +677,8 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2014-12-29"
+    "startDate": "2014-12-29",
+    "endDate": "2014-12-30"
   },
   {
     "id": 70,
@@ -600,7 +686,8 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2015-01-03"
+    "startDate": "2015-01-03",
+    "endDate": "2015-01-04"
   },
   {
     "id": 71,
@@ -608,7 +695,8 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2015-02-07"
+    "startDate": "2015-02-07",
+    "endDate": "2015-02-08"
   },
   {
     "id": 72,
@@ -616,15 +704,17 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2015-02-28"
+    "startDate": "2015-02-28",
+    "endDate": "2015-03-01"
   },
   {
     "id": 73,
     "name": "IMA Berkeley",
     "locationType": "in_person",
-    "locationName": "Berkeley Studio",
+    "locationName": "Institute of Mosaic Art (Berkeley)",
     "locationAddress": "805 Allston Way, Berkeley, CA 94710",
-    "startDate": "2015-03-07"
+    "startDate": "2015-03-07",
+    "endDate": "2015-03-08"
   },
   {
     "id": 74,
@@ -632,7 +722,8 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2015-03-21"
+    "startDate": "2015-03-21",
+    "endDate": "2015-03-22"
   },
   {
     "id": 75,
@@ -640,7 +731,8 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2015-04-11"
+    "startDate": "2015-04-11",
+    "endDate": "2015-04-12"
   },
   {
     "id": 76,
@@ -648,7 +740,8 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2015-06-27"
+    "startDate": "2015-06-27",
+    "endDate": "2015-06-28"
   },
   {
     "id": 77,
@@ -656,7 +749,8 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2015-08-22"
+    "startDate": "2015-08-22",
+    "endDate": "2015-08-23"
   },
   {
     "id": 78,
@@ -664,7 +758,8 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2015-09-19"
+    "startDate": "2015-09-19",
+    "endDate": "2015-09-20"
   },
   {
     "id": 79,
@@ -672,7 +767,8 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2015-09-26"
+    "startDate": "2015-09-26",
+    "endDate": "2015-09-27"
   },
   {
     "id": 80,
@@ -680,7 +776,8 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2015-10-17"
+    "startDate": "2015-10-17",
+    "endDate": "2015-10-18"
   },
   {
     "id": 81,
@@ -688,7 +785,8 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2015-11-07"
+    "startDate": "2015-11-07",
+    "endDate": "2015-11-08"
   },
   {
     "id": 82,
@@ -696,7 +794,8 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2015-11-21"
+    "startDate": "2015-11-21",
+    "endDate": "2015-11-22"
   },
   {
     "id": 83,
@@ -704,7 +803,8 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2015-12-12"
+    "startDate": "2015-12-12",
+    "endDate": "2015-12-13"
   },
   {
     "id": 84,
@@ -712,7 +812,8 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2016-01-02"
+    "startDate": "2016-01-02",
+    "endDate": "2016-01-03"
   },
   {
     "id": 85,
@@ -720,7 +821,8 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2016-01-16"
+    "startDate": "2016-01-16",
+    "endDate": "2016-01-17"
   },
   {
     "id": 86,
@@ -728,7 +830,8 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2016-01-23"
+    "startDate": "2016-01-23",
+    "endDate": "2016-01-24"
   },
   {
     "id": 87,
@@ -736,23 +839,17 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2016-03-05"
-  },
-  {
-    "id": 88,
-    "name": "IMA Berkeley",
-    "locationType": "in_person",
-    "locationName": "Berkeley Studio",
-    "locationAddress": "805 Allston Way, Berkeley, CA 94710",
-    "startDate": "2016-03-18"
+    "startDate": "2016-03-05",
+    "endDate": "2016-03-06"
   },
   {
     "id": 89,
     "name": "IMA Berkeley",
     "locationType": "in_person",
-    "locationName": "Berkeley Studio",
+    "locationName": "Institute of Mosaic Art (Berkeley)",
     "locationAddress": "805 Allston Way, Berkeley, CA 94710",
-    "startDate": "2016-03-19"
+    "startDate": "2016-03-19",
+    "endDate": "2016-03-20"
   },
   {
     "id": 90,
@@ -760,7 +857,8 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2016-04-02"
+    "startDate": "2016-04-02",
+    "endDate": "2016-04-03"
   },
   {
     "id": 91,
@@ -768,7 +866,8 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2016-04-30"
+    "startDate": "2016-04-30",
+    "endDate": "2016-05-01"
   },
   {
     "id": 92,
@@ -776,7 +875,8 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2016-05-14"
+    "startDate": "2016-05-14",
+    "endDate": "2016-05-16"
   },
   {
     "id": 93,
@@ -784,7 +884,8 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2016-05-28"
+    "startDate": "2016-05-28",
+    "endDate": "2016-05-29"
   },
   {
     "id": 94,
@@ -792,7 +893,8 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2016-06-04"
+    "startDate": "2016-06-04",
+    "endDate": "2016-06-06"
   },
   {
     "id": 95,
@@ -800,7 +902,8 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2016-06-11"
+    "startDate": "2016-06-11",
+    "endDate": "2016-06-13"
   },
   {
     "id": 96,
@@ -808,7 +911,8 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2016-08-20"
+    "startDate": "2016-08-20",
+    "endDate": "2016-08-21"
   },
   {
     "id": 97,
@@ -816,7 +920,8 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2016-09-17"
+    "startDate": "2016-09-17",
+    "endDate": "2016-09-18"
   },
   {
     "id": 98,
@@ -824,7 +929,8 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2016-10-08"
+    "startDate": "2016-10-08",
+    "endDate": "2016-10-09"
   },
   {
     "id": 99,
@@ -832,7 +938,8 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2016-10-29"
+    "startDate": "2016-10-29",
+    "endDate": "2016-10-30"
   },
   {
     "id": 100,
@@ -840,7 +947,8 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2016-11-19"
+    "startDate": "2016-11-19",
+    "endDate": "2016-11-20"
   },
   {
     "id": 101,
@@ -848,7 +956,8 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2016-12-01"
+    "startDate": "2016-12-01",
+    "endDate": "2016-12-02"
   },
   {
     "id": 102,
@@ -856,7 +965,8 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2016-12-04"
+    "startDate": "2016-12-04",
+    "endDate": "2016-12-05"
   },
   {
     "id": 103,
@@ -864,7 +974,8 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2016-12-10"
+    "startDate": "2016-12-10",
+    "endDate": "2016-12-11"
   },
   {
     "id": 104,
@@ -872,7 +983,8 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2017-01-14"
+    "startDate": "2017-01-14",
+    "endDate": "2017-01-15"
   },
   {
     "id": 105,
@@ -880,7 +992,8 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2017-02-11"
+    "startDate": "2017-02-11",
+    "endDate": "2017-02-12"
   },
   {
     "id": 106,
@@ -888,7 +1001,8 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2017-03-11"
+    "startDate": "2017-03-11",
+    "endDate": "2017-03-12"
   },
   {
     "id": 107,
@@ -896,7 +1010,8 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2017-04-01"
+    "startDate": "2017-04-01",
+    "endDate": "2017-04-02"
   },
   {
     "id": 108,
@@ -904,7 +1019,8 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2017-06-03"
+    "startDate": "2017-06-03",
+    "endDate": "2017-06-04"
   },
   {
     "id": 109,
@@ -912,7 +1028,8 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2017-08-12"
+    "startDate": "2017-08-12",
+    "endDate": "2017-08-13"
   },
   {
     "id": 110,
@@ -920,7 +1037,8 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2017-09-09"
+    "startDate": "2017-09-09",
+    "endDate": "2017-09-10"
   },
   {
     "id": 111,
@@ -928,7 +1046,8 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2017-09-30"
+    "startDate": "2017-09-30",
+    "endDate": "2017-10-01"
   },
   {
     "id": 112,
@@ -936,7 +1055,8 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2017-10-14"
+    "startDate": "2017-10-14",
+    "endDate": "2017-10-15"
   },
   {
     "id": 113,
@@ -944,7 +1064,8 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2017-10-28"
+    "startDate": "2017-10-28",
+    "endDate": "2017-10-29"
   },
   {
     "id": 114,
@@ -952,7 +1073,8 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2017-11-18"
+    "startDate": "2017-11-18",
+    "endDate": "2017-11-19"
   },
   {
     "id": 115,
@@ -960,7 +1082,8 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2017-12-09"
+    "startDate": "2017-12-09",
+    "endDate": "2017-12-10"
   },
   {
     "id": 116,
@@ -968,7 +1091,8 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2017-12-16"
+    "startDate": "2017-12-16",
+    "endDate": "2017-12-17"
   },
   {
     "id": 117,
@@ -976,7 +1100,8 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2018-01-13"
+    "startDate": "2018-01-13",
+    "endDate": "2018-01-14"
   },
   {
     "id": 118,
@@ -984,7 +1109,8 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2018-02-03"
+    "startDate": "2018-02-03",
+    "endDate": "2018-02-04"
   },
   {
     "id": 119,
@@ -992,7 +1118,8 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2018-03-03"
+    "startDate": "2018-03-03",
+    "endDate": "2018-03-05"
   },
   {
     "id": 120,
@@ -1000,7 +1127,8 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2018-03-10"
+    "startDate": "2018-03-10",
+    "endDate": "2018-03-11"
   },
   {
     "id": 121,
@@ -1008,7 +1136,8 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2018-04-21"
+    "startDate": "2018-04-21",
+    "endDate": "2018-04-22"
   },
   {
     "id": 122,
@@ -1016,7 +1145,8 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2018-05-26"
+    "startDate": "2018-05-26",
+    "endDate": "2018-05-27"
   },
   {
     "id": 123,
@@ -1024,7 +1154,8 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2018-07-14"
+    "startDate": "2018-07-14",
+    "endDate": "2018-07-15"
   },
   {
     "id": 124,
@@ -1032,7 +1163,8 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2018-07-21"
+    "startDate": "2018-07-21",
+    "endDate": "2018-07-22"
   },
   {
     "id": 125,
@@ -1040,7 +1172,8 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2018-08-04"
+    "startDate": "2018-08-04",
+    "endDate": "2018-08-05"
   },
   {
     "id": 126,
@@ -1048,15 +1181,17 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2018-08-11"
+    "startDate": "2018-08-11",
+    "endDate": "2018-08-12"
   },
   {
     "id": 127,
     "name": "SMA Santa Barbara",
     "locationType": "in_person",
-    "locationName": "Santa Barbara Studio",
+    "locationName": "SB School of Mosaic Art (Santa Barbara)",
     "locationAddress": "4223 State St, Santa Barbara, CA 93105",
-    "startDate": "2018-09-07"
+    "startDate": "2018-09-07",
+    "endDate": "2018-09-08"
   },
   {
     "id": 128,
@@ -1064,7 +1199,8 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2018-09-22"
+    "startDate": "2018-09-22",
+    "endDate": "2018-09-23"
   },
   {
     "id": 129,
@@ -1072,7 +1208,8 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2018-09-29"
+    "startDate": "2018-09-29",
+    "endDate": "2018-09-30"
   },
   {
     "id": 130,
@@ -1080,7 +1217,8 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2018-10-23"
+    "startDate": "2018-10-23",
+    "endDate": "2018-10-24"
   },
   {
     "id": 131,
@@ -1088,7 +1226,8 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2018-10-27"
+    "startDate": "2018-10-27",
+    "endDate": "2018-10-28"
   },
   {
     "id": 132,
@@ -1096,7 +1235,8 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2018-11-17"
+    "startDate": "2018-11-17",
+    "endDate": "2018-11-18"
   },
   {
     "id": 133,
@@ -1104,7 +1244,8 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2018-12-01"
+    "startDate": "2018-12-01",
+    "endDate": "2018-12-02"
   },
   {
     "id": 134,
@@ -1112,7 +1253,8 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2018-12-08"
+    "startDate": "2018-12-08",
+    "endDate": "2018-12-09"
   },
   {
     "id": 135,
@@ -1120,7 +1262,8 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2019-01-12"
+    "startDate": "2019-01-12",
+    "endDate": "2019-01-13"
   },
   {
     "id": 136,
@@ -1128,7 +1271,8 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2019-01-19"
+    "startDate": "2019-01-19",
+    "endDate": "2019-01-20"
   },
   {
     "id": 137,
@@ -1136,7 +1280,8 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2019-02-25"
+    "startDate": "2019-02-25",
+    "endDate": "2019-02-26"
   },
   {
     "id": 138,
@@ -1144,7 +1289,8 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2019-03-02"
+    "startDate": "2019-03-02",
+    "endDate": "2019-03-03"
   },
   {
     "id": 139,
@@ -1152,7 +1298,8 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2019-03-23"
+    "startDate": "2019-03-23",
+    "endDate": "2019-03-24"
   },
   {
     "id": 140,
@@ -1160,7 +1307,8 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2019-04-01"
+    "startDate": "2019-04-01",
+    "endDate": "2019-04-02"
   },
   {
     "id": 141,
@@ -1168,7 +1316,8 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2019-05-02"
+    "startDate": "2019-05-02",
+    "endDate": "2019-05-04"
   },
   {
     "id": 142,
@@ -1176,7 +1325,8 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2019-05-18"
+    "startDate": "2019-05-18",
+    "endDate": "2019-05-19"
   },
   {
     "id": 143,
@@ -1184,7 +1334,8 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2019-05-25"
+    "startDate": "2019-05-25",
+    "endDate": "2019-05-26"
   },
   {
     "id": 144,
@@ -1192,7 +1343,8 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2019-07-13"
+    "startDate": "2019-07-13",
+    "endDate": "2019-07-14"
   },
   {
     "id": 145,
@@ -1200,7 +1352,8 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2019-07-27"
+    "startDate": "2019-07-27",
+    "endDate": "2019-07-28"
   },
   {
     "id": 146,
@@ -1208,7 +1361,8 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2019-08-03"
+    "startDate": "2019-08-03",
+    "endDate": "2019-08-04"
   },
   {
     "id": 147,
@@ -1216,15 +1370,17 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2019-08-05"
+    "startDate": "2019-08-05",
+    "endDate": "2019-08-06"
   },
   {
     "id": 148,
     "name": "SMA Austin",
     "locationType": "in_person",
-    "locationName": "The Commune Annex (Austin, TX)",
+    "locationName": "The Commune Annex (Austin)",
     "locationAddress": "The Commune Annex, 5212 Avenue F, Austin, TX 78751",
-    "startDate": "2019-09-14"
+    "startDate": "2019-09-14",
+    "endDate": "2019-09-15"
   },
   {
     "id": 149,
@@ -1232,7 +1388,8 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2019-09-28"
+    "startDate": "2019-09-28",
+    "endDate": "2019-09-29"
   },
   {
     "id": 150,
@@ -1240,7 +1397,8 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2019-10-03"
+    "startDate": "2019-10-03",
+    "endDate": "2019-10-04"
   },
   {
     "id": 151,
@@ -1248,7 +1406,8 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2019-10-15"
+    "startDate": "2019-10-15",
+    "endDate": "2019-10-16"
   },
   {
     "id": 152,
@@ -1256,7 +1415,8 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2019-11-02"
+    "startDate": "2019-11-02",
+    "endDate": "2019-11-03"
   },
   {
     "id": 153,
@@ -1264,7 +1424,8 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2019-11-23"
+    "startDate": "2019-11-23",
+    "endDate": "2019-11-24"
   },
   {
     "id": 154,
@@ -1272,15 +1433,17 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2019-12-02"
+    "startDate": "2019-12-02",
+    "endDate": "2019-12-03"
   },
   {
     "id": 155,
     "name": "Nancy's Class",
     "locationType": "in_person",
-    "locationName": "Angie’s Studio",
-    "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2019-12-07"
+    "locationName": "Nancy Callanan's Home",
+    "locationAddress": "785 Quintana Rd #442, Morro Bay, CA 93442",
+    "startDate": "2019-12-07",
+    "endDate": "2019-12-08"
   },
   {
     "id": 156,
@@ -1288,7 +1451,8 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2019-12-14"
+    "startDate": "2019-12-14",
+    "endDate": "2019-12-15"
   },
   {
     "id": 157,
@@ -1296,127 +1460,143 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2020-01-18"
+    "startDate": "2020-01-18",
+    "endDate": "2020-01-19"
   },
   {
     "id": 158,
     "name": "LMA Orlando",
     "locationType": "in_person",
-    "locationName": "Luna Mosaic Arts (Orlando, FL)",
+    "locationName": "Luna Mosaic Arts (Orlando)",
     "locationAddress": "813 Virginia Dr, Orlando, FL 32803",
-    "startDate": "2020-02-21"
+    "startDate": "2020-02-21",
+    "endDate": "2020-02-22"
   },
   {
     "id": 159,
     "name": "Votive",
-    "locationType": "in_person",
-    "locationName": "Angie’s Studio",
+    "locationType": "online",
+    "locationName": "Angie's Studio (Zoom)",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2020-04-05"
+    "startDate": "2020-04-05",
+    "endDate": "2020-04-06"
   },
   {
     "id": 160,
     "name": "Votive",
-    "locationType": "in_person",
-    "locationName": "Angie’s Studio",
+    "locationType": "online",
+    "locationName": "Angie's Studio (Zoom)",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2020-04-07"
+    "startDate": "2020-04-07",
+    "endDate": "2020-04-08"
   },
   {
     "id": 161,
     "name": "Votive",
-    "locationType": "in_person",
-    "locationName": "Angie’s Studio",
+    "locationType": "online",
+    "locationName": "Angie's Studio (Zoom)",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2020-04-09"
+    "startDate": "2020-04-09",
+    "endDate": "2020-04-10"
   },
   {
     "id": 162,
     "name": "Votive",
-    "locationType": "in_person",
-    "locationName": "Angie’s Studio",
+    "locationType": "online",
+    "locationName": "Angie's Studio (Zoom)",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2020-04-11"
+    "startDate": "2020-04-11",
+    "endDate": "2020-04-12"
   },
   {
     "id": 163,
     "name": "Mandala",
-    "locationType": "in_person",
-    "locationName": "Angie’s Studio",
+    "locationType": "online",
+    "locationName": "Angie's Studio (Zoom)",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2020-05-02"
+    "startDate": "2020-05-02",
+    "endDate": "2020-05-04"
   },
   {
     "id": 164,
     "name": "Mandala",
-    "locationType": "in_person",
-    "locationName": "Angie’s Studio",
+    "locationType": "online",
+    "locationName": "Angie's Studio (Zoom)",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2020-08-01"
+    "startDate": "2020-08-01",
+    "endDate": "2020-08-03"
   },
   {
     "id": 165,
     "name": "Mandala",
-    "locationType": "in_person",
-    "locationName": "Angie’s Studio",
+    "locationType": "online",
+    "locationName": "Angie's Studio (Zoom)",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2020-09-19"
+    "startDate": "2020-09-19",
+    "endDate": "2020-09-21"
   },
   {
     "id": 166,
     "name": "Mandala",
-    "locationType": "in_person",
-    "locationName": "Angie’s Studio",
+    "locationType": "online",
+    "locationName": "Angie's Studio (Zoom)",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2020-10-04"
+    "startDate": "2020-10-04",
+    "endDate": "2020-10-06"
   },
   {
     "id": 167,
     "name": "Votive",
-    "locationType": "in_person",
-    "locationName": "Angie’s Studio",
+    "locationType": "online",
+    "locationName": "Angie's Studio (Zoom)",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2020-11-06"
+    "startDate": "2020-11-06",
+    "endDate": "2020-11-07"
   },
   {
     "id": 168,
     "name": "Mandala",
-    "locationType": "in_person",
-    "locationName": "Angie’s Studio",
+    "locationType": "online",
+    "locationName": "Angie's Studio (Zoom)",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2020-11-14"
+    "startDate": "2020-11-14",
+    "endDate": "2020-11-16"
   },
   {
     "id": 169,
     "name": "Votive",
-    "locationType": "in_person",
-    "locationName": "Angie’s Studio",
+    "locationType": "online",
+    "locationName": "Angie's Studio (Zoom)",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2020-11-20"
+    "startDate": "2020-11-20",
+    "endDate": "2020-11-21"
   },
   {
     "id": 170,
     "name": "Votive",
-    "locationType": "in_person",
-    "locationName": "Angie’s Studio",
+    "locationType": "online",
+    "locationName": "Angie's Studio (Zoom)",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2020-12-05"
+    "startDate": "2020-12-05",
+    "endDate": "2020-12-06"
   },
   {
     "id": 171,
     "name": "Mandala",
-    "locationType": "in_person",
-    "locationName": "Angie’s Studio",
+    "locationType": "online",
+    "locationName": "Angie's Studio (Zoom)",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2021-01-02"
+    "startDate": "2021-01-02",
+    "endDate": "2021-01-04"
   },
   {
     "id": 172,
     "name": "Mandala",
-    "locationType": "in_person",
-    "locationName": "Angie’s Studio",
+    "locationType": "online",
+    "locationName": "Angie's Studio (Zoom)",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2021-02-27"
+    "startDate": "2021-02-27",
+    "endDate": "2021-03-01"
   },
   {
     "id": 173,
@@ -1424,31 +1604,35 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2021-08-16"
+    "startDate": "2021-08-16",
+    "endDate": "2021-08-17"
   },
   {
     "id": 174,
     "name": "Mandala",
-    "locationType": "in_person",
-    "locationName": "Angie’s Studio",
+    "locationType": "online",
+    "locationName": "Angie's Studio (Zoom)",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2021-09-25"
+    "startDate": "2021-09-25",
+    "endDate": "2021-09-27"
   },
   {
     "id": 175,
     "name": "LMA Orlando",
     "locationType": "in_person",
-    "locationName": "Luna Mosaic Arts (Orlando, FL)",
+    "locationName": "Luna Mosaic Arts (Orlando)",
     "locationAddress": "813 Virginia Dr, Orlando, FL 32803",
-    "startDate": "2022-02-25"
+    "startDate": "2022-02-25",
+    "endDate": "2022-02-26"
   },
   {
     "id": 176,
     "name": "LMA Orlando",
     "locationType": "in_person",
-    "locationName": "Luna Mosaic Arts (Orlando, FL)",
+    "locationName": "Luna Mosaic Arts (Orlando)",
     "locationAddress": "813 Virginia Dr, Orlando, FL 32803",
-    "startDate": "2022-02-26"
+    "startDate": "2022-02-26",
+    "endDate": "2022-02-27"
   },
   {
     "id": 177,
@@ -1456,7 +1640,8 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2022-05-14"
+    "startDate": "2022-05-14",
+    "endDate": "2022-05-15"
   },
   {
     "id": 178,
@@ -1464,23 +1649,26 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2023-02-04"
+    "startDate": "2023-02-04",
+    "endDate": "2023-02-05"
   },
   {
     "id": 179,
     "name": "LMA Orlando",
     "locationType": "in_person",
-    "locationName": "Luna Mosaic Arts (Orlando, FL)",
+    "locationName": "Luna Mosaic Arts (Orlando)",
     "locationAddress": "813 Virginia Dr, Orlando, FL 32803",
-    "startDate": "2023-02-24"
+    "startDate": "2023-02-24",
+    "endDate": "2023-02-25"
   },
   {
     "id": 180,
     "name": "LMA Orlando",
     "locationType": "in_person",
-    "locationName": "Luna Mosaic Arts (Orlando, FL)",
+    "locationName": "Luna Mosaic Arts (Orlando)",
     "locationAddress": "813 Virginia Dr, Orlando, FL 32803",
-    "startDate": "2023-02-25"
+    "startDate": "2023-02-25",
+    "endDate": "2023-02-26"
   },
   {
     "id": 181,
@@ -1488,7 +1676,8 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2023-03-11"
+    "startDate": "2023-03-11",
+    "endDate": "2023-03-12"
   },
   {
     "id": 182,
@@ -1496,7 +1685,8 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2023-04-22"
+    "startDate": "2023-04-22",
+    "endDate": "2023-04-23"
   },
   {
     "id": 183,
@@ -1504,15 +1694,17 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2023-05-06"
+    "startDate": "2023-05-06",
+    "endDate": "2023-05-07"
   },
   {
     "id": 184,
     "name": "SMA Santa Barbara",
     "locationType": "in_person",
-    "locationName": "Santa Barbara Studio",
+    "locationName": "SB School of Mosaic Art (Santa Barbara)",
     "locationAddress": "4223 State St, Santa Barbara, CA 93105",
-    "startDate": "2023-05-20"
+    "startDate": "2023-05-20",
+    "endDate": "2023-05-21"
   },
   {
     "id": 185,
@@ -1520,7 +1712,8 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2023-07-14"
+    "startDate": "2023-07-14",
+    "endDate": "2023-07-16"
   },
   {
     "id": 186,
@@ -1528,7 +1721,8 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2023-08-05"
+    "startDate": "2023-08-05",
+    "endDate": "2023-08-06"
   },
   {
     "id": 187,
@@ -1536,7 +1730,8 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2023-09-16"
+    "startDate": "2023-09-16",
+    "endDate": "2023-09-17"
   },
   {
     "id": 188,
@@ -1544,7 +1739,8 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2023-10-06"
+    "startDate": "2023-10-06",
+    "endDate": "2023-10-08"
   },
   {
     "id": 189,
@@ -1552,7 +1748,8 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2023-11-11"
+    "startDate": "2023-11-11",
+    "endDate": "2023-11-12"
   },
   {
     "id": 190,
@@ -1560,7 +1757,8 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2023-11-18"
+    "startDate": "2023-11-18",
+    "endDate": "2023-11-19"
   },
   {
     "id": 191,
@@ -1568,7 +1766,8 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2023-12-02"
+    "startDate": "2023-12-02",
+    "endDate": "2023-12-03"
   },
   {
     "id": 192,
@@ -1576,7 +1775,8 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2024-01-06"
+    "startDate": "2024-01-06",
+    "endDate": "2024-01-07"
   },
   {
     "id": 193,
@@ -1584,23 +1784,26 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2024-01-20"
+    "startDate": "2024-01-20",
+    "endDate": "2024-01-21"
   },
   {
     "id": 194,
     "name": "Orlando, Birdhouse Mandala",
     "locationType": "in_person",
-    "locationName": "Luna Mosaic Arts (Orlando, FL)",
+    "locationName": "Luna Mosaic Arts (Orlando)",
     "locationAddress": "813 Virginia Dr, Orlando, FL 32803",
-    "startDate": "2024-02-16"
+    "startDate": "2024-02-16",
+    "endDate": "2024-02-18"
   },
   {
     "id": 195,
     "name": "Orlando, Mirror",
     "locationType": "in_person",
-    "locationName": "Luna Mosaic Arts (Orlando, FL)",
+    "locationName": "Luna Mosaic Arts (Orlando)",
     "locationAddress": "813 Virginia Dr, Orlando, FL 32803",
-    "startDate": "2024-02-24"
+    "startDate": "2024-02-24",
+    "endDate": "2024-02-25"
   },
   {
     "id": 196,
@@ -1608,7 +1811,8 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2024-03-09"
+    "startDate": "2024-03-09",
+    "endDate": "2024-03-10"
   },
   {
     "id": 197,
@@ -1616,7 +1820,8 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2024-04-06"
+    "startDate": "2024-04-06",
+    "endDate": "2024-04-07"
   },
   {
     "id": 198,
@@ -1624,7 +1829,8 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2024-04-27"
+    "startDate": "2024-04-27",
+    "endDate": "2024-04-28"
   },
   {
     "id": 199,
@@ -1632,7 +1838,8 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2024-04-29"
+    "startDate": "2024-04-29",
+    "endDate": "2024-04-30"
   },
   {
     "id": 200,
@@ -1640,7 +1847,8 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2024-05-17"
+    "startDate": "2024-05-17",
+    "endDate": "2024-05-19"
   },
   {
     "id": 201,
@@ -1648,7 +1856,8 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2024-07-13"
+    "startDate": "2024-07-13",
+    "endDate": "2024-07-14"
   },
   {
     "id": 202,
@@ -1656,7 +1865,8 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2024-09-14"
+    "startDate": "2024-09-14",
+    "endDate": "2024-09-15"
   },
   {
     "id": 203,
@@ -1664,39 +1874,17 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2024-10-05"
+    "startDate": "2024-10-05",
+    "endDate": "2024-10-06"
   },
   {
     "id": 204,
     "name": "Mandala Retreat",
     "locationType": "in_person",
-    "locationName": "Deer Island Retreat",
+    "locationName": "Marvelous Mosaic Fine Art (Portland)",
     "locationAddress": "64535 Columbia River Hwy, Deer Island, OR 97054",
-    "startDate": "2024-10-25"
-  },
-  {
-    "id": 205,
-    "name": "Mandala Retreat",
-    "locationType": "in_person",
-    "locationName": "Deer Island Retreat",
-    "locationAddress": "64535 Columbia River Hwy, Deer Island, OR 97054",
-    "startDate": "2024-10-26"
-  },
-  {
-    "id": 206,
-    "name": "Mandala Retreat",
-    "locationType": "in_person",
-    "locationName": "Deer Island Retreat",
-    "locationAddress": "64535 Columbia River Hwy, Deer Island, OR 97054",
-    "startDate": "2024-10-27"
-  },
-  {
-    "id": 207,
-    "name": "Mandala Retreat",
-    "locationType": "in_person",
-    "locationName": "Deer Island Retreat",
-    "locationAddress": "64535 Columbia River Hwy, Deer Island, OR 97054",
-    "startDate": "2024-10-28"
+    "startDate": "2024-10-25",
+    "endDate": "2024-10-27"
   },
   {
     "id": 208,
@@ -1704,7 +1892,8 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2024-11-09"
+    "startDate": "2024-11-09",
+    "endDate": "2024-11-10"
   },
   {
     "id": 209,
@@ -1712,7 +1901,8 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2024-11-23"
+    "startDate": "2024-11-23",
+    "endDate": "2024-11-24"
   },
   {
     "id": 210,
@@ -1720,23 +1910,26 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2025-01-18"
+    "startDate": "2025-01-18",
+    "endDate": "2025-01-19"
   },
   {
     "id": 211,
     "name": "Orlando 3-day",
     "locationType": "in_person",
-    "locationName": "Luna Mosaic Arts (Orlando, FL)",
+    "locationName": "Luna Mosaic Arts (Orlando)",
     "locationAddress": "813 Virginia Dr, Orlando, FL 32803",
-    "startDate": "2025-01-24"
+    "startDate": "2025-01-24",
+    "endDate": "2025-01-26"
   },
   {
     "id": 212,
     "name": "Orlando 2-day",
     "locationType": "in_person",
-    "locationName": "Luna Mosaic Arts (Orlando, FL)",
+    "locationName": "Luna Mosaic Arts (Orlando)",
     "locationAddress": "813 Virginia Dr, Orlando, FL 32803",
-    "startDate": "2025-01-25"
+    "startDate": "2025-01-25",
+    "endDate": "2025-01-26"
   },
   {
     "id": 213,
@@ -1744,15 +1937,17 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2025-02-08"
+    "startDate": "2025-02-08",
+    "endDate": "2025-02-09"
   },
   {
     "id": 214,
     "name": "Spokane Mandala",
     "locationType": "in_person",
-    "locationName": "Spokane Studio",
+    "locationName": "2nd Sight Workspace",
     "locationAddress": "823 N Crestline St, Spokane, WA 99202",
-    "startDate": "2025-02-15"
+    "startDate": "2025-02-15",
+    "endDate": "2025-02-17"
   },
   {
     "id": 215,
@@ -1760,7 +1955,8 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2025-04-25"
+    "startDate": "2025-04-25",
+    "endDate": "2025-04-27"
   },
   {
     "id": 216,
@@ -1768,7 +1964,8 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2025-06-21"
+    "startDate": "2025-06-21",
+    "endDate": "2025-06-22"
   },
   {
     "id": 217,
@@ -1776,55 +1973,62 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2025-07-05"
+    "startDate": "2025-07-05",
+    "endDate": "2025-07-06"
   },
   {
     "id": 218,
-    "name": "MIrror",
+    "name": "Mirror",
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2025-08-23"
+    "startDate": "2025-08-23",
+    "endDate": "2025-08-24"
   },
   {
     "id": 219,
-    "name": "MIrror",
+    "name": "Mirror",
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2025-09-13"
+    "startDate": "2025-09-13",
+    "endDate": "2025-09-14"
   },
   {
     "id": 220,
-    "name": "MIrror",
+    "name": "Mirror",
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2025-09-14"
+    "startDate": "2025-09-14",
+    "endDate": "2025-09-15"
   },
   {
     "id": 221,
     "name": "Oakland Birdhouse",
     "locationType": "in_person",
-    "locationName": "Oakland Studio",
+    "locationName": "Studio 9",
     "locationAddress": "2020 Dennison Street, Oakland, CA",
-    "startDate": "2025-09-26"
+    "startDate": "2025-09-26",
+    "endDate": "2025-09-28"
   },
   {
     "id": 222,
     "name": "Portland Mandala",
     "locationType": "in_person",
-    "locationName": "Deer Island Retreat",
+    "locationName": "Marvelous Mosaic Fine Art (Portland)",
     "locationAddress": "64535 Columbia River Hwy, Deer Island, OR 97054",
-    "startDate": "2025-10-24"
+    "startDate": "2025-10-24",
+    "endDate": "2025-10-26"
   },
   {
     "id": 223,
     "name": "Portland Mandala",
     "locationType": "in_person",
-    "locationName": "Deer Island Retreat",
+    "locationName": "Marvelous Mosaic Fine Art (Portland)",
     "locationAddress": "64535 Columbia River Hwy, Deer Island, OR 97054",
-    "startDate": "2025-10-25"
+    "startDate": "2025-10-25",
+    "endDate": "2025-10-27"
   },
   {
     "id": 224,
@@ -1832,7 +2036,8 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2025-11-15"
+    "startDate": "2025-11-15",
+    "endDate": "2025-11-16"
   },
   {
     "id": 225,
@@ -1840,7 +2045,8 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2025-12-06"
+    "startDate": "2025-12-06",
+    "endDate": "2025-12-07"
   },
   {
     "id": 226,
@@ -1848,7 +2054,8 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2026-01-03"
+    "startDate": "2026-01-03",
+    "endDate": "2026-01-04"
   },
   {
     "id": 227,
@@ -1856,7 +2063,8 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2026-01-17"
+    "startDate": "2026-01-17",
+    "endDate": "2026-01-18"
   },
   {
     "id": 228,
@@ -1864,7 +2072,8 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2026-02-07"
+    "startDate": "2026-02-07",
+    "endDate": "2026-02-08"
   },
   {
     "id": 229,
@@ -1872,7 +2081,8 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2026-02-28"
+    "startDate": "2026-02-28",
+    "endDate": "2026-03-02"
   },
   {
     "id": 230,
@@ -1880,7 +2090,8 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2026-04-11"
+    "startDate": "2026-04-11",
+    "endDate": "2026-04-12"
   },
   {
     "id": 231,
@@ -1888,7 +2099,8 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2026-04-12"
+    "startDate": "2026-04-12",
+    "endDate": "2026-04-13"
   },
   {
     "id": 232,
@@ -1896,7 +2108,8 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2026-06-13"
+    "startDate": "2026-06-13",
+    "endDate": "2026-06-14"
   },
   {
     "id": 233,
@@ -1904,7 +2117,8 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2026-07-11"
+    "startDate": "2026-07-11",
+    "endDate": "2026-07-12"
   },
   {
     "id": 234,
@@ -1912,7 +2126,8 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2026-09-19"
+    "startDate": "2026-09-19",
+    "endDate": "2026-09-20"
   },
   {
     "id": 235,
@@ -1920,15 +2135,17 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2026-10-09"
+    "startDate": "2026-10-09",
+    "endDate": "2026-10-11"
   },
   {
     "id": 236,
     "name": "Deer Island",
     "locationType": "in_person",
-    "locationName": "Deer Island Retreat",
+    "locationName": "Marvelous Mosaic Fine Art (Portland)",
     "locationAddress": "64535 Columbia River Hwy, Deer Island, OR 97054",
-    "startDate": "2026-10-23"
+    "startDate": "2026-10-23",
+    "endDate": "2026-10-24"
   },
   {
     "id": 237,
@@ -1936,7 +2153,8 @@ module.exports =
     "locationType": "in_person",
     "locationName": "Angie’s Studio",
     "locationAddress": "503 N 62nd St, Seattle, WA 98103",
-    "startDate": "2026-11-14"
+    "startDate": "2026-11-14",
+    "endDate": "2026-11-15"
   }
 ] )
   },

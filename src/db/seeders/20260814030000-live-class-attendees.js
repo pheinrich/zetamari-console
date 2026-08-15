@@ -72,6 +72,11 @@
 // against). 51 rows have an email that didn't match any seeded Customer -
 // see build_liveclass_seeder.py's printed "Unmatched emails" list for the
 // full accounting.
+//
+// liveClassId repointing: 5 rows originally pointed at a LiveClass id
+// that 20260814020000-live-classes.js later eliminated as a date typo
+// (id 88 -> 89, ids 205-207 -> 204 - see that file's header) - those 5
+// rows now point at the surviving id instead.
 module.exports =
 {
   async up( queryInterface, Sequelize )
@@ -2501,7 +2506,7 @@ module.exports =
   },
   {
     "id": 200,
-    "liveClassId": 205,
+    "liveClassId": 204,
     "status": "completed",
     "customerId": 1569,
     "firstName": "Lisa",
@@ -2537,7 +2542,7 @@ module.exports =
   },
   {
     "id": 203,
-    "liveClassId": 205,
+    "liveClassId": 204,
     "status": "completed",
     "customerId": 999,
     "firstName": "Jane",
@@ -2549,7 +2554,7 @@ module.exports =
   },
   {
     "id": 204,
-    "liveClassId": 206,
+    "liveClassId": 204,
     "status": "cancelled",
     "customerId": 2524,
     "firstName": "Tammy",
@@ -2561,7 +2566,7 @@ module.exports =
   },
   {
     "id": 205,
-    "liveClassId": 207,
+    "liveClassId": 204,
     "status": "completed",
     "customerId": 1628,
     "firstName": "Louise",
@@ -12110,7 +12115,7 @@ module.exports =
   },
   {
     "id": 1028,
-    "liveClassId": 88,
+    "liveClassId": 89,
     "status": "completed",
     "customerId": 1075,
     "firstName": "Jennifer",
