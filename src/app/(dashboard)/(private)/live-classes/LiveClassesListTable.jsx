@@ -38,7 +38,7 @@ const DEFAULT_VIEW = {
   sorting: [{id: 'startDate', desc: true}],
   pagination: {pageIndex: 0, pageSize: 10},
   globalFilter: '',
-  filters: {location: '', attendees: ''},
+  filters: {location: ''},
 }
 
 // The 'name' column is the one meaningfully free-text searched - rank
@@ -164,6 +164,14 @@ export default function LiveClassesListTable( {liveClassData} )
     filterFns: { fuzzy: fuzzyFilter },
     state: { sorting: view.sorting, pagination: view.pagination, globalFilter: view.globalFilter },
     globalFilterFn: fuzzyFilter,
+
+    // See the matching comment in customers/CustomersListTable.jsx -
+    // bypasses TanStack's default getColumnCanGlobalFilter heuristic (which
+    // ANDs with, rather than being overridden by, each column's own
+    // enableGlobalFilter) so 'name' below is reliably searchable even
+    // though this heuristic currently happens to pass anyway (LiveClass
+    // has a real .name field on its first row).
+    getColumnCanGlobalFilter: () => true,
     onSortingChange,
     onPaginationChange,
     onGlobalFilterChange: value => updateView( {globalFilter: value} ),

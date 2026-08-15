@@ -190,6 +190,16 @@ export default function CustomersListTable( {customerData} )
     filterFns: { fuzzy: fuzzyFilter },
     state: { sorting: view.sorting, pagination: view.pagination, globalFilter: view.globalFilter },
     globalFilterFn: fuzzyFilter,
+
+    // Bypasses TanStack's default getColumnCanGlobalFilter heuristic,
+    // which ANDs together with each column's own enableGlobalFilter
+    // rather than being overridden by it - that default heuristic only
+    // inspects the first row's raw getValue() and requires a
+    // string/number, so it still excluded 'name' below even with
+    // enableGlobalFilter: true set explicitly, since Customer has no real
+    // .name field (getValue('name') is always undefined). Each column's
+    // own enableGlobalFilter is now the sole authority.
+    getColumnCanGlobalFilter: () => true,
     onSortingChange,
     onPaginationChange,
     onGlobalFilterChange: value => updateView( {globalFilter: value} ),

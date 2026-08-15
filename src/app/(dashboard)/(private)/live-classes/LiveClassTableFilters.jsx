@@ -13,7 +13,7 @@ import Select from '@mui/material/Select'
 // customers/CustomerTableFilters.jsx.
 export default function LiveClassTableFilters( {liveClassData, setData, filters, onFiltersChange} )
 {
-  const { location = '', attendees = '' } = filters || {}
+  const { location = '' } = filters || {}
 
   // Location values come straight from the data (locationName is
   // free-text - "Deer Island Retreat", "Seattle Mosaic Arts", etc.) rather
@@ -28,15 +28,13 @@ export default function LiveClassTableFilters( {liveClassData, setData, filters,
   useEffect( () => {
     const filtered = liveClassData?.filter( liveClass => {
       if( location && liveClass.locationName !== location ) return false
-      if( attendees === 'none' && liveClass.attendeeCount ) return false
-      if( attendees === 'some' && !liveClass.attendeeCount ) return false
 
       return true
     })
 
     setData( filtered ?? [] )
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [location, attendees, liveClassData] )
+  }, [location, liveClassData] )
 
   return (
     <CardContent>
@@ -55,22 +53,6 @@ export default function LiveClassTableFilters( {liveClassData, setData, filters,
               {locationOptions.map( name => (
                 <MenuItem key={name} value={name}>{name}</MenuItem>
               ) )}
-            </Select>
-          </FormControl>
-        </Grid>
-        <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-          <FormControl fullWidth>
-            <InputLabel id='live-class-attendees-filter'>Attendees</InputLabel>
-            <Select
-              fullWidth
-              label='Attendees'
-              labelId='live-class-attendees-filter'
-              value={attendees}
-              onChange={e => onFiltersChange( {...filters, attendees: e.target.value} )}
-            >
-              <MenuItem value=''>All</MenuItem>
-              <MenuItem value='some'>Has attendees</MenuItem>
-              <MenuItem value='none'>No attendees</MenuItem>
             </Select>
           </FormControl>
         </Grid>
