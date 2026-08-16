@@ -350,7 +350,7 @@ module.exports =
     "firstName": "Scott",
     "lastName": "Dolphin",
     "company": "15 Steps",
-    "email": "admin@breatheithaca.com",
+    "email": "15steps@fifteensteps.com",
     "phone": "(607) 272-4902",
     "street1": "171 E State St",
     "city": "Ithaca",
@@ -360,7 +360,8 @@ module.exports =
     "createdOn": "2013-05-27",
     "notes": "Formerly '15 Steps'; new owners as of 1/21 (was Bettsie Park), Also Home Cooking Ithaca",
     "type": "wholesale",
-    "website": "https://www.fifteensteps.com/"
+    "website": "https://www.fifteensteps.com/",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 52,
@@ -794,19 +795,6 @@ module.exports =
     "acceptsEmailMarketing": true
   },
   {
-    "id": 85,
-    "firstName": "Alison",
-    "lastName": "Kelley",
-    "email": "outofherhead2@aol.com",
-    "street1": "951 Cromwell Bridge Rd",
-    "city": "Baltimore",
-    "state": "MD",
-    "postalCode": "21286",
-    "country": "US",
-    "createdOn": "2009-04-08",
-    "notes": "Imported record: 1 order(s), $25.00 total spent."
-  },
-  {
     "id": 86,
     "firstName": "Alison",
     "lastName": "Lantz",
@@ -881,7 +869,8 @@ module.exports =
     "state": "MD",
     "postalCode": "21286",
     "country": "US",
-    "createdOn": "2019-08-09"
+    "createdOn": "2009-04-08",
+    "notes": "Imported record: 1 order(s), $25.00 total spent."
   },
   {
     "id": 92,
@@ -1946,12 +1935,7 @@ module.exports =
     "id": 180,
     "firstName": "Anne",
     "lastName": "Huddleston",
-    "email": "annech@cinci.rr.com"
-  },
-  {
-    "id": 181,
-    "firstName": "Anne",
-    "lastName": "Huddleston",
+    "email": "annech@cinci.rr.com",
     "createdOn": "2013-08-08"
   },
   {
@@ -2042,12 +2026,6 @@ module.exports =
     "createdOn": "2020-03-31",
     "notes": "Imported record: 1 order(s), $59.00 total spent.",
     "acceptsEmailMarketing": false
-  },
-  {
-    "id": 188,
-    "firstName": "Annette",
-    "lastName": "Dokken",
-    "email": "annette.dokken@motiva.com"
   },
   {
     "id": 189,
@@ -2485,21 +2463,6 @@ module.exports =
     "createdOn": "2015-06-23",
     "type": "wholesale",
     "website": "http://artworksaustin.com/"
-  },
-  {
-    "id": 219,
-    "firstName": "Debbie",
-    "lastName": "Zuckerman",
-    "company": "Artworks Gallery",
-    "email": "dzuckey@gmail.com",
-    "phone": "(269) 637-7789",
-    "street1": "263 Broadway St",
-    "city": "South Haven",
-    "state": "MI",
-    "postalCode": "49090",
-    "country": "US",
-    "createdOn": "2010-05-27",
-    "type": "wholesale"
   },
   {
     "id": 220,
@@ -4677,12 +4640,6 @@ module.exports =
     "acceptsEmailMarketing": true
   },
   {
-    "id": 386,
-    "firstName": "Casey",
-    "lastName": "Shelley",
-    "email": "cajeshel@gmail.com"
-  },
-  {
     "id": 387,
     "firstName": "Casey",
     "lastName": "Shelley",
@@ -5326,12 +5283,6 @@ module.exports =
     "createdOn": "2010-05-27"
   },
   {
-    "id": 437,
-    "firstName": "Chris",
-    "lastName": "Heinen",
-    "email": "mheinen@comcast.net"
-  },
-  {
     "id": 438,
     "firstName": "Chris",
     "lastName": "Luedke",
@@ -5370,16 +5321,10 @@ module.exports =
     "createdOn": "2010-05-27"
   },
   {
-    "id": 441,
-    "firstName": "Chrissie",
-    "lastName": "Diller",
-    "email": "chrissie.diller@gmail.com"
-  },
-  {
     "id": 442,
     "firstName": "Chrissie",
     "lastName": "Diller",
-    "email": "cosebelle_2@hotmail.com",
+    "email": "chrissie.diller@gmail.com",
     "street1": "3955 Phinney Ave N",
     "city": "Seattle",
     "state": "WA",
@@ -6607,12 +6552,6 @@ module.exports =
     "acceptsEmailMarketing": false
   },
   {
-    "id": 542,
-    "firstName": "Dacia",
-    "lastName": "Emmel",
-    "email": "daciawpf@gmail.com"
-  },
-  {
     "id": 543,
     "firstName": "Dacia L",
     "lastName": "Emmel",
@@ -6850,12 +6789,6 @@ module.exports =
     "acceptsEmailMarketing": false
   },
   {
-    "id": 562,
-    "firstName": "Danielle",
-    "lastName": "MacLean",
-    "email": "dmaclean@kitsapcu.org"
-  },
-  {
     "id": 563,
     "firstName": "Darla",
     "lastName": "Lynn",
@@ -7071,12 +7004,6 @@ module.exports =
     "createdOn": "2021-12-27",
     "notes": "+Apron\nAdditional contact: stev8050@bellsouth.net\nImported record: 1 order(s), $165.00 total spent.",
     "acceptsEmailMarketing": true
-  },
-  {
-    "id": 580,
-    "firstName": "Dawn",
-    "lastName": "Stevens",
-    "email": "stev8050@bellsouth.net"
   },
   {
     "id": 581,
@@ -7598,22 +7525,6 @@ module.exports =
     "country": "US",
     "createdOn": "2025-01-23",
     "notes": "Imported record: 1 order(s), $41.35 total spent.",
-    "acceptsEmailMarketing": false
-  },
-  {
-    "id": 625,
-    "firstName": "Deborah",
-    "lastName": "March",
-    "email": "deborahmarch@gmail.com",
-    "phone": "(331) 762-7637",
-    "street1": "427 Fulton St Apt B",
-    "street2": "c/o Katelyn Daniels",
-    "city": "Elgin",
-    "state": "IL",
-    "postalCode": "60120",
-    "country": "US",
-    "createdOn": "2018-12-16",
-    "notes": "Imported record: 1 order(s), $29.40 total spent.",
     "acceptsEmailMarketing": false
   },
   {
@@ -8233,12 +8144,6 @@ module.exports =
     "postalCode": "98052-5466",
     "country": "US",
     "createdOn": "2019-08-16"
-  },
-  {
-    "id": 675,
-    "firstName": "Diane",
-    "lastName": "Groendyke",
-    "email": "dianegroendyke@hotmail.com"
   },
   {
     "id": 676,
@@ -9702,19 +9607,6 @@ module.exports =
     "website": "http://www.epilogueart.com"
   },
   {
-    "id": 794,
-    "firstName": "Eric",
-    "lastName": "Dandurand",
-    "email": "cambriaglassworks@gmail.com",
-    "phone": "(805) 927-4248",
-    "street1": "2180 Old Creamery Rd",
-    "city": "Harmony",
-    "state": "CA",
-    "postalCode": "93435",
-    "country": "US",
-    "createdOn": "2015-11-20"
-  },
-  {
     "id": 795,
     "firstName": "Eric",
     "lastName": "Steffen",
@@ -9963,20 +9855,6 @@ module.exports =
     "createdOn": "2011-09-18",
     "type": "wholesale",
     "website": "https://www.facebook.com/TheEscapeGeorgetown/"
-  },
-  {
-    "id": 814,
-    "firstName": "Esther",
-    "lastName": "Barak",
-    "email": "goldylocks10@gmail.com",
-    "street1": "176 Geneva St Unit 4",
-    "city": "Saint Catharines",
-    "state": "ON",
-    "postalCode": "L2R 4P3",
-    "country": "CA",
-    "createdOn": "2022-11-23",
-    "notes": "Imported record: 1 order(s), legacy user ID 86819495.",
-    "acceptsEmailMarketing": false
   },
   {
     "id": 815,
@@ -10435,12 +10313,6 @@ module.exports =
     "createdOn": "2020-11-15",
     "notes": "Imported record: 2 order(s), $456.25 total spent.",
     "acceptsEmailMarketing": false
-  },
-  {
-    "id": 847,
-    "firstName": "Gail",
-    "lastName": "Giolli",
-    "email": "ggiolli@comcast.net"
   },
   {
     "id": 848,
@@ -10933,7 +10805,7 @@ module.exports =
     "postalCode": "14174",
     "country": "US",
     "createdOn": "2024-05-07",
-    "notes": "Imported record: 1 order(s), $40.40 total spent.",
+    "notes": "Imported record: 1 order(s), legacy user ID 86819495.\nImported record: 1 order(s), $40.40 total spent.",
     "acceptsEmailMarketing": true
   },
   {
@@ -10957,12 +10829,6 @@ module.exports =
     "lastName": "Morales",
     "email": "gamorales@cfi.rr.com",
     "createdOn": "2023-02-24"
-  },
-  {
-    "id": 886,
-    "firstName": "Gloria",
-    "lastName": "Morales",
-    "email": "gamorales@cfl.rr.com"
   },
   {
     "id": 887,
@@ -11130,12 +10996,6 @@ module.exports =
     "acceptsEmailMarketing": false
   },
   {
-    "id": 899,
-    "firstName": "Hailey",
-    "lastName": "Watkins",
-    "email": "haileywatkins361@gmail.com"
-  },
-  {
     "id": 900,
     "firstName": "Haley",
     "lastName": "Churchill",
@@ -11219,7 +11079,7 @@ module.exports =
     "state": "CA",
     "postalCode": "93435",
     "country": "US",
-    "createdOn": "2016-03-01",
+    "createdOn": "2015-11-20",
     "type": "wholesale",
     "website": "https://www.harmonyglassworks.com/"
   },
@@ -11377,12 +11237,7 @@ module.exports =
     "id": 917,
     "firstName": "Heidi",
     "lastName": "Horwitz",
-    "email": "heidihorwitz@comcast.net"
-  },
-  {
-    "id": 918,
-    "firstName": "Heidi",
-    "lastName": "Horwitz",
+    "email": "heidihorwitz@comcast.net",
     "createdOn": "2018-01-02"
   },
   {
@@ -11585,7 +11440,7 @@ module.exports =
     "state": "WA",
     "postalCode": "98020",
     "country": "US",
-    "createdOn": "2019-06-02"
+    "createdOn": "2013-07-22"
   },
   {
     "id": 934,
@@ -12534,12 +12389,6 @@ module.exports =
     "acceptsEmailMarketing": true
   },
   {
-    "id": 1011,
-    "firstName": "Jane",
-    "lastName": "Swanson",
-    "email": "jane.swanson@costcotravel.com"
-  },
-  {
     "id": 1012,
     "firstName": "Jane",
     "lastName": "Swanson",
@@ -13206,12 +13055,6 @@ module.exports =
     "acceptsEmailMarketing": true
   },
   {
-    "id": 1066,
-    "firstName": "Jennean",
-    "lastName": "Everett",
-    "email": "jenneanr@hotmail.com"
-  },
-  {
     "id": 1067,
     "firstName": "Jennifer",
     "lastName": "Bensted",
@@ -13230,12 +13073,7 @@ module.exports =
     "id": 1068,
     "firstName": "Jennifer",
     "lastName": "Burke",
-    "email": "jb.snowfish@gmail.com"
-  },
-  {
-    "id": 1069,
-    "firstName": "Jennifer",
-    "lastName": "Burke",
+    "email": "jb.snowfish@gmail.com",
     "createdOn": "2013-02-06"
   },
   {
@@ -13338,12 +13176,7 @@ module.exports =
     "id": 1077,
     "firstName": "Jennifer",
     "lastName": "Graham",
-    "email": "jenng159@gmail.com"
-  },
-  {
-    "id": 1078,
-    "firstName": "Jennifer",
-    "lastName": "Graham",
+    "email": "jenng159@gmail.com",
     "street1": "1212 181st Avenue NE",
     "city": "Snohomish",
     "state": "WA",
@@ -14663,21 +14496,6 @@ module.exports =
     "createdOn": "2013-07-07"
   },
   {
-    "id": 1189,
-    "firstName": "Judy",
-    "lastName": "Turpie",
-    "email": "judy.turpie@cox.net",
-    "phone": "(928) 252-3447",
-    "street1": "27096 W Burnett Rd",
-    "city": "Buckeye",
-    "state": "AZ",
-    "postalCode": "85396",
-    "country": "US",
-    "createdOn": "2019-05-25",
-    "notes": "Imported record: 1 order(s), $126.20 total spent.",
-    "acceptsEmailMarketing": false
-  },
-  {
     "id": 1190,
     "firstName": "Judy",
     "lastName": "Turpie",
@@ -14689,7 +14507,8 @@ module.exports =
     "postalCode": "23831",
     "country": "US",
     "createdOn": "2026-08-03",
-    "notes": "Imported record: 1 order(s), $120.28 total spent."
+    "notes": "Imported record: 1 order(s), $120.28 total spent.",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1191,
@@ -14899,12 +14718,6 @@ module.exports =
     "createdOn": "2021-02-05",
     "notes": "Imported record: 3 order(s), $402.00 total spent.",
     "acceptsEmailMarketing": false
-  },
-  {
-    "id": 1206,
-    "firstName": "Julie",
-    "lastName": "Friesen",
-    "email": "jewels.2@sbcglobal.net"
   },
   {
     "id": 1207,
@@ -15503,12 +15316,7 @@ module.exports =
     "id": 1255,
     "firstName": "Karen",
     "lastName": "Healy",
-    "email": "kathealy@comcast.net"
-  },
-  {
-    "id": 1256,
-    "firstName": "Karen",
-    "lastName": "Healy",
+    "email": "kathealy@comcast.net",
     "createdOn": "2023-11-17"
   },
   {
@@ -15774,12 +15582,6 @@ module.exports =
     "country": "US",
     "createdOn": "2020-04-19",
     "acceptsEmailMarketing": false
-  },
-  {
-    "id": 1278,
-    "firstName": "Karen",
-    "lastName": "Zarinski",
-    "email": "kfz911@yahoo.com"
   },
   {
     "id": 1279,
@@ -16065,12 +15867,6 @@ module.exports =
     "createdOn": "2020-11-29",
     "notes": "Imported record: 1 order(s), $210.19 total spent.",
     "acceptsEmailMarketing": false
-  },
-  {
-    "id": 1303,
-    "firstName": "Kathleen",
-    "lastName": "Appleyard",
-    "email": "kappleyard20612@comcast.net"
   },
   {
     "id": 1304,
@@ -16687,12 +16483,7 @@ module.exports =
     "id": 1356,
     "firstName": "Kerry",
     "lastName": "Sturgill",
-    "email": "kerry.sturgill@swedish.org"
-  },
-  {
-    "id": 1357,
-    "firstName": "Kerry",
-    "lastName": "Sturgill",
+    "email": "kerry.sturgill@swedish.org",
     "createdOn": "2010-12-02"
   },
   {
@@ -17203,13 +16994,6 @@ module.exports =
     "acceptsEmailMarketing": true
   },
   {
-    "id": 1402,
-    "firstName": "Kory",
-    "lastName": "Dollar",
-    "email": "kory@marvelousmosaic.com",
-    "createdOn": "2024-05-15"
-  },
-  {
     "id": 1403,
     "firstName": "Dianne",
     "lastName": "Krause",
@@ -17437,12 +17221,6 @@ module.exports =
     "acceptsEmailMarketing": false
   },
   {
-    "id": 1421,
-    "firstName": "Kristina",
-    "lastName": "Keller",
-    "email": "litratec@hotmail.com"
-  },
-  {
     "id": 1422,
     "firstName": "Kristina",
     "lastName": "Walsh",
@@ -17543,7 +17321,7 @@ module.exports =
     "state": "MI",
     "postalCode": "49090",
     "country": "US",
-    "createdOn": "2018-09-13",
+    "createdOn": "2010-05-27",
     "type": "wholesale",
     "website": "https://www.lakeshorepaint.com/"
   },
@@ -18375,12 +18153,6 @@ module.exports =
     "acceptsEmailMarketing": true
   },
   {
-    "id": 1501,
-    "firstName": "Leslie",
-    "lastName": "Weaver",
-    "email": "lweaver@washingtondmc.com"
-  },
-  {
     "id": 1502,
     "firstName": "Leslie",
     "lastName": "Williams Pruss",
@@ -18421,12 +18193,6 @@ module.exports =
     "createdOn": "2021-09-01",
     "notes": "Imported record: 1 order(s), $25.30 total spent.",
     "acceptsEmailMarketing": false
-  },
-  {
-    "id": 1505,
-    "firstName": "Libby",
-    "lastName": "Lewis",
-    "email": "llewis@n-forge.com"
   },
   {
     "id": 1506,
@@ -18644,24 +18410,9 @@ module.exports =
     "state": "TX",
     "postalCode": "77573",
     "country": "US",
-    "createdOn": "2020-08-17",
+    "createdOn": "2020-04-30",
     "notes": "Additional contact: shoretwo@comcast.net\nImported record: 2 order(s), $26.30 total spent, legacy user ID 44979479.",
     "acceptsEmailMarketing": true
-  },
-  {
-    "id": 1523,
-    "firstName": "Linda",
-    "lastName": "Duryea",
-    "email": "shoretwo@comcast.net",
-    "phone": "(281) 615-3808",
-    "street1": "2428 Thorndon Park Ct",
-    "city": "League City",
-    "state": "TX",
-    "postalCode": "77573",
-    "country": "US",
-    "createdOn": "2020-04-30",
-    "notes": "Imported record: 6 order(s), $649.90 total spent.",
-    "acceptsEmailMarketing": false
   },
   {
     "id": 1524,
@@ -19561,12 +19312,6 @@ module.exports =
     "acceptsEmailMarketing": false
   },
   {
-    "id": 1600,
-    "firstName": "Loraine",
-    "lastName": "Martinez",
-    "email": "loraine.martinez@live.com"
-  },
-  {
     "id": 1601,
     "firstName": "Loraine",
     "lastName": "Martinez",
@@ -20183,12 +19928,6 @@ module.exports =
     "createdOn": "2017-08-24"
   },
   {
-    "id": 1648,
-    "firstName": "Lynn",
-    "lastName": "Bartelt",
-    "email": "howzez2@comcast.com"
-  },
-  {
     "id": 1649,
     "firstName": "Lynn",
     "lastName": "Bartelt",
@@ -20207,7 +19946,7 @@ module.exports =
     "id": 1650,
     "firstName": "Lynn",
     "lastName": "Brandli",
-    "email": "lynnb@arcreports.com",
+    "email": "lynnlbrandli@gmail.com",
     "phone": "(425) 246-4840",
     "street1": "5894 Mont Blanc Pl NW",
     "city": "Issaquah",
@@ -20215,12 +19954,6 @@ module.exports =
     "postalCode": "98027-7860",
     "country": "US",
     "createdOn": "2019-06-02"
-  },
-  {
-    "id": 1651,
-    "firstName": "Lynn",
-    "lastName": "Brandli",
-    "email": "lynnlbrandli@gmail.com"
   },
   {
     "id": 1652,
@@ -20497,12 +20230,6 @@ module.exports =
     "createdOn": "2024-02-03"
   },
   {
-    "id": 1676,
-    "firstName": "Malia",
-    "lastName": "Santucci",
-    "createdOn": "2013-07-22"
-  },
-  {
     "id": 1677,
     "firstName": "Jerry",
     "lastName": "Frank",
@@ -20593,12 +20320,6 @@ module.exports =
     "createdOn": "2010-05-27"
   },
   {
-    "id": 1684,
-    "firstName": "Marcia",
-    "lastName": "Wiley",
-    "email": "mwiley@igc.org"
-  },
-  {
     "id": 1685,
     "firstName": "Marcie",
     "lastName": "Honerkamp",
@@ -20684,20 +20405,6 @@ module.exports =
     "acceptsEmailMarketing": true
   },
   {
-    "id": 1691,
-    "firstName": "Margaret",
-    "lastName": "Bachman",
-    "email": "glassart1@yahoo.com",
-    "phone": "(214) 675-5158",
-    "street1": "12504 39th Ave NE",
-    "city": "Seattle",
-    "state": "WA",
-    "postalCode": "98125",
-    "country": "US",
-    "createdOn": "2026-05-22",
-    "notes": "Imported record: 1 order(s), $285.00 total spent."
-  },
-  {
     "id": 1692,
     "firstName": "Margaret",
     "lastName": "Byl",
@@ -20744,12 +20451,6 @@ module.exports =
     "postalCode": "98133",
     "country": "US",
     "createdOn": "2019-08-09"
-  },
-  {
-    "id": 1696,
-    "firstName": "Margaret",
-    "lastName": "Law",
-    "email": "mtlseattle@gmail.com"
   },
   {
     "id": 1697,
@@ -21404,7 +21105,7 @@ module.exports =
     "state": "OR",
     "postalCode": "97054",
     "country": "US",
-    "createdOn": "2024-10-28",
+    "createdOn": "2024-05-15",
     "type": "wholesale",
     "website": "https://marvelousmosaic.com"
   },
@@ -21612,12 +21313,6 @@ module.exports =
     "acceptsEmailMarketing": true
   },
   {
-    "id": 1767,
-    "firstName": "Mary",
-    "lastName": "Glink",
-    "email": "maryglink1@me.com"
-  },
-  {
     "id": 1768,
     "firstName": "Mary",
     "lastName": "Gross",
@@ -21705,12 +21400,7 @@ module.exports =
     "id": 1775,
     "firstName": "Mary",
     "lastName": "Lang",
-    "email": "mary4fitness@gmail.com"
-  },
-  {
-    "id": 1776,
-    "firstName": "Mary",
-    "lastName": "Lang",
+    "email": "mary4fitness@gmail.com",
     "createdOn": "2023-11-17"
   },
   {
@@ -22622,8 +22312,10 @@ module.exports =
     "state": "TX",
     "postalCode": "77449",
     "country": "US",
-    "createdOn": "2019-11-25",
-    "website": "https://mexi-kids-mosaics.com/"
+    "createdOn": "2018-12-16",
+    "notes": "Imported record: 1 order(s), $29.40 total spent.",
+    "website": "https://mexi-kids-mosaics.com/",
+    "acceptsEmailMarketing": false
   },
   {
     "id": 1850,
@@ -22965,12 +22657,6 @@ module.exports =
     "acceptsEmailMarketing": true
   },
   {
-    "id": 1877,
-    "firstName": "Michelle",
-    "lastName": "Husby",
-    "email": "stitcher_71@yahoo.com"
-  },
-  {
     "id": 1878,
     "firstName": "Michelle",
     "lastName": "Kuster",
@@ -23215,12 +22901,7 @@ module.exports =
     "id": 1899,
     "firstName": "Monica",
     "lastName": "Cassidy",
-    "email": "monicac@longpainting.com"
-  },
-  {
-    "id": 1900,
-    "firstName": "Monica",
-    "lastName": "Cassidy",
+    "email": "monicac@longpainting.com",
     "createdOn": "2013-03-17"
   },
   {
@@ -23250,12 +22931,6 @@ module.exports =
     "createdOn": "2020-03-29",
     "notes": "Imported record: 1 order(s), $125.00 total spent.",
     "acceptsEmailMarketing": false
-  },
-  {
-    "id": 1903,
-    "firstName": "Monica",
-    "lastName": "Sanders",
-    "email": "monicasanders62@hotmail.com"
   },
   {
     "id": 1904,
@@ -23494,12 +23169,6 @@ module.exports =
     "createdOn": "2021-12-06",
     "notes": "Additional contact: vegiepal77@hotmail.com\nImported record: 3 order(s), $122.57 total spent.",
     "acceptsEmailMarketing": true
-  },
-  {
-    "id": 1922,
-    "firstName": "Nanci",
-    "lastName": "Perrin",
-    "email": "vegiepal77@hotmail.com"
   },
   {
     "id": 1923,
@@ -23822,7 +23491,7 @@ module.exports =
     "state": "WA",
     "postalCode": "98125",
     "country": "US",
-    "createdOn": "2023-01-28",
+    "createdOn": "2026-05-22",
     "notes": "Apron\nImported record: 3 order(s), $639.88 total spent.",
     "acceptsEmailMarketing": true
   },
@@ -24838,12 +24507,6 @@ module.exports =
     "createdOn": "2025-09-08",
     "notes": "Additional contact: pattysmorgan@gmail.com\nImported record: 2 order(s), $628.12 total spent.",
     "acceptsEmailMarketing": false
-  },
-  {
-    "id": 2028,
-    "firstName": "Patricia",
-    "lastName": "Morgan",
-    "email": "pattysmorgan@gmail.com"
   },
   {
     "id": 2029,
@@ -26149,12 +25812,6 @@ module.exports =
     "createdOn": "2019-08-09"
   },
   {
-    "id": 2129,
-    "firstName": "Ramona",
-    "lastName": "Nakashima",
-    "email": "amona.nakashima@northwestu.edu"
-  },
-  {
     "id": 2130,
     "firstName": "Ramona",
     "lastName": "Nakashima",
@@ -27106,12 +26763,7 @@ module.exports =
     "id": 2209,
     "firstName": "Rosie",
     "lastName": "Epstein",
-    "email": "rosie1011@nwi.net"
-  },
-  {
-    "id": 2210,
-    "firstName": "Rosie",
-    "lastName": "Epstein",
+    "email": "rosie1011@nwi.net",
     "street1": "504 5th Ave S Apt 603",
     "city": "Seattle",
     "state": "WA",
@@ -27998,14 +27650,6 @@ module.exports =
     "postalCode": "2067",
     "country": "US",
     "createdOn": "2018-11-26"
-  },
-  {
-    "id": 2281,
-    "firstName": "Scott",
-    "lastName": "Dolphin",
-    "email": "15steps@fifteensteps.com",
-    "createdOn": "2022-08-06",
-    "acceptsEmailMarketing": false
   },
   {
     "id": 2282,
@@ -28950,16 +28594,10 @@ module.exports =
     "acceptsEmailMarketing": false
   },
   {
-    "id": 2358,
-    "firstName": "Sheryl",
-    "lastName": "Winskill",
-    "email": "sywinskill@gmail.com"
-  },
-  {
     "id": 2359,
     "firstName": "Sheryl",
     "lastName": "Winskill",
-    "email": "sywinskill@hotmail.com",
+    "email": "sywinskill@gmail.com",
     "street1": "4608 Holly Ln NW",
     "city": "Gig Harbor",
     "state": "WA",
@@ -29717,7 +29355,7 @@ module.exports =
     "state": "WA",
     "postalCode": "98121",
     "country": "US",
-    "createdOn": "2010-05-27",
+    "createdOn": "2011-11-30",
     "type": "wholesale",
     "website": "https://www.stockandassociates.com/"
   },
@@ -32214,22 +31852,6 @@ module.exports =
     "notes": "UPS# 67V603----------------------As soon as an order ships, it is imperative that you send an Advanced Shipping Notification (ASN) immediately to:ASN@unoallavolta.com   * Please copy the list below and paste it on the body of your ASN email.Vendor Name and Address:Date of Shipment:Carrier:Carrier Tracking Number:Expected Arrival Date:Purchase Order Number (s) in shipment:Is order shipped complete?If \"NO\" list item# and qty. of missing items:When will the missing items ship?:Total Cartons of this shipment:",
     "type": "wholesale",
     "website": "https://www.unoallavolta.com/"
-  },
-  {
-    "id": 2612,
-    "firstName": "Shelly",
-    "lastName": "Stock",
-    "company": "Urban Farm Artist",
-    "email": "sstock@stockandassociates.com",
-    "phone": "(206) 443-0494",
-    "street1": "109 Bell St",
-    "city": "Seattle",
-    "state": "WA",
-    "postalCode": "98121",
-    "country": "US",
-    "createdOn": "2011-11-30",
-    "type": "wholesale",
-    "website": "https://www.urbanfarmartist.com/"
   },
   {
     "id": 2613,

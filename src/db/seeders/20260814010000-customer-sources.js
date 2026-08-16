@@ -734,7 +734,7 @@ module.exports =
   },
   {
     "id": 98,
-    "customerId": 85,
+    "customerId": 91,
     "sourceType": "website",
     "sourceName": "Etsy",
     "firstSeenOn": "2009-04-08"
@@ -1707,7 +1707,7 @@ module.exports =
   },
   {
     "id": 237,
-    "customerId": 181,
+    "customerId": 180,
     "sourceType": "software",
     "sourceName": "QuickBooks Online",
     "firstSeenOn": "2013-08-08"
@@ -2078,7 +2078,7 @@ module.exports =
   },
   {
     "id": 290,
-    "customerId": 219,
+    "customerId": 1429,
     "sourceType": "software",
     "sourceName": "QuickBooks Online",
     "firstSeenOn": "2010-05-27"
@@ -6117,14 +6117,14 @@ module.exports =
   },
   {
     "id": 867,
-    "customerId": 625,
+    "customerId": 1849,
     "sourceType": "website",
     "sourceName": "SquareSpace",
     "firstSeenOn": "2018-12-16"
   },
   {
     "id": 868,
-    "customerId": 625,
+    "customerId": 1849,
     "sourceType": "software",
     "sourceName": "QuickBooks Online",
     "firstSeenOn": "2018-12-16"
@@ -7783,7 +7783,7 @@ module.exports =
   },
   {
     "id": 1105,
-    "customerId": 794,
+    "customerId": 905,
     "sourceType": "software",
     "sourceName": "QuickBooks Online",
     "firstSeenOn": "2015-11-20"
@@ -8000,14 +8000,14 @@ module.exports =
   },
   {
     "id": 1136,
-    "customerId": 814,
+    "customerId": 883,
     "sourceType": "online_learning",
     "sourceName": "Teachable",
     "firstSeenOn": "2022-11-23"
   },
   {
     "id": 1137,
-    "customerId": 814,
+    "customerId": 883,
     "sourceType": "software",
     "sourceName": "QuickBooks Online",
     "firstSeenOn": "2022-11-23"
@@ -8636,13 +8636,6 @@ module.exports =
     "firstSeenOn": "2024-05-07"
   },
   {
-    "id": 1227,
-    "customerId": 883,
-    "sourceType": "software",
-    "sourceName": "QuickBooks Online",
-    "firstSeenOn": "2024-05-07"
-  },
-  {
     "id": 1228,
     "customerId": 884,
     "sourceType": "website",
@@ -8832,13 +8825,6 @@ module.exports =
     "firstSeenOn": "2018-01-10"
   },
   {
-    "id": 1255,
-    "customerId": 905,
-    "sourceType": "software",
-    "sourceName": "QuickBooks Online",
-    "firstSeenOn": "2016-03-01"
-  },
-  {
     "id": 1256,
     "customerId": 906,
     "sourceType": "website",
@@ -8952,7 +8938,7 @@ module.exports =
   },
   {
     "id": 1272,
-    "customerId": 918,
+    "customerId": 917,
     "sourceType": "software",
     "sourceName": "QuickBooks Online",
     "firstSeenOn": "2018-01-02"
@@ -9089,13 +9075,6 @@ module.exports =
     "sourceType": "software",
     "sourceName": "QuickBooks Online",
     "firstSeenOn": "2019-08-05"
-  },
-  {
-    "id": 1292,
-    "customerId": 933,
-    "sourceType": "software",
-    "sourceName": "QuickBooks Online",
-    "firstSeenOn": "2019-06-02"
   },
   {
     "id": 1293,
@@ -10429,7 +10408,7 @@ module.exports =
   },
   {
     "id": 1483,
-    "customerId": 1069,
+    "customerId": 1068,
     "sourceType": "software",
     "sourceName": "QuickBooks Online",
     "firstSeenOn": "2013-02-06"
@@ -10534,7 +10513,7 @@ module.exports =
   },
   {
     "id": 1498,
-    "customerId": 1078,
+    "customerId": 1077,
     "sourceType": "software",
     "sourceName": "QuickBooks Online",
     "firstSeenOn": "2019-08-09"
@@ -11661,31 +11640,17 @@ module.exports =
   },
   {
     "id": 1659,
-    "customerId": 1189,
+    "customerId": 1190,
     "sourceType": "website",
     "sourceName": "SquareSpace",
     "firstSeenOn": "2019-05-25"
   },
   {
     "id": 1660,
-    "customerId": 1189,
+    "customerId": 1190,
     "sourceType": "software",
     "sourceName": "QuickBooks Online",
     "firstSeenOn": "2019-05-25"
-  },
-  {
-    "id": 1661,
-    "customerId": 1190,
-    "sourceType": "website",
-    "sourceName": "SquareSpace",
-    "firstSeenOn": "2026-08-03"
-  },
-  {
-    "id": 1662,
-    "customerId": 1190,
-    "sourceType": "software",
-    "sourceName": "QuickBooks Online",
-    "firstSeenOn": "2026-08-03"
   },
   {
     "id": 1663,
@@ -12340,7 +12305,7 @@ module.exports =
   },
   {
     "id": 1756,
-    "customerId": 1256,
+    "customerId": 1255,
     "sourceType": "software",
     "sourceName": "QuickBooks Online",
     "firstSeenOn": "2023-11-17"
@@ -13376,7 +13341,7 @@ module.exports =
   },
   {
     "id": 1904,
-    "customerId": 1357,
+    "customerId": 1356,
     "sourceType": "software",
     "sourceName": "QuickBooks Online",
     "firstSeenOn": "2010-12-02"
@@ -13831,7 +13796,7 @@ module.exports =
   },
   {
     "id": 1969,
-    "customerId": 1402,
+    "customerId": 1748,
     "sourceType": "software",
     "sourceName": "QuickBooks Online",
     "firstSeenOn": "2024-05-15"
@@ -14108,13 +14073,6 @@ module.exports =
     "sourceType": "software",
     "sourceName": "QuickBooks Online",
     "firstSeenOn": "2024-07-12"
-  },
-  {
-    "id": 2009,
-    "customerId": 1429,
-    "sourceType": "software",
-    "sourceName": "QuickBooks Online",
-    "firstSeenOn": "2018-09-13"
   },
   {
     "id": 2010,
@@ -14971,13 +14929,6 @@ module.exports =
     "firstSeenOn": "2020-08-17"
   },
   {
-    "id": 2132,
-    "customerId": 1522,
-    "sourceType": "website",
-    "sourceName": "SquareSpace",
-    "firstSeenOn": "2020-08-17"
-  },
-  {
     "id": 2133,
     "customerId": 1522,
     "sourceType": "software",
@@ -14986,7 +14937,7 @@ module.exports =
   },
   {
     "id": 2134,
-    "customerId": 1523,
+    "customerId": 1522,
     "sourceType": "website",
     "sourceName": "SquareSpace",
     "firstSeenOn": "2020-04-30"
@@ -16505,7 +16456,7 @@ module.exports =
   },
   {
     "id": 2351,
-    "customerId": 1676,
+    "customerId": 933,
     "sourceType": "software",
     "sourceName": "QuickBooks Online",
     "firstSeenOn": "2013-07-22"
@@ -16656,20 +16607,6 @@ module.exports =
     "sourceType": "software",
     "sourceName": "QuickBooks Online",
     "firstSeenOn": "2025-07-01"
-  },
-  {
-    "id": 2373,
-    "customerId": 1691,
-    "sourceType": "website",
-    "sourceName": "SquareSpace",
-    "firstSeenOn": "2026-05-22"
-  },
-  {
-    "id": 2374,
-    "customerId": 1691,
-    "sourceType": "software",
-    "sourceName": "QuickBooks Online",
-    "firstSeenOn": "2026-05-22"
   },
   {
     "id": 2375,
@@ -17281,13 +17218,6 @@ module.exports =
     "firstSeenOn": "2026-01-02"
   },
   {
-    "id": 2462,
-    "customerId": 1748,
-    "sourceType": "software",
-    "sourceName": "QuickBooks Online",
-    "firstSeenOn": "2024-10-28"
-  },
-  {
     "id": 2463,
     "customerId": 1749,
     "sourceType": "website",
@@ -17548,7 +17478,7 @@ module.exports =
   },
   {
     "id": 2500,
-    "customerId": 1776,
+    "customerId": 1775,
     "sourceType": "software",
     "sourceName": "QuickBooks Online",
     "firstSeenOn": "2023-11-17"
@@ -18331,13 +18261,6 @@ module.exports =
     "firstSeenOn": "2013-08-16"
   },
   {
-    "id": 2612,
-    "customerId": 1849,
-    "sourceType": "software",
-    "sourceName": "QuickBooks Online",
-    "firstSeenOn": "2019-11-25"
-  },
-  {
     "id": 2613,
     "customerId": 1850,
     "sourceType": "online_learning",
@@ -18815,7 +18738,7 @@ module.exports =
   },
   {
     "id": 2681,
-    "customerId": 1900,
+    "customerId": 1899,
     "sourceType": "software",
     "sourceName": "QuickBooks Online",
     "firstSeenOn": "2013-03-17"
@@ -21818,7 +21741,7 @@ module.exports =
   },
   {
     "id": 3110,
-    "customerId": 2210,
+    "customerId": 2209,
     "sourceType": "software",
     "sourceName": "QuickBooks Online",
     "firstSeenOn": "2023-09-16"
@@ -22504,7 +22427,7 @@ module.exports =
   },
   {
     "id": 3208,
-    "customerId": 2281,
+    "customerId": 51,
     "sourceType": "website",
     "sourceName": "SquareSpace",
     "firstSeenOn": "2022-08-06"
@@ -25833,13 +25756,6 @@ module.exports =
     "sourceType": "software",
     "sourceName": "QuickBooks Online",
     "firstSeenOn": "2011-04-10"
-  },
-  {
-    "id": 3684,
-    "customerId": 2612,
-    "sourceType": "software",
-    "sourceName": "QuickBooks Online",
-    "firstSeenOn": "2011-11-30"
   },
   {
     "id": 3685,
