@@ -7,11 +7,16 @@ import { useRouter } from 'next/navigation'
 import Autocomplete from '@mui/material/Autocomplete'
 import Button from '@mui/material/Button'
 import Chip from '@mui/material/Chip'
+import Dialog from '@mui/material/Dialog'
+import DialogActions from '@mui/material/DialogActions'
+import DialogContent from '@mui/material/DialogContent'
+import DialogTitle from '@mui/material/DialogTitle'
 import FormControl from '@mui/material/FormControl'
 import IconButton from '@mui/material/IconButton'
 import InputLabel from '@mui/material/InputLabel'
 import MenuItem from '@mui/material/MenuItem'
 import Select from '@mui/material/Select'
+import Stack from '@mui/material/Stack'
 import TextField from '@mui/material/TextField'
 import Typography from '@mui/material/Typography'
 
@@ -37,6 +42,17 @@ export default function LiveClassAttendeeEditor( {liveClassId, attendees, custom
   const [email, setEmail] = useState( '' )
   const [status, setStatus] = useState( 'enrolled' )
   const [error, setError] = useState( null )
+
+  // Notes/Upgrade Notes editing - a Dialog rather than inline table cells
+  // like Status/Discount above, since both are free-text TEXT columns
+  // that can run long (see the model's own doc comment on upgradeNotes/
+  // notes) and don't fit a table cell well. `notesAttendee` holds the row
+  // currently being edited (null when the dialog is closed); the two
+  // draft fields are separate local state rather than mutating
+  // notesAttendee directly, so Cancel can discard edits cleanly.
+  const [notesAttendee, setNotesAttendee] = useState( null )
+  const [notesDraft, setNotesDraft] = useState( '' )
+  const [upgradeNotesDraft, setUpgradeNotesDraft] = useState( '' )
 
   function handleAdd()
   {
@@ -82,6 +98,21 @@ export default function LiveClassAttendeeEditor( {liveClassId, attendees, custom
     })
   }
 
+  // enrolledOn is NOT NULL on the model (defaults to today's date if a
+  // row is created without one - see LiveClassAttendee.js) - an empty
+  // value here is left alone rather than sent as null, since the date
+  // input can't be blanked back to "unset" once a real value exists.
+  function handleEnrolledOnChange( attendeeId, newEnrolledOn )
+  {
+    if( !newEnrolledOn )
+      return
+
+    startTransition( async () => {
+      await updateLiveClassAttendee( attendeeId, {enrolledOn: newEnrolledOn} )
+      router.refresh()
+    })
+  }
+
   function handleRemove( attendeeId )
   {
     if( !confirm( 'Remove this attendee?' ) )
@@ -89,6 +120,30 @@ export default function LiveClassAttendeeEditor( {liveClassId, attendees, custom
 
     startTransition( async () => {
       await removeLiveClassAttendee( attendeeId )
+      router.refresh()
+    })
+  }
+
+  function openNotesDialog( attendee )
+  {
+    setNotesAttendee( attendee )
+    setNotesDraft( attendee.notes || '' )
+    setUpgradeNotesDraft( attendee.upgradeNotes || '' )
+  }
+
+  function closeNotesDialog()
+  {
+    setNotesAttendee( null )
+  }
+
+  function handleSaveNotes()
+  {
+    startTransition( async () => {
+      await updateLiveClassAttendee( notesAttendee.id, {
+        notes: notesDraft || null,
+        upgradeNotes: upgradeNotesDraft || null,
+      } )
+      closeNotesDialog()
       router.refresh()
     })
   }
@@ -103,6 +158,8 @@ export default function LiveClassAttendeeEditor( {liveClassId, attendees, custom
               <th>Email</th>
               <th>Status</th>
               <th>Discount %</th>
+              <th>Enrolled</th>
+              <th>Notes</th>
               <th></th>
             </tr>
           </thead>
@@ -149,6 +206,21 @@ export default function LiveClassAttendeeEditor( {liveClassId, attendees, custom
                   />
                 </td>
                 <td>
+                  <TextField
+                    type='date'
+                    size='small'
+                    defaultValue={attendee.enrolledOn || ''}
+                    onBlur={e => handleEnrolledOnChange( attendee.id, e.target.value )}
+                    disabled={isPending}
+                    className='is-40'
+                  />
+                </td>
+                <td>
+                  <IconButton size='small' disabled={isPending} onClick={() => openNotesDialog( attendee )}>
+                    <i className={(attendee.notes || attendee.upgradeNotes) ? 'ri-file-text-fill' : 'ri-file-text-line'} />
+                  </IconButton>
+                </td>
+                <td>
                   <IconButton size='small' disabled={isPending} onClick={() => handleRemove( attendee.id )}>
                     <i className='ri-delete-bin-7-line' />
                   </IconButton>
@@ -156,7 +228,7 @@ export default function LiveClassAttendeeEditor( {liveClassId, attendees, custom
               </tr>
             ) )}
             {0 === attendees.length && (
-              <tr><td colSpan={5}>No attendees added yet.</td></tr>
+              <tr><td colSpan={7}>No attendees added yet.</td></tr>
             )}
           </tbody>
         </table>
@@ -203,6 +275,43 @@ export default function LiveClassAttendeeEditor( {liveClassId, attendees, custom
         </Button>
       </div>
       {error && <Typography color='error' variant='body2'>{error}</Typography>}
+
+      <Dialog open={Boolean( notesAttendee )} onClose={closeNotesDialog} fullWidth maxWidth='sm'>
+        <DialogTitle>
+          Notes
+          {notesAttendee && (
+            <Typography variant='body2' color='text.secondary'>
+              {[notesAttendee.firstName, notesAttendee.lastName].filter( Boolean ).join( ' ' ) || 'Attendee'}
+            </Typography>
+          )}
+        </DialogTitle>
+        <DialogContent>
+          <Stack spacing={4} className='mbs-1'>
+            <TextField
+              fullWidth
+              multiline
+              minRows={3}
+              label='Notes'
+              value={notesDraft}
+              onChange={e => setNotesDraft( e.target.value )}
+            />
+            <TextField
+              fullWidth
+              multiline
+              minRows={3}
+              label='Upgrade Notes'
+              value={upgradeNotesDraft}
+              onChange={e => setUpgradeNotesDraft( e.target.value )}
+            />
+          </Stack>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={closeNotesDialog} color='secondary'>Cancel</Button>
+          <Button variant='contained' disabled={isPending} onClick={handleSaveNotes}>
+            {isPending ? 'Saving...' : 'Save'}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </div>
   )
 }
