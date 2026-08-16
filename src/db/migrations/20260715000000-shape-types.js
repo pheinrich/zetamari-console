@@ -18,6 +18,23 @@
  * `key` is only set for the shapes buildFromType() (@/libs/mirror) can
  * draw parametrically from width/height alone (the original 7 ENUM
  * values); it stays null for shapes that only ever exist as svgData.
+ *
+ * ShapeTypes' actual row data (all 17 families, with production's real
+ * ids/keys) is now seeded separately by 20250311035022-shape-types.js
+ * (timestamped to run right after 20250311035021-products.js and right
+ * before 20250311035023-contours.js - see that seeder's own header for
+ * why both directions of ordering matter), sourced from a phpMyAdmin
+ * export of the live database rather than derived here - this migration
+ * no longer inserts the 7 parametric rows itself (it used to,
+ * unconditionally), since that would collide with that seeder's own
+ * explicit-id inserts on a fresh database. It still links any Contours
+ * whose shapeType/name already resolve to a matching ShapeTypes row at
+ * the time this migration runs, which is a no-op on a genuinely fresh
+ * install (Contours themselves are only seeded, much later - and now
+ * come with their own correct shapeTypeId already set - by
+ * 20250311035023-contours.js) but preserves this migration's original
+ * one-time effect against the already-populated database it was
+ * actually written and run against.
  */
 const PARAMETRIC_SHAPES = [
   { key: 'chapel arch', name: 'Chapel Arch' },
@@ -48,18 +65,14 @@ module.exports =
       description: { type: Sequelize.DataTypes.TEXT, allowNull: true },
     })
 
-    for( const shape of PARAMETRIC_SHAPES )
-      await queryInterface.sequelize.query(
-        'INSERT INTO `ShapeTypes` (`name`, `key`) VALUES (?, ?)',
-        { replacements: [shape.name, shape.key] }
-      )
-
     await queryInterface.addColumn( 'Contours', 'shapeTypeId', {
       type: Sequelize.DataTypes.INTEGER,
       allowNull: true,
     })
 
-    // Point every parametric contour at its matching ShapeType.
+    // Point every parametric contour at its matching ShapeType, if one
+    // already exists by this key (it won't on a fresh install - see the
+    // top-of-file comment - making this a harmless no-op there).
     for( const shape of PARAMETRIC_SHAPES )
       await queryInterface.sequelize.query(
         'UPDATE `Contours` c JOIN `ShapeTypes` s ON s.`key` = ? SET c.`shapeTypeId` = s.`id` WHERE c.`shapeType` = ?',
