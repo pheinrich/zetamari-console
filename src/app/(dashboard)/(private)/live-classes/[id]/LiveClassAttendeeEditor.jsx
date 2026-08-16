@@ -241,6 +241,14 @@ export default function LiveClassAttendeeEditor( {liveClassId, attendees, custom
           options={customerOptions}
           value={customer}
           getOptionLabel={option => customerDisplayName( option )}
+
+          // Without this, MUI keys each dropdown option by
+          // getOptionLabel(option) (see useAutocomplete.js) - fine for
+          // most lists, but two different Customers can legitimately
+          // share a display name (e.g. two people both named "Anne
+          // Huddleston"), which produced a duplicate-key React warning.
+          // id is always unique.
+          getOptionKey={option => option.id}
           isOptionEqualToValue={(option, value) => option.id === value.id}
           onChange={(e, value) => {
             setCustomer( value )
