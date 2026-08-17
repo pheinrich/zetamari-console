@@ -89,6 +89,28 @@ const VerticalMenu = ({ scrollMenu }) => {
             visualizer
           </MenuItem>
         </MenuSection>
+        <MenuSection label='scheduling'>
+          <MenuItem href='/orders' icon={<i className='ri-shopping-bag-3-line' />}>
+            orders
+          </MenuItem>
+          <MenuItem href='/production' icon={<i className='ri-layout-grid-line' />}>
+            production
+          </MenuItem>
+          <MenuItem href='/capacity' icon={<i className='ri-calendar-check-line' />}>
+            capacity
+          </MenuItem>
+        </MenuSection>
+        <MenuSection label='customers'>
+          <MenuItem href='/customers' icon={<i className='ri-user-line' />}>
+            customers
+          </MenuItem>
+          <MenuItem href='/live-classes' icon={<i className='ri-graduation-cap-line' />}>
+            live classes
+          </MenuItem>
+          <MenuItem href='/events' icon={<i className='ri-calendar-event-line' />}>
+            events
+          </MenuItem>
+        </MenuSection>
         <SubMenu label='frontPages' icon={<i className='ri-file-copy-line' />}>
           <MenuItem href='/front-pages/landing-page' target='_blank'>
             landing

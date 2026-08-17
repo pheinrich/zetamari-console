@@ -37,15 +37,27 @@ export async function readPiecesForBoard()
   return pieces.map( p => p.toJSON() )
 }
 
-// Moves each Piece to its next *real* phase - walking getPhaseSequence()
-// (kit vs finished, same as the recalculation engine) from its current
-// phase forward, skipping any phase whose getPieceDurationHours() is 0
-// (the exact same auto-skip logic simulateBacklog() uses - the board and
-// the engine have to agree on which phases are real steps, or a Piece
-// could look "done" to one and not the other). A Piece already at (or
-// past) the last real phase is left alone, not errored - reported via
-// the returned `advanced` count instead, since a batch selection may
-// legitimately mix pieces at different points in their own sequences.
+// Moves each Piece to its next phase - walking getPhaseSequence() (kit
+// vs finished, same as the recalculation engine) from its current phase
+// forward one step, skipping *only* Glass when its getPieceDurationHours()
+// is 0 (Q17 - the common case where nothing needs hand-cutting). Every
+// other phase always gets its own click, even when its computed
+// duration happens to be 0 (e.g. a product missing geometry/cost-factor
+// configuration) - a 0-hour *estimate* isn't the same as "this
+// production step doesn't happen," and treating it that way jumped
+// straight to Finishing the moment any phase's duration was unknown.
+// Found live: advancing a piece skipped everything after Design.
+//
+// simulateBacklog() (pieceScheduling.js) separately treats any 0-hour
+// phase as instant for *timing* purposes - that's fine and unrelated
+// to this: it never changes which phase value gets persisted, only how
+// long the simulation spends on a phase it's just walking through in
+// memory. This function is the only place phase state is written, so
+// it's the only place "skip" has to mean "the step doesn't happen."
+// A Piece already at (or past) the last real phase is left alone, not
+// errored - reported via the returned `advanced` count instead, since a
+// batch selection may legitimately mix pieces at different points in
+// their own sequences.
 export async function advancePieces( pieceIds )
 {
   const session = await auth()
@@ -90,6 +102,7 @@ export async function advancePieces( pieceIds )
 
       let nextIndex = currentIndex + 1
       while( nextIndex < sequence.length
+        && 'Glass' === sequence[nextIndex]
         && 0 === getPieceDurationHours( sequence[nextIndex], product, settingsJson, costFactorsByKey, overrideByProductFactor[piece.productId] ) )
         nextIndex++
 

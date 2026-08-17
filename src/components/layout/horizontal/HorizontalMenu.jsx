@@ -111,6 +111,30 @@ const HorizontalMenu = ({}) => {
           </MenuItem>
         </SubMenu>
 
+        <SubMenu label='scheduling' icon={<i className='ri-shopping-bag-3-line' />}>
+          <MenuItem href='/orders' icon={<i className='ri-shopping-bag-3-line' />}>
+            orders
+          </MenuItem>
+          <MenuItem href='/production' icon={<i className='ri-layout-grid-line' />}>
+            production
+          </MenuItem>
+          <MenuItem href='/capacity' icon={<i className='ri-calendar-check-line' />}>
+            capacity
+          </MenuItem>
+        </SubMenu>
+
+        <SubMenu label='customers' icon={<i className='ri-user-line' />}>
+          <MenuItem href='/customers' icon={<i className='ri-user-line' />}>
+            customers
+          </MenuItem>
+          <MenuItem href='/live-classes' icon={<i className='ri-graduation-cap-line' />}>
+            live classes
+          </MenuItem>
+          <MenuItem href='/events' icon={<i className='ri-calendar-event-line' />}>
+            events
+          </MenuItem>
+        </SubMenu>
+
         <SubMenu label='apps' icon={<i className='ri-mail-open-line' />}>
           <SubMenu label='eCommerce' icon={<i className='ri-shopping-bag-3-line' />}>
             <MenuItem href='/apps/ecommerce/dashboard'>dashboard</MenuItem>

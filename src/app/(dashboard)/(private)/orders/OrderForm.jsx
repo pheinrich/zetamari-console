@@ -12,6 +12,7 @@ import CardContent from '@mui/material/CardContent'
 import Button from '@mui/material/Button'
 import IconButton from '@mui/material/IconButton'
 import Alert from '@mui/material/Alert'
+import InputAdornment from '@mui/material/InputAdornment'
 import TextField from '@mui/material/TextField'
 import Typography from '@mui/material/Typography'
 import Autocomplete from '@mui/material/Autocomplete'
@@ -49,6 +50,7 @@ export default function OrderForm( {customerOptions, productOptions} )
   const nextRowKey = useRef( 1 )
   const [rowKeys, setRowKeys] = useState( [0] )
   const [customer, setCustomer] = useState( null )
+  const [promisedDate, setPromisedDate] = useState( '' )
 
   const { handleSubmit, loading, errors, success } = useFormSubmit({
     schema,
@@ -121,7 +123,24 @@ export default function OrderForm( {customerOptions, productOptions} )
                     type='date'
                     label='Promised Date (optional)'
                     name='promisedDate'
-                    slotProps={{ inputLabel: { shrink: true } }}
+                    value={promisedDate}
+                    onChange={e => setPromisedDate( e.target.value )}
+                    slotProps={{
+                      inputLabel: { shrink: true },
+                      input: {
+                        // A native date input has no way to clear its
+                        // value except the browser's own (easy-to-miss)
+                        // built-in "x" - this is a real button instead,
+                        // only shown once there's something to clear.
+                        endAdornment: promisedDate && (
+                          <InputAdornment position='end'>
+                            <IconButton size='small' onClick={() => setPromisedDate( '' )} aria-label='Clear promised date'>
+                              <i className='ri-close-line' />
+                            </IconButton>
+                          </InputAdornment>
+                        ),
+                      },
+                    }}
                     helperText="Leave blank to let scheduling compute one from the backlog. Set this only when the customer requested a specific date."
                   />
                 </Grid>

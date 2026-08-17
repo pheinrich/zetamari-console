@@ -9,6 +9,7 @@ import Typography from '@mui/material/Typography'
 
 import { readOrder } from '@/db/actions/order'
 import { customerDisplayName } from '../../customers/customerFormat'
+import OrderDetailActions from './OrderDetailActions'
 import tableStyles from '@core/styles/table.module.css'
 
 function originLabel( origin )
@@ -21,10 +22,11 @@ function originLabel( origin )
   return 'Not yet set'
 }
 
-// Read-only - enough to see the recalculation engine's output (Promised
-// Date/origin, Projected Completion Date, at-risk state, assigned
-// Grouting Day) without the kanban/at-risk-list UI, which is deferred to
-// a follow-up. See the implementation plan's Verification section.
+// Read-only aside from Edit/Delete - enough to see the recalculation
+// engine's output (Promised Date/origin, Projected Completion Date,
+// at-risk state, assigned Grouting Day, per-product phase progress)
+// without the kanban/at-risk-list UI. See the implementation plan's
+// Verification section.
 export default async function OrderPage( {params} )
 {
   const {id} = await params
@@ -42,12 +44,15 @@ export default async function OrderPage( {params} )
               <Typography variant='h4'>Order #{order.id}</Typography>
               <Typography color='text.secondary'>{customerDisplayName( order.Customer )}</Typography>
             </div>
-            {order.isAtRisk && <Chip color='error' label='At Risk' />}
+            <div className='flex items-center gap-4'>
+              {order.isAtRisk && <Chip color='error' label='At Risk' />}
+              <OrderDetailActions order={order} />
+            </div>
           </CardContent>
         </Card>
       </Grid>
 
-      <Grid size={{ xs: 12, md: 6 }}>
+      <Grid size={{ xs: 12 }}>
         <Card>
           <CardHeader title='Scheduling' />
           <CardContent className='flex flex-col gap-3'>
@@ -59,18 +64,6 @@ export default async function OrderPage( {params} )
         </Card>
       </Grid>
 
-      <Grid size={{ xs: 12, md: 6 }}>
-        <Card>
-          <CardHeader title='Pieces by Phase' />
-          <CardContent className='flex flex-col gap-2'>
-            {Object.keys( order.pieceCountsByPhase ).length === 0 && <Typography color='text.secondary'>No pieces.</Typography>}
-            {Object.entries( order.pieceCountsByPhase ).map( ([phase, count]) => (
-              <Typography key={phase}>{phase}: {count}</Typography>
-            ) )}
-          </CardContent>
-        </Card>
-      </Grid>
-
       <Grid size={{ xs: 12 }}>
         <Card>
           <CardHeader title='Products' />
@@ -78,7 +71,7 @@ export default async function OrderPage( {params} )
             <div className='overflow-x-auto'>
               <table className={tableStyles.table}>
                 <thead>
-                  <tr><th>Product</th><th>SKU</th><th>Quantity</th></tr>
+                  <tr><th>Product</th><th>SKU</th><th>Quantity</th><th>Progress</th></tr>
                 </thead>
                 <tbody>
                   {order.lines.map( line => (
@@ -89,6 +82,16 @@ export default async function OrderPage( {params} )
                       <td>{line.Product?.name}</td>
                       <td>{line.Product?.sku}</td>
                       <td>{line.quantity}</td>
+                      <td>
+                        <div className='flex flex-wrap gap-2'>
+                          {Object.entries( line.phaseCounts ).map( ([phase, count]) => (
+                            <Chip key={phase} size='small' variant='tonal' label={`${phase} × ${count}`} />
+                          ) )}
+                          {0 === Object.keys( line.phaseCounts ).length && (
+                            <Typography variant='body2' color='text.secondary'>No pieces</Typography>
+                          )}
+                        </div>
+                      </td>
                     </tr>
                   ) )}
                 </tbody>
