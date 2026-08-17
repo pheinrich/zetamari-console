@@ -11,6 +11,17 @@ const OrderProduct = sequelize.define(
     quantity: { type: DataTypes.FLOAT, defaultValue: 1 },
   },
   {
+    // No surrogate id column exists on the real OrderProducts table (see
+    // 20250311024228-initdb.js) - Sequelize otherwise assumes one by
+    // default and silently includes it in every generated SELECT, which
+    // only throws ("Unknown column 'id' in 'field list'") the moment
+    // something actually queries this model without restricting
+    // `attributes` first. Found live via readOrder()/readOrders() - the
+    // first code ever to read OrderProduct rows back (customer.js's
+    // readCustomerOrders() has the same latent bug, dormant only
+    // because Orders was empty until now - see that function's grouped
+    // count query).
+    id: false,
     timestamps: false,
   })
 

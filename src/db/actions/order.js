@@ -139,9 +139,12 @@ export async function readOrders()
   if( 0 === orders.length )
     return []
 
+  // COUNT(orderId), not COUNT(id) - OrderProduct has no id column (see
+  // its model's doc comment). orderId is NOT NULL, so this counts rows
+  // per group exactly the same way.
   const counts = await OrderProduct.findAll( {
     where: {orderId: orders.map( o => o.id )},
-    attributes: ['orderId', [Sequelize.fn( 'COUNT', Sequelize.col( 'id' ) ), 'count']],
+    attributes: ['orderId', [Sequelize.fn( 'COUNT', Sequelize.col( 'orderId' ) ), 'count']],
     group: ['orderId'],
   } )
 

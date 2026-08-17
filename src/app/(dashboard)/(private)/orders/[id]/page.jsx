@@ -82,7 +82,10 @@ export default async function OrderPage( {params} )
                 </thead>
                 <tbody>
                   {order.lines.map( line => (
-                    <tr key={line.id}>
+                    // OrderProduct has no id column (see its model's
+                    // doc comment) - orderId+productId is unique per
+                    // line in practice.
+                    <tr key={`${line.orderId}-${line.productId}`}>
                       <td>{line.Product?.name}</td>
                       <td>{line.Product?.sku}</td>
                       <td>{line.quantity}</td>
