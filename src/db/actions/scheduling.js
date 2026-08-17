@@ -7,6 +7,7 @@ import Product from '@/db/models/Product'
 import User from '@/db/models/User'
 import Capacity from '@/db/models/Capacity'
 import WeeklyBudget from '@/db/models/WeeklyBudget'
+import AssistantAvailability from '@/db/models/AssistantAvailability'
 import GroutingDay from '@/db/models/GroutingDay'
 import Settings from '@/db/models/Settings'
 import CostFactor from '@/db/models/CostFactor'
@@ -58,13 +59,14 @@ export async function ensureProjectionsFresh()
   if( 0 === staleCount )
     return
 
-  const [orders, pieces, products, users, capacities, weeklyBudgets, groutingDays, settings, costFactors, overrides] = await Promise.all( [
+  const [orders, pieces, products, users, capacities, weeklyBudgets, assistantAvailability, groutingDays, settings, costFactors, overrides] = await Promise.all( [
     Order.findAll( {where: {completedOn: null}} ),
     Piece.findAll(),
     Product.findAll( {include: COSTING_INCLUDE} ),
     User.findAll( {attributes: ['id', 'role', 'defaultWeeklyHours']} ),
     Capacity.findAll(),
     WeeklyBudget.findAll(),
+    AssistantAvailability.findAll(),
     GroutingDay.findAll(),
     Settings.findOne(),
     CostFactor.findAll(),
@@ -81,6 +83,7 @@ export async function ensureProjectionsFresh()
     users: users.map( u => u.toJSON() ),
     capacities: capacities.map( c => c.toJSON() ),
     weeklyBudgets: weeklyBudgets.map( w => w.toJSON() ),
+    assistantAvailability: assistantAvailability.map( a => a.toJSON() ),
     groutingDays: groutingDays.map( g => g.toJSON() ),
     settingsJson: settings?.toJSON(),
     costFactors: costFactors.map( f => f.toJSON() ),
