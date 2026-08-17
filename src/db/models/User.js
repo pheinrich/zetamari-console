@@ -9,6 +9,15 @@ const User = sequelize.define(
     name: { type: DataTypes.STRING, allowNull: false },
     email: { type: DataTypes.STRING, unique: true, allowNull: false },
     password: { type: DataTypes.STRING, allowNull: false },
+    // Which of CONTEXT.md's Owner/Assistant this user is, for
+    // manufacturing-scheduling purposes (see Capacity/Weekly Budget
+    // below and the 20260816000000-user-role-and-weekly-hours.js
+    // migration) - nullable for any future non-production login.
+    role: { type: DataTypes.ENUM( 'owner', 'assistant' ) },
+    // Standing recurring default hours/week a Weekly Budget falls back
+    // to when no week-specific value has been set. Null until someone
+    // configures it (no Settings UI yet).
+    defaultWeeklyHours: { type: DataTypes.FLOAT },
   },
   {
     timestamps: false,

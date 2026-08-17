@@ -11,6 +11,18 @@ const Order = sequelize.define(
     completedOn: { type: DataTypes.DATEONLY },
     packedOn: { type: DataTypes.DATEONLY },
 
+    // CONTEXT.md's Promised Date / Projected Completion Date split (see
+    // docs/adr/0003-* and the 20260816030000-order-scheduling-dates.js
+    // migration). promisedDate is fixed once given; promisedDateOrigin
+    // records which of CONTEXT.md's two origins it came from ('explicit'
+    // = the customer's own requested date, 'computed' = derived from the
+    // backlog), since that drives scheduling priority when Capacity is
+    // scarce. projectedCompletionDate is written by the scheduling
+    // engine, not entered by staff.
+    promisedDate: { type: DataTypes.DATEONLY },
+    promisedDateOrigin: { type: DataTypes.ENUM( 'explicit', 'computed' ) },
+    projectedCompletionDate: { type: DataTypes.DATEONLY },
+
     // Declared explicitly (rather than left to belongsTo() below to
     // create implicitly) so it matches the 20260807050000-orders-
     // customer.js migration's column exactly and so query results built
