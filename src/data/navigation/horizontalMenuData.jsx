@@ -64,6 +64,17 @@ const horizontalMenuData = () => [
     ]
   },
   {
+    label: 'orders',
+    icon: 'ri-shopping-bag-3-line',
+    children: [
+      {
+        label: 'orders',
+        icon: 'ri-shopping-bag-3-line',
+        href: '/orders'
+      }
+    ]
+  },
+  {
     label: 'customers',
     icon: 'ri-user-line',
     children: [

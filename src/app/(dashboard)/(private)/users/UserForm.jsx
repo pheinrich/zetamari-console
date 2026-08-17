@@ -13,6 +13,10 @@ import Button from '@mui/material/Button'
 import Alert from '@mui/material/Alert'
 import TextField from '@mui/material/TextField'
 import Typography from '@mui/material/Typography'
+import FormControl from '@mui/material/FormControl'
+import InputLabel from '@mui/material/InputLabel'
+import MenuItem from '@mui/material/MenuItem'
+import Select from '@mui/material/Select'
 
 import { useFormSubmit } from '@/utils/formSubmitHook'
 import { createUser, updateUser } from '@/db/actions/user'
@@ -24,6 +28,8 @@ const schema = z.object({
   name: z.string().min( 1 ),
   email: z.string().email(),
   password: optionalString,
+  role: optionalString,
+  defaultWeeklyHours: optionalString,
 })
 
 export default function UserForm( {initialData={}} )
@@ -89,6 +95,32 @@ export default function UserForm( {initialData={}} )
                     autoComplete='new-password'
                     required={!isEdit}
                     helperText={isEdit ? 'Leave blank to keep the current password.' : 'At least 8 characters.'}
+                  />
+                </Grid>
+                <Grid size={{ xs: 12, sm: 6 }}>
+                  <FormControl fullWidth>
+                    <InputLabel id='user-role-select'>Role</InputLabel>
+                    <Select
+                      labelId='user-role-select'
+                      label='Role'
+                      name='role'
+                      defaultValue={initialData?.role || ''}
+                    >
+                      <MenuItem value=''>Unspecified</MenuItem>
+                      <MenuItem value='owner'>Owner</MenuItem>
+                      <MenuItem value='assistant'>Assistant</MenuItem>
+                    </Select>
+                  </FormControl>
+                </Grid>
+                <Grid size={{ xs: 12, sm: 6 }}>
+                  <TextField
+                    fullWidth
+                    type='number'
+                    label='Default Weekly Hours'
+                    name='defaultWeeklyHours'
+                    defaultValue={initialData?.defaultWeeklyHours ?? ''}
+                    helperText='Standing production hours/week, used by scheduling when no Capacity or Weekly Budget override is set for a given week.'
+                    slotProps={{htmlInput: {step: 0.5, min: 0}}}
                   />
                 </Grid>
               </Grid>

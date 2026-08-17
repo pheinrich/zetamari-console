@@ -63,6 +63,17 @@ const verticalMenuData = () => [
     ]
   },
   {
+    label: 'orders',
+    isSection: true,
+    children: [
+      {
+        label: 'orders',
+        icon: 'ri-shopping-bag-3-line',
+        href: '/orders'
+      }
+    ]
+  },
+  {
     label: 'customers',
     isSection: true,
     children: [

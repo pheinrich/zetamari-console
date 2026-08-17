@@ -11,10 +11,14 @@ import Order from '@/db/models/Order'
 //
 // `orderId` is mutable: Pieces of the same product are fungible until
 // shipped, and may rarely be reassigned to a different order (e.g. to
-// salvage a deadline). `phase` is one of CONTEXT.md's six Production
-// Phases; Grouting/Finishing happen per-order as a batch once every
-// Piece on that order has cleared its pre-Grouting phases - that gate is
-// enforced in application logic, not here.
+// salvage a deadline). `phase` is one of CONTEXT.md's eight Production
+// Phases (grown from the original six by 20260817000000-piece-phase-
+// picking-glass.js) - which phases a given Piece actually passes
+// through, and in what order, depends on its Product's type ('kit' vs
+// "finished" - see src/libs/pieceScheduling.js's PHASE_SEQUENCES).
+// Grouping Pieces onto a shared Grouting Day is a scheduling
+// convenience, not a rule enforced here - see CONTEXT.md's Grouting
+// Day entry and docs/adr/0006.
 const Piece = sequelize.define(
   'Piece',
   {
@@ -22,7 +26,7 @@ const Piece = sequelize.define(
     productId: { type: DataTypes.INTEGER, allowNull: false, references: { model: Product, key: 'id' } },
     orderId: { type: DataTypes.INTEGER, allowNull: false, references: { model: Order, key: 'id' } },
     phase: {
-      type: DataTypes.ENUM( 'Design', 'CNC', 'Sanding', 'Gluing', 'Grouting', 'Finishing' ),
+      type: DataTypes.ENUM( 'Design', 'CNC', 'Sanding', 'Picking', 'Gluing', 'Grouting', 'Glass', 'Finishing' ),
       allowNull: false,
       defaultValue: 'Design',
     },
