@@ -64,13 +64,23 @@ const horizontalMenuData = () => [
     ]
   },
   {
-    label: 'orders',
+    label: 'scheduling',
     icon: 'ri-shopping-bag-3-line',
     children: [
       {
         label: 'orders',
         icon: 'ri-shopping-bag-3-line',
         href: '/orders'
+      },
+      {
+        label: 'production',
+        icon: 'ri-layout-grid-line',
+        href: '/production'
+      },
+      {
+        label: 'capacity',
+        icon: 'ri-calendar-check-line',
+        href: '/capacity'
       }
     ]
   },

@@ -63,13 +63,23 @@ const verticalMenuData = () => [
     ]
   },
   {
-    label: 'orders',
+    label: 'scheduling',
     isSection: true,
     children: [
       {
         label: 'orders',
         icon: 'ri-shopping-bag-3-line',
         href: '/orders'
+      },
+      {
+        label: 'production',
+        icon: 'ri-layout-grid-line',
+        href: '/production'
+      },
+      {
+        label: 'capacity',
+        icon: 'ri-calendar-check-line',
+        href: '/capacity'
       }
     ]
   },

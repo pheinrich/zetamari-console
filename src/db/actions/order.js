@@ -135,7 +135,7 @@ export async function readOrders()
   await sequelize.sync()
   await ensureProjectionsFresh()
 
-  const orders = await Order.findAll( {include: [Customer], order: [['createdOn', 'DESC']]} )
+  const orders = await Order.findAll( {include: [Customer, GroutingDay], order: [['createdOn', 'DESC']]} )
   if( 0 === orders.length )
     return []
 
