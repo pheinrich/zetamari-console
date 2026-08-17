@@ -1,7 +1,9 @@
 'use client'
 
-import { useMemo } from 'react'
+import { useMemo, useTransition } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import { toast } from 'react-toastify'
 
 import Card from '@mui/material/Card'
 import CardHeader from '@mui/material/CardHeader'
@@ -9,6 +11,7 @@ import Button from '@mui/material/Button'
 import Chip from '@mui/material/Chip'
 import Divider from '@mui/material/Divider'
 import FormControlLabel from '@mui/material/FormControlLabel'
+import IconButton from '@mui/material/IconButton'
 import Switch from '@mui/material/Switch'
 import TablePagination from '@mui/material/TablePagination'
 import TextField from '@mui/material/TextField'
@@ -26,6 +29,7 @@ import {
   getPaginationRowModel,
 } from '@tanstack/react-table'
 
+import { deleteOrder } from '@/db/actions/order'
 import { useTableViewState } from '@/hooks/useTableViewState'
 import { customerDisplayName } from '../customers/customerFormat'
 import tableStyles from '@core/styles/table.module.css'
@@ -59,6 +63,8 @@ const columnHelper = createColumnHelper()
 
 export default function OrdersListTable( {orderData} )
 {
+  const router = useRouter()
+  const [isPending, startTransition] = useTransition()
   const { view, updateView, onSortingChange, onPaginationChange } = useTableViewState( 'orders', DEFAULT_VIEW )
 
   const filters = {...DEFAULT_VIEW.filters, ...view.filters}
@@ -69,10 +75,31 @@ export default function OrdersListTable( {orderData} )
     [orderData, filters.atRiskOnly]
   )
 
+  function handleDelete( order )
+  {
+    if( !confirm( `Delete order #${order.id}? This removes its Pieces and cannot be undone.` ) )
+      return
+
+    startTransition( async () => {
+      try
+      {
+        await deleteOrder( order.id )
+        toast.success( 'Order deleted' )
+        router.refresh()
+      }
+      catch( err )
+      {
+        toast.error( 'Failed to delete the order' )
+      }
+    })
+  }
+
   const columns = useMemo(
     () => [
       columnHelper.accessor( 'id', {
         header: 'Order',
+        // Also its own link (not just relying on the row click below) -
+        // keeps this keyboard-focusable and openable in a new tab.
         cell: ({ row }) => <Link href={`/orders/${row.original.id}`}>#{row.original.id}</Link>
       } ),
       columnHelper.accessor( o => customerDisplayName( o.Customer ), {
@@ -111,8 +138,25 @@ export default function OrdersListTable( {orderData} )
           : null,
         enableSorting: false
       } ),
+      columnHelper.accessor( 'actions', {
+        header: 'Actions',
+        cell: ({ row }) => (
+          // Row itself navigates on click (see the <tr onClick> below) -
+          // stopPropagation here so these buttons don't also trigger it.
+          <div className='flex items-center' onClick={e => e.stopPropagation()}>
+            <IconButton size='small' component={Link} href={`/orders/${row.original.id}/edit`}>
+              <i className='ri-edit-box-line text-[22px] text-textSecondary' />
+            </IconButton>
+            <IconButton size='small' disabled={isPending} onClick={() => handleDelete( row.original )}>
+              <i className='ri-delete-bin-7-line text-[22px] text-textSecondary' />
+            </IconButton>
+          </div>
+        ),
+        enableSorting: false
+      } ),
     ],
-    []
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [isPending]
   )
 
   const table = useReactTable({
@@ -201,7 +245,11 @@ export default function OrdersListTable( {orderData} )
           ) : (
             <tbody>
               {table.getRowModel().rows.slice( 0, table.getState().pagination.pageSize ).map( row => (
-                <tr key={row.id}>
+                <tr
+                  key={row.id}
+                  className='cursor-pointer hover:bg-actionHover'
+                  onClick={() => router.push( `/orders/${row.original.id}` )}
+                >
                   {row.getVisibleCells().map( cell => (
                     <td key={cell.id}>{flexRender( cell.column.columnDef.cell, cell.getContext() )}</td>
                   ) )}
