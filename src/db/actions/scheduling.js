@@ -30,6 +30,15 @@ export async function markOrdersScheduleStale( orderIds )
   await Order.update( {scheduleStale: true}, {where: {id: orderIds}} )
 }
 
+// Capacity/Weekly Budget edits affect the whole shared pool, not one
+// order - every open order's projection depends on them, so a targeted
+// id list (markOrdersScheduleStale above) isn't enough. Mirrors
+// productCost.js's markAllProductsCostStale().
+export async function markAllOrdersScheduleStale()
+{
+  await Order.update( {scheduleStale: true}, {where: {completedOn: null}} )
+}
+
 // The read-side half: if any open Order is scheduleStale, loads the
 // full open backlog + every input simulateBacklog() needs, runs it
 // once (whole-backlog - Projected Completion Date depends on every
