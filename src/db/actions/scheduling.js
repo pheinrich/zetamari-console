@@ -13,7 +13,7 @@ import CostFactor from '@/db/models/CostFactor'
 import ProductCostOverride from '@/db/models/ProductCostOverride'
 import sequelize from '@/db/sequelize'
 import { auth } from '@/lib/auth'
-import { COSTING_INCLUDE } from '@/db/actions/productCost'
+import { COSTING_INCLUDE } from '@/db/costingInclude'
 import { formatDateOnly, simulateBacklog } from '@/libs/pieceScheduling'
 
 // The write-side half of docs/adr/0005's lazily-recomputed-cache
