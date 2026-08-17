@@ -2,6 +2,7 @@ import { DataTypes } from 'sequelize'
 import sequelize from '@/db/sequelize.js'
 import User from '@/db/models/User'
 import Customer from '@/db/models/Customer'
+import GroutingDay from '@/db/models/GroutingDay'
 
 const Order = sequelize.define(
   'Order',
@@ -22,6 +23,19 @@ const Order = sequelize.define(
     promisedDate: { type: DataTypes.DATEONLY },
     promisedDateOrigin: { type: DataTypes.ENUM( 'explicit', 'computed' ) },
     projectedCompletionDate: { type: DataTypes.DATEONLY },
+
+    // Nullable - set once this order's "finished"-type Pieces become
+    // Grouting-ready (src/libs/pieceScheduling.js's assignGroutingDay());
+    // stays null for orders made entirely of 'kit'-type Pieces, which
+    // never enter Grouting. See CONTEXT.md's Grouting Day entry and
+    // docs/adr/0006.
+    groutingDayId: { type: DataTypes.INTEGER, allowNull: true, references: { model: GroutingDay, key: 'id' } },
+
+    // The recompute-trigger flag for projectedCompletionDate/promisedDate
+    // (when computed)/groutingDayId - same lazily-recomputed-cache shape
+    // as Product.cogsCostCacheStale. See docs/adr/0005 and
+    // db/actions/scheduling.js's ensureProjectionsFresh().
+    scheduleStale: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: true },
 
     // Declared explicitly (rather than left to belongsTo() below to
     // create implicitly) so it matches the 20260807050000-orders-
@@ -44,5 +58,8 @@ Order.belongsTo( User )
 // customer/contact/student master list) show a customer's order history.
 Customer.hasMany( Order, {foreignKey: 'customerId'} )
 Order.belongsTo( Customer, {foreignKey: 'customerId'} )
+
+GroutingDay.hasMany( Order )
+Order.belongsTo( GroutingDay )
 
 export default Order

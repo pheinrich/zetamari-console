@@ -9,6 +9,23 @@ import sequelize from '@/db/sequelize'
 import { auth } from '@/lib/auth'
 import { computeDefaultQuantities, computeSupersededFactors, convertToRateUnit, MATERIAL_WEIGHT_FIELD } from '@/libs/costFactors'
 
+// Side-effect-only imports (same trick product.js's own `import '@/db/
+// models/SupplierProduct'` uses) - COSTING_INCLUDE below references the
+// woodenBaseInfo/bomLines/material/suppliers associations these model
+// files declare as a side effect of being imported, not anything
+// exported from them directly. Without these, whether COSTING_INCLUDE
+// actually works depends on some *other* file (normally product.js)
+// having already been loaded earlier in the same process - true by
+// accident on product-catalog pages, but not for a caller like
+// scheduling.js's ensureProjectionsFresh(), reached from /orders pages
+// that have no other reason to load product.js first. Found the hard
+// way: "Association with alias 'woodenBaseInfo' does not exist on
+// Product" the first time COSTING_INCLUDE was used from outside the
+// product pages.
+import '@/db/models/WoodenBaseInfo'
+import '@/db/models/BillOfMaterial'
+import '@/db/models/SupplierProduct'
+
 // What computeDefaultQuantities()/computeSupersededFactors() need to
 // derive geometry- and BOM-based defaults - the woodenBaseInfo branch of
 // readProduct's eager include (product.js) for geometry, plus bomLines
@@ -18,8 +35,10 @@ import { computeDefaultQuantities, computeSupersededFactors, convertToRateUnit, 
 // below - readProduct's own eager include doesn't need this, only
 // costing does). Shared by loadProductForCosting (one product) and
 // readProductsCogsCosts (every product at once, for the list page's Cost
-// column).
-const COSTING_INCLUDE = [
+// column) - also exported for scheduling.js's ensureProjectionsFresh(),
+// which needs the same geometry to compute Piece phase durations via
+// pieceScheduling.js's getPieceDurationHours().
+export const COSTING_INCLUDE = [
   {
     association: 'woodenBaseInfo',
     include: [

@@ -7,8 +7,12 @@ import sequelize from '@/db/sequelize'
 import { auth } from '@/lib/auth'
 
 // Never select the hashed password out to the client - these two are the
-// only reads used by the admin User CRUD UI.
-const PUBLIC_ATTRIBUTES = ['id', 'name', 'email']
+// only reads used by the admin User CRUD UI. role/defaultWeeklyHours
+// (added by 20260816000000-user-role-and-weekly-hours.js) feed the
+// scheduling engine's Capacity fallback chain and Owner-only-phase rule
+// (see libs/pieceScheduling.js) - editable here since there's no other
+// UI surface for them yet.
+const PUBLIC_ATTRIBUTES = ['id', 'name', 'email', 'role', 'defaultWeeklyHours']
 
 export async function createUser( data )
 {
@@ -23,7 +27,13 @@ export async function createUser( data )
     // NB: password is intentionally passed through unhashed - User's
     // beforeCreate hook hashes it. Hashing here too would double-hash it
     // and make the account impossible to log into.
-    const user = await User.create( {name: data.name, email: data.email, password: data.password} )
+    const user = await User.create( {
+      name: data.name,
+      email: data.email,
+      password: data.password,
+      role: data.role || null,
+      defaultWeeklyHours: null != data.defaultWeeklyHours && '' !== data.defaultWeeklyHours ? Number( data.defaultWeeklyHours ) : null,
+    } )
     return {success: true, id: user.id}
   }
   catch( error )
@@ -78,7 +88,13 @@ export async function updateUser( data )
     // to hash the password itself when one is supplied. An empty/omitted
     // password leaves the existing one unchanged.
     const hashedPassword = data.password ? await bcrypt.hash( data.password, 10 ) : user.password
-    await user.update( {name: data.name, email: data.email, password: hashedPassword} )
+    await user.update( {
+      name: data.name,
+      email: data.email,
+      password: hashedPassword,
+      role: data.role || null,
+      defaultWeeklyHours: null != data.defaultWeeklyHours && '' !== data.defaultWeeklyHours ? Number( data.defaultWeeklyHours ) : null,
+    } )
     return {success: true}
   }
   catch( error )
