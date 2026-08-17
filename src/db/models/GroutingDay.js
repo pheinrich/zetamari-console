@@ -11,10 +11,13 @@ import sequelize from '@/db/sequelize.js'
 // value recomputed fresh on every read (the deliberate exception to
 // docs/adr/0005's lazy-cache pattern).
 //
-// `estimatedAssistantHours` is manually entered and adjustable - not
-// derived from any named User's Capacity (volunteers aren't tracked as
-// Users at all). Owners' own extended hours on this date reuse the
-// existing per-day Capacity override instead of a column here.
+// Expected assistant hours for this date aren't stored here - they're
+// computed on demand as the sum of that date's AssistantAvailability
+// rows (see the 20260817040000-drop-grouting-day-estimated-hours.js
+// migration and src/libs/pieceScheduling.js's simulateBacklog(), which
+// attaches the sum to its result under `assistantHours`). Owners' own
+// extended hours on this date reuse the existing per-day Capacity
+// override instead of a column here.
 const GroutingDay = sequelize.define(
   'GroutingDay',
   {
@@ -25,7 +28,6 @@ const GroutingDay = sequelize.define(
       allowNull: false,
       defaultValue: 'computed',
     },
-    estimatedAssistantHours: { type: DataTypes.FLOAT },
   },
   {
     timestamps: false,

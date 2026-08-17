@@ -228,20 +228,23 @@ export function sortByPriority( orders )
 }
 
 // Walks forward day-by-day from `startDateStr`, consuming `hoursNeeded`
-// from whichever eligible User(s) have remaining Capacity that day
-// (Owner-only phases only draw from role: 'owner' Users - see
-// OWNER_ONLY_PHASES), mutating the shared `remainingCapacityCache` as it
-// goes so later pieces/orders in the same simulateBacklog() run see an
-// already-depleted pool, not a fresh one. Returns the date the phase's
-// hours were fully consumed.
+// from whichever eligible pool(s) have remaining Capacity that day,
+// mutating the shared `remainingCapacityCache` as it goes so later
+// pieces/orders in the same simulateBacklog() run see an already-
+// depleted pool, not a fresh one. Named Users are Owners only now (see
+// OWNER_ONLY_PHASES's comment - assistants are never Users), so the
+// eligible-Users filter applies unconditionally, not just for
+// Owner-only phases; for non-Owner-only phases (Gluing/Picking), the
+// day-walk also draws from a synthetic assistants:${date} pool sourced
+// from `ctx.assistantHoursByDate` (AssistantAvailability's per-date
+// sum), cached the same way. Returns the date the phase's hours were
+// fully consumed.
 function consumeOrdinaryCapacity( hoursNeeded, startDateStr, ownerOnly, ctx )
 {
   if( 0 === hoursNeeded )
     return startDateStr
 
-  const eligibleUserIds = ctx.userIds.filter( id => !ownerOnly || 'owner' === ctx.usersById[id]?.role )
-  if( 0 === eligibleUserIds.length )
-    return startDateStr // nobody eligible to do this work - leave the date where it stood, at-risk detection will surface the stall via a non-advancing projection
+  const eligibleUserIds = ctx.userIds.filter( id => 'owner' === ctx.usersById[id]?.role )
 
   let remaining = hoursNeeded
   let cursor = startDateStr
@@ -269,6 +272,21 @@ function consumeOrdinaryCapacity( hoursNeeded, startDateStr, ownerOnly, ctx )
       remaining -= consumed
     }
 
+    if( !ownerOnly && remaining > 0 )
+    {
+      const assistantKey = `assistants:${cursor}`
+      if( !(assistantKey in ctx.remainingCapacityCache) )
+        ctx.remainingCapacityCache[assistantKey] = ctx.assistantHoursByDate[cursor] ?? 0
+
+      const availableAssistantHours = ctx.remainingCapacityCache[assistantKey]
+      if( availableAssistantHours > 0 )
+      {
+        const consumed = Math.min( availableAssistantHours, remaining )
+        ctx.remainingCapacityCache[assistantKey] -= consumed
+        remaining -= consumed
+      }
+    }
+
     if( remaining > 0 )
       cursor = formatDateOnly( addDays( parseDateOnly( cursor ), 1 ) )
   }
@@ -288,7 +306,7 @@ function consumeOrdinaryCapacity( hoursNeeded, startDateStr, ownerOnly, ctx )
 //
 // Inputs are plain objects/arrays, already loaded by the caller (see
 // db/actions/scheduling.js) - this function does no I/O.
-export function simulateBacklog( {orders, pieces, productsById, users, capacities, weeklyBudgets, groutingDays, settingsJson, costFactors, overrides, todayStr} )
+export function simulateBacklog( {orders, pieces, productsById, users, capacities, weeklyBudgets, assistantAvailability, groutingDays, settingsJson, costFactors, overrides, todayStr} )
 {
   const usersById = Object.fromEntries( users.map( u => [u.id, u] ) )
   const userIds = users.map( u => u.id )
@@ -300,6 +318,13 @@ export function simulateBacklog( {orders, pieces, productsById, users, capacitie
   const capacityByUserDate = Object.fromEntries( capacities.map( c => [`${c.userId}:${c.date}`, c.hours] ) )
   const weeklyBudgetByUserWeek = Object.fromEntries( weeklyBudgets.map( w => [`${w.userId}:${w.weekStartDate}`, w.hours] ) )
 
+  // One summed pool per date - individual AssistantAvailability entries
+  // (who, specifically) only matter to the UI; the engine just needs
+  // each date's total.
+  const assistantHoursByDate = {}
+  for( const a of assistantAvailability )
+    assistantHoursByDate[a.date] = (assistantHoursByDate[a.date] ?? 0) + a.hours
+
   const groutingDaysByDate = Object.fromEntries( groutingDays.map( g => [g.date, g] ) )
   const groutingDaysById = Object.fromEntries( groutingDays.map( g => [g.id, g] ) )
   const reservedGroutingDayDates = groutingDays.map( g => g.date )
@@ -308,7 +333,7 @@ export function simulateBacklog( {orders, pieces, productsById, users, capacitie
   for( const piece of pieces )
     (piecesByOrderId[piece.orderId] ??= []).push( piece )
 
-  const ctx = {usersById, userIds, capacityByUserDate, weeklyBudgetByUserWeek, remainingCapacityCache: {}}
+  const ctx = {usersById, userIds, capacityByUserDate, weeklyBudgetByUserWeek, assistantHoursByDate, remainingCapacityCache: {}}
 
   const openOrders = orders.filter( o => !o.completedOn )
   const results = []
@@ -373,7 +398,7 @@ export function simulateBacklog( {orders, pieces, productsById, users, capacitie
 
         if( !groutingDaysByDate[groutingDate] )
         {
-          const newGroutingDay = {id: null, date: groutingDate, origin: 'computed', estimatedAssistantHours: null}
+          const newGroutingDay = {id: null, date: groutingDate, origin: 'computed'}
           groutingDaysByDate[groutingDate] = newGroutingDay
           reservedGroutingDayDates.push( groutingDate )
         }
@@ -386,12 +411,17 @@ export function simulateBacklog( {orders, pieces, productsById, users, capacitie
       ? order.promisedDate
       : formatDateOnly( groutingDate ? addDays( parseDateOnly( groutingDate ), 2 ) : nextOrSameMonday( parseDateOnly( latestFinish ) ) )
 
+    // assistantHours is computed here, not stored on GroutingDay itself
+    // (see that model's doc comment) - just this date's
+    // AssistantAvailability sum, for display.
     results.push( {
       orderId: order.id,
       projectedCompletionDate: latestFinish,
       promisedDate: computedPromisedDate,
       promisedDateOrigin: order.promisedDateOrigin ?? 'computed',
-      groutingDay: groutingDate ? groutingDaysByDate[groutingDate] : null,
+      groutingDay: groutingDate
+        ? {...groutingDaysByDate[groutingDate], assistantHours: assistantHoursByDate[groutingDate] ?? 0}
+        : null,
     } )
   }
 
