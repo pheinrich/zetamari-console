@@ -1,13 +1,13 @@
 'use server'
 
 import { unauthorized } from 'next/navigation'
+
 import Order from '@/db/models/Order'
 import Piece from '@/db/models/Piece'
 import Product from '@/db/models/Product'
 import User from '@/db/models/User'
-import Capacity from '@/db/models/Capacity'
-import WeeklyBudget from '@/db/models/WeeklyBudget'
-import AssistantAvailability from '@/db/models/AssistantAvailability'
+import CapacityEvent from '@/db/models/CapacityEvent'
+import CapacityEventPerson from '@/db/models/CapacityEventPerson'
 import GroutingDay from '@/db/models/GroutingDay'
 import Settings from '@/db/models/Settings'
 import CostFactor from '@/db/models/CostFactor'
@@ -31,10 +31,10 @@ export async function markOrdersScheduleStale( orderIds )
   await Order.update( {scheduleStale: true}, {where: {id: orderIds}} )
 }
 
-// Capacity/Weekly Budget edits affect the whole shared pool, not one
-// order - every open order's projection depends on them, so a targeted
-// id list (markOrdersScheduleStale above) isn't enough. Mirrors
-// productCost.js's markAllProductsCostStale().
+// CapacityEvent edits affect the whole shared pool, not one order -
+// every open order's projection depends on them, so a targeted id list
+// (markOrdersScheduleStale above) isn't enough. Mirrors productCost.js's
+// markAllProductsCostStale().
 export async function markAllOrdersScheduleStale()
 {
   await Order.update( {scheduleStale: true}, {where: {completedOn: null}} )
@@ -50,23 +50,23 @@ export async function markAllOrdersScheduleStale()
 export async function ensureProjectionsFresh()
 {
   const session = await auth()
+
   if( !session )
     unauthorized()
 
   await sequelize.sync()
 
   const staleCount = await Order.count( {where: {completedOn: null, scheduleStale: true}} )
+
   if( 0 === staleCount )
     return
 
-  const [orders, pieces, products, users, capacities, weeklyBudgets, assistantAvailability, groutingDays, settings, costFactors, overrides] = await Promise.all( [
+  const [orders, pieces, products, users, capacityEvents, groutingDays, settings, costFactors, overrides] = await Promise.all( [
     Order.findAll( {where: {completedOn: null}} ),
     Piece.findAll(),
     Product.findAll( {include: COSTING_INCLUDE} ),
-    User.findAll( {attributes: ['id', 'role', 'defaultWeeklyHours']} ),
-    Capacity.findAll(),
-    WeeklyBudget.findAll(),
-    AssistantAvailability.findAll(),
+    User.findAll( {attributes: ['id', 'role']} ),
+    CapacityEvent.findAll( {include: CapacityEventPerson} ),
     GroutingDay.findAll(),
     Settings.findOne(),
     CostFactor.findAll(),
@@ -81,9 +81,11 @@ export async function ensureProjectionsFresh()
     pieces: pieces.map( p => p.toJSON() ),
     productsById,
     users: users.map( u => u.toJSON() ),
-    capacities: capacities.map( c => c.toJSON() ),
-    weeklyBudgets: weeklyBudgets.map( w => w.toJSON() ),
-    assistantAvailability: assistantAvailability.map( a => a.toJSON() ),
+    capacityEvents: capacityEvents.map( e => {
+      const json = e.toJSON()
+
+      return {...json, people: json.CapacityEventPeople}
+    } ),
     groutingDays: groutingDays.map( g => g.toJSON() ),
     settingsJson: settings?.toJSON(),
     costFactors: costFactors.map( f => f.toJSON() ),
@@ -113,6 +115,7 @@ export async function ensureProjectionsFresh()
             defaults: {origin: 'computed'},
             transaction: t,
           } )
+
           groutingDayId = groutingDay.id
         }
       }

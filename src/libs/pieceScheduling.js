@@ -14,12 +14,14 @@
 // back - see parseDateOnly()/formatDateOnly() below. This sidesteps
 // Date.toISOString()'s UTC conversion, which can shift a date-only
 // value by a day depending on the server's timezone offset.
-import { addDays, isWeekend, startOfWeek } from 'date-fns'
+import { addDays } from 'date-fns'
+
 import { computeDefaultQuantities, convertToRateUnit } from './costFactors'
 
 export function parseDateOnly( dateStr )
 {
   const [year, month, day] = dateStr.split( '-' ).map( Number )
+
   return new Date( year, month - 1, day )
 }
 
@@ -28,6 +30,7 @@ export function formatDateOnly( date )
   const year = date.getFullYear()
   const month = String( date.getMonth() + 1 ).padStart( 2, '0' )
   const day = String( date.getDate() ).padStart( 2, '0' )
+
   return `${year}-${month}-${day}`
 }
 
@@ -80,6 +83,7 @@ export function getPhaseSequence( product )
 export function getPieceDurationHours( phase, product, settingsJson, costFactorsByKey, overrideByFactorId )
 {
   const factor = costFactorsByKey[PHASE_TO_COST_FACTOR_KEY[phase]]
+
   if( !factor )
     return 0
 
@@ -97,42 +101,127 @@ export function getPieceDurationHours( phase, product, settingsJson, costFactors
   return convertToRateUnit( effectiveQuantity, factor )
 }
 
-// CONTEXT.md's Capacity/Weekly Budget fallback chain: an explicit
-// per-day Capacity row wins when set; otherwise that week's WeeklyBudget
-// divided evenly across the week's business days; otherwise the User's
-// own standing defaultWeeklyHours divided the same way; otherwise 0. An
-// unset week is never treated as zero Capacity on its own - it falls
-// through to the next tier instead.
-function countBusinessDaysInWeek( weekStart )
+// CONTEXT.md's Capacity Event: the *only* source of explicit Capacity
+// (see docs/adr/0007) - a day nobody assigned a CapacityEvent to is
+// simply 0 hours, never a computed default. `capacity` is a JSON array
+// of per-day hours with a "last value repeats" shorthand: an array
+// shorter than the event's day span holds its last value for every day
+// after it runs out (`[8]` across 6 days = 8 hours every day, `[8,1,5]`
+// = 8/1/5-then-5-forever). Expands every CapacityEvent's people into
+// flat `${userId}:${dateStr}` -> hours (Owners) and `${dateStr}` -> summed
+// hours (Assistants, pooled - see consumeOrdinaryCapacity()'s doc
+// comment) maps, ready for resolveDailyCapacity()/simulateBacklog().
+export function expandCapacityEvents( capacityEvents )
 {
-  let count = 0
-  for( let i = 0; i < 7; i++ )
-    if( !isWeekend( addDays( weekStart, i ) ) )
-      count++
+  const capacityByUserDate = {}
+  const assistantHoursByDate = {}
 
-  return count
+  for( const event of capacityEvents )
+  {
+    const days = []
+
+    for( let cursor = parseDateOnly( event.startDate ); cursor <= parseDateOnly( event.endDate ); cursor = addDays( cursor, 1 ) )
+      days.push( formatDateOnly( cursor ) )
+
+    for( const person of event.people ?? [] )
+    {
+      days.forEach( (dateStr, index) => {
+        const hours = person.capacity[Math.min( index, person.capacity.length - 1 )] ?? 0
+
+        if( null != person.userId )
+          capacityByUserDate[`${person.userId}:${dateStr}`] = hours
+        else
+          assistantHoursByDate[dateStr] = (assistantHoursByDate[dateStr] ?? 0) + hours
+      } )
+    }
+  }
+
+  return {capacityByUserDate, assistantHoursByDate}
 }
 
-export function resolveDailyCapacity( userId, dateStr, capacityByUserDate, weeklyBudgetByUserWeek, usersById )
+export function resolveDailyCapacity( userId, dateStr, capacityByUserDate )
 {
-  const explicitCapacity = capacityByUserDate[`${userId}:${dateStr}`]
-  if( null != explicitCapacity )
-    return explicitCapacity
+  return capacityByUserDate[`${userId}:${dateStr}`] ?? 0
+}
 
-  const weekStart = startOfWeek( parseDateOnly( dateStr ), {weekStartsOn: 1} )
-  const businessDays = countBusinessDaysInWeek( weekStart )
-  if( 0 === businessDays )
-    return 0
+// The Capacity calendar's per-person input format: a "+"-separated list
+// of terms, each either a bare number (one day at that many hours) or
+// "hours*days" (that many hours, repeated for that many days) - e.g.
+// "8+1+4" -> [8,1,4], "8*5" -> [8,8,8,8,8], "4+1+2+8*2" -> [4,1,2,8,8].
+// This is what actually builds a CapacityEventPerson.capacity array (see
+// that model's doc comment for the array's own "last value repeats"
+// semantics once it's shorter than the Event's day span). Returns null
+// on anything that doesn't parse to at least one valid day, so callers
+// can reject the edit instead of silently storing garbage.
+export function parseCapacityFormula( text )
+{
+  const terms = String( text ?? '' ).split( '+' ).map( t => t.trim() )
 
-  const weeklyBudget = weeklyBudgetByUserWeek[`${userId}:${formatDateOnly( weekStart )}`]
-  if( null != weeklyBudget )
-    return weeklyBudget / businessDays
+  if( 0 === terms.length || terms.some( t => '' === t ) )
+    return null
 
-  const defaultWeeklyHours = usersById[userId]?.defaultWeeklyHours
-  if( null != defaultWeeklyHours )
-    return defaultWeeklyHours / businessDays
+  const days = []
 
-  return 0
+  for( const term of terms )
+  {
+    const parts = term.split( '*' ).map( p => p.trim() )
+
+    if( 1 === parts.length )
+    {
+      const value = Number( parts[0] )
+
+      if( !Number.isFinite( value ) || value < 0 )
+        return null
+
+      days.push( value )
+    }
+    else if( 2 === parts.length )
+    {
+      const value = Number( parts[0] )
+      const count = Number( parts[1] )
+
+      if( !Number.isFinite( value ) || value < 0 || !Number.isInteger( count ) || count <= 0 )
+        return null
+
+      for( let i = 0; i < count; i++ )
+        days.push( value )
+    }
+    else
+    {
+      return null
+    }
+  }
+
+  return days
+}
+
+export function sumCapacity( days )
+{
+  return days.reduce( (sum, hours) => sum + hours, 0 )
+}
+
+// The inverse of parseCapacityFormula(), for repopulating the edit field
+// from a stored array - collapses consecutive equal-value runs into
+// "value*count" terms (bare "value" when count is 1), joined by "+".
+// Not guaranteed to reproduce the exact text originally typed (e.g.
+// "8+8+8" round-trips as "8*3"), only an equivalent formula.
+export function formatCapacityFormula( days )
+{
+  const terms = []
+  let i = 0
+
+  while( i < days.length )
+  {
+    let count = 1
+
+    while( i + count < days.length && days[i + count] === days[i] )
+      count++
+
+    terms.push( count > 1 ? `${days[i]}*${count}` : `${days[i]}` )
+    i += count
+  }
+
+  return terms.join( '+' )
 }
 
 // CONTEXT.md's Grouting Day: target dates prefer Saturday (Sunday
@@ -163,12 +252,15 @@ export function assignGroutingDay( readyDateStr, explicitPromisedDateStr, existi
   // Re-check from scratch after every push-out, since pushing past one
   // conflicting date can land within range of another.
   let changed = true
+
   while( changed )
   {
     changed = false
+
     for( const existingDate of existingDates )
     {
       const gapDays = Math.abs( daysBetween( candidate, existingDate ) )
+
       if( 0 === gapDays || gapDays >= PREFERRED_CADENCE_DAYS )
         continue
 
@@ -189,6 +281,7 @@ export function assignGroutingDay( readyDateStr, explicitPromisedDateStr, existi
 function nextOrSameMonday( date )
 {
   const day = date.getDay() // 0 = Sunday, 1 = Monday, ... 6 = Saturday
+
   if( 1 === day )
     return date
 
@@ -217,6 +310,7 @@ export function sortByPriority( orders )
 
   return [...orders].sort( (a, b) => {
     const rankDiff = rank( a ) - rank( b )
+
     if( 0 !== rankDiff )
       return rankDiff
 
@@ -236,9 +330,9 @@ export function sortByPriority( orders )
 // eligible-Users filter applies unconditionally, not just for
 // Owner-only phases; for non-Owner-only phases (Gluing/Picking), the
 // day-walk also draws from a synthetic assistants:${date} pool sourced
-// from `ctx.assistantHoursByDate` (AssistantAvailability's per-date
-// sum), cached the same way. Returns the date the phase's hours were
-// fully consumed.
+// from `ctx.assistantHoursByDate` (assistant CapacityEvent entries'
+// per-date sum), cached the same way. Returns the date the phase's
+// hours were fully consumed.
 function consumeOrdinaryCapacity( hoursNeeded, startDateStr, ownerOnly, ctx )
 {
   if( 0 === hoursNeeded )
@@ -260,14 +354,17 @@ function consumeOrdinaryCapacity( hoursNeeded, startDateStr, ownerOnly, ctx )
         break
 
       const key = `${userId}:${cursor}`
+
       if( !(key in ctx.remainingCapacityCache) )
-        ctx.remainingCapacityCache[key] = resolveDailyCapacity( userId, cursor, ctx.capacityByUserDate, ctx.weeklyBudgetByUserWeek, ctx.usersById )
+        ctx.remainingCapacityCache[key] = resolveDailyCapacity( userId, cursor, ctx.capacityByUserDate )
 
       const available = ctx.remainingCapacityCache[key]
+
       if( available <= 0 )
         continue
 
       const consumed = Math.min( available, remaining )
+
       ctx.remainingCapacityCache[key] -= consumed
       remaining -= consumed
     }
@@ -275,13 +372,16 @@ function consumeOrdinaryCapacity( hoursNeeded, startDateStr, ownerOnly, ctx )
     if( !ownerOnly && remaining > 0 )
     {
       const assistantKey = `assistants:${cursor}`
+
       if( !(assistantKey in ctx.remainingCapacityCache) )
         ctx.remainingCapacityCache[assistantKey] = ctx.assistantHoursByDate[cursor] ?? 0
 
       const availableAssistantHours = ctx.remainingCapacityCache[assistantKey]
+
       if( availableAssistantHours > 0 )
       {
         const consumed = Math.min( availableAssistantHours, remaining )
+
         ctx.remainingCapacityCache[assistantKey] -= consumed
         remaining -= consumed
       }
@@ -306,34 +406,28 @@ function consumeOrdinaryCapacity( hoursNeeded, startDateStr, ownerOnly, ctx )
 //
 // Inputs are plain objects/arrays, already loaded by the caller (see
 // db/actions/scheduling.js) - this function does no I/O.
-export function simulateBacklog( {orders, pieces, productsById, users, capacities, weeklyBudgets, assistantAvailability, groutingDays, settingsJson, costFactors, overrides, todayStr} )
+export function simulateBacklog( {orders, pieces, productsById, users, capacityEvents, groutingDays, settingsJson, costFactors, overrides, todayStr} )
 {
   const usersById = Object.fromEntries( users.map( u => [u.id, u] ) )
   const userIds = users.map( u => u.id )
   const costFactorsByKey = Object.fromEntries( costFactors.map( f => [f.key, f] ) )
   const overrideByFactorId = {}
+
   for( const o of overrides )
     (overrideByFactorId[o.productId] ??= {})[o.costFactorId] = o
 
-  const capacityByUserDate = Object.fromEntries( capacities.map( c => [`${c.userId}:${c.date}`, c.hours] ) )
-  const weeklyBudgetByUserWeek = Object.fromEntries( weeklyBudgets.map( w => [`${w.userId}:${w.weekStartDate}`, w.hours] ) )
-
-  // One summed pool per date - individual AssistantAvailability entries
-  // (who, specifically) only matter to the UI; the engine just needs
-  // each date's total.
-  const assistantHoursByDate = {}
-  for( const a of assistantAvailability )
-    assistantHoursByDate[a.date] = (assistantHoursByDate[a.date] ?? 0) + a.hours
+  const {capacityByUserDate, assistantHoursByDate} = expandCapacityEvents( capacityEvents )
 
   const groutingDaysByDate = Object.fromEntries( groutingDays.map( g => [g.date, g] ) )
   const groutingDaysById = Object.fromEntries( groutingDays.map( g => [g.id, g] ) )
   const reservedGroutingDayDates = groutingDays.map( g => g.date )
 
   const piecesByOrderId = {}
+
   for( const piece of pieces )
     (piecesByOrderId[piece.orderId] ??= []).push( piece )
 
-  const ctx = {usersById, userIds, capacityByUserDate, weeklyBudgetByUserWeek, assistantHoursByDate, remainingCapacityCache: {}}
+  const ctx = {usersById, userIds, capacityByUserDate, assistantHoursByDate, remainingCapacityCache: {}}
 
   const openOrders = orders.filter( o => !o.completedOn )
   const results = []
@@ -368,6 +462,7 @@ export function simulateBacklog( {orders, pieces, productsById, users, capacitie
         }
 
         const hoursNeeded = getPieceDurationHours( phase, product, settingsJson, costFactorsByKey, overrideByFactorId[piece.productId] )
+
         if( 0 === hoursNeeded )
           continue // auto-skip - e.g. Glass on a piece that doesn't need hand-cutting (Q17)
 
@@ -394,11 +489,13 @@ export function simulateBacklog( {orders, pieces, productsById, users, capacitie
       {
         const explicitPromisedDateStr = 'explicit' === order.promisedDateOrigin ? order.promisedDate : null
         const assignment = assignGroutingDay( groutingReadyDate, explicitPromisedDateStr, reservedGroutingDayDates )
+
         groutingDate = assignment.date
 
         if( !groutingDaysByDate[groutingDate] )
         {
           const newGroutingDay = {id: null, date: groutingDate, origin: 'computed'}
+
           groutingDaysByDate[groutingDate] = newGroutingDay
           reservedGroutingDayDates.push( groutingDate )
         }
@@ -412,8 +509,8 @@ export function simulateBacklog( {orders, pieces, productsById, users, capacitie
       : formatDateOnly( groutingDate ? addDays( parseDateOnly( groutingDate ), 2 ) : nextOrSameMonday( parseDateOnly( latestFinish ) ) )
 
     // assistantHours is computed here, not stored on GroutingDay itself
-    // (see that model's doc comment) - just this date's
-    // AssistantAvailability sum, for display.
+    // (see that model's doc comment) - just this date's summed assistant
+    // CapacityEvent hours, for display.
     results.push( {
       orderId: order.id,
       projectedCompletionDate: latestFinish,

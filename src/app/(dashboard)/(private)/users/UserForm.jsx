@@ -1,9 +1,13 @@
 'use client'
 
-import { useRouter } from 'next/navigation'
 import { useEffect } from 'react'
-import { z } from 'zod'
+
+import { useRouter } from 'next/navigation'
+
 import NextLink from 'next/link'
+
+import { z } from 'zod'
+
 
 import Grid from '@mui/material/Grid2'
 import Card from '@mui/material/Card'
@@ -29,13 +33,13 @@ const schema = z.object({
   email: z.string().email(),
   password: optionalString,
   role: optionalString,
-  defaultWeeklyHours: optionalString,
 })
 
 export default function UserForm( {initialData={}} )
 {
   const router = useRouter()
   const isEdit = Boolean( initialData?.id )
+
   const { handleSubmit, loading, errors, success } = useFormSubmit({
     schema: isEdit ? schema : schema.extend( {password: z.string().min( 8, 'Password must be at least 8 characters' )} ),
     onSubmit: isEdit ? updateUser : createUser
@@ -111,17 +115,6 @@ export default function UserForm( {initialData={}} )
                       <MenuItem value='assistant'>Assistant</MenuItem>
                     </Select>
                   </FormControl>
-                </Grid>
-                <Grid size={{ xs: 12, sm: 6 }}>
-                  <TextField
-                    fullWidth
-                    type='number'
-                    label='Default Weekly Hours'
-                    name='defaultWeeklyHours'
-                    defaultValue={initialData?.defaultWeeklyHours ?? ''}
-                    helperText='Standing production hours/week, used by scheduling when no Capacity or Weekly Budget override is set for a given week.'
-                    slotProps={{htmlInput: {step: 0.5, min: 0}}}
-                  />
                 </Grid>
               </Grid>
             </CardContent>
