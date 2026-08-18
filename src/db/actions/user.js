@@ -2,21 +2,22 @@
 
 import bcrypt from 'bcryptjs'
 import { Sequelize } from 'sequelize'
+
 import User from '@/db/models/User'
 import sequelize from '@/db/sequelize'
 import { auth } from '@/lib/auth'
 
 // Never select the hashed password out to the client - these two are the
-// only reads used by the admin User CRUD UI. role/defaultWeeklyHours
-// (added by 20260816000000-user-role-and-weekly-hours.js) feed the
-// scheduling engine's Capacity fallback chain and Owner-only-phase rule
-// (see libs/pieceScheduling.js) - editable here since there's no other
-// UI surface for them yet.
-const PUBLIC_ATTRIBUTES = ['id', 'name', 'email', 'role', 'defaultWeeklyHours']
+// only reads used by the admin User CRUD UI. role (added by
+// 20260816000000-user-role-and-weekly-hours.js) feeds the scheduling
+// engine's Owner-only-phase rule (see libs/pieceScheduling.js) -
+// editable here since there's no other UI surface for it yet.
+const PUBLIC_ATTRIBUTES = ['id', 'name', 'email', 'role']
 
 export async function createUser( data )
 {
   const session = await auth()
+
   if( !session )
     throw new Error( 'Unauthorized', {cause: 401} )
 
@@ -32,8 +33,8 @@ export async function createUser( data )
       email: data.email,
       password: data.password,
       role: data.role || null,
-      defaultWeeklyHours: null != data.defaultWeeklyHours && '' !== data.defaultWeeklyHours ? Number( data.defaultWeeklyHours ) : null,
     } )
+
     return {success: true, id: user.id}
   }
   catch( error )
@@ -41,6 +42,7 @@ export async function createUser( data )
     if( error instanceof Sequelize.ValidationError )
     {
       const message = error.errors.map( (e) => e.message ).join( '; ' )
+
       return {error: `Validation failed: ${message}`}
     }
 
@@ -51,28 +53,33 @@ export async function createUser( data )
 export async function readUser( id )
 {
   const session = await auth()
+
   if( !session )
     throw new Error( 'Unauthorized', {cause: 401} )
 
   await sequelize.sync()
   const user = await User.findByPk( id, {attributes: PUBLIC_ATTRIBUTES} )
+
   return user?.toJSON()
 }
 
 export async function readUsers()
 {
   const session = await auth()
+
   if( !session )
     throw new Error( 'Unauthorized', {cause: 401} )
 
   await sequelize.sync()
   const users = await User.findAll( {attributes: PUBLIC_ATTRIBUTES} )
+
   return users.map( u => u.toJSON() )
 }
 
 export async function updateUser( data )
 {
   const session = await auth()
+
   if( !session )
     throw new Error( 'Unauthorized', {cause: 401} )
 
@@ -88,13 +95,14 @@ export async function updateUser( data )
     // to hash the password itself when one is supplied. An empty/omitted
     // password leaves the existing one unchanged.
     const hashedPassword = data.password ? await bcrypt.hash( data.password, 10 ) : user.password
+
     await user.update( {
       name: data.name,
       email: data.email,
       password: hashedPassword,
       role: data.role || null,
-      defaultWeeklyHours: null != data.defaultWeeklyHours && '' !== data.defaultWeeklyHours ? Number( data.defaultWeeklyHours ) : null,
     } )
+
     return {success: true}
   }
   catch( error )
@@ -102,6 +110,7 @@ export async function updateUser( data )
     if( error instanceof Sequelize.ValidationError )
     {
       const message = error.errors.map( (e) => e.message ).join( '; ' )
+
       return {error: `Validation failed: ${message}`}
     }
 
@@ -112,6 +121,7 @@ export async function updateUser( data )
 export async function deleteUser( id )
 {
   const session = await auth()
+
   if( !session )
     throw new Error( 'Unauthorized', {cause: 401} )
 

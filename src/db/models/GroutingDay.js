@@ -1,4 +1,5 @@
 import { DataTypes } from 'sequelize'
+
 import sequelize from '@/db/sequelize.js'
 
 // CONTEXT.md's Grouting Day - the periodic shop event when Grouting and
@@ -12,12 +13,11 @@ import sequelize from '@/db/sequelize.js'
 // docs/adr/0005's lazy-cache pattern).
 //
 // Expected assistant hours for this date aren't stored here - they're
-// computed on demand as the sum of that date's AssistantAvailability
-// rows (see the 20260817040000-drop-grouting-day-estimated-hours.js
+// computed on demand as the sum of that date's assistant CapacityEvent
+// entries (see the 20260817040000-drop-grouting-day-estimated-hours.js
 // migration and src/libs/pieceScheduling.js's simulateBacklog(), which
 // attaches the sum to its result under `assistantHours`). Owners' own
-// extended hours on this date reuse the existing per-day Capacity
-// override instead of a column here.
+// extended hours on this date come from a CapacityEvent the same way.
 const GroutingDay = sequelize.define(
   'GroutingDay',
   {

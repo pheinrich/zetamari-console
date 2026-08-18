@@ -6,7 +6,7 @@ import CapacityCalendar from './CapacityCalendar'
 
 export default async function CapacityPage()
 {
-  const {users, capacities, weeklyBudgets, assistantAvailability, groutingDays} = await readSchedulingInputs()
+  const {users, capacityEvents, groutingDays} = await readSchedulingInputs()
   const owners = users.filter( u => 'owner' === u.role )
 
   return (
@@ -14,21 +14,15 @@ export default async function CapacityPage()
       <Grid size={{ xs: 12 }}>
         <Typography variant='h4'>Capacity</Typography>
         <Typography color='text.secondary'>
-          Each Owner&apos;s hours default from their Weekly Budget/Default Weekly Hours (shown muted) - type a
-          number to override a specific day (including 0, for a day off), or clear it to go back to the default.
-          Named assistants can be added per day; their hours feed the shared assistant labor pool for scheduling,
-          including Grouting Day&apos;s expected turnout.
+          Capacity is entirely explicit - a day nobody&apos;s scheduled on an event is 0 hours. Click a day to
+          create an event spanning one or more days (e.g. a normal production week, an away-at-a-show trip);
+          assign any number of Owners/Assistants, each with their own per-day hours. Click an existing event&apos;s
+          bar to edit it.
         </Typography>
       </Grid>
 
       <Grid size={{ xs: 12 }}>
-        <CapacityCalendar
-          owners={owners}
-          capacities={capacities}
-          weeklyBudgets={weeklyBudgets}
-          assistantAvailability={assistantAvailability}
-          groutingDays={groutingDays}
-        />
+        <CapacityCalendar owners={owners} capacityEvents={capacityEvents} groutingDays={groutingDays} />
       </Grid>
     </Grid>
   )
