@@ -97,7 +97,7 @@ const VerticalMenu = ({ scrollMenu }) => {
             production
           </MenuItem>
           <MenuItem href='/capacity' icon={<i className='ri-calendar-check-line' />}>
-            capacity
+            calendar
           </MenuItem>
         </MenuSection>
         <MenuSection label='customers'>

@@ -78,7 +78,7 @@ const horizontalMenuData = () => [
         href: '/production'
       },
       {
-        label: 'capacity',
+        label: 'calendar',
         icon: 'ri-calendar-check-line',
         href: '/capacity'
       }
