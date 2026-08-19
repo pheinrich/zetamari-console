@@ -1,0 +1,52 @@
+/* Denser than @core/styles/table.module.css on purpose - that shared
+   module drives every other list page's row height/font-size, and this
+   table intentionally reads much tighter than those (dozens-to-hundreds
+   of Pieces per phase, one phase on screen at a time). Kept local so
+   this page's density doesn't leak onto Orders/Customers/Products/etc. */
+.table {
+  inline-size: 100%;
+  border-collapse: collapse;
+  font-size: 0.75rem;
+  white-space: nowrap;
+
+  thead {
+    text-transform: uppercase;
+    color: var(--mui-palette-text-primary);
+
+    th {
+      font-weight: 500;
+      font-size: 0.6875rem;
+      letter-spacing: 0.2px;
+      text-align: start;
+      block-size: 32px;
+      background-color: var(--mui-palette-customColors-tableHeaderBg);
+      padding-block: 0.25rem;
+      padding-inline: 0.5rem;
+
+      &:first-of-type {
+        padding-inline-start: 0.5rem;
+      }
+    }
+  }
+
+  tbody {
+    color: var(--mui-palette-text-secondary);
+
+    th,
+    td {
+      font-size: 0.75rem;
+      line-height: 1.3;
+      block-size: 32px;
+      padding-block: 0.25rem;
+      padding-inline: 0.5rem;
+
+      &:first-of-type {
+        padding-inline-start: 0.5rem;
+      }
+    }
+
+    tr:not(:last-child) {
+      border-block-end: 1px solid var(--border-color);
+    }
+  }
+}
