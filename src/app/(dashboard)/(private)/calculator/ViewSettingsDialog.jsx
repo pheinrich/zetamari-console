@@ -16,8 +16,8 @@ import { TABS, PRICING_COLUMNS } from './configurationCost'
 // Columns checklists, Pin Settings toggle) that used to be scattered
 // directly across MirrorCalculator's kebab Menu into one dedicated dialog,
 // opened via a single "View Settings..." item - per the 2026-08-04
-// revision. Unlike the kebab's other items (Save New Wooden Base/Print
-// Report/etc, which act on the data), none of these touch substrateInfo/
+// revision. Unlike the kebab's other item (Print Report, which acts on the
+// data), none of these touch substrateInfo/
 // the gallery - they only control how the existing data is displayed - so
 // grouping them here keeps the kebab menu itself short. All state
 // (tabVisible/pricingColumnVisible/pinned) still lives in MirrorCalculator,

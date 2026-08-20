@@ -46,13 +46,22 @@ function isRateHolderKey( key )
 // to KIT_FACTORS itself, not any of the raw building-block lists above it
 // (nor FINISHED_MIRROR_FACTORS) - Kit is the only preset meant to default
 // it "on."
+//
+// Per the 2026-08-19 revision, Grout is its own building block
+// (GROUT_MATERIAL_FACTORS), kept out of TESSERAE_MATERIAL_FACTORS/
+// KIT_FACTORS entirely - Finished Mirror is the only preset that should
+// default the Grout material row "on" (grouting only makes sense once the
+// whole piece is assembled), so it's added directly into
+// FINISHED_MIRROR_FACTORS rather than flowing through Tesserae/Kit the
+// way it used to.
 const WOODEN_BASE_FACTORS = ['woodenBase', 'sheetBreakageWood', 'machineWear', 'utilities', 'laborCnc', 'laborSanding']
 const MIRROR_GLASS_FACTORS = ['mirrorGlass', 'sheetBreakageGlass', 'laborGlass']
-const TESSERAE_MATERIAL_FACTORS = ['tesserae', 'grout']
+const TESSERAE_MATERIAL_FACTORS = ['tesserae']
+const GROUT_MATERIAL_FACTORS = ['grout']
 const TESSERAE_LABOR_FACTORS = ['laborGluing', 'laborGrouting']
 const SUBSTRATE_FACTORS = [...WOODEN_BASE_FACTORS, ...MIRROR_GLASS_FACTORS]
 const KIT_FACTORS = [...SUBSTRATE_FACTORS, ...TESSERAE_MATERIAL_FACTORS, 'laborPicking']
-const FINISHED_MIRROR_FACTORS = [...SUBSTRATE_FACTORS, ...TESSERAE_MATERIAL_FACTORS, ...TESSERAE_LABOR_FACTORS, 'laborFinishing', 'bom']
+const FINISHED_MIRROR_FACTORS = [...SUBSTRATE_FACTORS, ...TESSERAE_MATERIAL_FACTORS, ...GROUT_MATERIAL_FACTORS, ...TESSERAE_LABOR_FACTORS, 'laborFinishing', 'bom']
 
 // Ordered for display in the Pricing tab's "Include" preset dropdown - the
 // raw materials first, then the progressively composed bundles.
@@ -115,7 +124,7 @@ export function buildSyntheticProduct( substrateInfo, outsideContour, insideCont
       // Not a real product - no learned real-world nesting count exists
       // to enter, so this always falls back to computeDefaultQuantities()'s
       // live grid-packing estimate (see WoodenBaseInfo.js's doc comment)
-      // unless the person has double-clicked to override it.
+      // unless the person has clicked to override it.
       piecesPerSheet: quantityOverrides.sheetBreakageWood ?? null,
       glassPiecesPerSheet: quantityOverrides.sheetBreakageGlass ?? null,
     },
@@ -148,7 +157,7 @@ const SHEET_BREAKAGE_KEYS = new Set( ['sheetBreakageWood', 'sheetBreakageGlass']
 // Per-factor $ breakdown, mirroring db/actions/productCost.js's
 // readProductCosts() row math - but for a synthetic product with no
 // ProductCostOverride rows at all, so every factor's effective quantity is
-// just its computed default, or the person's own double-click override
+// just its computed default, or the person's own click-to-edit override
 // (see computeVisualizerStats below) - a hypothetical shape has no real
 // BOM line to supersede a Material factor, and no product id to hang a
 // *persisted* override off of, but the Visualizer still supports the same
@@ -206,10 +215,10 @@ function computeFactorRow( factor, computed, ownerRate, assistantRate, markupFac
 //     and `overridden` (whether a quantityOverrides entry is currently
 //     active for it).
 //   - weight: Wooden Base/Mirror Glass/Tesserae/Grout's individual weight
-//     contributions plus the Substrate/Kit/Finished Mirror running sums
-//     (Substrate = Wooden Base + Mirror Glass; Kit = Substrate + Tesserae;
-//     Finished Mirror = Kit + Grout - see the 2026-08-02 Weight tab
-//     revision), all in lb.
+//     contributions, in lb - the Weight tab's own Total row (see
+//     StatsSummary.jsx's WeightTable) sums whichever of these are
+//     currently checked "Include", so no fixed Substrate/Kit/Finished
+//     Mirror bundle math is kept here (see the 2026-08-19 revision).
 //   - markupFactor/retailMultiplier: exposed so the Pricing tab's per-
 //     column Assistant/Owner tooltip can work out each $ column's own
 //     labor split (COGS/Wholesale/Retail treat Owner labor differently -
@@ -298,22 +307,19 @@ export function computeVisualizerStats( substrateInfo, outsideContour, insideCon
     rowsByKey[factor.key] = row
   }
 
-  const woodenBaseWeight = (rowsByKey.woodenBase?.quantity ?? 0) * (settings?.woodenBaseWeightPerSqIn ?? 0)
-  const mirrorGlassWeight = (rowsByKey.mirrorGlass?.quantity ?? 0) * (settings?.mirrorGlassWeightPerSqIn ?? 0)
-  const tesseraeWeight = (rowsByKey.tesserae?.quantity ?? 0) * (settings?.tesseraeWeightPerSqIn ?? 0)
-  const groutWeight = (rowsByKey.grout?.quantity ?? 0) * (settings?.groutWeightPerSqIn ?? 0)
-  const substrateWeight = woodenBaseWeight + mirrorGlassWeight
-  const kitWeight = substrateWeight + tesseraeWeight
-  const finishedMirrorWeight = kitWeight + groutWeight
-
+  // Per the 2026-08-19 revision, the Weight tab shows these four rows
+  // directly (via StatsSummary.jsx's WeightTable, reusing the Pricing
+  // tab's own Material section/Include checkboxes/preset dropdown) rather
+  // than a fixed set of precomputed Substrate/Kit/Finished Mirror bundle
+  // rows - the checkboxes already let someone build any of those same
+  // combinations (and any other), with the Total row summing whichever
+  // rows are currently checked, so there's no fixed bundle math to keep
+  // here beyond each individual material's own weight.
   const weight = {
-    woodenBase: woodenBaseWeight,
-    mirrorGlass: mirrorGlassWeight,
-    tesserae: tesseraeWeight,
-    grout: groutWeight,
-    substrate: substrateWeight,
-    kit: kitWeight,
-    finishedMirror: finishedMirrorWeight,
+    woodenBase: (rowsByKey.woodenBase?.quantity ?? 0) * (settings?.woodenBaseWeightPerSqIn ?? 0),
+    mirrorGlass: (rowsByKey.mirrorGlass?.quantity ?? 0) * (settings?.mirrorGlassWeightPerSqIn ?? 0),
+    tesserae: (rowsByKey.tesserae?.quantity ?? 0) * (settings?.tesseraeWeightPerSqIn ?? 0),
+    grout: (rowsByKey.grout?.quantity ?? 0) * (settings?.groutWeightPerSqIn ?? 0),
   }
 
   return { computed, rowsByKey, weight, markupFactor, retailMultiplier }

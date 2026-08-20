@@ -1,5 +1,5 @@
 import { readContours } from '@/db/actions/contour'
-import { readWoodenBaseProducts } from '@/db/actions/product'
+import { readProducts, readWoodenBaseProducts } from '@/db/actions/product'
 import { readShapeTypes } from '@/db/actions/shapeType'
 import { readSettings, readCostFactors } from '@/db/actions/settings'
 
@@ -16,9 +16,12 @@ import MirrorCalculator from './MirrorCalculator'
 // None of these tie the working panel to a product in an ongoing way -
 // the Visualizer is exploratory local state; "Copy From..." (in the
 // working panel's header) only ever copies a product's values in once,
-// and the only persistence actions are "Save New Wooden Base..."/"Save
-// New Mirror Glass..." (in the ⋮ menu), which fork the current values
-// into a brand new Product of the corresponding type.
+// and the only persistence action is the Pricing tab's "Create New
+// Product..." button (see StatsSummary.jsx/CreateNewProductDialog.jsx,
+// which replaced the old ⋮ menu's "Save New Wooden Base.../Save New
+// Mirror Glass..." items), which forks the current shape/dimensions -
+// plus a Bill of Materials line for each Pricing-tab Material row
+// currently checked "Include" - into a brand new, hidden draft Product.
 //
 // substrateProducts already carries every wooden base product's full
 // WoodenBaseInfo (dimensions + outside/inside/rabbet contours), so no
@@ -29,6 +32,11 @@ import MirrorCalculator from './MirrorCalculator'
 // calculator subsystem below - it's this feature's own working-geometry
 // vocabulary, not a direct reference to the renamed Product.type/model -
 // see the 20260723000000-rename-product-types.js migration.)
+//
+// `products` is the full catalog (every type) - CreateNewProductDialog's
+// per-category Bill of Materials pickers filter it client-side, same as
+// BomEditor.jsx's own material picker already does on the product edit
+// page.
 export default async function CalculatorPage( {searchParams} )
 {
   const params = await searchParams
@@ -38,9 +46,10 @@ export default async function CalculatorPage( {searchParams} )
   // product-costing system reads, fetched once here (server-side, like
   // everything else on this page) rather than per-render in the client
   // component below.
-  const [contours, substrateProducts, shapeTypes, settings, costFactors] = await Promise.all([
+  const [contours, substrateProducts, products, shapeTypes, settings, costFactors] = await Promise.all([
     readContours(),
     readWoodenBaseProducts(),
+    readProducts(),
     readShapeTypes(),
     readSettings(),
     readCostFactors(),
@@ -82,6 +91,7 @@ export default async function CalculatorPage( {searchParams} )
       initialState={initialState}
       contours={contours}
       substrateProducts={substrateProducts}
+      products={products}
       shapeTypes={shapeTypes}
       shopSettings={settings}
       costFactors={costFactors}
