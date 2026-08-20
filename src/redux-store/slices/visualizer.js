@@ -14,10 +14,15 @@ import { createSlice } from '@reduxjs/toolkit'
 // wins over whatever happened to be open in this tab before - see
 // MirrorCalculator.jsx's `fromExplicitLink` handling.
 //
-// Shape matches urlCodec's decoded {current, gallery, pinned} exactly
-// (gallery entries have no `id` field - MirrorCalculator assigns those
-// fresh on load, same as it does for a URL-decoded gallery) so the two
-// sources are interchangeable at the point MirrorCalculator reads them.
+// Shape matches urlCodec's decoded {current, gallery, pinned, tabVisible,
+// pricingColumnVisible} exactly (gallery entries have no `id` field -
+// MirrorCalculator assigns those fresh on load, same as it does for a
+// URL-decoded gallery) so the two sources are interchangeable at the
+// point MirrorCalculator reads them. Per the 2026-08-19 persistence
+// revision, `current`/each `gallery` entry also carries its own Pricing/
+// Weight tab state (preset/include/pricingOverrides/weightOverrides) -
+// still just plain JSON fields here, no shape change needed in this file
+// itself.
 const initialState = {
   snapshot: null,
 }
