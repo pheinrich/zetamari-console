@@ -475,12 +475,12 @@ export function formatCost( value )
 
 export function formatMachineTime( minutes )
 {
-  return `${(minutes ?? 0).toFixed( 1 )} min`
+  return `${(minutes ?? 0).toFixed( 2 )} min`
 }
 
 export function formatCutDistance( inches )
 {
-  return `${(inches ?? 0).toFixed( 1 )} in`
+  return `${(inches ?? 0).toFixed( 2 )} in`
 }
 
 // Placeholder for figures with no formula yet (Shipping Weight on the
@@ -506,7 +506,7 @@ export function formatQuantity( value, unit )
   if( 'sqin' === unit )
     return `${v.toFixed( 2 )} sq in`
   if( 'min' === unit )
-    return `${v.toFixed( 1 )} min`
+    return `${v.toFixed( 2 )} min`
 
   return `${v.toFixed( 2 )}${unit ? ` ${unit}` : ''}`
 }

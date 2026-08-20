@@ -283,7 +283,13 @@ function EditableQuantityCell( {value, computedValue, overridden, formatValue, o
 
   function startEditing()
   {
-    setDraft( null == value ? '' : String( value ) )
+    // Rounded to 2 decimal places (matching every computed figure shown
+    // elsewhere on the Visualizer's tabs) rather than the raw value's
+    // full floating-point precision - most visible on a Quantity implied
+    // from a COGS/Wholesale/Retail-cell edit (see the 2026-08-19
+    // revision's column propagation), which otherwise lands on a long,
+    // ugly decimal.
+    setDraft( null == value ? '' : String( Math.round( value * 100 ) / 100 ) )
     setEditing( true )
   }
 
