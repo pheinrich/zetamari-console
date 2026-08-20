@@ -57,6 +57,9 @@ const VerticalMenu = ({ scrollMenu }) => {
         menuSectionStyles={menuSectionStyles(verticalNavOptions, theme)}
       >
         <MenuSection label='inventory'>
+          <MenuItem href='/calculator' icon={<i className='ri-ruler-2-line' />}>
+            visualizer
+          </MenuItem>
           <MenuItem href='/products' icon={<i className='ri-shapes-line' />}>
             products
           </MenuItem>
@@ -71,9 +74,6 @@ const VerticalMenu = ({ scrollMenu }) => {
           </MenuItem>
           <MenuItem href='/settings' icon={<i className='ri-settings-3-line' />}>
             settings
-          </MenuItem>
-          <MenuItem href='/calculator' icon={<i className='ri-ruler-2-line' />}>
-            visualizer
           </MenuItem>
         </MenuSection>
         <MenuSection label='scheduling'>

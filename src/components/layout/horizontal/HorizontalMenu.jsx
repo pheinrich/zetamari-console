@@ -71,6 +71,9 @@ const HorizontalMenu = ({}) => {
         }}
       >
         <SubMenu label='inventory' icon={<i className='ri-shapes-line' />}>
+          <MenuItem href='/calculator' icon={<i className='ri-ruler-2-line' />}>
+            visualizer
+          </MenuItem>
           <MenuItem href='/products' icon={<i className='ri-shapes-line' />}>
             products
           </MenuItem>
@@ -85,9 +88,6 @@ const HorizontalMenu = ({}) => {
           </MenuItem>
           <MenuItem href='/settings' icon={<i className='ri-settings-3-line' />}>
             settings
-          </MenuItem>
-          <MenuItem href='/calculator' icon={<i className='ri-ruler-2-line' />}>
-            visualizer
           </MenuItem>
         </SubMenu>
 
