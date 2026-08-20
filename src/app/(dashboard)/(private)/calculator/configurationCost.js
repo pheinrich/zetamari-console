@@ -100,13 +100,13 @@ export const PRICING_COLUMNS = [
 // is fetched everywhere else in the calculator) - already the exact shape
 // buildGeometry() expects for `woodenBaseInfo.outside/inside/rabbet`.
 //
-// `quantityOverrides` (added for the 2026-08-04 editable-Quantity
-// revision) only ever contributes its `sheetBreakageWood`/
-// `sheetBreakageGlass` entries here - those two rows display a PIECE
-// COUNT, not the dollar quantity every other row's override replaces
-// directly (see computeVisualizerStats below), so editing them has to
-// flow through the exact same manual-override inputs a real product uses
-// (WoodenBaseInfo.piecesPerSheet/glassPiecesPerSheet) so
+// `quantityOverrides` is a bare {sheetBreakageWood, sheetBreakageGlass}
+// map of PIECE COUNTS (not the dollar quantity every other row's override
+// replaces directly - see computeVisualizerStats below) - callers pre-
+// extract just the Quantity-column overrides for these two rows into this
+// shape (see pieceOverridesFrom) before calling here, so editing them
+// flows through the exact same manual-override inputs a real product uses
+// (WoodenBaseInfo.piecesPerSheet/glassPiecesPerSheet) and
 // computeDefaultQuantities() recomputes the dollar breakage figure from
 // the overridden piece count, the same way it would for a real product.
 export function buildSyntheticProduct( substrateInfo, outsideContour, insideContour, rabbetContour, quantityOverrides = {} )
@@ -148,11 +148,39 @@ function resolveLaborRates( factors )
 }
 
 // The two rows whose Quantity column shows a piece count rather than the
-// factor's own $ quantity (see computeVisualizerStats below) - their
-// override therefore has to flow in through buildSyntheticProduct's
+// factor's own $ quantity (see computeVisualizerStats below) - a Quantity-
+// column override therefore has to flow in through buildSyntheticProduct's
 // piecesPerSheet fields (computeDefaultQuantities recomputes the dollar
-// figure from there), not by replacing `computed[key]` directly.
+// figure from there), not by replacing `computed[key]` directly. A COGS/
+// Wholesale/Retail-column override on either of these rows (per the
+// 2026-08-19 revision) bypasses piecesPerSheet entirely instead - see
+// pieceOverridesFrom/computeVisualizerStats below.
 const SHEET_BREAKAGE_KEYS = new Set( ['sheetBreakageWood', 'sheetBreakageGlass'] )
+
+// The Weight tab's four rows (see MATERIAL_ROWS/WeightTable in
+// StatsSummary.jsx) - the only CostFactor keys with a per-sq-in weight of
+// their own.
+const WEIGHT_MATERIAL_KEYS = ['woodenBase', 'mirrorGlass', 'tesserae', 'grout']
+
+// Picks the Quantity-column (piece-count) overrides out of a Pricing tab's
+// override map, in the bare {sheetBreakageWood, sheetBreakageGlass} shape
+// buildSyntheticProduct expects - a COGS/Wholesale/Retail-column override
+// on either Sheet Breakage row never belongs here (see SHEET_BREAKAGE_KEYS
+// above), since it bypasses piecesPerSheet entirely.
+function pieceOverridesFrom( pricingOverrides )
+{
+  const result = {}
+
+  for( const key of SHEET_BREAKAGE_KEYS )
+  {
+    const override = pricingOverrides[key]
+
+    if( override && 'quantity' === override.source && Number.isFinite( override.value ) )
+      result[key] = override.value
+  }
+
+  return result
+}
 
 // Per-factor $ breakdown, mirroring db/actions/productCost.js's
 // readProductCosts() row math - but for a synthetic product with no
@@ -203,19 +231,55 @@ function computeFactorRow( factor, computed, ownerRate, assistantRate, markupFac
   }
 }
 
+// Per-$1-of-quantity cost rates for a factor (per the 2026-08-19 revision,
+// which made the Pricing tab's COGS/Wholesale/Retail columns editable the
+// same way Quantity already was) - every one of computeFactorRow's cogsCost/
+// wholesaleCost/retailCost formulas is a straight linear function of
+// quantity for fixed rates/markup/retail-multiplier/owner-share (no
+// additive constant anywhere in them, Labor's owner/assistant split
+// included), so probing computeFactorRow with quantity=1 and reading the
+// resulting $ figures back off it IS that per-unit rate, without
+// re-deriving its Material/Machine-vs-Labor branching here a second time.
+function computeUnitRates( factor, ownerRate, assistantRate, markupFactor, retailMultiplier )
+{
+  const probe = computeFactorRow( factor, {[factor.key]: 1}, ownerRate, assistantRate, markupFactor, retailMultiplier )
+
+  return { cogs: probe.cogsCost, wholesale: probe.wholesaleCost, retail: probe.retailCost }
+}
+
+// Inverts a person's direct edit to a Pricing row's COGS/Wholesale/Retail
+// cell (see EditableQuantityCell in StatsSummary.jsx) into the equivalent
+// Quantity, via `row.unitRates` (see computeUnitRates above) - the same
+// override machinery a Quantity-cell edit already uses (computeVisualizerStats
+// below), just entered through a different column. Returns null when the
+// column has no rate to invert against (a zero-rate factor), in which case
+// the edit is silently ignored rather than dividing by zero.
+export function impliedQuantityFromColumn( row, columnKey, targetValue )
+{
+  const rate = row?.unitRates?.[columnKey]
+
+  if( !rate )
+    return null
+
+  return targetValue / rate
+}
+
 // Everything the tabbed Visualizer UI needs in one call (StatsSummary.jsx
 // memoizes this rather than recomputing per-tab):
 //   - computed: the raw computeDefaultQuantities() output, WITH any
-//     quantityOverrides already applied - Production's Machine Time/Cut
+//     pricingOverrides already applied - Production's Machine Time/Cut
 //     Distance come straight off computed.runTimeMin/computed.cutDistanceIn.
 //   - rowsByKey: every non-rate-holder CostFactor's $ breakdown (see
 //     computeFactorRow above), keyed by factor key - the Pricing tab's row
-//     data source. Each row also carries `computedQuantity` (the ORIGINAL,
-//     un-overridden value - what the tooltip on an overridden cell shows)
-//     and `overridden` (whether a quantityOverrides entry is currently
-//     active for it).
-//   - weight: Wooden Base/Mirror Glass/Tesserae/Grout's individual weight
-//     contributions, in lb - the Weight tab's own Total row (see
+//     data source. Each row also carries `computedQuantity`/`computedCost`
+//     (the ORIGINAL, un-overridden values - what an overridden cell's
+//     tooltip shows), `unitRates` (see computeUnitRates/
+//     impliedQuantityFromColumn above), and `overrideSource` (which
+//     column, if any, a pricingOverrides entry is currently active for).
+//   - weight/weightRowsByKey: Wooden Base/Mirror Glass/Tesserae/Grout's
+//     individual weight contributions, in lb, and the row data
+//     (quantity/computedQuantity/overrideSource/unit) the Weight tab's own
+//     Quantity column edits against - the Weight tab's Total row (see
 //     StatsSummary.jsx's WeightTable) sums whichever of these are
 //     currently checked "Include", so no fixed Substrate/Kit/Finished
 //     Mirror bundle math is kept here (see the 2026-08-19 revision).
@@ -224,31 +288,43 @@ function computeFactorRow( factor, computed, ownerRate, assistantRate, markupFac
 //     labor split (COGS/Wholesale/Retail treat Owner labor differently -
 //     see StatsSummary.jsx) without duplicating the Settings lookup.
 //
-// `quantityOverrides` (added for the 2026-08-04 editable-Quantity
-// revision) is a plain {factorKey: value} map of the person's own double-
-// click edits on the Pricing tab - purely client-side/ephemeral (nothing
-// persisted, unlike a real product's ProductCostOverride). For most keys
-// this directly replaces computeDefaultQuantities()'s own value; for the
-// two Sheet Breakage rows specifically (see SHEET_BREAKAGE_KEYS) it's
-// instead threaded through buildSyntheticProduct's piecesPerSheet fields,
-// so the dollar figure gets recomputed from the overridden piece count
-// exactly like a real product's manual entry would.
-export function computeVisualizerStats( substrateInfo, outsideContour, insideContour, rabbetContour, settings, factors, quantityOverrides = {} )
+// `pricingOverrides`/`weightOverrides` (split into two independent maps
+// per the 2026-08-19 revision - previously one shared `quantityOverrides`
+// map fed both tabs, so a Pricing what-if edit silently changed the
+// estimated Weight too) are each a plain {factorKey: {value, source}} map
+// of the person's own click-to-edit edits on that tab - purely client-
+// side/ephemeral (nothing persisted server-side, unlike a real product's
+// ProductCostOverride, though see MirrorCalculator.jsx for how these now
+// travel with the Visualizer's own lightbox/URL/session state instead).
+// `source` records which column the person actually edited ('quantity',
+// or - Pricing only - 'cogs'/'wholesale'/'retail'), so the UI can show the
+// override styling/tooltip on that one cell specifically (see
+// EditableQuantityCell) rather than always defaulting to the Quantity
+// column, and so a Sheet Breakage row's dollar-column edit knows to bypass
+// piecesPerSheet (see pieceOverridesFrom above). Whichever column was
+// edited, `row.value` is always the equivalent Quantity - a COGS/
+// Wholesale/Retail edit is inverted to it via computeUnitRates/
+// impliedQuantityFromColumn (in StatsSummary.jsx) before ever reaching
+// here, so from this point on it's handled exactly like a direct Quantity
+// edit would be.
+export function computeVisualizerStats( substrateInfo, outsideContour, insideContour, rabbetContour, settings, factors, pricingOverrides = {}, weightOverrides = {} )
 {
   // Computed with NO overrides at all - the "original" values every
-  // overridden row's tooltip compares against, regardless of what's
-  // currently overridden.
+  // overridden row's tooltip compares against, regardless of which tab
+  // (or which column within Pricing) is currently overridden.
   const baseComputed = computeDefaultQuantities(
     buildSyntheticProduct( substrateInfo, outsideContour, insideContour, rabbetContour ),
     settings
   )
 
-  // Computed WITH the piece-count overrides (if any) baked into the
-  // synthetic product - only sheetBreakageWood/sheetBreakageGlass/
-  // piecesPerSheetWood/piecesPerSheetGlass can actually differ from
-  // baseComputed here (see buildSyntheticProduct's doc comment).
+  // Computed WITH the Sheet Breakage rows' Quantity-column (piece-count)
+  // overrides, if any, baked into the synthetic product - only
+  // sheetBreakageWood/sheetBreakageGlass/piecesPerSheetWood/
+  // piecesPerSheetGlass can actually differ from baseComputed here (see
+  // buildSyntheticProduct's doc comment). A COGS/Wholesale/Retail edit on
+  // either row skips this entirely - see pieceOverridesFrom/the loop below.
   const piecesComputed = computeDefaultQuantities(
-    buildSyntheticProduct( substrateInfo, outsideContour, insideContour, rabbetContour, quantityOverrides ),
+    buildSyntheticProduct( substrateInfo, outsideContour, insideContour, rabbetContour, pieceOverridesFrom( pricingOverrides ) ),
     settings
   )
 
@@ -260,16 +336,17 @@ export function computeVisualizerStats( substrateInfo, outsideContour, insideCon
     piecesPerSheetGlass: piecesComputed.piecesPerSheetGlass,
   }
 
-  // Every other overridden key replaces `computed[key]` directly - same
-  // "effective quantity" idea as db/actions/productCost.js's
-  // ProductCostOverride.quantityOverride, just held in memory instead of
-  // the database.
-  for( const [key, value] of Object.entries( quantityOverrides ) )
+  // Every other override - and a Sheet Breakage row's own dollar-column
+  // override (source is 'cogs'/'wholesale'/'retail', not 'quantity') -
+  // replaces `computed[key]` directly, same "effective quantity" idea as
+  // db/actions/productCost.js's ProductCostOverride.quantityOverride, just
+  // held in memory instead of the database.
+  for( const [key, override] of Object.entries( pricingOverrides ) )
   {
-    if( SHEET_BREAKAGE_KEYS.has( key ) )
+    if( SHEET_BREAKAGE_KEYS.has( key ) && 'quantity' === override?.source )
       continue
-    if( null != value && Number.isFinite( value ) )
-      computed[key] = value
+    if( null != override?.value && Number.isFinite( override.value ) )
+      computed[key] = override.value
   }
 
   const markupPercent = settings?.markupPercent ?? 25
@@ -285,44 +362,68 @@ export function computeVisualizerStats( substrateInfo, outsideContour, insideCon
       continue
 
     const row = computeFactorRow( factor, computed, ownerRate, assistantRate, markupFactor, retailMultiplier )
+    const baseRow = computeFactorRow( factor, baseComputed, ownerRate, assistantRate, markupFactor, retailMultiplier )
 
-    // For the two Sheet Breakage rows, "overridden"/"computedQuantity"
-    // describe the PIECE COUNT (what's actually displayed and edited),
-    // not the dollar quantity `row.quantity` carries - see
-    // computeFactorRow/SHEET_BREAKAGE_KEYS above.
+    row.unitRates = computeUnitRates( factor, ownerRate, assistantRate, markupFactor, retailMultiplier )
+    row.computedCost = { cogs: baseRow.cogsCost, wholesale: baseRow.wholesaleCost, retail: baseRow.retailCost }
+    row.overrideSource = pricingOverrides[factor.key]?.source ?? null
+
+    // For the two Sheet Breakage rows, the Quantity column shows a PIECE
+    // COUNT (what's actually displayed and, when `overrideSource` is
+    // 'quantity', edited), not the dollar quantity `row.quantity` carries -
+    // see computeFactorRow/SHEET_BREAKAGE_KEYS above.
     if( SHEET_BREAKAGE_KEYS.has( factor.key ) )
     {
       const pieceKey = 'sheetBreakageWood' === factor.key ? 'piecesPerSheetWood' : 'piecesPerSheetGlass'
 
       row.pieceCount = computed[pieceKey] ?? 0
       row.computedPieceCount = baseComputed[pieceKey] ?? 0
-      row.overridden = null != quantityOverrides[factor.key]
     }
     else
     {
       row.computedQuantity = baseComputed[factor.key] ?? 0
-      row.overridden = null != quantityOverrides[factor.key]
     }
 
     rowsByKey[factor.key] = row
   }
 
-  // Per the 2026-08-19 revision, the Weight tab shows these four rows
-  // directly (via StatsSummary.jsx's WeightTable, reusing the Pricing
-  // tab's own Material section/Include checkboxes/preset dropdown) rather
-  // than a fixed set of precomputed Substrate/Kit/Finished Mirror bundle
-  // rows - the checkboxes already let someone build any of those same
-  // combinations (and any other), with the Total row summing whichever
-  // rows are currently checked, so there's no fixed bundle math to keep
-  // here beyond each individual material's own weight.
-  const weight = {
-    woodenBase: (rowsByKey.woodenBase?.quantity ?? 0) * (settings?.woodenBaseWeightPerSqIn ?? 0),
-    mirrorGlass: (rowsByKey.mirrorGlass?.quantity ?? 0) * (settings?.mirrorGlassWeightPerSqIn ?? 0),
-    tesserae: (rowsByKey.tesserae?.quantity ?? 0) * (settings?.tesseraeWeightPerSqIn ?? 0),
-    grout: (rowsByKey.grout?.quantity ?? 0) * (settings?.groutWeightPerSqIn ?? 0),
+  // Weight tab's own, entirely independent override pass (per the
+  // 2026-08-19 revision) - a Quantity edit here never touches
+  // `pricingOverrides`/`computed` above, and vice versa, so adjusting one
+  // tab's what-if numbers never silently changes the other's. Simpler
+  // than the Pricing pass above: none of WEIGHT_MATERIAL_KEYS is a Sheet
+  // Breakage row, so there's no piecesPerSheet indirection to thread
+  // through at all - every override here replaces `weightComputed[key]`
+  // directly.
+  const weightComputed = {...baseComputed}
+
+  for( const [key, override] of Object.entries( weightOverrides ) )
+    if( null != override?.value && Number.isFinite( override.value ) )
+      weightComputed[key] = override.value
+
+  const weightRowsByKey = {}
+
+  for( const key of WEIGHT_MATERIAL_KEYS )
+  {
+    const factor = factors.find( f => f.key === key )
+
+    weightRowsByKey[key] = {
+      key,
+      unit: factor?.unit,
+      quantity: weightComputed[key] ?? 0,
+      computedQuantity: baseComputed[key] ?? 0,
+      overrideSource: weightOverrides[key]?.source ?? null,
+    }
   }
 
-  return { computed, rowsByKey, weight, markupFactor, retailMultiplier }
+  const weight = {
+    woodenBase: weightRowsByKey.woodenBase.quantity * (settings?.woodenBaseWeightPerSqIn ?? 0),
+    mirrorGlass: weightRowsByKey.mirrorGlass.quantity * (settings?.mirrorGlassWeightPerSqIn ?? 0),
+    tesserae: weightRowsByKey.tesserae.quantity * (settings?.tesseraeWeightPerSqIn ?? 0),
+    grout: weightRowsByKey.grout.quantity * (settings?.groutWeightPerSqIn ?? 0),
+  }
+
+  return { computed, rowsByKey, weight, weightRowsByKey, markupFactor, retailMultiplier }
 }
 
 // Area tab's four rows. Mosaic Surface/Visible Mirror are purely geometry

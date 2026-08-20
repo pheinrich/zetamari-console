@@ -29,18 +29,21 @@ import { setVisualizerSnapshot } from '@/redux-store/slices/visualizer'
 
 import { DEFAULT_SETTINGS } from './mirrorSettings'
 import { resolveSubstrateInfo } from './resolveSubstrateInfo'
-import { encodeEntry, encodeEntryList } from './urlCodec'
-import { TABS } from './configurationCost'
+import { encodeEntry, encodeEntryList, encodeFlagSet } from './urlCodec'
+import { TABS, PRICING_COLUMNS } from './configurationCost'
 import CopyFromMenu from './CopyFromMenu'
 import NewShapeMenu from './NewShapeMenu'
 import EditableLabel from './EditableLabel'
 import ParamsPanel from './ParamsPanel'
 import MirrorView from './MirrorView'
 import MirrorToolbar from './MirrorToolbar'
-import StatsSummary from './StatsSummary'
+import StatsSummary, { presetInclude } from './StatsSummary'
 import LightboxStrip from './LightboxStrip'
 import ComparisonTable from './ComparisonTable'
 import ViewSettingsDialog from './ViewSettingsDialog'
+
+const TAB_KEYS = TABS.map( t => t.key )
+const PRICING_COLUMN_KEYS = PRICING_COLUMNS.map( c => c.key )
 
 const MAIN_PREVIEW_SIZE = 460
 
@@ -97,6 +100,8 @@ export default function MirrorCalculator( {initialState, contours, substrateProd
     current: (fromExplicitLink || !storedSnapshot) ? initialState.current : storedSnapshot.current,
     gallery: (galleryFromExplicitLink || !storedSnapshot) ? initialState.gallery : storedSnapshot.gallery,
     pinned: (galleryFromExplicitLink || !storedSnapshot) ? initialState.pinned : storedSnapshot.pinned,
+    tabVisible: (galleryFromExplicitLink || !storedSnapshot) ? initialState.tabVisible : storedSnapshot.tabVisible,
+    pricingColumnVisible: (galleryFromExplicitLink || !storedSnapshot) ? initialState.pricingColumnVisible : storedSnapshot.pricingColumnVisible,
   }
 
   const [substrateInfo, setSubstrateInfoState] = useState( () => ({
@@ -111,6 +116,19 @@ export default function MirrorCalculator( {initialState, contours, substrateProd
   const [settings, setSettings] = useState( startState.current.settings ?? DEFAULT_SETTINGS )
   const [pinned, setPinned] = useState( startState.pinned ?? false )
 
+  // StatsSummary's Pricing/Weight tab state - Include checkboxes, the
+  // preset dropdown, and this-row's-worth-of-what-if overrides for each
+  // tab's Quantity/COGS/Wholesale/Retail cells (per the 2026-08-19
+  // persistence revision). Lifted here, alongside substrateInfo/label/
+  // settings, so each lightbox entry can carry its own snapshot of it
+  // (see loadEntry/handleAddToLightbox/updateSelectedEntry below) instead
+  // of resetting every time the working panel's shape changes or the tab
+  // gets navigated away from and back.
+  const [preset, setPreset] = useState( startState.current.preset ?? 'all' )
+  const [include, setInclude] = useState( () => startState.current.include ?? presetInclude( 'all' ) )
+  const [pricingOverrides, setPricingOverridesState] = useState( () => startState.current.pricingOverrides ?? {} )
+  const [weightOverrides, setWeightOverridesState] = useState( () => startState.current.weightOverrides ?? {} )
+
   const [gallery, setGallery] = useState( () => startState.gallery.map( (e, i) => ({...e, id: `g-${i}`}) ) )
   const nextGalleryIdRef = useRef( startState.gallery.length )
   const [selectedId, setSelectedId] = useState( null )
@@ -122,9 +140,16 @@ export default function MirrorCalculator( {initialState, contours, substrateProd
   // rather than local to StatsSummary, since the 2026-08-03 revision
   // merged its own standalone kebab menu into this pre-existing one (see
   // the Menu below). Tab *order* stays local state inside StatsSummary
-  // itself (a drag gesture on the tab strip, not a menu control).
-  const [tabVisible, setTabVisible] = useState( () => Object.fromEntries( TABS.map( t => [t.key, true] ) ) )
-  const [pricingColumnVisible, setPricingColumnVisible] = useState( {cogs: true, wholesale: true, retail: true} )
+  // itself (a drag gesture on the tab strip, not a menu control). Unlike
+  // Include/overrides above these are global to the whole Visualizer tab,
+  // not per-shape, so (per the 2026-08-19 revision) they persist alongside
+  // `pinned` rather than inside every lightbox entry - see the sync effect
+  // below and urlCodec's encodeFlagSet/decodeFlagSet.
+  const [tabVisible, setTabVisible] = useState( () => startState.tabVisible ?? Object.fromEntries( TABS.map( t => [t.key, true] ) ) )
+
+  const [pricingColumnVisible, setPricingColumnVisible] = useState(
+    () => startState.pricingColumnVisible ?? {cogs: true, wholesale: true, retail: true}
+  )
 
   // Print reports render in an in-page Dialog with the report page
   // loaded into an iframe, rather than a separate tab/window. Safari has
@@ -178,13 +203,80 @@ export default function MirrorCalculator( {initialState, contours, substrateProd
     setGallery( prev => prev.map( e => (e.id === selectedId ? {...e, ...patch} : e) ) )
   }
 
+  // Include/preset edits live-update the selected entry the same way
+  // settings do - pin-gated for the same reason (pinning is the escape
+  // hatch for "keep looking at this no matter which entry I click").
+  function handleIncludeChange( key, checked )
+  {
+    const next = {...include, [key]: checked}
+
+    setInclude( next )
+    if( !pinned && selectedId )
+      updateSelectedEntry( {include: next} )
+  }
+
+  function handlePresetChange( nextPreset )
+  {
+    const nextInclude = presetInclude( nextPreset )
+
+    setPreset( nextPreset )
+    setInclude( nextInclude )
+    if( !pinned && selectedId )
+      updateSelectedEntry( {preset: nextPreset, include: nextInclude} )
+  }
+
+  // Pricing/Weight tab overrides, unlike Include/preset above, are NEVER
+  // pin-gated - per the 2026-08-19 revision they're deliberately entry-
+  // specific always, not something pinning can carry across a lightbox
+  // selection change the way view settings/Include can.
+  function handlePricingOverrideCommit( key, override )
+  {
+    const next = {...pricingOverrides, [key]: override}
+
+    setPricingOverridesState( next )
+    if( selectedId )
+      updateSelectedEntry( {pricingOverrides: next} )
+  }
+
+  function handlePricingOverrideRevert( key )
+  {
+    const next = {...pricingOverrides}
+
+    delete next[key]
+    setPricingOverridesState( next )
+    if( selectedId )
+      updateSelectedEntry( {pricingOverrides: next} )
+  }
+
+  function handleWeightOverrideCommit( key, override )
+  {
+    const next = {...weightOverrides, [key]: override}
+
+    setWeightOverridesState( next )
+    if( selectedId )
+      updateSelectedEntry( {weightOverrides: next} )
+  }
+
+  function handleWeightOverrideRevert( key )
+  {
+    const next = {...weightOverrides}
+
+    delete next[key]
+    setWeightOverridesState( next )
+    if( selectedId )
+      updateSelectedEntry( {weightOverrides: next} )
+  }
+
   // Loads a lightbox entry into the working panel. Shape/dimensions/label
-  // always come from the entry; view settings (toggles/zoom) only come
-  // from the entry when settings aren't pinned - pinning is exactly the
-  // escape hatch for "keep looking at these settings no matter which
-  // entry I click". Also used when a comparison table row's name is
-  // clicked (see handleSelectFromTable below) - clicking a name is meant
-  // to behave exactly like clicking the matching thumbnail.
+  // always come from the entry; view settings (toggles/zoom) and Include/
+  // preset only come from the entry when settings aren't pinned - pinning
+  // is exactly the escape hatch for "keep looking at these settings no
+  // matter which entry I click". Pricing/Weight overrides, per the
+  // 2026-08-19 revision, are never pin-gated - they always follow the
+  // entry being loaded, defaulting to "no overrides" for one that's never
+  // had any set. Also used when a comparison table row's name is clicked
+  // (see handleSelectFromTable below) - clicking a name is meant to behave
+  // exactly like clicking the matching thumbnail.
   function loadEntry( entry )
   {
     setSubstrateInfoState( {
@@ -196,8 +288,16 @@ export default function MirrorCalculator( {initialState, contours, substrateProd
       border: entry.border,
     } )
     setLabel( entry.label ?? '' )
+
     if( !pinned )
+    {
       setSettings( entry.settings ?? DEFAULT_SETTINGS )
+      setPreset( entry.preset ?? 'all' )
+      setInclude( entry.include ?? presetInclude( 'all' ) )
+    }
+
+    setPricingOverridesState( entry.pricingOverrides ?? {} )
+    setWeightOverridesState( entry.weightOverrides ?? {} )
     setSelectedId( entry.id )
   }
 
@@ -261,12 +361,18 @@ export default function MirrorCalculator( {initialState, contours, substrateProd
   // Resets the working panel to a blank shape and clears the label/
   // selection - the "start fresh" action the old Prototype dropdown's
   // "— Blank Shape —" option used to provide. Doesn't touch settings
-  // (view toggles/zoom), matching that same old behavior.
+  // (view toggles/zoom), matching that same old behavior. Include/preset/
+  // overrides DO reset (per the 2026-08-19 revision) - a blank shape
+  // starts with a clean slate on the Pricing/Weight tabs too.
   function handleNew()
   {
     setSubstrateInfoState( resolveSubstrateInfo( {}, null, contours ) )
     setLabel( '' )
     setSelectedId( null )
+    setPreset( 'all' )
+    setInclude( presetInclude( 'all' ) )
+    setPricingOverridesState( {} )
+    setWeightOverridesState( {} )
   }
 
   // NewShapeMenu's "New" dropdown - `shapeType` is a basic ShapeType row
@@ -315,6 +421,10 @@ export default function MirrorCalculator( {initialState, contours, substrateProd
     setSubstrateInfoState( next )
     setLabel( '' )
     setSelectedId( null )
+    setPreset( 'all' )
+    setInclude( presetInclude( 'all' ) )
+    setPricingOverridesState( {} )
+    setWeightOverridesState( {} )
   }
 
   function handleAddToLightbox()
@@ -332,6 +442,10 @@ export default function MirrorCalculator( {initialState, contours, substrateProd
       height: substrateInfo.height,
       border: substrateInfo.border,
       settings,
+      preset,
+      include,
+      pricingOverrides,
+      weightOverrides,
     }
 
     setGallery( prev => [...prev, entry] )
@@ -444,10 +558,11 @@ export default function MirrorCalculator( {initialState, contours, substrateProd
     function sync()
     {
       const url = new URL( window.location.href )
+      const current = {...substrateInfo, label, settings, preset, include, pricingOverrides, weightOverrides}
 
       url.searchParams.delete( 'productId' )
       url.searchParams.delete( 'panels' )
-      url.searchParams.set( 'current', encodeEntry( {...substrateInfo, label, settings} ) )
+      url.searchParams.set( 'current', encodeEntry( current ) )
 
       const galleryEncoded = encodeEntryList( gallery )
       if( galleryEncoded )
@@ -460,12 +575,17 @@ export default function MirrorCalculator( {initialState, contours, substrateProd
       else
         url.searchParams.delete( 'pinned' )
 
+      url.searchParams.set( 'tabVisible', encodeFlagSet( tabVisible, TAB_KEYS ) )
+      url.searchParams.set( 'pricingColumns', encodeFlagSet( pricingColumnVisible, PRICING_COLUMN_KEYS ) )
+
       window.history.replaceState( null, '', url.toString() )
 
       dispatch( setVisualizerSnapshot( {
-        current: {...substrateInfo, label, settings},
+        current,
         gallery: gallery.map( ({id, ...rest}) => rest ),
         pinned,
+        tabVisible,
+        pricingColumnVisible,
       } ) )
     }
 
@@ -476,7 +596,10 @@ export default function MirrorCalculator( {initialState, contours, substrateProd
     }, 300 )
 
     return () => clearTimeout( timeoutId )
-  }, [substrateInfo, label, settings, gallery, pinned, dispatch] )
+  }, [
+    substrateInfo, label, settings, preset, include, pricingOverrides, weightOverrides,
+    gallery, pinned, tabVisible, pricingColumnVisible, dispatch,
+  ] )
 
   // True-unmount-only flush (empty deps, so this cleanup never runs on a
   // mere dependency change - only when the component actually goes away,
@@ -597,6 +720,16 @@ export default function MirrorCalculator( {initialState, contours, substrateProd
                   products={products}
                   tabVisible={tabVisible}
                   pricingColumnVisible={pricingColumnVisible}
+                  include={include}
+                  onIncludeChange={handleIncludeChange}
+                  preset={preset}
+                  onPresetChange={handlePresetChange}
+                  pricingOverrides={pricingOverrides}
+                  onPricingOverrideCommit={handlePricingOverrideCommit}
+                  onPricingOverrideRevert={handlePricingOverrideRevert}
+                  weightOverrides={weightOverrides}
+                  onWeightOverrideCommit={handleWeightOverrideCommit}
+                  onWeightOverrideRevert={handleWeightOverrideRevert}
                 />
               </Stack>
             </Stack>

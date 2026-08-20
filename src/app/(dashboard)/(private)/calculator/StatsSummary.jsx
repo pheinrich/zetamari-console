@@ -27,6 +27,7 @@ import {
   CONFIGURATIONS,
   computeVisualizerStats,
   computeAreaStats,
+  impliedQuantityFromColumn,
   formatAreaFt2,
   formatAreaIn2,
   formatWeightLb,
@@ -132,7 +133,12 @@ const INCLUDE_PRESETS = [
   ...CONFIGURATIONS.map( c => ({ key: c.key, label: c.label }) ),
 ]
 
-function presetInclude( presetKey )
+// Exported (per the 2026-08-19 lightbox-persistence revision) so
+// MirrorCalculator.jsx can seed/reset `include` itself - `include`/
+// `preset` are now lifted there, alongside substrateInfo/label/settings,
+// so each lightbox entry can carry its own Pricing/Weight tab state (see
+// MirrorCalculator's loadEntry/handleAddToLightbox).
+export function presetInclude( presetKey )
 {
   if( 'all' === presetKey )
     return Object.fromEntries( PRICING_ROWS.map( r => [r.key, true] ) )
@@ -250,15 +256,23 @@ function ProductionTable( {computed} )
 
 // --- Pricing ----------------------------------------------------------------
 
-// Lets a Pricing/Weight-tab Quantity cell click into an editable "what-if"
-// override (see quantityOverrides in the main component) - the underlying
-// cost math re-derives from it live (the two Sheet Breakage rows even
-// re-run the real sheet-nesting formula through buildSyntheticProduct -
-// see SHEET_BREAKAGE_KEYS in configurationCost.js), but nothing here is
-// ever persisted; it's a scratch pad for exploring "what if this were N
-// instead," not the real per-product ProductCostOverride system. An
-// overridden value renders in a distinct color with a tooltip showing the
-// computed original; the small X shown while editing reverts it. Single
+// Lets a Pricing/Weight-tab cell click into an editable "what-if" override
+// (see pricingOverrides/weightOverrides in the main component) - the
+// underlying cost math re-derives from it live (the two Sheet Breakage
+// rows even re-run the real sheet-nesting formula through
+// buildSyntheticProduct - see SHEET_BREAKAGE_KEYS in configurationCost.js),
+// but nothing here is ever persisted server-side; it's a scratch pad for
+// exploring "what if this were N instead," not the real per-product
+// ProductCostOverride system (though see MirrorCalculator.jsx for how it
+// now travels with the Visualizer's own lightbox/URL/session state). Per
+// the 2026-08-19 revision this is shared by all four of a Pricing row's
+// cells (Quantity/COGS/Wholesale/Retail, not just Quantity) - whichever
+// one is actually edited becomes that row's single override source (see
+// `overridden`/`computedValue`, passed in per-cell by the caller), and the
+// other three recompute from it, the same way they would from a Quantity
+// edit. An overridden value renders in a distinct color with a tooltip
+// showing the computed original; the small X shown while editing reverts
+// the whole row's override, regardless of which cell sourced it. Single
 // click to start editing, with the draft's text pre-selected on focus -
 // same convention as EditableLabel.jsx's name field, rather than the
 // double-click this used before the 2026-08-19 revision.
@@ -359,7 +373,7 @@ function IncludeRow( {row, data, label, include, onIncludeChange, onQuantityComm
         <EditableQuantityCell
           value={row.pieceCount ? data.pieceCount : data.quantity}
           computedValue={row.pieceCount ? data.computedPieceCount : data.computedQuantity}
-          overridden={Boolean( data.overridden )}
+          overridden={'quantity' === data.overrideSource}
           formatValue={row.pieceCount ? formatPiecesPerSheet : v => formatQuantity( v, data.unit )}
           onCommit={val => onQuantityCommit( row.key, val )}
           onRevert={() => onQuantityRevert( row.key )}
@@ -386,6 +400,7 @@ function PricingTable( {
   retailMultiplier,
   onQuantityCommit,
   onQuantityRevert,
+  onDollarCommit,
 } )
 {
   const visibleColumns = PRICING_COLUMNS.filter( c => columnVisible[c.key] )
@@ -463,11 +478,24 @@ function PricingTable( {
                   onQuantityCommit={onQuantityCommit}
                   onQuantityRevert={onQuantityRevert}
                 >
-                  {visibleColumns.map( c => (
-                    <TableCell key={c.key} align='right'>
-                      {rowsByKey[row.key] ? formatCost( rowsByKey[row.key][`${c.key}Cost`] ) : '—'}
-                    </TableCell>
-                  ) )}
+                  {visibleColumns.map( c => {
+                    const data = rowsByKey[row.key]
+
+                    if( !data )
+                      return <TableCell key={c.key} align='right'>—</TableCell>
+
+                    return (
+                      <EditableQuantityCell
+                        key={c.key}
+                        value={data[`${c.key}Cost`]}
+                        computedValue={data.computedCost[c.key]}
+                        overridden={data.overrideSource === c.key}
+                        formatValue={formatCost}
+                        onCommit={val => onDollarCommit( row.key, c.key, val )}
+                        onRevert={() => onQuantityRevert( row.key )}
+                      />
+                    )
+                  } )}
                 </IncludeRow>
               ) )}
               <TableRow hover={'Labor' === section}>
@@ -607,31 +635,47 @@ function WeightTable( {rows, rowsByKey, weight, factorsByKey, include, onInclude
 // state (`tabOrder`) - same native-HTML5-drag-API pattern LightboxStrip.jsx
 // already uses for reordering the gallery.
 //
-// `include` (below) also drives the Pricing tab's "Create New Product..."
-// button (see CreateNewProductDialog.jsx, which replaced the old ⋮ menu's
-// "Save New Wooden Base.../Save New Mirror Glass..." items) - it stays
-// local state here rather than lifting to MirrorCalculator since nothing
-// outside the Pricing tab needs it. `label`/`products` are passed through
-// untouched, just for that dialog's initial name field and Bill of
-// Materials pickers.
-export default function StatsSummary( {mirror, label, substrateInfo, outsideContour, insideContour, rabbetContour, shopSettings, costFactors, products, tabVisible, pricingColumnVisible} )
+// `include`/`preset`/`pricingOverrides`/`weightOverrides` (below) also
+// drive the Pricing tab's "Create New Product..." button (see
+// CreateNewProductDialog.jsx, which replaced the old ⋮ menu's "Save New
+// Wooden Base.../Save New Mirror Glass..." items). Per the 2026-08-19
+// lightbox-persistence revision these are now lifted to MirrorCalculator
+// (rather than local state here) alongside substrateInfo/label/settings,
+// so each lightbox entry can carry its own Pricing/Weight tab state and
+// none of it is lost navigating away from the Visualizer - see
+// MirrorCalculator's loadEntry/handleAddToLightbox/updateSelectedEntry.
+// `expandedSection`/`tabOrder` stay local, ambient UI state (which
+// sections are expanded, which order the tabs are dragged into) rather
+// than data worth persisting per entry.
+export default function StatsSummary( {
+  mirror,
+  label,
+  substrateInfo,
+  outsideContour,
+  insideContour,
+  rabbetContour,
+  shopSettings,
+  costFactors,
+  products,
+  tabVisible,
+  pricingColumnVisible,
+  include,
+  onIncludeChange,
+  preset,
+  onPresetChange,
+  pricingOverrides,
+  onPricingOverrideCommit,
+  onPricingOverrideRevert,
+  weightOverrides,
+  onWeightOverrideCommit,
+  onWeightOverrideRevert,
+} )
 {
   const [tabOrder, setTabOrder] = useState( () => TABS.map( t => t.key ) )
   const [dragTabKey, setDragTabKey] = useState( null )
   const [activeKey, setActiveKey] = useState( 'area' )
-  const [preset, setPreset] = useState( 'all' )
-  const [include, setInclude] = useState( () => presetInclude( 'all' ) )
   const [expandedSection, setExpandedSection] = useState( {Material: true, Breakage: true, Machine: true, Labor: true} )
   const [createProductOpen, setCreateProductOpen] = useState( false )
-
-  // Ephemeral client-side "what-if" overrides for the Pricing tab's
-  // Quantity column (see EditableQuantityCell) - a plain {factorKey:
-  // number} map, never persisted, unlike the real per-product
-  // ProductCostOverride system. Threaded through to computeVisualizerStats
-  // so the two Sheet Breakage rows re-run their real sheet-nesting formula
-  // and every other row's dollar figures recompute from the overridden
-  // quantity, exactly as the live product-costing system would.
-  const [quantityOverrides, setQuantityOverrides] = useState( {} )
 
   const stats = useMemo( () => {
     if( !mirror )
@@ -644,9 +688,10 @@ export default function StatsSummary( {mirror, label, substrateInfo, outsideCont
       rabbetContour,
       shopSettings,
       costFactors ?? [],
-      quantityOverrides
+      pricingOverrides,
+      weightOverrides
     )
-  }, [mirror, substrateInfo, outsideContour, insideContour, rabbetContour, shopSettings, costFactors, quantityOverrides] )
+  }, [mirror, substrateInfo, outsideContour, insideContour, rabbetContour, shopSettings, costFactors, pricingOverrides, weightOverrides] )
 
   const areaStats = useMemo( () => (stats ? computeAreaStats( mirror, stats.computed ) : null), [mirror, stats] )
   const factorsByKey = useMemo( () => Object.fromEntries( (costFactors ?? []).map( f => [f.key, f] ) ), [costFactors] )
@@ -654,36 +699,33 @@ export default function StatsSummary( {mirror, label, substrateInfo, outsideCont
   if( !mirror || !stats || !areaStats )
     return null
 
-  function handlePresetChange( nextPreset )
-  {
-    setPreset( nextPreset )
-    setInclude( presetInclude( nextPreset ) )
-  }
-
-  function handleIncludeChange( key, checked )
-  {
-    setInclude( prev => ({...prev, [key]: checked}) )
-  }
-
   function handleToggleSection( section )
   {
     setExpandedSection( prev => ({...prev, [section]: !prev[section]}) )
   }
 
-  function handleQuantityCommit( key, value )
+  // Quantity-cell edits pass the drafted value straight through as this
+  // row's override; COGS/Wholesale/Retail-cell edits (per the 2026-08-19
+  // revision) are inverted to the equivalent Quantity first (see
+  // impliedQuantityFromColumn/computeUnitRates in configurationCost.js) so
+  // from computeVisualizerStats's point of view every override is a
+  // Quantity override, just tagged with which column actually sourced it.
+  function handlePricingQuantityCommit( key, value )
   {
-    setQuantityOverrides( prev => ({...prev, [key]: value}) )
+    onPricingOverrideCommit( key, {value, source: 'quantity'} )
   }
 
-  function handleQuantityRevert( key )
+  function handlePricingDollarCommit( key, columnKey, value )
   {
-    setQuantityOverrides( prev => {
-      const next = {...prev}
+    const implied = impliedQuantityFromColumn( stats.rowsByKey[key], columnKey, value )
 
-      delete next[key]
+    if( null != implied )
+      onPricingOverrideCommit( key, {value: implied, source: columnKey} )
+  }
 
-      return next
-    } )
+  function handleWeightQuantityCommit( key, value )
+  {
+    onWeightOverrideCommit( key, {value, source: 'quantity'} )
   }
 
   function handleTabDrop( targetKey )
@@ -740,15 +782,15 @@ export default function StatsSummary( {mirror, label, substrateInfo, outsideCont
       {active?.key === 'weight' && (
         <WeightTable
           rows={MATERIAL_ROWS}
-          rowsByKey={stats.rowsByKey}
+          rowsByKey={stats.weightRowsByKey}
           weight={stats.weight}
           factorsByKey={factorsByKey}
           include={include}
-          onIncludeChange={handleIncludeChange}
+          onIncludeChange={onIncludeChange}
           preset={preset}
-          onPresetChange={handlePresetChange}
-          onQuantityCommit={handleQuantityCommit}
-          onQuantityRevert={handleQuantityRevert}
+          onPresetChange={onPresetChange}
+          onQuantityCommit={handleWeightQuantityCommit}
+          onQuantityRevert={onWeightOverrideRevert}
         />
       )}
       {active?.key === 'packaging' && <MetricTable rows={PACKAGING_ROWS} columns={PACKAGING_COLUMNS} values={{}} />}
@@ -769,16 +811,17 @@ export default function StatsSummary( {mirror, label, substrateInfo, outsideCont
             rowsByKey={stats.rowsByKey}
             factorsByKey={factorsByKey}
             include={include}
-            onIncludeChange={handleIncludeChange}
+            onIncludeChange={onIncludeChange}
             preset={preset}
-            onPresetChange={handlePresetChange}
+            onPresetChange={onPresetChange}
             columnVisible={pricingColumnVisible}
             expandedSection={expandedSection}
             onToggleSection={handleToggleSection}
             markupFactor={stats.markupFactor}
             retailMultiplier={stats.retailMultiplier}
-            onQuantityCommit={handleQuantityCommit}
-            onQuantityRevert={handleQuantityRevert}
+            onQuantityCommit={handlePricingQuantityCommit}
+            onQuantityRevert={onPricingOverrideRevert}
+            onDollarCommit={handlePricingDollarCommit}
           />
           <CreateNewProductDialog
             open={createProductOpen}
