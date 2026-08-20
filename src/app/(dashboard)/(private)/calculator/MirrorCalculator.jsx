@@ -40,8 +40,6 @@ import MirrorToolbar from './MirrorToolbar'
 import StatsSummary from './StatsSummary'
 import LightboxStrip from './LightboxStrip'
 import ComparisonTable from './ComparisonTable'
-import SaveNewWoodenBaseDialog from './SaveNewWoodenBaseDialog'
-import SaveNewMirrorGlassDialog from './SaveNewMirrorGlassDialog'
 import ViewSettingsDialog from './ViewSettingsDialog'
 
 const MAIN_PREVIEW_SIZE = 460
@@ -90,7 +88,7 @@ function reportHref( pathname, params )
 // the incoming link's format wasn't actually capable of specifying one
 // (bare nav *or* a bare ?productId= link) - see page.jsx for exactly which
 // link formats set each flag.
-export default function MirrorCalculator( {initialState, contours, substrateProducts, shapeTypes, shopSettings, costFactors, fromExplicitLink, galleryFromExplicitLink} )
+export default function MirrorCalculator( {initialState, contours, substrateProducts, products, shapeTypes, shopSettings, costFactors, fromExplicitLink, galleryFromExplicitLink} )
 {
   const dispatch = useDispatch()
   const storedSnapshot = useSelector( state => state.visualizerReducer.snapshot )
@@ -117,8 +115,6 @@ export default function MirrorCalculator( {initialState, contours, substrateProd
   const nextGalleryIdRef = useRef( startState.gallery.length )
   const [selectedId, setSelectedId] = useState( null )
 
-  const [saveWoodenBaseOpen, setSaveWoodenBaseOpen] = useState( false )
-  const [saveMirrorGlassOpen, setSaveMirrorGlassOpen] = useState( false )
   const [viewSettingsOpen, setViewSettingsOpen] = useState( false )
   const [menuAnchor, setMenuAnchor] = useState( null )
 
@@ -391,18 +387,6 @@ export default function MirrorCalculator( {initialState, contours, substrateProd
     setMenuAnchor( null )
   }
 
-  function handleSaveNewWoodenBase()
-  {
-    setSaveWoodenBaseOpen( true )
-    setMenuAnchor( null )
-  }
-
-  function handleSaveNewMirrorGlass()
-  {
-    setSaveMirrorGlassOpen( true )
-    setMenuAnchor( null )
-  }
-
   const outsideContour = contours.find( c => c.id === substrateInfo.outsideId )
   const insideContour = contours.find( c => c.id === substrateInfo.insideId )
   const rabbetContour = contours.find( c => c.id === substrateInfo.rabbetId )
@@ -550,14 +534,6 @@ export default function MirrorCalculator( {initialState, contours, substrateProd
                 <ListItemIcon><i className='ri-printer-line' /></ListItemIcon>
                 <ListItemText>Print Report</ListItemText>
               </MenuItem>
-              <MenuItem onClick={handleSaveNewWoodenBase} disabled={!mirror}>
-                <ListItemIcon><i className='ri-save-line' /></ListItemIcon>
-                <ListItemText>Save New Wooden Base...</ListItemText>
-              </MenuItem>
-              <MenuItem onClick={handleSaveNewMirrorGlass} disabled={!mirror}>
-                <ListItemIcon><i className='ri-save-line' /></ListItemIcon>
-                <ListItemText>Save New Mirror Glass...</ListItemText>
-              </MenuItem>
               <Divider />
               <MenuItem
                 onClick={() => {
@@ -611,12 +587,14 @@ export default function MirrorCalculator( {initialState, contours, substrateProd
                 <Divider />
                 <StatsSummary
                   mirror={mirror}
+                  label={label}
                   substrateInfo={substrateInfo}
                   outsideContour={outsideContour}
                   insideContour={insideContour}
                   rabbetContour={rabbetContour}
                   shopSettings={shopSettings}
                   costFactors={costFactors}
+                  products={products}
                   tabVisible={tabVisible}
                   pricingColumnVisible={pricingColumnVisible}
                 />
@@ -688,17 +666,6 @@ export default function MirrorCalculator( {initialState, contours, substrateProd
         />
       </CardContent>
 
-      <SaveNewWoodenBaseDialog
-        open={saveWoodenBaseOpen}
-        onClose={() => setSaveWoodenBaseOpen( false )}
-        substrateInfo={substrateInfo}
-      />
-      <SaveNewMirrorGlassDialog
-        open={saveMirrorGlassOpen}
-        onClose={() => setSaveMirrorGlassOpen( false )}
-        substrateInfo={substrateInfo}
-        contours={contours}
-      />
       <ViewSettingsDialog
         open={viewSettingsOpen}
         onClose={() => setViewSettingsOpen( false )}

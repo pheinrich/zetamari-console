@@ -3,6 +3,7 @@
 import { Fragment, useMemo, useState } from 'react'
 
 import Box from '@mui/material/Box'
+import Button from '@mui/material/Button'
 import Checkbox from '@mui/material/Checkbox'
 import IconButton from '@mui/material/IconButton'
 import MenuItem from '@mui/material/MenuItem'
@@ -36,6 +37,7 @@ import {
   formatPiecesPerSheet,
   formatTBD,
 } from './configurationCost'
+import CreateNewProductDialog from './CreateNewProductDialog'
 
 // --- Row/column definitions -------------------------------------------------
 
@@ -52,24 +54,6 @@ const AREA_ROWS = [
 const AREA_COLUMNS = [
   { key: 'sqft', label: 'sq ft', format: formatAreaFt2 },
   { key: 'sqin', label: 'sq in', format: formatAreaIn2 },
-]
-
-const WEIGHT_ROWS = [
-  { key: 'woodenBase', label: 'Wooden Base' },
-  { key: 'mirrorGlass', label: 'Mirror Glass' },
-  { key: 'tesserae', label: 'Tesserae' },
-  { key: 'grout', label: 'Grout' },
-  { key: 'substrate', label: 'Substrate (Wooden Base + Mirror Glass)' },
-  { key: 'kit', label: 'Kit (Wooden Base + Mirror Glass + Tesserae)' },
-  { key: 'finishedMirror', label: 'Finished Mirror' },
-]
-
-// "Weight" is the real, computed material weight; "Shipping Weight" has no
-// formula yet anywhere in the app, so it's a TBD placeholder here too (see
-// the Packaging tab below) until real packaging data exists.
-const WEIGHT_COLUMNS = [
-  { key: 'weight', label: 'Weight', format: formatWeightLb },
-  { key: 'shippingWeight', label: 'Shipping Weight', format: formatTBD },
 ]
 
 // Packaging (renamed from "Shipping" in the 2026-08-03 revision) - no box-
@@ -102,17 +86,23 @@ const PRODUCTION_ROWS = [
 // (always 0 for a hypothetical shape with no real BOM lines - nothing to
 // toggle) and the two laborOwner/laborAssistant rate-holder rows (they
 // have no quantity/row of their own - see configurationCost.js). `label`
-// overrides the CostFactor's own DB label for the Labor rows only - the
-// section header already says "Labor," so repeating "Design Labor"/"CNC
-// Labor"/etc on every row would be redundant; Material/Machine rows reuse
-// the factor's real label as-is (they already match this wording exactly).
+// overrides the CostFactor's own DB label for the Labor rows (the section
+// header already says "Labor," so repeating "Design Labor"/"CNC Labor"/etc
+// on every row would be redundant) and the two Breakage rows (their own
+// section header already says "Breakage," so "Wood"/"Glass" alone is
+// enough); Material/Machine rows reuse the factor's real label as-is (it
+// already matches this wording exactly). Sheet Breakage moved into its own
+// section (below Material) per the 2026-08-19 revision - it's a piece
+// count, not a dollar material cost, and keeping it out of Material lets
+// the Weight tab's reused Material-section table (see MATERIAL_ROWS/
+// WeightTable below) show only real, weighable materials.
 const PRICING_ROWS = [
   { section: 'Material', key: 'woodenBase' },
   { section: 'Material', key: 'mirrorGlass' },
   { section: 'Material', key: 'tesserae' },
   { section: 'Material', key: 'grout' },
-  { section: 'Material', key: 'sheetBreakageWood', label: 'Wood Breakage-Pieces', pieceCount: true },
-  { section: 'Material', key: 'sheetBreakageGlass', label: 'Glass Breakage-Pieces', pieceCount: true },
+  { section: 'Breakage', key: 'sheetBreakageWood', label: 'Wood', pieceCount: true },
+  { section: 'Breakage', key: 'sheetBreakageGlass', label: 'Glass', pieceCount: true },
   { section: 'Machine', key: 'machineWear' },
   { section: 'Machine', key: 'utilities' },
   { section: 'Labor', key: 'laborDesign', label: 'Design' },
@@ -125,7 +115,13 @@ const PRICING_ROWS = [
   { section: 'Labor', key: 'laborFinishing', label: 'Finishing' },
 ]
 
-const PRICING_SECTIONS = ['Material', 'Machine', 'Labor']
+const PRICING_SECTIONS = ['Material', 'Breakage', 'Machine', 'Labor']
+
+// The Weight tab reuses this same Material section (see WeightTable
+// below) rather than duplicating a row list - it's the only section
+// that's ever meaningfully "weighable" (Breakage is a piece count,
+// Machine/Labor have no material weight of their own).
+const MATERIAL_ROWS = PRICING_ROWS.filter( r => 'Material' === r.section )
 
 // The Include column header's preset dropdown - bulk-sets every row's
 // checkbox at once. 'all'/'none' are special-cased; anything else is
@@ -196,7 +192,21 @@ function laborSplitTooltip( assistant, owner )
   return `Assistant: ${formatCost( assistant )}, Owner: ${formatCost( owner )}`
 }
 
-// --- Area/Weight/Packaging (shared shape: one row label, several columns) --
+// Weight tab's counterpart to sumRows above - just a single $-less sum
+// (each Material row's own weight, from computeVisualizerStats's `weight`
+// map) across whichever rows are currently checked "Include".
+function sumWeightRows( rows, weight, include )
+{
+  let total = 0
+
+  for( const row of rows )
+    if( include[row.key] )
+      total += weight[row.key] ?? 0
+
+  return total
+}
+
+// --- Area/Packaging (shared shape: one row label, several columns) --------
 
 function MetricTable( {rows, columns, values} )
 {
@@ -240,7 +250,7 @@ function ProductionTable( {computed} )
 
 // --- Pricing ----------------------------------------------------------------
 
-// Lets a Pricing-tab Quantity cell double-click into an editable "what-if"
+// Lets a Pricing/Weight-tab Quantity cell click into an editable "what-if"
 // override (see quantityOverrides in the main component) - the underlying
 // cost math re-derives from it live (the two Sheet Breakage rows even
 // re-run the real sheet-nesting formula through buildSyntheticProduct -
@@ -248,7 +258,10 @@ function ProductionTable( {computed} )
 // ever persisted; it's a scratch pad for exploring "what if this were N
 // instead," not the real per-product ProductCostOverride system. An
 // overridden value renders in a distinct color with a tooltip showing the
-// computed original; the small X shown while editing reverts it.
+// computed original; the small X shown while editing reverts it. Single
+// click to start editing, with the draft's text pre-selected on focus -
+// same convention as EditableLabel.jsx's name field, rather than the
+// double-click this used before the 2026-08-19 revision.
 function EditableQuantityCell( {value, computedValue, overridden, formatValue, onCommit, onRevert} )
 {
   const [editing, setEditing] = useState( false )
@@ -302,6 +315,7 @@ function EditableQuantityCell( {value, computedValue, overridden, formatValue, o
             variant='standard'
             value={draft}
             onChange={evt => setDraft( evt.target.value )}
+            onFocus={evt => evt.target.select()}
             onBlur={commit}
             onKeyDown={handleKeyDown}
             sx={{width: 80}}
@@ -315,12 +329,46 @@ function EditableQuantityCell( {value, computedValue, overridden, formatValue, o
     <Tooltip title={overridden ? `Computed: ${formatValue( computedValue )}` : ''}>
       <TableCell
         align='right'
-        onDoubleClick={startEditing}
+        onClick={startEditing}
         sx={{cursor: 'text', color: overridden ? 'warning.main' : undefined, fontWeight: overridden ? 600 : undefined}}
       >
         {formatValue( value )}
       </TableCell>
     </Tooltip>
+  )
+}
+
+// Shared by PricingTable and WeightTable (see below) - one Include-
+// checkbox + label + editable Quantity cell row, with whatever trailing
+// $/Weight cell(s) the caller supplies as `children`. This is the actual
+// "reuse part of the Pricing tab table" piece the Weight tab's table is
+// built from (see the 2026-08-19 revision).
+function IncludeRow( {row, data, label, include, onIncludeChange, onQuantityCommit, onQuantityRevert, children} )
+{
+  return (
+    <TableRow>
+      <TableCell padding='checkbox'>
+        <Checkbox
+          size='small'
+          checked={Boolean( include[row.key] )}
+          onChange={evt => onIncludeChange( row.key, evt.target.checked )}
+        />
+      </TableCell>
+      <TableCell>{label}</TableCell>
+      {data ? (
+        <EditableQuantityCell
+          value={row.pieceCount ? data.pieceCount : data.quantity}
+          computedValue={row.pieceCount ? data.computedPieceCount : data.computedQuantity}
+          overridden={Boolean( data.overridden )}
+          formatValue={row.pieceCount ? formatPiecesPerSheet : v => formatQuantity( v, data.unit )}
+          onCommit={val => onQuantityCommit( row.key, val )}
+          onRevert={() => onQuantityRevert( row.key )}
+        />
+      ) : (
+        <TableCell align='right'>—</TableCell>
+      )}
+      {children}
+    </TableRow>
   )
 }
 
@@ -404,39 +452,24 @@ function PricingTable( {
                   </Typography>
                 </TableCell>
               </TableRow>
-              {expanded && sectionRows.map( row => {
-                const data = rowsByKey[row.key]
-
-                return (
-                  <TableRow key={row.key}>
-                    <TableCell padding='checkbox'>
-                      <Checkbox
-                        size='small'
-                        checked={Boolean( include[row.key] )}
-                        onChange={evt => onIncludeChange( row.key, evt.target.checked )}
-                      />
+              {expanded && sectionRows.map( row => (
+                <IncludeRow
+                  key={row.key}
+                  row={row}
+                  data={rowsByKey[row.key]}
+                  label={row.label ?? factorsByKey[row.key]?.label ?? row.key}
+                  include={include}
+                  onIncludeChange={onIncludeChange}
+                  onQuantityCommit={onQuantityCommit}
+                  onQuantityRevert={onQuantityRevert}
+                >
+                  {visibleColumns.map( c => (
+                    <TableCell key={c.key} align='right'>
+                      {rowsByKey[row.key] ? formatCost( rowsByKey[row.key][`${c.key}Cost`] ) : '—'}
                     </TableCell>
-                    <TableCell>{row.label ?? factorsByKey[row.key]?.label ?? row.key}</TableCell>
-                    {data ? (
-                      <EditableQuantityCell
-                        value={row.pieceCount ? data.pieceCount : data.quantity}
-                        computedValue={row.pieceCount ? data.computedPieceCount : data.computedQuantity}
-                        overridden={Boolean( data.overridden )}
-                        formatValue={row.pieceCount ? formatPiecesPerSheet : v => formatQuantity( v, data.unit )}
-                        onCommit={val => onQuantityCommit( row.key, val )}
-                        onRevert={() => onQuantityRevert( row.key )}
-                      />
-                    ) : (
-                      <TableCell align='right'>—</TableCell>
-                    )}
-                    {visibleColumns.map( c => (
-                      <TableCell key={c.key} align='right'>
-                        {data ? formatCost( data[`${c.key}Cost`] ) : '—'}
-                      </TableCell>
-                    ) )}
-                  </TableRow>
-                )
-              } )}
+                  ) )}
+                </IncludeRow>
+              ) )}
               <TableRow hover={'Labor' === section}>
                 <TableCell />
                 <TableCell>{subtotalLabel}</TableCell>
@@ -488,6 +521,75 @@ function PricingTable( {
   )
 }
 
+// Weight tab, per the 2026-08-19 revision - reuses the Pricing tab's
+// Material section (MATERIAL_ROWS, defined above PRICING_ROWS/
+// PRICING_SECTIONS) and its IncludeRow (shared with PricingTable above),
+// including the same preset dropdown/checkboxes/editable Quantity cells -
+// `include`/`preset`/`onIncludeChange`/`onPresetChange`/
+// `onQuantityCommit`/`onQuantityRevert` are the very same state PricingTable
+// reads and writes, so toggling either tab keeps the other in sync. Unlike
+// PricingTable this is a single, always-expanded, unnamed section (no
+// header row, no collapse toggle) with one Weight column in place of
+// COGS/Wholesale/Retail, and no per-section Subtotal row - the Total row
+// alone is enough when there's only ever the one section.
+function WeightTable( {rows, rowsByKey, weight, factorsByKey, include, onIncludeChange, preset, onPresetChange, onQuantityCommit, onQuantityRevert} )
+{
+  const total = sumWeightRows( rows, weight, include )
+
+  return (
+    <Table size='small'>
+      <TableHead>
+        <TableRow>
+          <TableCell sx={{minWidth: 130}}>
+            <Select
+              variant='outlined'
+              size='small'
+              value={preset}
+              onChange={evt => onPresetChange( evt.target.value )}
+              sx={{
+                fontSize: '0.8125rem',
+                '& .MuiSelect-select': {
+                  paddingInlineStart: '0.75rem !important',
+                  paddingInlineEnd: '2.75rem !important',
+                },
+              }}
+            >
+              {INCLUDE_PRESETS.map( p => <MenuItem key={p.key} value={p.key}>{p.label}</MenuItem> )}
+            </Select>
+          </TableCell>
+          <TableCell>Material</TableCell>
+          <TableCell align='right'>Quantity</TableCell>
+          <TableCell align='right'>Weight</TableCell>
+        </TableRow>
+      </TableHead>
+      <TableBody>
+        {rows.map( row => (
+          <IncludeRow
+            key={row.key}
+            row={row}
+            data={rowsByKey[row.key]}
+            label={row.label ?? factorsByKey[row.key]?.label ?? row.key}
+            include={include}
+            onIncludeChange={onIncludeChange}
+            onQuantityCommit={onQuantityCommit}
+            onQuantityRevert={onQuantityRevert}
+          >
+            <TableCell align='right'>{formatWeightLb( weight[row.key] ?? 0 )}</TableCell>
+          </IncludeRow>
+        ) )}
+      </TableBody>
+      <TableFooter>
+        <TableRow sx={{borderTop: '2px solid', borderColor: 'divider', '& .MuiTableCell-root': {paddingBlock: 1.5}}}>
+          <TableCell />
+          <TableCell><Typography variant='subtitle2'>Total</Typography></TableCell>
+          <TableCell />
+          <TableCell align='right'><Typography variant='subtitle2'>{formatWeightLb( total )}</Typography></TableCell>
+        </TableRow>
+      </TableFooter>
+    </Table>
+  )
+}
+
 // --- Main component ---------------------------------------------------------
 
 // Area/Weight/Packaging/Production/Pricing for the single working panel, as
@@ -504,14 +606,23 @@ function PricingTable( {
 // the tab strip itself (no menu control needed for it), so it stays local
 // state (`tabOrder`) - same native-HTML5-drag-API pattern LightboxStrip.jsx
 // already uses for reordering the gallery.
-export default function StatsSummary( {mirror, substrateInfo, outsideContour, insideContour, rabbetContour, shopSettings, costFactors, tabVisible, pricingColumnVisible} )
+//
+// `include` (below) also drives the Pricing tab's "Create New Product..."
+// button (see CreateNewProductDialog.jsx, which replaced the old ⋮ menu's
+// "Save New Wooden Base.../Save New Mirror Glass..." items) - it stays
+// local state here rather than lifting to MirrorCalculator since nothing
+// outside the Pricing tab needs it. `label`/`products` are passed through
+// untouched, just for that dialog's initial name field and Bill of
+// Materials pickers.
+export default function StatsSummary( {mirror, label, substrateInfo, outsideContour, insideContour, rabbetContour, shopSettings, costFactors, products, tabVisible, pricingColumnVisible} )
 {
   const [tabOrder, setTabOrder] = useState( () => TABS.map( t => t.key ) )
   const [dragTabKey, setDragTabKey] = useState( null )
   const [activeKey, setActiveKey] = useState( 'area' )
   const [preset, setPreset] = useState( 'all' )
   const [include, setInclude] = useState( () => presetInclude( 'all' ) )
-  const [expandedSection, setExpandedSection] = useState( {Material: true, Machine: true, Labor: true} )
+  const [expandedSection, setExpandedSection] = useState( {Material: true, Breakage: true, Machine: true, Labor: true} )
+  const [createProductOpen, setCreateProductOpen] = useState( false )
 
   // Ephemeral client-side "what-if" overrides for the Pricing tab's
   // Quantity column (see EditableQuantityCell) - a plain {factorKey:
@@ -626,25 +737,59 @@ export default function StatsSummary( {mirror, substrateInfo, outsideContour, in
       </Tabs>
 
       {active?.key === 'area' && <MetricTable rows={AREA_ROWS} columns={AREA_COLUMNS} values={areaStats} />}
-      {active?.key === 'weight' && <MetricTable rows={WEIGHT_ROWS} columns={WEIGHT_COLUMNS} values={stats.weight} />}
-      {active?.key === 'packaging' && <MetricTable rows={PACKAGING_ROWS} columns={PACKAGING_COLUMNS} values={{}} />}
-      {active?.key === 'production' && <ProductionTable computed={stats.computed} />}
-      {active?.key === 'pricing' && (
-        <PricingTable
+      {active?.key === 'weight' && (
+        <WeightTable
+          rows={MATERIAL_ROWS}
           rowsByKey={stats.rowsByKey}
+          weight={stats.weight}
           factorsByKey={factorsByKey}
           include={include}
           onIncludeChange={handleIncludeChange}
           preset={preset}
           onPresetChange={handlePresetChange}
-          columnVisible={pricingColumnVisible}
-          expandedSection={expandedSection}
-          onToggleSection={handleToggleSection}
-          markupFactor={stats.markupFactor}
-          retailMultiplier={stats.retailMultiplier}
           onQuantityCommit={handleQuantityCommit}
           onQuantityRevert={handleQuantityRevert}
         />
+      )}
+      {active?.key === 'packaging' && <MetricTable rows={PACKAGING_ROWS} columns={PACKAGING_COLUMNS} values={{}} />}
+      {active?.key === 'production' && <ProductionTable computed={stats.computed} />}
+      {active?.key === 'pricing' && (
+        <>
+          <Stack direction='row' justifyContent='flex-end' className='mbe-2'>
+            <Button
+              variant='outlined'
+              size='small'
+              startIcon={<i className='ri-add-line' />}
+              onClick={() => setCreateProductOpen( true )}
+            >
+              Create New Product...
+            </Button>
+          </Stack>
+          <PricingTable
+            rowsByKey={stats.rowsByKey}
+            factorsByKey={factorsByKey}
+            include={include}
+            onIncludeChange={handleIncludeChange}
+            preset={preset}
+            onPresetChange={handlePresetChange}
+            columnVisible={pricingColumnVisible}
+            expandedSection={expandedSection}
+            onToggleSection={handleToggleSection}
+            markupFactor={stats.markupFactor}
+            retailMultiplier={stats.retailMultiplier}
+            onQuantityCommit={handleQuantityCommit}
+            onQuantityRevert={handleQuantityRevert}
+          />
+          <CreateNewProductDialog
+            open={createProductOpen}
+            onClose={() => setCreateProductOpen( false )}
+            label={label}
+            substrateInfo={substrateInfo}
+            outsideContour={outsideContour}
+            include={include}
+            products={products ?? []}
+          />
+        </>
       )}
     </Box>
   )
