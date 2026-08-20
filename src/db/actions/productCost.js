@@ -8,6 +8,8 @@ import Settings from '@/db/models/Settings'
 import sequelize from '@/db/sequelize'
 import { auth } from '@/lib/auth'
 import { computeDefaultQuantities, computeSupersededFactors, convertToRateUnit, MATERIAL_WEIGHT_FIELD } from '@/libs/costFactors'
+import { woodenBaseRatePerSqIn } from '@/libs/woodenBaseRates'
+import { glassSheetRatePerSqIn } from '@/libs/glassSheetRates'
 
 // COSTING_INCLUDE lives in db/costingInclude.js, not here - a 'use
 // server' file (this one) can only export async functions (Next
@@ -24,6 +26,17 @@ import { COSTING_INCLUDE } from '@/db/costingInclude'
 // row in a product's cost breakdown - see computeLaborSplit() below,
 // which is the only place they're read (by key, for their `rate`).
 const LABOR_RATE_KEYS = { owner: 'laborOwner', assistant: 'laborAssistant' }
+
+// Sheet Breakage (Wood)/Sheet Breakage (Glass)'s Quantity column, per the
+// Visualizer's own Pricing tab (calculator/configurationCost.js/
+// StatsSummary.jsx), shows the piece count behind their dollar figure
+// (WoodenBaseInfo.piecesPerSheet/glassPiecesPerSheet if set, else a live
+// grid-packing estimate - see libs/costFactors.js), not the dollar amount
+// itself - maps each factor key to the matching computeDefaultQuantities()
+// piece-count field so readProductCosts() below can attach it to that
+// row (as `pieceCount`) for the product edit page's Cost Breakdown to
+// display the same way.
+const SHEET_BREAKAGE_PIECE_KEYS = { sheetBreakageWood: 'piecesPerSheetWood', sheetBreakageGlass: 'piecesPerSheetGlass' }
 
 function resolveLaborRates( factors )
 {
@@ -273,6 +286,29 @@ export async function readProductCosts( productId )
   const computed = computeDefaultQuantities( productJson, settingsJson )
   const superseded = computeSupersededFactors( productJson )
 
+  // The exact ingredients libs/costFactors.js's own Sheet Breakage (Wood)/
+  // (Glass) formula (max(0, sheetCost/pieces - area x ratePerSqIn)) uses -
+  // computed.woodenBase/mirrorGlass ARE that formula's woodenBaseArea/
+  // mirrorGlassArea (assigned there unchanged, see computeDefaultQuantities),
+  // and woodenBaseRatePerSqIn/glassSheetRatePerSqIn are the same
+  // dependency-free helpers that formula itself calls. Handed to the
+  // product edit page's Cost Breakdown (ProductCostBreakdown.jsx) so
+  // editing the Quantity (piece count) on either row can reproduce that
+  // same dollar figure live, client-side, instead of only taking effect
+  // after the next save/reload.
+  const sheetBreakageInputs = {
+    sheetBreakageWood: {
+      sheetCost: settingsJson?.sheetCostPerSheet || 0,
+      area: computed.woodenBase ?? 0,
+      ratePerSqIn: woodenBaseRatePerSqIn( settingsJson ),
+    },
+    sheetBreakageGlass: {
+      sheetCost: settingsJson?.glassSheetCostPerSheet || 0,
+      area: computed.mirrorGlass ?? 0,
+      ratePerSqIn: glassSheetRatePerSqIn( settingsJson ),
+    },
+  }
+
   const materialMachineFactors = factors.filter( f => 'material' === f.category || 'machine' === f.category )
   const laborStageFactors = factors.filter( f => 'labor' === f.category && !Object.values( LABOR_RATE_KEYS ).includes( f.key ) )
   const { ownerRate, assistantRate } = resolveLaborRates( factors )
@@ -294,6 +330,8 @@ export async function readProductCosts( productId )
     const rateQuantity = convertToRateUnit( effectiveQuantity, factor )
     const cogsCost = rateQuantity * (factor.rate ?? 0)
 
+    const piecesPerSheetKey = SHEET_BREAKAGE_PIECE_KEYS[factor.key]
+
     return {
       factor: factor.toJSON(),
       computedQuantity,
@@ -306,6 +344,7 @@ export async function readProductCosts( productId )
       cogsCost,
       wholesaleCost: cogsCost * markupFactor,
       retailCost: cogsCost * markupFactor * retailMultiplier,
+      pieceCount: piecesPerSheetKey ? (computed[piecesPerSheetKey] ?? 0) : undefined,
     }
   } )
 
@@ -357,6 +396,7 @@ export async function readProductCosts( productId )
     cogsTotal,
     wholesaleTotal: enabledRows.reduce( (sum, r) => sum + r.wholesaleCost, 0 ),
     retailTotal: enabledRows.reduce( (sum, r) => sum + r.retailCost, 0 ),
+    sheetBreakageInputs,
   }
 }
 
