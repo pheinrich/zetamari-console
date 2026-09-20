@@ -8,25 +8,29 @@ import Chip from '@mui/material/Chip'
 import Typography from '@mui/material/Typography'
 
 import { readLiveClass } from '@/db/actions/liveClass'
-import { readCustomers } from '@/db/actions/customer'
+import { readCustomers, readPeople } from '@/db/actions/person'
 import { formatCurrency } from '../../products/productFormat'
+import { formatOccurrenceRange } from '@/utils/basicEventFormat'
 import CustomAvatar from '@core/components/mui/Avatar'
 import LiveClassDetailActions from './LiveClassDetailActions'
 import LiveClassAttendeeEditor from './LiveClassAttendeeEditor'
+import OccurrenceEditor from '../../calendar/OccurrenceEditor'
 
 export default async function LiveClassPage( {params} )
 {
   const {id} = await params
 
-  const [liveClass, customers] = await Promise.all([
+  const [liveClass, customers, people] = await Promise.all([
     readLiveClass( id, true ),
     readCustomers(),
+    readPeople(),
   ])
 
   if( !liveClass )
     return notFound()
 
   const attendees = liveClass.LiveClassAttendees || []
+  const occurrences = liveClass.BasicEvents || []
 
   return (
     <>
@@ -40,7 +44,7 @@ export default async function LiveClassPage( {params} )
                 </CustomAvatar>
                 <div className='flex flex-col gap-1'>
                   <Typography variant='h4'>{liveClass.name}</Typography>
-                  <Typography color='text.secondary'>{liveClass.startDate}{liveClass.endDate && liveClass.endDate !== liveClass.startDate ? ` – ${liveClass.endDate}` : ''}</Typography>
+                  <Typography color='text.secondary'>{formatOccurrenceRange( occurrences )}</Typography>
                 </div>
               </div>
               <LiveClassDetailActions liveClass={liveClass} />
@@ -72,6 +76,15 @@ export default async function LiveClassPage( {params} )
                   </Grid>
                 )}
               </Grid>
+            </CardContent>
+          </Card>
+        </Grid>
+
+        <Grid size={{ xs: 12 }}>
+          <Card>
+            <CardHeader title='Occurrences' subheader='One or more sessions, each with its own hours' />
+            <CardContent>
+              <OccurrenceEditor liveClassId={liveClass.id} occurrences={occurrences} personOptions={people} />
             </CardContent>
           </Card>
         </Grid>

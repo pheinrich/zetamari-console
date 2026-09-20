@@ -1,7 +1,7 @@
 import { notFound } from 'next/navigation'
 
 import { readOrder } from '@/db/actions/order'
-import { readCustomers } from '@/db/actions/customer'
+import { readCustomers } from '@/db/actions/person'
 import OrderEditForm from '../../OrderEditForm'
 
 export default async function EditOrderPage( {params} )

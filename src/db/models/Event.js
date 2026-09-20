@@ -8,6 +8,13 @@ import sequelize from '@/db/sequelize.js'
 // CustomerSource (see that model) a real, reusable record to link a
 // source to instead of a loose string, for shows/conferences that recur
 // year over year.
+//
+// Its schedule lives entirely on BasicEvent now (see that model and
+// docs/adr/0008) - `startDate`/`endDate` here were dropped by the
+// 20260917020000-basic-events.js migration, since a show's schedule is
+// its one-or-more occurrences (varying hours per day), not a single
+// range. hasMany(BasicEvent) is wired in BasicEvent.js, which this file
+// doesn't need to import directly.
 const Event = sequelize.define(
   'Event',
   {
@@ -19,8 +26,6 @@ const Event = sequelize.define(
     email: { type: DataTypes.STRING },
     website: { type: DataTypes.STRING },
     boothNumber: { type: DataTypes.STRING },
-    startDate: { type: DataTypes.DATEONLY },
-    endDate: { type: DataTypes.DATEONLY },
   },
   {
     timestamps: false,

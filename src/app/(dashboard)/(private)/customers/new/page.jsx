@@ -1,6 +1,9 @@
 import CustomerForm from '../CustomerForm'
+import { readRoles } from '@/db/actions/role'
 
-export default function NewCustomerPage()
+export default async function NewCustomerPage()
 {
-  return <CustomerForm />
+  const roles = await readRoles()
+
+  return <CustomerForm roleOptions={roles} />
 }

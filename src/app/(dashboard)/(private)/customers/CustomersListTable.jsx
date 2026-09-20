@@ -29,7 +29,7 @@ import {
 
 import CustomerTableFilters from './CustomerTableFilters'
 import { customerDisplayName } from './customerFormat'
-import { deleteCustomer } from '@/db/actions/customer'
+import { deleteCustomer } from '@/db/actions/person'
 import { useTableViewState } from '@/hooks/useTableViewState'
 import { multiFieldFuzzyFilter } from '@/utils/multiFieldFuzzyFilter'
 import CustomAvatar from '@core/components/mui/Avatar'
@@ -134,12 +134,17 @@ export default function CustomersListTable( {customerData} )
         ),
         enableGlobalFilter: true
       } ),
-      columnHelper.accessor( 'type', {
-        header: 'Type',
-        cell: ({ row }) => row.original.type
-          ? <Chip label={row.original.type === 'wholesale' ? 'Wholesale' : 'Retail'} variant='tonal' size='small' />
-          : <Typography color='text.secondary'>—</Typography>,
-        enableGlobalFilter: false
+      columnHelper.accessor( 'Roles', {
+        header: 'Roles',
+        cell: ({ row }) => (row.original.Roles || []).length === 0
+          ? <Typography color='text.secondary'>—</Typography>
+          : (
+            <div className='flex flex-wrap gap-1'>
+              {row.original.Roles.map( r => <Chip key={r.id} label={r.name} variant='tonal' size='small' /> )}
+            </div>
+          ),
+        enableGlobalFilter: false,
+        enableSorting: false,
       } ),
       columnHelper.accessor( 'phone', {
         header: 'Phone',

@@ -70,48 +70,60 @@ const HorizontalMenu = ({}) => {
           menuSectionStyles: verticalMenuSectionStyles(verticalNavOptions, theme)
         }}
       >
-        <SubMenu label='inventory' icon={<i className='ri-shapes-line' />}>
+        <SubMenu label='tools' icon={<i className='ri-ruler-2-line' />}>
           <MenuItem href='/calculator' icon={<i className='ri-ruler-2-line' />}>
             visualizer
           </MenuItem>
-          <MenuItem href='/products' icon={<i className='ri-shapes-line' />}>
-            products
-          </MenuItem>
+        </SubMenu>
+
+        <SubMenu label='inventory' icon={<i className='ri-shapes-line' />}>
           <MenuItem href='/contours' icon={<i className='ri-shape-2-line' />}>
             contours
           </MenuItem>
           <MenuItem href='/suppliers' icon={<i className='ri-truck-line' />}>
             suppliers
           </MenuItem>
-          <MenuItem href='/users' icon={<i className='ri-team-line' />}>
-            users
+          <MenuItem href='/products' icon={<i className='ri-shapes-line' />}>
+            products
           </MenuItem>
-          <MenuItem href='/settings' icon={<i className='ri-settings-3-line' />}>
-            settings
+        </SubMenu>
+
+        <SubMenu label='customer' icon={<i className='ri-user-line' />}>
+          <MenuItem href='/customers' icon={<i className='ri-user-line' />}>
+            contacts
+          </MenuItem>
+          <MenuItem href='/orders' icon={<i className='ri-shopping-bag-3-line' />}>
+            orders
           </MenuItem>
         </SubMenu>
 
         <SubMenu label='scheduling' icon={<i className='ri-shopping-bag-3-line' />}>
-          <MenuItem href='/orders' icon={<i className='ri-shopping-bag-3-line' />}>
-            orders
-          </MenuItem>
-          <MenuItem href='/production' icon={<i className='ri-layout-grid-line' />}>
-            production
-          </MenuItem>
-          <MenuItem href='/capacity' icon={<i className='ri-calendar-check-line' />}>
+          <MenuItem href='/calendar' icon={<i className='ri-calendar-check-line' />}>
             calendar
           </MenuItem>
-        </SubMenu>
-
-        <SubMenu label='customers' icon={<i className='ri-user-line' />}>
-          <MenuItem href='/customers' icon={<i className='ri-user-line' />}>
-            customers
+          <MenuItem href='/events' icon={<i className='ri-calendar-event-line' />}>
+            shows
           </MenuItem>
           <MenuItem href='/live-classes' icon={<i className='ri-graduation-cap-line' />}>
             live classes
           </MenuItem>
-          <MenuItem href='/events' icon={<i className='ri-calendar-event-line' />}>
-            events
+          <MenuItem href='/production' icon={<i className='ri-layout-grid-line' />}>
+            production
+          </MenuItem>
+        </SubMenu>
+
+        <SubMenu label='config' icon={<i className='ri-settings-3-line' />}>
+          <MenuItem href='/users' icon={<i className='ri-team-line' />}>
+            users
+          </MenuItem>
+          <MenuItem href='/roles' icon={<i className='ri-shield-user-line' />}>
+            roles
+          </MenuItem>
+          <MenuItem href='/permissions' icon={<i className='ri-lock-2-line' />}>
+            permissions
+          </MenuItem>
+          <MenuItem href='/settings' icon={<i className='ri-settings-3-line' />}>
+            settings
           </MenuItem>
         </SubMenu>
       </Menu>

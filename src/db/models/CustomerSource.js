@@ -1,6 +1,6 @@
 import { DataTypes } from 'sequelize'
 import sequelize from '@/db/sequelize.js'
-import Customer from '@/db/models/Customer'
+import Person from '@/db/models/Person'
 import Event from '@/db/models/Event'
 
 // One row per channel a Customer has been sourced from - a Customer
@@ -23,7 +23,7 @@ const CustomerSource = sequelize.define(
     // query - see Order.js/LiveClassAttendee.js for the bug this pattern
     // fixes. Same approach SupplierProduct.js already uses for
     // supplierId/productId.
-    customerId: { type: DataTypes.INTEGER, allowNull: false, references: { model: Customer, key: 'id' } },
+    customerId: { type: DataTypes.INTEGER, allowNull: false, references: { model: Person, key: 'id' } },
     sourceType: {
       type: DataTypes.ENUM( 'website', 'software', 'online_learning', 'art_show', 'conference', 'retail' ),
       allowNull: false,
@@ -38,8 +38,8 @@ const CustomerSource = sequelize.define(
     timestamps: false,
   })
 
-Customer.hasMany( CustomerSource, {onDelete: 'CASCADE', foreignKey: 'customerId'} )
-CustomerSource.belongsTo( Customer, {foreignKey: 'customerId'} )
+Person.hasMany( CustomerSource, {onDelete: 'CASCADE', foreignKey: 'customerId', as: 'CustomerSources'} )
+CustomerSource.belongsTo( Person, {foreignKey: 'customerId', as: 'Customer'} )
 
 Event.hasMany( CustomerSource, {foreignKey: 'eventId'} )
 CustomerSource.belongsTo( Event, {foreignKey: 'eventId'} )

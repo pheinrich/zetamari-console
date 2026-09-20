@@ -8,6 +8,7 @@ import { toast } from 'react-toastify'
 import Card from '@mui/material/Card'
 import CardHeader from '@mui/material/CardHeader'
 import Button from '@mui/material/Button'
+import Chip from '@mui/material/Chip'
 import Divider from '@mui/material/Divider'
 import IconButton from '@mui/material/IconButton'
 import TablePagination from '@mui/material/TablePagination'
@@ -26,7 +27,8 @@ import {
   getPaginationRowModel,
 } from '@tanstack/react-table'
 
-import { deleteUser } from '@/db/actions/user'
+import { deleteUser } from '@/db/actions/person'
+import { customerDisplayName } from '../customers/customerFormat'
 import { useTableViewState } from '@/hooks/useTableViewState'
 import CustomAvatar from '@core/components/mui/Avatar'
 import tableStyles from '@core/styles/table.module.css'
@@ -63,7 +65,7 @@ export default function UsersListTable( {userData} )
 
   function handleDelete( user )
   {
-    if( !confirm( `Delete ${user.name}? This cannot be undone.` ) )
+    if( !confirm( `Delete ${customerDisplayName( user )}? This cannot be undone.` ) )
       return
 
     startTransition( async () => {
@@ -82,21 +84,33 @@ export default function UsersListTable( {userData} )
 
   const columns = useMemo(
     () => [
-      columnHelper.accessor( 'name', {
+      columnHelper.accessor( row => customerDisplayName( row ), {
+        id: 'name',
         header: 'User',
         cell: ({ row }) => (
           <div className='flex items-center gap-4'>
             <CustomAvatar skin='light' color='primary' size={38}>
-              {initials( row.original.name )}
+              {initials( customerDisplayName( row.original ) )}
             </CustomAvatar>
             <div className='flex flex-col'>
               <Typography component={Link} href={`/users/${row.original.id}`} className='font-medium' color='text.primary'>
-                {row.original.name}
+                {customerDisplayName( row.original )}
               </Typography>
               <Typography variant='body2'>{row.original.email}</Typography>
             </div>
           </div>
         )
+      } ),
+      columnHelper.accessor( 'Roles', {
+        header: 'Roles',
+        cell: ({ row }) => (
+          <div className='flex flex-wrap gap-1'>
+            {(row.original.Roles || []).length === 0
+              ? <Typography color='text.secondary'>—</Typography>
+              : row.original.Roles.map( r => <Chip key={r.id} label={r.name} size='small' variant='tonal' /> )}
+          </div>
+        ),
+        enableSorting: false,
       } ),
       columnHelper.accessor( 'actions', {
         header: 'Actions',

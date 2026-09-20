@@ -32,8 +32,6 @@ const schema = z.object({
   email: optionalString,
   website: optionalString,
   boothNumber: optionalString,
-  startDate: optionalString,
-  endDate: optionalString,
 })
 
 // Deliberately lightweight - see db/actions/event.js. This exists so
@@ -52,7 +50,7 @@ export default function EventForm( {initialData={}} )
 
   useEffect( () => {
     if( success )
-      router.push( '/events' )
+      router.push( isEdit ? `/events/${initialData.id}` : '/events' )
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [success, router] )
 
@@ -63,7 +61,7 @@ export default function EventForm( {initialData={}} )
           <div className='flex flex-wrap sm:items-center justify-between max-sm:flex-col gap-6'>
             <Typography variant='h4'>{isEdit ? 'Update' : 'Create'} Event</Typography>
             <div className='flex flex-wrap gap-4'>
-              <Button variant='outlined' color='secondary' component={NextLink} href='/events'>
+              <Button variant='outlined' color='secondary' component={NextLink} href={isEdit ? `/events/${initialData.id}` : '/events'}>
                 Cancel
               </Button>
               <Button type='submit' variant='contained' disabled={loading}>
@@ -104,26 +102,6 @@ export default function EventForm( {initialData={}} )
                       <MenuItem value='conference'>Conference</MenuItem>
                     </Select>
                   </FormControl>
-                </Grid>
-                <Grid size={{ xs: 12, sm: 6 }}>
-                  <TextField
-                    fullWidth
-                    type='date'
-                    label='Start Date'
-                    name='startDate'
-                    slotProps={{ inputLabel: { shrink: true } }}
-                    defaultValue={initialData?.startDate || ''}
-                  />
-                </Grid>
-                <Grid size={{ xs: 12, sm: 6 }}>
-                  <TextField
-                    fullWidth
-                    type='date'
-                    label='End Date'
-                    name='endDate'
-                    slotProps={{ inputLabel: { shrink: true } }}
-                    defaultValue={initialData?.endDate || ''}
-                  />
                 </Grid>
                 <Grid size={{ xs: 12, sm: 6 }}>
                   <TextField fullWidth label='Phone' name='phone' defaultValue={initialData?.phone || ''} />

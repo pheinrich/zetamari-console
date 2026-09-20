@@ -82,7 +82,9 @@ export default function EventsListTable( {eventData} )
             <CustomAvatar skin='light' color='primary' size={38}>
               <i className={row.original.type === 'conference' ? 'ri-mic-line text-lg' : 'ri-palette-line text-lg'} />
             </CustomAvatar>
-            <Typography className='font-medium' color='text.primary'>{row.original.name}</Typography>
+            <Typography component={Link} href={`/events/${row.original.id}`} className='font-medium' color='text.primary'>
+              {row.original.name}
+            </Typography>
           </div>
         )
       } ),

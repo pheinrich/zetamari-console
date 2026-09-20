@@ -1,6 +1,6 @@
 import { DataTypes } from 'sequelize'
 import sequelize from '@/db/sequelize.js'
-import Customer from '@/db/models/Customer'
+import Person from '@/db/models/Person'
 import LiveClass from '@/db/models/LiveClass'
 
 // A single class seat - deliberately NOT called "Student". `customerId`
@@ -31,7 +31,7 @@ const LiveClassAttendee = sequelize.define(
     // story. Same pattern SupplierProduct.js already uses for
     // supplierId/productId.
     liveClassId: { type: DataTypes.INTEGER, allowNull: false, references: { model: LiveClass, key: 'id' } },
-    customerId: { type: DataTypes.INTEGER, allowNull: true, references: { model: Customer, key: 'id' } },
+    customerId: { type: DataTypes.INTEGER, allowNull: true, references: { model: Person, key: 'id' } },
     firstName: { type: DataTypes.STRING },
     lastName: { type: DataTypes.STRING },
 
@@ -58,7 +58,7 @@ const LiveClassAttendee = sequelize.define(
 LiveClass.hasMany( LiveClassAttendee, {onDelete: 'CASCADE', foreignKey: 'liveClassId'} )
 LiveClassAttendee.belongsTo( LiveClass, {foreignKey: 'liveClassId'} )
 
-Customer.hasMany( LiveClassAttendee, {foreignKey: 'customerId'} )
-LiveClassAttendee.belongsTo( Customer, {foreignKey: 'customerId'} )
+Person.hasMany( LiveClassAttendee, {foreignKey: 'customerId', as: 'LiveClassAttendees'} )
+LiveClassAttendee.belongsTo( Person, {foreignKey: 'customerId', as: 'Customer'} )
 
 export default LiveClassAttendee

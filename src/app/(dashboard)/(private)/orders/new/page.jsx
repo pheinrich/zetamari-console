@@ -1,4 +1,4 @@
-import { readCustomers } from '@/db/actions/customer'
+import { readCustomers } from '@/db/actions/person'
 import { readProducts } from '@/db/actions/product'
 import OrderForm from '../OrderForm'
 

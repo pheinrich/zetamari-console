@@ -1,6 +1,9 @@
 import UserForm from '../UserForm'
+import { readRoles } from '@/db/actions/role'
 
-export default function NewUserPage()
+export default async function NewUserPage()
 {
-  return <UserForm />
+  const roles = await readRoles()
+
+  return <UserForm roleOptions={roles} />
 }

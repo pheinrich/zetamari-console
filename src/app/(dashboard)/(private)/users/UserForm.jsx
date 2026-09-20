@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 
 import { useRouter } from 'next/navigation'
 
@@ -17,32 +17,37 @@ import Button from '@mui/material/Button'
 import Alert from '@mui/material/Alert'
 import TextField from '@mui/material/TextField'
 import Typography from '@mui/material/Typography'
-import FormControl from '@mui/material/FormControl'
-import InputLabel from '@mui/material/InputLabel'
-import MenuItem from '@mui/material/MenuItem'
-import Select from '@mui/material/Select'
+import Autocomplete from '@mui/material/Autocomplete'
 
 import { useFormSubmit } from '@/utils/formSubmitHook'
-import { createUser, updateUser } from '@/db/actions/user'
+import { createUser, updateUser } from '@/db/actions/person'
 
 const optionalString = z.preprocess( (val) => (val === '' || val == null ? undefined : val), z.string().optional() )
 
 const schema = z.object({
   id: z.preprocess( (val) => (val === '' || val == null ? undefined : val), z.coerce.number().optional() ),
-  name: z.string().min( 1 ),
+  firstName: optionalString,
+  lastName: optionalString,
   email: z.string().email(),
   password: optionalString,
-  role: optionalString,
 })
 
-export default function UserForm( {initialData={}} )
+// A User is just a Person with a password (see db/actions/person.js) -
+// which capacities they act in (Owner, Assistant, Admin, ...) are Role
+// assignments, submitted alongside the form fields rather than a single
+// role Select.
+export default function UserForm( {initialData={}, roleOptions=[]} )
 {
   const router = useRouter()
   const isEdit = Boolean( initialData?.id )
 
+  const [roles, setRoles] = useState(
+    () => roleOptions.filter( r => initialData?.Roles?.some( ir => ir.id === r.id ) )
+  )
+
   const { handleSubmit, loading, errors, success } = useFormSubmit({
     schema: isEdit ? schema : schema.extend( {password: z.string().min( 8, 'Password must be at least 8 characters' )} ),
-    onSubmit: isEdit ? updateUser : createUser
+    onSubmit: data => (isEdit ? updateUser : createUser)( {...data, roleIds: roles.map( r => r.id )} )
   })
 
   // See ProductForm.jsx for why this is a router.push() effect rather
@@ -85,7 +90,10 @@ export default function UserForm( {initialData={}} )
             <CardContent>
               <Grid container spacing={5}>
                 <Grid size={{ xs: 12, sm: 6 }}>
-                  <TextField fullWidth label='Name' name='name' defaultValue={initialData?.name || ''} required />
+                  <TextField fullWidth label='First Name' name='firstName' defaultValue={initialData?.firstName || ''} />
+                </Grid>
+                <Grid size={{ xs: 12, sm: 6 }}>
+                  <TextField fullWidth label='Last Name' name='lastName' defaultValue={initialData?.lastName || ''} />
                 </Grid>
                 <Grid size={{ xs: 12, sm: 6 }}>
                   <TextField fullWidth type='email' label='Email' name='email' defaultValue={initialData?.email || ''} required />
@@ -101,20 +109,17 @@ export default function UserForm( {initialData={}} )
                     helperText={isEdit ? 'Leave blank to keep the current password.' : 'At least 8 characters.'}
                   />
                 </Grid>
-                <Grid size={{ xs: 12, sm: 6 }}>
-                  <FormControl fullWidth>
-                    <InputLabel id='user-role-select'>Role</InputLabel>
-                    <Select
-                      labelId='user-role-select'
-                      label='Role'
-                      name='role'
-                      defaultValue={initialData?.role || ''}
-                    >
-                      <MenuItem value=''>Unspecified</MenuItem>
-                      <MenuItem value='owner'>Owner</MenuItem>
-                      <MenuItem value='assistant'>Assistant</MenuItem>
-                    </Select>
-                  </FormControl>
+                <Grid size={{ xs: 12 }}>
+                  <Autocomplete
+                    multiple
+                    options={roleOptions}
+                    value={roles}
+                    getOptionLabel={option => option.name}
+                    getOptionKey={option => option.id}
+                    isOptionEqualToValue={(option, value) => option.id === value.id}
+                    onChange={(e, value) => setRoles( value )}
+                    renderInput={params => <TextField {...params} label='Roles' placeholder='Add role' />}
+                  />
                 </Grid>
               </Grid>
             </CardContent>

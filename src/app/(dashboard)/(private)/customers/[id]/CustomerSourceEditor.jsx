@@ -13,7 +13,7 @@ import Select from '@mui/material/Select'
 import TextField from '@mui/material/TextField'
 import Typography from '@mui/material/Typography'
 
-import { addCustomerSource, removeCustomerSource } from '@/db/actions/customer'
+import { addCustomerSource, removeCustomerSource } from '@/db/actions/person'
 import { SOURCE_TYPE_META, sourceTypeLabel, sourceTypeUsesEvent } from '../sourceTypeMeta'
 import tableStyles from '@core/styles/table.module.css'
 
