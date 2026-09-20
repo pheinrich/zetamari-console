@@ -34,8 +34,6 @@ const schema = z.object({
   locationType: z.enum( ['in_person', 'online'] ),
   locationName: optionalString,
   locationAddress: optionalString,
-  startDate: z.string().min( 1 ),
-  endDate: optionalString,
   cost: optionalPositiveNumber,
   notes: optionalString,
 })
@@ -116,27 +114,6 @@ export default function LiveClassForm( {initialData={}} )
                 </Grid>
                 <Grid size={{ xs: 12, sm: 6 }}>
                   <TextField fullWidth label='Location Address' name='locationAddress' defaultValue={initialData?.locationAddress || ''} />
-                </Grid>
-                <Grid size={{ xs: 12, sm: 4 }}>
-                  <TextField
-                    fullWidth
-                    type='date'
-                    label='Start Date'
-                    name='startDate'
-                    slotProps={{ inputLabel: { shrink: true } }}
-                    defaultValue={initialData?.startDate || ''}
-                    required
-                  />
-                </Grid>
-                <Grid size={{ xs: 12, sm: 4 }}>
-                  <TextField
-                    fullWidth
-                    type='date'
-                    label='End Date'
-                    name='endDate'
-                    slotProps={{ inputLabel: { shrink: true } }}
-                    defaultValue={initialData?.endDate || ''}
-                  />
                 </Grid>
                 <Grid size={{ xs: 12, sm: 4 }}>
                   <TextField

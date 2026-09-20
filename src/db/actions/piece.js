@@ -2,7 +2,7 @@
 
 import { unauthorized } from 'next/navigation'
 
-import Customer from '@/db/models/Customer'
+import Person from '@/db/models/Person'
 import GroutingDay from '@/db/models/GroutingDay'
 import Order from '@/db/models/Order'
 import Piece from '@/db/models/Piece'
@@ -14,7 +14,7 @@ import sequelize from '@/db/sequelize'
 import { auth } from '@/lib/auth'
 import { COSTING_INCLUDE } from '@/db/costingInclude'
 import { getPhaseSequence, getPieceDurationHours } from '@/libs/pieceScheduling'
-import { markOrdersScheduleStale, ensureProjectionsFresh } from '@/db/actions/scheduling'
+import { markOrdersScheduleStale } from '@/db/actions/scheduling'
 
 // Order-level status the /production table filters on - not a stored
 // column, derived fresh each read from what's already on hand. 'shipped'
@@ -54,12 +54,11 @@ export async function readPiecesForProduction()
     unauthorized()
 
   await sequelize.sync()
-  await ensureProjectionsFresh()
 
   const pieces = await Piece.findAll( {
     include: [
       Product,
-      {model: Order, where: {completedOn: null}, include: [Customer, GroutingDay]},
+      {model: Order, where: {completedOn: null}, include: [{model: Person, as: 'Customer'}, GroutingDay]},
     ],
     order: [['id', 'ASC']],
   } )

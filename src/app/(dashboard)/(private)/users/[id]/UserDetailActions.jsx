@@ -7,7 +7,8 @@ import { toast } from 'react-toastify'
 
 import Button from '@mui/material/Button'
 
-import { deleteUser } from '@/db/actions/user'
+import { deleteUser } from '@/db/actions/person'
+import { customerDisplayName } from '../../customers/customerFormat'
 
 export default function UserDetailActions( {user} )
 {
@@ -16,7 +17,7 @@ export default function UserDetailActions( {user} )
 
   function handleDelete()
   {
-    if( !confirm( `Delete ${user.name}? This cannot be undone.` ) )
+    if( !confirm( `Delete ${customerDisplayName( user )}? This cannot be undone.` ) )
       return
 
     startTransition( async () => {

@@ -1,7 +1,7 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { z } from 'zod'
 import NextLink from 'next/link'
 
@@ -17,9 +17,10 @@ import MenuItem from '@mui/material/MenuItem'
 import Select from '@mui/material/Select'
 import TextField from '@mui/material/TextField'
 import Typography from '@mui/material/Typography'
+import Autocomplete from '@mui/material/Autocomplete'
 
 import { useFormSubmit } from '@/utils/formSubmitHook'
-import { createCustomer, updateCustomer } from '@/db/actions/customer'
+import { createCustomer, updateCustomer } from '@/db/actions/person'
 
 const optionalString = z.preprocess( (val) => (val === '' ? undefined : val), z.string().optional() )
 
@@ -28,14 +29,9 @@ const optionalPositiveNumber = z.preprocess(
   z.coerce.number().optional()
 )
 
-const optionalType = z.preprocess(
-  (val) => (val === '' || val == null ? undefined : val),
-  z.enum( ['wholesale', 'retail'] ).optional()
-)
-
-// Tri-state - see the Customer model's doc comment on acceptsEmailMarketing.
+// Tri-state - see the Person model's doc comment on acceptsEmailMarketing.
 // A Select (not a checkbox) submits one of these three literal strings;
-// the server action (parseEmailMarketing in db/actions/customer.js) maps
+// the server action (parseEmailMarketing in db/actions/person.js) maps
 // 'true'/'false' to real booleans and anything else (including 'unknown')
 // to null.
 const emailMarketingValue = z.enum( ['true', 'false', 'unknown'] )
@@ -54,7 +50,6 @@ const schema = z.object({
   postalCode: optionalString,
   country: optionalString,
   notes: optionalString,
-  type: optionalType,
   website: optionalString,
   acceptsEmailMarketing: emailMarketingValue,
   discountPercent: optionalPositiveNumber,
@@ -64,15 +59,21 @@ const schema = z.object({
 // 20260807000000-customers.js migration for why: sometimes all Angie has
 // is an email address from a mailing list signup, other times everything
 // but an email (a cash sale at a show). Nothing here should block a save
-// just because a field wasn't captured.
-export default function CustomerForm( {initialData={}} )
+// just because a field wasn't captured. `type` (wholesale/retail) is now
+// a Role assignment (see db/actions/role.js) rather than its own column -
+// same Roles multi-select UserForm.jsx uses.
+export default function CustomerForm( {initialData={}, roleOptions=[]} )
 {
   const router = useRouter()
   const isEdit = Boolean( initialData?.id )
 
+  const [roles, setRoles] = useState(
+    () => roleOptions.filter( r => initialData?.Roles?.some( ir => ir.id === r.id ) )
+  )
+
   const { handleSubmit, loading, errors, success } = useFormSubmit({
     schema,
-    onSubmit: isEdit ? updateCustomer : createCustomer
+    onSubmit: data => (isEdit ? updateCustomer : createCustomer)( {...data, roleIds: roles.map( r => r.id )} )
   })
 
   useEffect( () => {
@@ -137,20 +138,17 @@ export default function CustomerForm( {initialData={}} )
                 <Grid size={{ xs: 12, sm: 6 }}>
                   <TextField fullWidth label='Website' name='website' defaultValue={initialData?.website || ''} />
                 </Grid>
-                <Grid size={{ xs: 12, sm: 6 }}>
-                  <FormControl fullWidth>
-                    <InputLabel id='customer-type-select'>Type</InputLabel>
-                    <Select
-                      labelId='customer-type-select'
-                      label='Type'
-                      name='type'
-                      defaultValue={initialData?.type || ''}
-                    >
-                      <MenuItem value=''>Unspecified</MenuItem>
-                      <MenuItem value='wholesale'>Wholesale</MenuItem>
-                      <MenuItem value='retail'>Retail</MenuItem>
-                    </Select>
-                  </FormControl>
+                <Grid size={{ xs: 12 }}>
+                  <Autocomplete
+                    multiple
+                    options={roleOptions}
+                    value={roles}
+                    getOptionLabel={option => option.name}
+                    getOptionKey={option => option.id}
+                    isOptionEqualToValue={(option, value) => option.id === value.id}
+                    onChange={(e, value) => setRoles( value )}
+                    renderInput={params => <TextField {...params} label='Roles' placeholder='Add role' />}
+                  />
                 </Grid>
               </Grid>
             </CardContent>

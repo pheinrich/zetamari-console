@@ -1,5 +1,5 @@
 import Grid from '@mui/material/Grid2'
-import { readCustomers } from '@/db/actions/customer'
+import { readCustomers } from '@/db/actions/person'
 import CustomersListTable from './CustomersListTable'
 
 export default async function CustomersPage()

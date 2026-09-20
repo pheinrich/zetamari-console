@@ -21,7 +21,9 @@ export default function CustomerTableFilters( {customerData, setData, filters, o
 
   useEffect( () => {
     const filtered = customerData?.filter( customer => {
-      if( type && customer.type !== type ) return false
+      const roleName = 'wholesale' === type ? 'Wholesale Customer' : 'retail' === type ? 'Retail Customer' : null
+
+      if( roleName && !customer.Roles?.some( r => r.name === roleName ) ) return false
 
       // Tri-state - see the acceptsEmailMarketing model doc comment.
       // 'no' here means an explicit opt-out (false), not merely "unknown"

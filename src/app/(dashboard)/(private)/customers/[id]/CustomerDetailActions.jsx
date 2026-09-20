@@ -7,7 +7,7 @@ import { toast } from 'react-toastify'
 
 import Button from '@mui/material/Button'
 
-import { deleteCustomer } from '@/db/actions/customer'
+import { deleteCustomer } from '@/db/actions/person'
 import { customerDisplayName } from '../customerFormat'
 
 export default function CustomerDetailActions( {customer} )

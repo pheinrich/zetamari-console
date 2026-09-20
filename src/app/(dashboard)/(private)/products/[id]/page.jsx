@@ -23,7 +23,6 @@ import MillefioriInfoView from './MillefioriInfoView'
 import MirrorGlassInfoView from './MirrorGlassInfoView'
 import WoodenBaseInfoView from './WoodenBaseInfoView'
 import TileInfoView from './TileInfoView'
-import ProductCostEditor from './ProductCostEditor'
 import SupplierProductView from '../SupplierProductView'
 import BomEditor from '../BomEditor'
 import ProductImagesCard from '../ProductImagesCard'
@@ -133,9 +132,11 @@ export default async function ProductPage( {params} )
 
             <Grid size={{ xs: 12 }}>
               <Card>
-                <CardHeader title='Cost Breakdown' subheader='Per-factor production cost estimate - separate from the price fields above' />
+                <CardHeader title='Cost Breakdown' subheader='View/edit per-factor production cost estimates in the Edit view' />
                 <CardContent>
-                  <ProductCostEditor productId={product.id} costs={costs} />
+                  <Typography color='text.secondary'>
+                    Cost breakdown is only available when editing the product. Click the Edit button at the top to review and adjust per-factor costs.
+                  </Typography>
                 </CardContent>
               </Card>
             </Grid>

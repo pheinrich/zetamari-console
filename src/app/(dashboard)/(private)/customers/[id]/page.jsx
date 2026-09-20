@@ -8,7 +8,7 @@ import CardContent from '@mui/material/CardContent'
 import Chip from '@mui/material/Chip'
 import Typography from '@mui/material/Typography'
 
-import { readCustomer, readCustomerOrders } from '@/db/actions/customer'
+import { readCustomer, readCustomerOrders } from '@/db/actions/person'
 import { readEvents } from '@/db/actions/event'
 import { isApronEligible, isDiscountEligible } from '@/libs/customerLoyalty'
 import { customerDisplayName, emailMarketingLabel } from '../customerFormat'
@@ -69,8 +69,12 @@ export default async function CustomerPage( {params} )
                   <Typography>{customer.phone || '—'}</Typography>
                 </Grid>
                 <Grid size={{ xs: 6, sm: 3 }}>
-                  <Typography variant='body2' color='text.secondary'>Type</Typography>
-                  <Typography>{customer.type ? (customer.type === 'wholesale' ? 'Wholesale' : 'Retail') : '—'}</Typography>
+                  <Typography variant='body2' color='text.secondary'>Roles</Typography>
+                  <div className='flex flex-wrap gap-1'>
+                    {(customer.Roles || []).length === 0
+                      ? <Typography>—</Typography>
+                      : customer.Roles.map( r => <Chip key={r.id} label={r.name} variant='tonal' size='small' /> )}
+                  </div>
                 </Grid>
                 <Grid size={{ xs: 6, sm: 3 }}>
                   <Typography variant='body2' color='text.secondary'>Company</Typography>

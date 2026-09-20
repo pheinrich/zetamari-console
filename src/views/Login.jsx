@@ -95,7 +95,7 @@ const Login = ({ mode }) => {
       redirect: false
     })
 
-    if (res && res.ok && res.error === null) {
+    if (res && res.ok && !res.error) {
       // Vars
       const redirectURL = searchParams.get('redirectTo') ?? '/'
 

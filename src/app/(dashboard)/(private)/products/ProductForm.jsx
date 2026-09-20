@@ -26,6 +26,7 @@ import { createProduct, updateProduct } from '@/db/actions/product'
 import { PRODUCT_TYPE_META } from './ProductTypeMeta'
 import { formatCurrency } from './productFormat'
 import ProductImagesCard from './ProductImagesCard'
+import ProductCostBreakdown from './[id]/ProductCostBreakdown'
 import tableStyles from '@core/styles/table.module.css'
 
 // Same spinner-hiding treatment used on the Cost Breakdown/BOM editors -
@@ -184,6 +185,15 @@ export default function ProductForm( {contourList, initialData={}, costs, comput
   // something to fill it from, same as the cost breakdown does for the
   // price fields below.
   const [weight, setWeight] = useState( initialData?.weight || '' )
+  // Controlled the same way, and for the same reason as weight above -
+  // lifted here (rather than left as an uncontrolled defaultValue on the
+  // Wooden Base Details TextField below) so the Cost Breakdown card's
+  // Sheet Breakage rows can edit these same two values directly (they're
+  // "Quantity" for those two rows - see ProductCostBreakdown.jsx) and
+  // have it reflected in the one field that actually gets submitted,
+  // rather than maintaining a second, disconnected copy.
+  const [piecesPerSheet, setPiecesPerSheet] = useState( initialData?.woodenBaseInfo?.piecesPerSheet ?? '' )
+  const [glassPiecesPerSheet, setGlassPiecesPerSheet] = useState( initialData?.woodenBaseInfo?.glassPiecesPerSheet ?? '' )
   // Both only ever seeded once, from the Duplicate flow's snapshot (see
   // products/new/page.jsx) - dupCostRows drives the Included checkboxes/
   // costOverrides.* inputs below, dupBomLines the bill-of-materials
@@ -318,6 +328,28 @@ export default function ProductForm( {contourList, initialData={}, costs, comput
                 </CardContent>
               </Card>
             </Grid>
+
+            {isEdit && costs && (
+              <Grid size={{ xs: 12 }}>
+                <Card>
+                  <CardHeader
+                    title='Cost Breakdown'
+                    subheader='Per-factor production cost estimate - edit any column to adjust, reset with the close button'
+                  />
+                  <CardContent>
+                    <ProductCostBreakdown
+                      productId={initialData?.id}
+                      costs={costs}
+                      piecesPerSheetEditable={'wooden base' === type}
+                      piecesPerSheet={piecesPerSheet}
+                      onPiecesPerSheetChange={setPiecesPerSheet}
+                      glassPiecesPerSheet={glassPiecesPerSheet}
+                      onGlassPiecesPerSheetChange={setGlassPiecesPerSheet}
+                    />
+                  </CardContent>
+                </Card>
+              </Grid>
+            )}
 
             {isDuplicate && (
               <Grid size={{ xs: 12 }}>
@@ -648,7 +680,8 @@ export default function ProductForm( {contourList, initialData={}, costs, comput
                               fullWidth
                               label='Pieces Per Sheet (Wood)'
                               name='woodenBaseInfo.piecesPerSheet'
-                              defaultValue={initialData?.woodenBaseInfo?.piecesPerSheet ?? ''}
+                              value={piecesPerSheet}
+                              onChange={e => setPiecesPerSheet( e.target.value )}
                               helperText='Blank = compute automatically'
                             />
                           </Grid>
@@ -657,7 +690,8 @@ export default function ProductForm( {contourList, initialData={}, costs, comput
                               fullWidth
                               label='Pieces Per Sheet (Glass)'
                               name='woodenBaseInfo.glassPiecesPerSheet'
-                              defaultValue={initialData?.woodenBaseInfo?.glassPiecesPerSheet ?? ''}
+                              value={glassPiecesPerSheet}
+                              onChange={e => setGlassPiecesPerSheet( e.target.value )}
                               helperText='Blank = compute automatically'
                             />
                           </Grid>

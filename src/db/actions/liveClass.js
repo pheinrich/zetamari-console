@@ -4,10 +4,15 @@ import { notFound, unauthorized } from 'next/navigation'
 import { Sequelize } from 'sequelize'
 import LiveClass from '@/db/models/LiveClass'
 import LiveClassAttendee from '@/db/models/LiveClassAttendee'
-import Customer from '@/db/models/Customer'
+import BasicEvent from '@/db/models/BasicEvent'
+import Person from '@/db/models/Person'
+// Side-effect import - wires up BasicEvent.belongsToMany(Person, {as:
+// 'Participants'}), which readLiveClass()'s eager include below needs.
+import '@/db/models/BasicEventParticipant'
 import sequelize from '@/db/sequelize'
 import { auth } from '@/lib/auth'
-import { seedDiscountIfEligible } from '@/db/actions/customer'
+import { seedDiscountIfEligible } from '@/db/actions/person'
+import { occurrenceDateRange } from '@/utils/basicEventFormat'
 
 export async function createLiveClass( data )
 {
@@ -20,8 +25,6 @@ export async function createLiveClass( data )
 
   if( !data.name )
     return {error: 'Name is required'}
-  if( !data.startDate )
-    return {error: 'Start date is required'}
 
   try
   {
@@ -30,8 +33,6 @@ export async function createLiveClass( data )
       locationType: data.locationType || 'in_person',
       locationName: data.locationName || null,
       locationAddress: data.locationAddress || null,
-      startDate: data.startDate,
-      endDate: data.endDate || null,
       cost: null != data.cost && '' !== data.cost ? Number( data.cost ) : null,
       notes: data.notes || null,
     } )
@@ -59,7 +60,10 @@ export async function readLiveClass( id, eager )
   if( eager )
   {
     const liveClass = await LiveClass.findByPk( id, {
-      include: [{model: LiveClassAttendee, include: [Customer]}],
+      include: [
+        {model: LiveClassAttendee, include: [{model: Person, as: 'Customer'}]},
+        {model: BasicEvent, include: [{model: Person, as: 'Participants'}]},
+      ],
     } )
 
     return liveClass?.toJSON()
@@ -78,7 +82,7 @@ export async function readLiveClasses()
     unauthorized()
 
   await sequelize.sync()
-  const liveClasses = await LiveClass.findAll( {order: [['startDate', 'DESC']]} )
+  const liveClasses = await LiveClass.findAll( {include: [BasicEvent]} )
 
   if( 0 === liveClasses.length )
     return []
@@ -97,7 +101,9 @@ export async function readLiveClasses()
   for( const c of counts )
     countByClassId[c.liveClassId] = Number( c.get( 'count' ) )
 
-  return liveClasses.map( c => ({...c.toJSON(), attendeeCount: countByClassId[c.id] || 0}) )
+  return liveClasses
+    .map( c => ({...c.toJSON(), attendeeCount: countByClassId[c.id] || 0, ...occurrenceDateRange( c.BasicEvents )}) )
+    .sort( (a, b) => (b.startDate || '').localeCompare( a.startDate || '' ) )
 }
 
 export async function updateLiveClass( data )
@@ -118,8 +124,6 @@ export async function updateLiveClass( data )
     locationType: data.locationType || 'in_person',
     locationName: data.locationName || null,
     locationAddress: data.locationAddress || null,
-    startDate: data.startDate,
-    endDate: data.endDate || null,
     cost: null != data.cost && '' !== data.cost ? Number( data.cost ) : null,
     notes: data.notes || null,
   } )
@@ -167,7 +171,7 @@ export async function addLiveClassAttendee( liveClassId, data )
 
     if( data.customerId && (!firstName || !lastName || !email) )
     {
-      const customer = await Customer.findByPk( data.customerId )
+      const customer = await Person.findByPk( data.customerId )
 
       firstName = firstName || customer?.firstName || null
       lastName = lastName || customer?.lastName || null

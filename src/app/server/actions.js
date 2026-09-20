@@ -16,7 +16,7 @@ import { db as faqData } from '@/fake-db/pages/faq'
 import { db as pricingData } from '@/fake-db/pages/pricing'
 import { db as statisticsData } from '@/fake-db/pages/widgetExamples'
 
-import { readUsers } from '@/db/actions/user'
+import { readUsers } from '@/db/actions/person'
 
 export const getEcommerceData = async () => {
   return eCommerceData

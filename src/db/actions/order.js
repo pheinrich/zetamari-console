@@ -2,7 +2,7 @@
 
 import { notFound, unauthorized } from 'next/navigation'
 import { Sequelize } from 'sequelize'
-import Customer from '@/db/models/Customer'
+import Person from '@/db/models/Person'
 import GroutingDay from '@/db/models/GroutingDay'
 import Order from '@/db/models/Order'
 import OrderProduct from '@/db/models/OrderProduct'
@@ -10,7 +10,7 @@ import Piece from '@/db/models/Piece'
 import Product from '@/db/models/Product'
 import sequelize from '@/db/sequelize'
 import { auth } from '@/lib/auth'
-import { ensureProjectionsFresh, markAllOrdersScheduleStale, markOrdersScheduleStale } from '@/db/actions/scheduling'
+import { markAllOrdersScheduleStale, markOrdersScheduleStale } from '@/db/actions/scheduling'
 
 // `lines` is [{productId, quantity}, ...] from the intake form's
 // repeatable rows. Spawns one Piece per unit of quantity, phase
@@ -161,9 +161,8 @@ export async function readOrder( id )
     unauthorized()
 
   await sequelize.sync()
-  await ensureProjectionsFresh()
 
-  const order = await Order.findByPk( id, {include: [Customer, GroutingDay]} )
+  const order = await Order.findByPk( id, {include: [{model: Person, as: 'Customer'}, GroutingDay]} )
   if( !order )
     notFound()
 
@@ -209,9 +208,8 @@ export async function readOrders()
     unauthorized()
 
   await sequelize.sync()
-  await ensureProjectionsFresh()
 
-  const orders = await Order.findAll( {include: [Customer, GroutingDay], order: [['createdOn', 'DESC']]} )
+  const orders = await Order.findAll( {include: [{model: Person, as: 'Customer'}, GroutingDay], order: [['createdOn', 'DESC']]} )
   if( 0 === orders.length )
     return []
 

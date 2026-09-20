@@ -3,14 +3,24 @@
 import { notFound, unauthorized } from 'next/navigation'
 import { Sequelize } from 'sequelize'
 import Event from '@/db/models/Event'
+import BasicEvent from '@/db/models/BasicEvent'
+import Person from '@/db/models/Person'
+// Side-effect import - wires up BasicEvent.belongsToMany(Person, {as:
+// 'Participants'}), which readEvent()'s eager include below needs.
+import '@/db/models/BasicEventParticipant'
 import sequelize from '@/db/sequelize'
 import { auth } from '@/lib/auth'
+import { occurrenceDateRange } from '@/utils/basicEventFormat'
 
 // Deliberately lightweight - art shows/conferences are being modeled now
 // (per Angie's explicit request, ahead of eventually breaking them out
 // into their own dedicated feature) so CustomerSource has somewhere real
 // to point for 'art_show'/'conference' sources, but the UI here is just
 // enough to create/list/edit/delete an Event, not a full CRM for events.
+//
+// An Event's schedule is entirely its BasicEvent occurrences now (see
+// that model and docs/adr/0008) - managed from the detail page
+// (BasicEventEditor), not this form.
 
 export async function createEvent( data )
 {
@@ -36,8 +46,6 @@ export async function createEvent( data )
       email: data.email || null,
       website: data.website || null,
       boothNumber: data.boothNumber || null,
-      startDate: data.startDate || null,
-      endDate: data.endDate || null,
     } )
 
     return {success: true, id: event.id}
@@ -51,7 +59,7 @@ export async function createEvent( data )
   }
 }
 
-export async function readEvent( id )
+export async function readEvent( id, eager )
 {
   const session = await auth()
 
@@ -59,7 +67,10 @@ export async function readEvent( id )
     unauthorized()
 
   await sequelize.sync()
-  const event = await Event.findByPk( id )
+  const event = await Event.findByPk(
+    id,
+    eager ? {include: [{model: BasicEvent, include: [{model: Person, as: 'Participants'}]}]} : undefined
+  )
 
   return event?.toJSON()
 }
@@ -72,9 +83,14 @@ export async function readEvents()
     unauthorized()
 
   await sequelize.sync()
-  const events = await Event.findAll( {order: [['startDate', 'DESC']]} )
+  const events = await Event.findAll( {include: [BasicEvent]} )
 
-  return events.map( e => e.toJSON() )
+  // No more single startDate column to ORDER BY in SQL - the schedule is
+  // now each row's BasicEvents, so the "most recent first" sort happens
+  // here instead, off the same computed range the list table displays.
+  return events
+    .map( e => ({...e.toJSON(), ...occurrenceDateRange( e.BasicEvents )}) )
+    .sort( (a, b) => (b.startDate || '').localeCompare( a.startDate || '' ) )
 }
 
 export async function updateEvent( data )
@@ -98,8 +114,6 @@ export async function updateEvent( data )
     email: data.email || null,
     website: data.website || null,
     boothNumber: data.boothNumber || null,
-    startDate: data.startDate || null,
-    endDate: data.endDate || null,
   } )
 
   return event.toJSON()
