@@ -274,8 +274,8 @@ export async function readCustomer( id, eager )
   {
     const person = await Person.findByPk( id, {
       include: [
-        {model: CustomerSource, include: [Event]},
-        {model: LiveClassAttendee, include: [LiveClass]},
+        {model: CustomerSource, as: 'CustomerSources', include: [Event]},
+        {model: LiveClassAttendee, as: 'LiveClassAttendees', include: [LiveClass]},
         Role,
       ],
     } )
