@@ -69,7 +69,15 @@ export async function readEvent( id, eager )
   await sequelize.sync()
   const event = await Event.findByPk(
     id,
-    eager ? {include: [{model: BasicEvent, include: [{model: Person, as: 'Participants'}]}]} : undefined
+    eager
+      ? {
+        include: [{model: BasicEvent, include: [{model: Person, as: 'Participants'}]}],
+
+        // Same reasoning as readLiveClass() - without this, occurrence
+        // row order (and which occurrence renders first) is arbitrary.
+        order: [[BasicEvent, 'startDatetime', 'ASC']],
+      }
+      : undefined
   )
 
   return event?.toJSON()
@@ -132,5 +140,5 @@ export async function deleteEvent( id )
   if( !event )
     notFound()
 
-  return event.destroy()
+  await event.destroy()
 }

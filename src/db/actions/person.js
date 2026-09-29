@@ -164,7 +164,7 @@ export async function deleteUser( id )
   if( !person )
     notFound()
 
-  return person.destroy()
+  await person.destroy()
 }
 
 // Every Person, regardless of Role or password - for pickers that
@@ -419,7 +419,7 @@ export async function deleteCustomer( id )
   if( !person )
     notFound()
 
-  return person.destroy()
+  await person.destroy()
 }
 
 // --- Sources -------------------------------------------------------------
@@ -473,7 +473,7 @@ export async function removeCustomerSource( id )
   if( !source )
     notFound()
 
-  return source.destroy()
+  await source.destroy()
 }
 
 // --- Loyalty ---------------------------------------------------------------

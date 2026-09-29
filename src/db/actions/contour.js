@@ -134,7 +134,7 @@ export async function deleteContour( id )
   if( !contour )
     throw new Error( 'Contour not found', {cause: 404} )
 
-  return await contour.destroy()
+  await contour.destroy()
 }
 
 export async function reverse( id )

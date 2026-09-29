@@ -99,5 +99,5 @@ export async function deletePermission( id )
   if( !permission )
     notFound()
 
-  return permission.destroy()
+  await permission.destroy()
 }

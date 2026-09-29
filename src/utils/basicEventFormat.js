@@ -4,6 +4,21 @@
 // "schedule" is now derived from its occurrences rather than stored as
 // its own startDate/endDate columns.
 
+// Callers pass either plain BasicEvent JSON (startDatetime as an ISO
+// string, e.g. detail pages reading an already-toJSON()'d parent) or raw
+// Sequelize instances (e.g. readLiveClasses()/readEvents(), which compute
+// this before calling the parent's own toJSON()) - for a Sequelize
+// instance, `startDatetime` is a live Date object, and `String(date)`
+// gives its default toString() ("Sat Nov 07 2009 00:00:00 GMT...") rather
+// than an ISO string, silently dropping the year once sliced. Routing
+// both shapes through `new Date()` first normalizes either input to a
+// real Date before formatting, so this can't happen regardless of which
+// shape a caller hands in.
+function toIsoDate( value )
+{
+  return new Date( value ).toISOString().slice( 0, 10 )
+}
+
 // The earliest start / latest end across a parent's BasicEvent rows, as
 // plain 'YYYY-MM-DD' date-only strings (dropping the time-of-day, which
 // list views don't show) - null/null if there are no occurrences yet.
@@ -12,8 +27,8 @@ export function occurrenceDateRange( basicEvents )
   if( !basicEvents?.length )
     return {startDate: null, endDate: null}
 
-  const starts = basicEvents.map( e => String( e.startDatetime ).slice( 0, 10 ) )
-  const ends = basicEvents.map( e => String( e.endDatetime ).slice( 0, 10 ) )
+  const starts = basicEvents.map( e => toIsoDate( e.startDatetime ) )
+  const ends = basicEvents.map( e => toIsoDate( e.endDatetime ) )
 
   return {
     startDate: starts.reduce( (min, d) => (d < min ? d : min) ),

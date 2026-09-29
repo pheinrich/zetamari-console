@@ -452,11 +452,9 @@ export async function removeBomLine( id )
   if( !line )
     notFound()
 
-  const result = await line.destroy()
+  await line.destroy()
 
   await markProductsCostStale( [line.parentProductId] )
-
-  return result
 }
 
 // --- Images --------------------------------------------------------------
@@ -517,7 +515,7 @@ export async function removeProductImage( id )
   if( !link )
     notFound()
 
-  return await link.destroy()
+  await link.destroy()
 }
 
 export async function reorderProductImage( id, sortOrder )

@@ -143,7 +143,7 @@ export async function deleteBasicEvent( id )
   if( !event )
     notFound()
 
-  return event.destroy()
+  await event.destroy()
 }
 
 export async function addParticipant( basicEventId, personId )

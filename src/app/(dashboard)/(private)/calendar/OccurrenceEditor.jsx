@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { forwardRef, useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 
 import Autocomplete from '@mui/material/Autocomplete'
@@ -21,17 +21,28 @@ import Typography from '@mui/material/Typography'
 
 import { createBasicEvent, updateBasicEvent, deleteBasicEvent } from '@/db/actions/basicEvent'
 import { customerDisplayName } from '../customers/customerFormat'
+import AppReactDatepicker from '@/libs/styles/AppReactDatepicker'
 import tableStyles from '@core/styles/table.module.css'
 
 const COLOR_OPTIONS = ['primary', 'secondary', 'success', 'error', 'warning', 'info']
 
-// A datetime-local input needs 'YYYY-MM-DDTHH:mm' - Sequelize DATE
-// columns round-trip as ISO strings ('...T00:00:00.000Z') once they've
-// been through toJSON(), so this just trims to the part the input wants.
-function toDatetimeLocal( value )
+// Sequelize DATE columns round-trip as ISO strings once they've been
+// through toJSON() - react-datepicker wants a real Date instead.
+function toDate( value )
 {
-  return value ? String( value ).slice( 0, 16 ) : ''
+  return value ? new Date( value ) : null
 }
+
+// Same PickersComponent idiom as EventCalendar.jsx - a plain MUI
+// TextField as react-datepicker's custom input, in place of the bare
+// `type="datetime-local"` native control this replaced (no year visible
+// once the table column narrows it, and a different look/feel than the
+// Calendar page's own start/end pickers).
+const PickersComponent = forwardRef( (props, ref) => (
+  <TextField inputRef={ref} size='small' {...props} label={props.label || ''} />
+) )
+
+PickersComponent.displayName = 'PickersComponent'
 
 // Manages one parent's (Event or LiveClass) BasicEvent occurrences - the
 // schedule itself, now that neither parent stores its own startDate/
@@ -44,8 +55,8 @@ export default function OccurrenceEditor( {eventId, liveClassId, occurrences, pe
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
   const [title, setTitle] = useState( '' )
-  const [startDatetime, setStartDatetime] = useState( '' )
-  const [endDatetime, setEndDatetime] = useState( '' )
+  const [startDatetime, setStartDatetime] = useState( null )
+  const [endDatetime, setEndDatetime] = useState( null )
   const [color, setColor] = useState( 'primary' )
   const [error, setError] = useState( null )
 
@@ -74,8 +85,8 @@ export default function OccurrenceEditor( {eventId, liveClassId, occurrences, pe
       else
       {
         setTitle( '' )
-        setStartDatetime( '' )
-        setEndDatetime( '' )
+        setStartDatetime( null )
+        setEndDatetime( null )
         setColor( 'primary' )
         router.refresh()
       }
@@ -168,21 +179,23 @@ export default function OccurrenceEditor( {eventId, liveClassId, occurrences, pe
                   />
                 </td>
                 <td>
-                  <TextField
-                    type='datetime-local'
-                    size='small'
-                    defaultValue={toDatetimeLocal( occurrence.startDatetime )}
+                  <AppReactDatepicker
+                    showTimeSelect
+                    dateFormat='yyyy-MM-dd hh:mm aa'
+                    selected={toDate( occurrence.startDatetime )}
                     disabled={isPending}
-                    onBlur={e => handleFieldChange( occurrence, 'startDatetime', e.target.value )}
+                    customInput={<PickersComponent />}
+                    onChange={date => date && handleFieldChange( occurrence, 'startDatetime', date )}
                   />
                 </td>
                 <td>
-                  <TextField
-                    type='datetime-local'
-                    size='small'
-                    defaultValue={toDatetimeLocal( occurrence.endDatetime )}
+                  <AppReactDatepicker
+                    showTimeSelect
+                    dateFormat='yyyy-MM-dd hh:mm aa'
+                    selected={toDate( occurrence.endDatetime )}
                     disabled={isPending}
-                    onBlur={e => handleFieldChange( occurrence, 'endDatetime', e.target.value )}
+                    customInput={<PickersComponent />}
+                    onChange={date => date && handleFieldChange( occurrence, 'endDatetime', date )}
                   />
                 </td>
                 <td>
@@ -228,21 +241,26 @@ export default function OccurrenceEditor( {eventId, liveClassId, occurrences, pe
 
       <div className='flex flex-wrap items-end gap-4'>
         <TextField size='small' label='Title' value={title} onChange={e => setTitle( e.target.value )} />
-        <TextField
-          type='datetime-local'
-          size='small'
-          label='Start'
-          slotProps={{ inputLabel: { shrink: true } }}
-          value={startDatetime}
-          onChange={e => setStartDatetime( e.target.value )}
+        <AppReactDatepicker
+          selectsStart
+          showTimeSelect
+          dateFormat='yyyy-MM-dd hh:mm aa'
+          selected={startDatetime}
+          startDate={startDatetime}
+          endDate={endDatetime}
+          customInput={<PickersComponent label='Start' />}
+          onChange={date => setStartDatetime( date )}
         />
-        <TextField
-          type='datetime-local'
-          size='small'
-          label='End'
-          slotProps={{ inputLabel: { shrink: true } }}
-          value={endDatetime}
-          onChange={e => setEndDatetime( e.target.value )}
+        <AppReactDatepicker
+          selectsEnd
+          showTimeSelect
+          dateFormat='yyyy-MM-dd hh:mm aa'
+          selected={endDatetime}
+          startDate={startDatetime}
+          endDate={endDatetime}
+          minDate={startDatetime}
+          customInput={<PickersComponent label='End' />}
+          onChange={date => setEndDatetime( date )}
         />
         <FormControl size='small' className='min-is-[120px]'>
           <InputLabel id='occurrence-color-select'>Color</InputLabel>

@@ -127,6 +127,17 @@ export default function LiveClassesListTable( {liveClassData} )
       columnHelper.accessor( 'startDate', {
         header: 'Start Date',
         cell: ({ row }) => <Typography>{row.original.startDate || '—'}</Typography>,
+
+        // Pinned explicitly rather than left to TanStack's auto-detected
+        // sortingFn - its heuristic samples `flatRows.slice(10)` (a
+        // known upstream bug: skips the first 10 rows instead of taking
+        // them, see node_modules/@tanstack/table-core/src/features/
+        // RowSorting.ts), so which comparator it picks depends on how
+        // many classes exist and what the 11th-onward rows look like,
+        // making sort order look inconsistent as the list grows.
+        // 'YYYY-MM-DD' strings (or null) sort correctly under plain
+        // alphanumeric comparison.
+        sortingFn: 'alphanumeric',
         enableGlobalFilter: false
       } ),
       columnHelper.accessor( 'cost', {

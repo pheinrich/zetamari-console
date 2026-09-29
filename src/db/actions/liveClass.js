@@ -64,6 +64,13 @@ export async function readLiveClass( id, eager )
         {model: LiveClassAttendee, include: [{model: Person, as: 'Customer'}]},
         {model: BasicEvent, include: [{model: Person, as: 'Participants'}]},
       ],
+
+      // Without this, occurrences come back in whatever order the DB
+      // happens to return them (not necessarily chronological), so the
+      // Occurrences editor's row order - and which occurrence renders as
+      // the first row - would be arbitrary. Same order readBasicEvents()
+      // already uses for the standalone /calendar page.
+      order: [[BasicEvent, 'startDatetime', 'ASC']],
     } )
 
     return liveClass?.toJSON()
@@ -106,6 +113,35 @@ export async function readLiveClasses()
     .sort( (a, b) => (b.startDate || '').localeCompare( a.startDate || '' ) )
 }
 
+// The distinct locations already in use across existing classes, one row
+// per locationName (first address seen for that name wins) - there's no
+// separate Location model, locationName/locationAddress are just plain
+// columns on LiveClass, so this is what LiveClassForm's location
+// Autocomplete suggests from to steer people toward reusing "Angie's
+// Studio" rather than retyping a slightly different name/address each
+// time (e.g. a stray comma or abbreviation) that then reads as a
+// different location everywhere locations get grouped or compared.
+export async function readLiveClassLocations()
+{
+  const session = await auth()
+
+  if( !session )
+    unauthorized()
+
+  await sequelize.sync()
+
+  const rows = await LiveClass.findAll( {attributes: ['locationName', 'locationAddress']} )
+  const byName = new Map()
+
+  for( const row of rows )
+    if( row.locationName && !byName.has( row.locationName ) )
+      byName.set( row.locationName, row.locationAddress || null )
+
+  return [...byName.entries()]
+    .map( ([locationName, locationAddress]) => ({locationName, locationAddress}) )
+    .sort( (a, b) => a.locationName.localeCompare( b.locationName ) )
+}
+
 export async function updateLiveClass( data )
 {
   const session = await auth()
@@ -144,7 +180,7 @@ export async function deleteLiveClass( id )
   if( !liveClass )
     notFound()
 
-  return liveClass.destroy()
+  await liveClass.destroy()
 }
 
 // --- Attendees (LiveClassAttendee, deliberately not "Student") -----------
@@ -244,5 +280,5 @@ export async function removeLiveClassAttendee( id )
   if( !attendee )
     notFound()
 
-  return attendee.destroy()
+  await attendee.destroy()
 }

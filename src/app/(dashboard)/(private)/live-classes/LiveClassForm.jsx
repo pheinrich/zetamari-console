@@ -1,7 +1,7 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { z } from 'zod'
 import NextLink from 'next/link'
 
@@ -11,6 +11,7 @@ import CardHeader from '@mui/material/CardHeader'
 import CardContent from '@mui/material/CardContent'
 import Button from '@mui/material/Button'
 import Alert from '@mui/material/Alert'
+import Autocomplete from '@mui/material/Autocomplete'
 import FormControl from '@mui/material/FormControl'
 import InputLabel from '@mui/material/InputLabel'
 import MenuItem from '@mui/material/MenuItem'
@@ -38,10 +39,12 @@ const schema = z.object({
   notes: optionalString,
 })
 
-export default function LiveClassForm( {initialData={}} )
+export default function LiveClassForm( {initialData={}, locationOptions=[]} )
 {
   const router = useRouter()
   const isEdit = Boolean( initialData?.id )
+  const [locationName, setLocationName] = useState( initialData?.locationName || '' )
+  const [locationAddress, setLocationAddress] = useState( initialData?.locationAddress || '' )
 
   const { handleSubmit, loading, errors, success } = useFormSubmit({
     schema,
@@ -104,16 +107,37 @@ export default function LiveClassForm( {initialData={}} )
                   </FormControl>
                 </Grid>
                 <Grid size={{ xs: 12, sm: 6 }}>
-                  <TextField
+                  <Autocomplete
+                    freeSolo
                     fullWidth
-                    label='Location Name'
-                    name='locationName'
-                    placeholder='e.g. Angie&apos;s Studio, Zoom, SAMA 2026'
-                    defaultValue={initialData?.locationName || ''}
+                    options={locationOptions.map( l => l.locationName )}
+                    inputValue={locationName}
+                    onInputChange={(e, value) => setLocationName( value )}
+                    onChange={(e, value) => {
+                      const match = locationOptions.find( l => l.locationName === value )
+
+                      if( match )
+                        setLocationAddress( match.locationAddress || '' )
+                    }}
+                    renderInput={params => (
+                      <TextField
+                        {...params}
+                        label='Location Name'
+                        placeholder='e.g. Angie&apos;s Studio, Zoom, SAMA 2026'
+                        helperText='Existing locations are suggested - pick one to reuse its address, or type a new name.'
+                      />
+                    )}
                   />
+                  <input type='hidden' name='locationName' value={locationName} />
                 </Grid>
                 <Grid size={{ xs: 12, sm: 6 }}>
-                  <TextField fullWidth label='Location Address' name='locationAddress' defaultValue={initialData?.locationAddress || ''} />
+                  <TextField
+                    fullWidth
+                    label='Location Address'
+                    name='locationAddress'
+                    value={locationAddress}
+                    onChange={e => setLocationAddress( e.target.value )}
+                  />
                 </Grid>
                 <Grid size={{ xs: 12, sm: 4 }}>
                   <TextField

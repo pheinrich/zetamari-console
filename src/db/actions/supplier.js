@@ -153,11 +153,9 @@ export async function deleteSupplier( id )
   // handles an array of material ids as readily as one).
   const priceLinks = await SupplierProduct.findAll( {where: {supplierId: id}, attributes: ['productId']} )
 
-  const result = await supplier.destroy()
+  await supplier.destroy()
 
   await markProductsUsingMaterialStale( priceLinks.map( l => l.productId ) )
-
-  return result
 }
 
 // --- Per-supplier product pricing --------------------------------------
@@ -218,9 +216,7 @@ export async function removeSupplierProductPrice( id )
   if( !link )
     notFound()
 
-  const result = await link.destroy()
+  await link.destroy()
 
   await markProductsUsingMaterialStale( link.productId )
-
-  return result
 }

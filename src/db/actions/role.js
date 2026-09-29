@@ -97,7 +97,7 @@ export async function deleteRole( id )
   if( !role )
     notFound()
 
-  return role.destroy()
+  await role.destroy()
 }
 
 // Replaces a Role's full set of granted Permissions in one call - the
