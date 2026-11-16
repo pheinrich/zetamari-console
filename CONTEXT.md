@@ -15,6 +15,18 @@ Hired help who performs production labor alongside an Owner. Paired with Owner i
 A staff-generated, unauthenticated (optionally password-protected) URL that gives a specific customer view-only access to one product's visualization and price, scoped to that customer's price tier (wholesale or retail). The v1 mechanism for customer-facing access.
 _Avoid_: Portal — reserved for a possible future authenticated, multi-order customer experience; not the same thing as a Design Link and not yet built.
 
+## Order intake
+
+**Sales Channel**:
+A marketplace or storefront orders arrive through — IndieMe, Faire, Houzz, and so on. Each notifies the business by email when an order is placed; those emails are the console's intake path (see Inbound Email).
+
+**Inbound Email**:
+A sales-channel notification email received at `/api/inbound/order-email`, stored byte-for-byte whether or not it was an order. Classified as a new order, some other notice from a known channel (payouts, ship reminders, retailer messages — kept but not parsed), or unrecognized. Kept raw so a parser fix can be replayed over past mail; one that couldn't be parsed is marked failed, not dropped.
+
+**Channel Order**:
+An order as a Sales Channel reported it, staged for review before it becomes an Order. Keeps the channel's own order number, buyer, ship-to, totals, and each line's channel SKU, description and price as received — matched to a console Product where the SKU matches exactly, left unmatched otherwise, never silently corrected. Separate from Order because an Order's lines must each resolve to a Product (they spawn Pieces), while channel SKUs drift from the console's and QuickBooks' through data-entry errors and unsynced changes, and some channels (Faire) send only part of the order by email. A person reviews it, then accepts it into an Order or dismisses it.
+_Avoid_: Import — an Order created by hand and one accepted from a Channel Order are the same thing once accepted; "Channel Order" names only the staged, as-reported form.
+
 ## Manufacturing scheduling
 
 **Piece**:
