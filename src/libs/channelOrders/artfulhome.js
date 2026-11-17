@@ -1,3 +1,4 @@
+import { artfulHomeSku } from './artfulhomeSkus.js'
 import { clean, dateOnly } from './text.js'
 
 // "New Artful Home Order PO #2103635-AT7859" (since 2025), or the older
@@ -12,7 +13,12 @@ export const ARTFUL_HOME_NEW_ORDER_SUBJECT = /^(?:New Artful Home Order PO #|Pur
 // variation ("Small"). No price, quantity or customer - Artful Home
 // drop-ships to its customer and keeps those in Artist Center - so the
 // order is staged `linesComplete: false` for someone to fill in from
-// there. The item number is kept as the line's (channel) SKU.
+// there.
+//
+// Item numbers are translated to our SKUs through ARTFUL_HOME_SKUS
+// (artfulhomeSkus.js), so a mapped line can match its Product like any
+// other channel's; the item number is then kept in the description. An
+// unmapped item keeps its item number as the line's SKU, unmatched.
 export function parseArtfulHomeOrder( text, subject )
 {
   const subjectMatch = clean( subject ).match( ARTFUL_HOME_NEW_ORDER_SUBJECT )
@@ -29,16 +35,23 @@ export function parseArtfulHomeOrder( text, subject )
   }
 
   // Each item starts at its "Title:" line.
-  const lines = body.split( /^(?=Title\s*:)/m ).slice( 1 ).map( block => ({
-    sku: value( 'Item', block ),
-    description: [
-      value( 'Title', block )?.replace( /^"(.*)"$/, '$1' ),
-      value( 'Description', block ),
-      value( 'Variation Title', block ),
-    ].filter( Boolean ).join( ', ' ) || null,
-    unitPrice: null,
-    quantity: null,
-  }) )
+  const lines = body.split( /^(?=Title\s*:)/m ).slice( 1 ).map( block => {
+    const item = value( 'Item', block )
+    const variation = value( 'Variation Title', block )
+    const sku = artfulHomeSku( item, variation )
+
+    return {
+      sku: sku ?? item,
+      description: [
+        value( 'Title', block )?.replace( /^"(.*)"$/, '$1' ),
+        value( 'Description', block ),
+        variation,
+        sku && item ? `Artful Home item ${item}` : null,
+      ].filter( Boolean ).join( ', ' ) || null,
+      unitPrice: null,
+      quantity: null,
+    }
+  } )
 
   if( !lines.length )
     throw new Error( 'Artful Home order email has no "Title:" items - template may have changed' )
