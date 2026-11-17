@@ -98,6 +98,7 @@ export function parseFaireOrder( html, subject )
     subtotal,
     shipping: null,
     discount: null,
+    tax: null,
     commission,
     commissionLabel: hasCommission ? tokens[detailsEnd + 1] : null,
     total: money( after( 'Total' ) ),

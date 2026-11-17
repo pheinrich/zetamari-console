@@ -34,8 +34,9 @@ export function money( text )
 
 const MONTHS = {jan: 1, feb: 2, mar: 3, apr: 4, may: 5, jun: 6, jul: 7, aug: 8, sep: 9, oct: 10, nov: 11, dec: 12}
 
-// "11/14/2026" or "Jul 28, 2026" -> "2026-11-14" (DATEONLY), built by
-// hand rather than through Date so no timezone can shift the day.
+// "11/14/2026", "Jul 28, 2026", "September 18, 2026" or "2026-11-13
+// 16:48:36.0" -> "2026-11-14" (DATEONLY), built by hand rather than
+// through Date so no timezone can shift the day.
 export function dateOnly( text )
 {
   const s = clean( text )
@@ -45,6 +46,8 @@ export function dateOnly( text )
 
   if( match )
     [, m, d, y] = match.map( Number )
+  else if( (match = s.match( /^(\d{4})-(\d{2})-(\d{2})\b/ )) )
+    [, y, m, d] = match.map( Number )
   else if( (match = s.match( /^([A-Za-z]{3})[a-z]*\.? (\d{1,2}), (\d{4})$/ )) )
   {
     m = MONTHS[match[1].toLowerCase()]
@@ -58,11 +61,23 @@ export function dateOnly( text )
   return `${y}-${String( m ).padStart( 2, '0' )}-${String( d ).padStart( 2, '0' )}`
 }
 
-// "Springfield, IL 62701" -> {city, state, postalCode}, or null if the
-// line doesn't look like a US city/state/ZIP line.
+// The shop's calendar day (Pacific) for an instant - for emails whose
+// only order date is when they were sent (an evening order in Seattle is
+// already the next day in UTC).
+export function pacificDate( date )
+{
+  if( !date || Number.isNaN( new Date( date ).getTime() ) )
+    return null
+
+  return new Intl.DateTimeFormat( 'en-CA', {timeZone: 'America/Los_Angeles'} ).format( new Date( date ) )
+}
+
+// "Springfield, IL 62701" (or Squarespace's "Springfield, IL, 62701") ->
+// {city, state, postalCode}, or null if the line doesn't look like a US
+// city/state/ZIP line.
 export function cityStateZip( text )
 {
-  const match = clean( text ).match( /^(.+?),\s*([A-Za-z]{2})\s+(\d{5}(?:-\d{4})?)$/ )
+  const match = clean( text ).match( /^(.+?),\s*([A-Za-z]{2}),?\s+(\d{5}(?:-\d{4})?)$/ )
 
   return match ? {city: match[1], state: match[2].toUpperCase(), postalCode: match[3]} : null
 }

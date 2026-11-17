@@ -73,6 +73,7 @@ export function parseIndieMeOrder( html )
     subtotal: money( labelled( 'SubTotal' ) ),
     shipping: money( labelled( 'Shipping' ) ),
     discount: money( labelled( 'Discount' ) ),
+    tax: null,
     commission: null,
     total: money( labelled( 'Total' ) ),
     notes: clean( notesRow.text() ) || null,

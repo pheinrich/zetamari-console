@@ -1,5 +1,8 @@
-import { parseIndieMeOrder } from './indieme.js'
+import { ARTFUL_HOME_NEW_ORDER_SUBJECT, parseArtfulHomeOrder } from './artfulhome.js'
+import { ETSY_NEW_ORDER_SUBJECT, parseEtsyOrder } from './etsy.js'
 import { FAIRE_NEW_ORDER_SUBJECT, parseFaireOrder } from './faire.js'
+import { parseIndieMeOrder } from './indieme.js'
+import { SQUARESPACE_NEW_ORDER_SUBJECT, parseSquarespaceOrder } from './squarespace.js'
 import { clean } from './text.js'
 
 // Which sales channel an inbound email came from, and whether it's a new
@@ -17,13 +20,34 @@ const CHANNELS = [
     channel: 'indieme',
     from: /@indieme\.com$/i,
     newOrder: /^New IndieMe Marketplace Store Order$/,
-    parse: ({html}) => parseIndieMeOrder( html ),
+    parse: ({html}) => parseIndieMeOrder( needs( html, 'HTML' ) ),
   },
   {
     channel: 'faire',
     from: /@(?:[a-z]+\.)?faire\.com$/i,
     newOrder: FAIRE_NEW_ORDER_SUBJECT,
-    parse: ({html, subject}) => parseFaireOrder( html, subject ),
+    parse: ({html, subject}) => parseFaireOrder( needs( html, 'HTML' ), subject ),
+  },
+  {
+    channel: 'etsy',
+    from: /^transaction@etsy\.com$/i,
+    newOrder: ETSY_NEW_ORDER_SUBJECT,
+    parse: ({text, subject, date}) => parseEtsyOrder( needs( text, 'plain-text' ), subject, date ),
+  },
+  {
+    // Only the shop-owner notifications. Other Squarespace shops' receipts
+    // to Angie as a customer come from squarespace.info, and Squarespace's
+    // own marketing from mail.squarespace.com.
+    channel: 'squarespace',
+    from: /^no-reply@squarespace\.com$/i,
+    newOrder: SQUARESPACE_NEW_ORDER_SUBJECT,
+    parse: ({html, subject}) => parseSquarespaceOrder( needs( html, 'HTML' ), subject ),
+  },
+  {
+    channel: 'artfulhome',
+    from: /@artfulhome\.com$/i,
+    newOrder: ARTFUL_HOME_NEW_ORDER_SUBJECT,
+    parse: ({text, subject}) => parseArtfulHomeOrder( needs( text, 'plain-text' ), subject ),
   },
   {
     // No parser yet - Houzz's last order notification was 2022-05. New
@@ -49,8 +73,10 @@ export function classifyOrderEmail( {from, subject} )
 
 // -> {channel, kind, order} where `order` is the channel-neutral shape
 // the parsers return (see parseIndieMeOrder()), present only for
-// 'new-order'. Throws if a new-order email can't be parsed.
-export function parseOrderEmail( {from, subject, html} )
+// 'new-order'. Throws if a new-order email can't be parsed. `html` and
+// `text` are the email's two bodies (each parser reads whichever is
+// cleaner for its channel), `date` its Date header.
+export function parseOrderEmail( {from, subject, html, text, date} )
 {
   const {channel, kind} = classifyOrderEmail( {from, subject} )
 
@@ -62,8 +88,13 @@ export function parseOrderEmail( {from, subject, html} )
   if( !entry.parse )
     throw new Error( `No ${channel} order email parser yet` )
 
-  if( !html )
-    throw new Error( `${channel} order email has no HTML body` )
+  return {channel, kind, order: entry.parse( {html, text, date, subject: clean( subject )} )}
+}
 
-  return {channel, kind, order: entry.parse( {html, subject: clean( subject )} )}
+function needs( body, what )
+{
+  if( !body )
+    throw new Error( `Order email has no ${what} body` )
+
+  return body
 }

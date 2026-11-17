@@ -48,7 +48,7 @@ export async function processInboundEmail( inbound, email = null )
 
   try
   {
-    parsed = parseOrderEmail( {from: email.from?.address, subject: email.subject, html: email.html} )
+    parsed = parseOrderEmail( {from: email.from?.address, subject: email.subject, html: email.html, text: email.text, date: email.date} )
   }
   catch( error )
   {
@@ -105,6 +105,7 @@ async function upsertChannelOrder( order, transaction )
     subtotal: order.subtotal,
     shipping: order.shipping,
     discount: order.discount,
+    tax: order.tax ?? null,
     commission: order.commission,
     commissionLabel: order.commissionLabel ?? null,
     total: order.total,

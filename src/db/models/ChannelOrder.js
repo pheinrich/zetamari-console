@@ -37,6 +37,7 @@ const ChannelOrder = sequelize.define(
     subtotal: { type: DataTypes.DECIMAL( 10, 2 ) },
     shipping: { type: DataTypes.DECIMAL( 10, 2 ) },
     discount: { type: DataTypes.DECIMAL( 10, 2 ) },
+    tax: { type: DataTypes.DECIMAL( 10, 2 ) },
     commission: { type: DataTypes.DECIMAL( 10, 2 ) },
     commissionLabel: { type: DataTypes.STRING },
     total: { type: DataTypes.DECIMAL( 10, 2 ) },
