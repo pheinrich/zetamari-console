@@ -38,7 +38,7 @@ export function parseArtfulHomeOrder( text, subject )
   const lines = body.split( /^(?=Title\s*:)/m ).slice( 1 ).map( block => {
     const item = value( 'Item', block )
     const variation = value( 'Variation Title', block )
-    const sku = artfulHomeSku( item, variation )
+    const sku = artfulHomeSku( item )
 
     return {
       sku: sku ?? item,
