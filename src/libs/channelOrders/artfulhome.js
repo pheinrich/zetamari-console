@@ -1,4 +1,4 @@
-import { artfulHomeSku } from './artfulhomeSkus.js'
+import { artfulHomeItem } from './artfulhomeSkus.js'
 import { clean, dateOnly } from './text.js'
 
 // "New Artful Home Order PO #2103635-AT7859" (since 2025), or the older
@@ -15,10 +15,12 @@ export const ARTFUL_HOME_NEW_ORDER_SUBJECT = /^(?:New Artful Home Order PO #|Pur
 // order is staged `linesComplete: false` for someone to fill in from
 // there.
 //
-// Item numbers are translated to our SKUs through ARTFUL_HOME_SKUS
-// (artfulhomeSkus.js), so a mapped line can match its Product like any
-// other channel's; the item number is then kept in the description. An
-// unmapped item keeps its item number as the line's SKU, unmatched.
+// Item numbers are looked up in ARTFUL_HOME_ITEMS (artfulhomeSkus.js):
+// a mapped line gets our SKU, so it can match its Product like any other
+// channel's, with the item number kept in the description; an unmapped
+// one keeps its item number as the line's SKU, unmatched. The table's
+// wholesale price, when present, fills in the unit price. Quantity stays
+// unknown, so the order is still staged incomplete.
 export function parseArtfulHomeOrder( text, subject )
 {
   const subjectMatch = clean( subject ).match( ARTFUL_HOME_NEW_ORDER_SUBJECT )
@@ -38,7 +40,8 @@ export function parseArtfulHomeOrder( text, subject )
   const lines = body.split( /^(?=Title\s*:)/m ).slice( 1 ).map( block => {
     const item = value( 'Item', block )
     const variation = value( 'Variation Title', block )
-    const sku = artfulHomeSku( item )
+    const known = artfulHomeItem( item )
+    const sku = known?.sku ?? null
 
     return {
       sku: sku ?? item,
@@ -48,7 +51,7 @@ export function parseArtfulHomeOrder( text, subject )
         variation,
         sku && item ? `Artful Home item ${item}` : null,
       ].filter( Boolean ).join( ', ' ) || null,
-      unitPrice: null,
+      unitPrice: known?.wholesale ?? null,
       quantity: null,
     }
   } )
