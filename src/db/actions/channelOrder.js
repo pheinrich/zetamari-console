@@ -10,7 +10,8 @@ import ChannelOrderLine from '@/db/models/ChannelOrderLine'
 import InboundEmail from '@/db/models/InboundEmail'
 import Product from '@/db/models/Product'
 import sequelize from '@/db/sequelize'
-import { processInboundEmail, refreshFaireChannelOrder, undoInboundEmail as undoProcessing } from '@/libs/channelOrders/ingest'
+import { etsyConnection } from '@/libs/channelOrders/etsyApi'
+import { processInboundEmail, refreshChannelOrderFromApi, undoInboundEmail as undoProcessing } from '@/libs/channelOrders/ingest'
 import { auth } from '@/lib/auth'
 
 // Review of order intake - Channel Orders staged from sales-channel
@@ -96,8 +97,8 @@ export async function setChannelOrderStatus( id, status )
   return {success: true}
 }
 
-// Completes a Faire order from Faire's API - see refreshFaireChannelOrder().
-export async function refreshFaireOrder( id )
+// Completes a Faire/Etsy order from its API - see refreshChannelOrderFromApi().
+export async function refreshChannelOrder( id )
 {
   await requireSession()
 
@@ -108,12 +109,20 @@ export async function refreshFaireOrder( id )
 
   try
   {
-    return {success: true, ...await refreshFaireChannelOrder( order )}
+    return {success: true, ...await refreshChannelOrderFromApi( order )}
   }
   catch( error )
   {
     return {error: error.message}
   }
+}
+
+// Whether Etsy's API is set up and connected, for the Channel Orders page.
+export async function readEtsyConnection()
+{
+  await requireSession()
+
+  return etsyConnection()
 }
 
 export async function readInboundEmails()

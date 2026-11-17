@@ -5,6 +5,7 @@ import { useMemo } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 
+import Alert from '@mui/material/Alert'
 import Button from '@mui/material/Button'
 import Card from '@mui/material/Card'
 import CardHeader from '@mui/material/CardHeader'
@@ -49,7 +50,7 @@ const fuzzyFilter = (row, columnId, value, addMeta) => {
 
 const columnHelper = createColumnHelper()
 
-export default function ChannelOrdersListTable( {orderData} )
+export default function ChannelOrdersListTable( {orderData, etsy, etsyOutcome} )
 {
   const router = useRouter()
   const { view, updateView, onSortingChange, onPaginationChange } = useTableViewState( 'channelOrders', DEFAULT_VIEW )
@@ -131,7 +132,17 @@ export default function ChannelOrdersListTable( {orderData} )
 
   return (
     <Card>
-      <CardHeader title='Channel Orders' subheader='Orders received from sales channels, awaiting review' className='pbe-4' />
+      <CardHeader
+        title='Channel Orders'
+        subheader='Orders received from sales channels, awaiting review'
+        action={<EtsyConnection etsy={etsy} />}
+        className='pbe-4'
+      />
+      {etsyOutcome && (
+        <Alert severity={etsyOutcome === 'connected' ? 'success' : 'error'} className='mli-5 mbe-4'>
+          {etsyOutcome === 'connected' ? `Etsy connected${etsy?.shopName ? ` (${etsy.shopName})` : ''}` : `Couldn't connect Etsy: ${etsyOutcome}`}
+        </Alert>
+      )}
       <Divider />
       <div className='flex justify-between flex-col items-start sm:flex-row sm:items-center gap-y-4 p-5'>
         <div className='flex flex-wrap items-center gap-4'>
@@ -240,5 +251,28 @@ export default function ChannelOrdersListTable( {orderData} )
         onRowsPerPageChange={e => table.setPageSize( Number( e.target.value ) )}
       />
     </Card>
+  )
+}
+
+// Etsy's API needs the shop owner's one-time approval (see
+// libs/channelOrders/etsyApi.js); /api/etsy/connect starts it. A plain
+// link, not next/link - it's a server redirect out to Etsy.
+function EtsyConnection( {etsy} )
+{
+  if( !etsy?.configured )
+    return null
+
+  return (
+    <div className='flex items-center gap-2'>
+      <Chip
+        size='small'
+        variant='tonal'
+        color={etsy.connected ? 'success' : 'warning'}
+        label={etsy.connected ? `Etsy: ${etsy.shopName ?? 'connected'}` : 'Etsy: not connected'}
+      />
+      <Button size='small' variant='text' href='/api/etsy/connect'>
+        {etsy.connected ? 'Reconnect' : 'Connect Etsy'}
+      </Button>
+    </div>
   )
 }

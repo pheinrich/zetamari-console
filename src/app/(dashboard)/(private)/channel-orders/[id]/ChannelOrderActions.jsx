@@ -8,7 +8,9 @@ import { toast } from 'react-toastify'
 
 import Button from '@mui/material/Button'
 
-import { refreshFaireOrder, setChannelOrderStatus } from '@/db/actions/channelOrder'
+import { refreshChannelOrder, setChannelOrderStatus } from '@/db/actions/channelOrder'
+
+import { channelLabel } from '../channelOrderFormat'
 
 export default function ChannelOrderActions( {order} )
 {
@@ -30,16 +32,18 @@ export default function ChannelOrderActions( {order} )
     } )
   }
 
-  function fetchFromFaire()
+  const apiChannel = ['faire', 'etsy'].includes( order.channel ) ? channelLabel( order.channel ) : null
+
+  function fetchFromApi()
   {
     startTransition( async () => {
-      const result = await refreshFaireOrder( order.id )
+      const result = await refreshChannelOrder( order.id )
 
       if( result.error )
-        toast.error( `Faire API: ${result.error}` )
+        toast.error( `${apiChannel} API: ${result.error}` )
       else
       {
-        toast.success( `Fetched ${result.lineCount} lines from Faire` )
+        toast.success( `Fetched ${result.lineCount} lines from ${apiChannel}` )
         router.refresh()
       }
     } )
@@ -48,9 +52,9 @@ export default function ChannelOrderActions( {order} )
   if( order.status === 'new' )
     return (
       <div className='flex flex-wrap gap-4'>
-        {order.channel === 'faire' && (
-          <Button variant='outlined' disabled={isPending} onClick={fetchFromFaire} startIcon={<i className='ri-download-cloud-2-line' />}>
-            Fetch from Faire
+        {apiChannel && (
+          <Button variant='outlined' disabled={isPending} onClick={fetchFromApi} startIcon={<i className='ri-download-cloud-2-line' />}>
+            Fetch from {apiChannel}
           </Button>
         )}
         <Button variant='outlined' color='secondary' disabled={isPending} onClick={() => setStatus( 'dismissed' )} startIcon={<i className='ri-archive-line' />}>

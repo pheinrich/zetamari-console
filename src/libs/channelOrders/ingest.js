@@ -9,7 +9,16 @@ import InboundEmail from '@/db/models/InboundEmail'
 import Product from '@/db/models/Product'
 import sequelize from '@/db/sequelize'
 import { parseOrderEmail } from '@/libs/channelOrders'
+import { fetchEtsyReceipt, withEtsyReceipt } from '@/libs/channelOrders/etsyApi'
 import { fetchFaireOrder, withFaireApiOrder } from '@/libs/channelOrders/faireApi'
+
+// Channels whose emails are completed from their own API: Faire's email
+// lists only some lines, Etsy's lines carry no SKUs. `fetch` takes the
+// email's order number; `apply` folds the result into the order.
+const API_COMPLETION = {
+  faire: {label: 'Faire API', fetch: fetchFaireOrder, apply: withFaireApiOrder},
+  etsy: {label: 'Etsy API', fetch: fetchEtsyReceipt, apply: withEtsyReceipt},
+}
 
 // Stores a raw RFC 5322 email (Buffer/string) as an InboundEmail, then
 // processes it. Idempotent on Message-ID: redelivering an email that
@@ -71,20 +80,21 @@ export async function processInboundEmail( inbound, email = null, {force = false
     return {inboundEmailId: inbound.id, status: 'ignored', channel, kind}
   }
 
-  // Faire's email is a partial order; complete it from Faire's API. If
-  // that fails the email's own lines are staged (flagged incomplete) and
-  // the reason kept on the email - still 'parsed', since the email was.
+  // Complete the order from the channel's API where there is one. If
+  // that fails the email's own lines are staged and the reason kept on
+  // the email - still 'parsed', since the email was.
   let apiError = null
+  const completion = API_COMPLETION[channel]
 
-  if( channel === 'faire' )
+  if( completion )
   {
     try
     {
-      order = withFaireApiOrder( order, await fetchFaireOrder( order.externalOrderId ) )
+      order = completion.apply( order, await completion.fetch( order.externalOrderId ) )
     }
     catch( error )
     {
-      apiError = `Faire API: ${error.message}`
+      apiError = `${completion.label}: ${error.message}`
     }
   }
 
@@ -174,19 +184,22 @@ async function replaceLines( channelOrderId, lines, transaction )
   }) ), {transaction} )
 }
 
-// Re-fetches a stored Faire Channel Order from Faire's API, replacing its
-// lines and amounts - for orders staged before the API was used, or when
-// it was unreachable at intake. Only while the order is still 'new'.
-// Clears a previous "Faire API:" error from its emails once it works.
-export async function refreshFaireChannelOrder( channelOrder )
+// Re-fetches a stored Channel Order from its channel's API (Faire or
+// Etsy), replacing its lines and, for Faire, amounts - for orders staged
+// before the API was used, or when it was unreachable at intake. Only
+// while the order is still 'new'. Clears that API's earlier error from
+// the order's emails once it works.
+export async function refreshChannelOrderFromApi( channelOrder )
 {
-  if( channelOrder.channel !== 'faire' )
-    throw new Error( 'Not a Faire order' )
+  const completion = API_COMPLETION[channelOrder.channel]
+
+  if( !completion )
+    throw new Error( `No API to fetch ${channelOrder.channel} orders from` )
 
   if( channelOrder.status !== 'new' )
     throw new Error( `This order is ${channelOrder.status} - restore it to new first` )
 
-  const order = withFaireApiOrder( channelOrder.toJSON(), await fetchFaireOrder( channelOrder.externalOrderId ) )
+  const order = completion.apply( channelOrder.toJSON(), await completion.fetch( channelOrder.externalOrderId ) )
 
   await sequelize.transaction( async transaction => {
     await channelOrder.update( {
@@ -203,7 +216,7 @@ export async function refreshFaireChannelOrder( channelOrder )
 
     await InboundEmail.update(
       {error: null},
-      {where: {channelOrderId: channelOrder.id, error: {[Op.startsWith]: 'Faire API:'}}, transaction}
+      {where: {channelOrderId: channelOrder.id, error: {[Op.startsWith]: `${completion.label}:`}}, transaction}
     )
   } )
 
