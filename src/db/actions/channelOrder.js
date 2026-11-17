@@ -10,7 +10,7 @@ import ChannelOrderLine from '@/db/models/ChannelOrderLine'
 import InboundEmail from '@/db/models/InboundEmail'
 import Product from '@/db/models/Product'
 import sequelize from '@/db/sequelize'
-import { processInboundEmail, undoInboundEmail as undoProcessing } from '@/libs/channelOrders/ingest'
+import { processInboundEmail, refreshFaireChannelOrder, undoInboundEmail as undoProcessing } from '@/libs/channelOrders/ingest'
 import { auth } from '@/lib/auth'
 
 // Review of order intake - Channel Orders staged from sales-channel
@@ -94,6 +94,26 @@ export async function setChannelOrderStatus( id, status )
   await order.update( {status} )
 
   return {success: true}
+}
+
+// Completes a Faire order from Faire's API - see refreshFaireChannelOrder().
+export async function refreshFaireOrder( id )
+{
+  await requireSession()
+
+  const order = await ChannelOrder.findByPk( id )
+
+  if( !order )
+    notFound()
+
+  try
+  {
+    return {success: true, ...await refreshFaireChannelOrder( order )}
+  }
+  catch( error )
+  {
+    return {error: error.message}
+  }
 }
 
 export async function readInboundEmails()

@@ -1,6 +1,7 @@
 import Link from 'next/link'
 
 import Grid from '@mui/material/Grid2'
+import Alert from '@mui/material/Alert'
 import Card from '@mui/material/Card'
 import CardHeader from '@mui/material/CardHeader'
 import CardContent from '@mui/material/CardContent'
@@ -43,6 +44,7 @@ export default async function ChannelOrderPage( {params} )
   const {id} = await params
   const order = await readChannelOrder( id )
   const shipTo = addressLines( order.shipTo )
+  const emailErrors = [...new Set( order.emails.map( e => e.error ).filter( Boolean ) )]
   const lineSum = order.Lines.reduce( (sum, l) => sum + Number( l.unitPrice ?? 0 ) * Number( l.quantity ?? 0 ), 0 )
 
   const amounts = [
@@ -71,6 +73,12 @@ export default async function ChannelOrderPage( {params} )
           </CardContent>
         </Card>
       </Grid>
+
+      {emailErrors.map( error => (
+        <Grid key={error} size={{ xs: 12 }}>
+          <Alert severity='warning'>{error}</Alert>
+        </Grid>
+      ) )}
 
       <Grid size={{ xs: 12, md: 4 }}>
         <Card className='bs-full'>

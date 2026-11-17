@@ -8,7 +8,7 @@ import { toast } from 'react-toastify'
 
 import Button from '@mui/material/Button'
 
-import { setChannelOrderStatus } from '@/db/actions/channelOrder'
+import { refreshFaireOrder, setChannelOrderStatus } from '@/db/actions/channelOrder'
 
 export default function ChannelOrderActions( {order} )
 {
@@ -30,11 +30,33 @@ export default function ChannelOrderActions( {order} )
     } )
   }
 
+  function fetchFromFaire()
+  {
+    startTransition( async () => {
+      const result = await refreshFaireOrder( order.id )
+
+      if( result.error )
+        toast.error( `Faire API: ${result.error}` )
+      else
+      {
+        toast.success( `Fetched ${result.lineCount} lines from Faire` )
+        router.refresh()
+      }
+    } )
+  }
+
   if( order.status === 'new' )
     return (
-      <Button variant='outlined' color='secondary' disabled={isPending} onClick={() => setStatus( 'dismissed' )} startIcon={<i className='ri-archive-line' />}>
-        Dismiss
-      </Button>
+      <div className='flex flex-wrap gap-4'>
+        {order.channel === 'faire' && (
+          <Button variant='outlined' disabled={isPending} onClick={fetchFromFaire} startIcon={<i className='ri-download-cloud-2-line' />}>
+            Fetch from Faire
+          </Button>
+        )}
+        <Button variant='outlined' color='secondary' disabled={isPending} onClick={() => setStatus( 'dismissed' )} startIcon={<i className='ri-archive-line' />}>
+          Dismiss
+        </Button>
+      </div>
     )
 
   if( order.status === 'dismissed' )

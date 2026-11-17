@@ -1,6 +1,7 @@
 import { createHash } from 'crypto'
 
 import PostalMime from 'postal-mime'
+import { Op } from 'sequelize'
 
 import ChannelOrder from '@/db/models/ChannelOrder'
 import ChannelOrderLine from '@/db/models/ChannelOrderLine'
@@ -8,6 +9,7 @@ import InboundEmail from '@/db/models/InboundEmail'
 import Product from '@/db/models/Product'
 import sequelize from '@/db/sequelize'
 import { parseOrderEmail } from '@/libs/channelOrders'
+import { fetchFaireOrder, withFaireApiOrder } from '@/libs/channelOrders/faireApi'
 
 // Stores a raw RFC 5322 email (Buffer/string) as an InboundEmail, then
 // processes it. Idempotent on Message-ID: redelivering an email that
@@ -59,7 +61,8 @@ export async function processInboundEmail( inbound, email = null, {force = false
     return {inboundEmailId: inbound.id, status: 'failed', error: error.message}
   }
 
-  const {channel, kind, order} = parsed
+  const {channel, kind} = parsed
+  let {order} = parsed
 
   if( kind !== 'new-order' )
   {
@@ -68,13 +71,30 @@ export async function processInboundEmail( inbound, email = null, {force = false
     return {inboundEmailId: inbound.id, status: 'ignored', channel, kind}
   }
 
+  // Faire's email is a partial order; complete it from Faire's API. If
+  // that fails the email's own lines are staged (flagged incomplete) and
+  // the reason kept on the email - still 'parsed', since the email was.
+  let apiError = null
+
+  if( channel === 'faire' )
+  {
+    try
+    {
+      order = withFaireApiOrder( order, await fetchFaireOrder( order.externalOrderId ) )
+    }
+    catch( error )
+    {
+      apiError = `Faire API: ${error.message}`
+    }
+  }
+
   try
   {
     const {channelOrder, updated} = await sequelize.transaction( t => upsertChannelOrder( order, t, force ) )
 
-    await inbound.update( {channel, kind, status: 'parsed', error: null, channelOrderId: channelOrder.id} )
+    await inbound.update( {channel, kind, status: 'parsed', error: apiError, channelOrderId: channelOrder.id} )
 
-    return {inboundEmailId: inbound.id, status: 'parsed', channel, kind, channelOrderId: channelOrder.id, updated}
+    return {inboundEmailId: inbound.id, status: 'parsed', channel, kind, channelOrderId: channelOrder.id, updated, ...(apiError && {error: apiError})}
   }
   catch( error )
   {
@@ -131,11 +151,20 @@ async function upsertChannelOrder( order, transaction, force = false )
   else
     channelOrder = await ChannelOrder.create( fields, {transaction} )
 
-  const productIdBySku = await matchSkus( order.lines.map( l => l.sku ), transaction )
+  await replaceLines( channelOrder.id, order.lines, transaction )
 
-  await ChannelOrderLine.destroy( {where: {channelOrderId: channelOrder.id}, transaction} )
-  await ChannelOrderLine.bulkCreate( order.lines.map( (line, position) => ({
-    channelOrderId: channelOrder.id,
+  return {channelOrder, updated: true}
+}
+
+// A Channel Order's lines, replaced wholesale, each matched to a Product
+// by exact SKU.
+async function replaceLines( channelOrderId, lines, transaction )
+{
+  const productIdBySku = await matchSkus( lines.map( l => l.sku ), transaction )
+
+  await ChannelOrderLine.destroy( {where: {channelOrderId}, transaction} )
+  await ChannelOrderLine.bulkCreate( lines.map( (line, position) => ({
+    channelOrderId,
     position,
     sku: line.sku,
     description: line.description?.slice( 0, 1024 ) ?? null,
@@ -143,8 +172,42 @@ async function upsertChannelOrder( order, transaction, force = false )
     quantity: line.quantity,
     productId: line.sku ? productIdBySku.get( line.sku.trim().toLowerCase() ) ?? null : null,
   }) ), {transaction} )
+}
 
-  return {channelOrder, updated: true}
+// Re-fetches a stored Faire Channel Order from Faire's API, replacing its
+// lines and amounts - for orders staged before the API was used, or when
+// it was unreachable at intake. Only while the order is still 'new'.
+// Clears a previous "Faire API:" error from its emails once it works.
+export async function refreshFaireChannelOrder( channelOrder )
+{
+  if( channelOrder.channel !== 'faire' )
+    throw new Error( 'Not a Faire order' )
+
+  if( channelOrder.status !== 'new' )
+    throw new Error( `This order is ${channelOrder.status} - restore it to new first` )
+
+  const order = withFaireApiOrder( channelOrder.toJSON(), await fetchFaireOrder( channelOrder.externalOrderId ) )
+
+  await sequelize.transaction( async transaction => {
+    await channelOrder.update( {
+      linesComplete: order.linesComplete,
+      expectedLineCount: order.expectedLineCount,
+      subtotal: order.subtotal,
+      discount: order.discount,
+      commission: order.commission,
+      commissionLabel: order.commissionLabel,
+      total: order.total,
+    }, {transaction} )
+
+    await replaceLines( channelOrder.id, order.lines, transaction )
+
+    await InboundEmail.update(
+      {error: null},
+      {where: {channelOrderId: channelOrder.id, error: {[Op.startsWith]: 'Faire API:'}}, transaction}
+    )
+  } )
+
+  return {lineCount: order.lines.length}
 }
 
 // Undoes processing of one InboundEmail: back to 'received', unlinked
