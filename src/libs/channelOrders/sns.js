@@ -66,9 +66,24 @@ export async function readSnsEnvelope( envelope )
   if( bucketName !== process.env.INBOUND_EMAIL_S3_BUCKET )
     throw httpError( 403, 'Unexpected S3 bucket' )
 
-  const object = await new S3Client().send( new GetObjectCommand( {Bucket: bucketName, Key: objectKey} ) )
+  const object = await s3Client().send( new GetObjectCommand( {Bucket: bucketName, Key: objectKey} ) )
 
   return {raw: Buffer.from( await object.Body.transformToByteArray() )}
+}
+
+// Credentials come from INBOUND_EMAIL_AWS_* rather than the SDK's usual
+// AWS_ACCESS_KEY_ID/AWS_SECRET_ACCESS_KEY/AWS_REGION: Vercel reserves
+// those names (its functions run on Lambda, which sets them itself), and
+// its AWS_REGION would be the function's region, not the bucket's.
+function s3Client()
+{
+  return new S3Client( {
+    region: process.env.INBOUND_EMAIL_AWS_REGION,
+    credentials: {
+      accessKeyId: process.env.INBOUND_EMAIL_AWS_ACCESS_KEY_ID,
+      secretAccessKey: process.env.INBOUND_EMAIL_AWS_SECRET_ACCESS_KEY,
+    },
+  } )
 }
 
 function httpError( status, message )
