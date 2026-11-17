@@ -96,6 +96,8 @@ export const ARTFUL_HOME_ITEMS = {
   'P07859-P00169': {sku: 'ZMCa2436-CinnamonSage', wholesale: 585.00}, // Cinnamon Sage Arch Mirror (24x36 Cinnamon Sage Arch)
   'P07859-P00174': {sku: 'ZMCa2436-IndigoTide', wholesale: 585.00}, // Indigo Tide Arch Mirror (24x36 Indigo Tide Arch)
   'P07859-P00175': {sku: 'ZMRe2428-SeafoamLace', wholesale: 400.00}, // Seafoam Lace, Medium (24x28 Seafoam Lace)
+  'P07859-P00176': {sku: 'ZMRe1827-GoldenTeal', wholesale: 325.00}, // Golden Teal Rectangle, Small
+  'P07859-P00177': {sku: 'ZMSq30-GoldenTeal', wholesale: 475.00}, // Golden Teal Rectangle, Large
   'P07859-P00178': {sku: 'ZMRe1827-SeafoamLace', wholesale: 325.00}, // Seafoam Lace, Small
   'P07859-P00179': {sku: 'ZMSq30-SeafoamLace', wholesale: 475.00}, // Seafoam Lace, Large
   'P07859-P00180': {sku: 'ZMRe1827-GoldenChocolate', wholesale: 325.00}, // Golden Chocolate, Small
