@@ -17,7 +17,7 @@ import ApiCredential from '@/db/models/ApiCredential'
 const API_URL = 'https://api.etsy.com/v3'
 const AUTHORIZE_URL = 'https://www.etsy.com/oauth/connect'
 const TOKEN_URL = `${API_URL}/public/oauth/token`
-const SCOPES = 'transactions_r shops_r'
+const SCOPES = 'transactions_r shops_r listings_r'
 
 function apiKey()
 {
