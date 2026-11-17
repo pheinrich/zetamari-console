@@ -72,6 +72,16 @@ const verticalMenuData = () => [
         href: '/orders'
       },
       {
+        label: 'channel orders',
+        icon: 'ri-inbox-line',
+        href: '/channel-orders'
+      },
+      {
+        label: 'inbound emails',
+        icon: 'ri-mail-line',
+        href: '/inbound-emails'
+      },
+      {
         label: 'production',
         icon: 'ri-layout-grid-line',
         href: '/production'

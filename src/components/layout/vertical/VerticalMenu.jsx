@@ -79,6 +79,12 @@ const VerticalMenu = ({ scrollMenu }) => {
           <MenuItem href='/orders' icon={<i className='ri-shopping-bag-3-line' />}>
             orders
           </MenuItem>
+          <MenuItem href='/channel-orders' icon={<i className='ri-inbox-line' />}>
+            channel orders
+          </MenuItem>
+          <MenuItem href='/inbound-emails' icon={<i className='ri-mail-line' />}>
+            inbound emails
+          </MenuItem>
         </MenuSection>
         <MenuSection label='scheduling'>
           <MenuItem href='/calendar' icon={<i className='ri-calendar-check-line' />}>

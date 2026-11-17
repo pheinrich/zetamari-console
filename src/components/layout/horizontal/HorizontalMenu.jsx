@@ -95,6 +95,12 @@ const HorizontalMenu = ({}) => {
           <MenuItem href='/orders' icon={<i className='ri-shopping-bag-3-line' />}>
             orders
           </MenuItem>
+          <MenuItem href='/channel-orders' icon={<i className='ri-inbox-line' />}>
+            channel orders
+          </MenuItem>
+          <MenuItem href='/inbound-emails' icon={<i className='ri-mail-line' />}>
+            inbound emails
+          </MenuItem>
         </SubMenu>
 
         <SubMenu label='scheduling' icon={<i className='ri-shopping-bag-3-line' />}>

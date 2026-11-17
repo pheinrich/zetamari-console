@@ -40,7 +40,9 @@ export async function ingestRawEmail( raw )
 // Classifies + parses one stored InboundEmail and upserts its Channel
 // Order. Separate from ingestRawEmail() so stored mail can be replayed
 // (`email` is the already-parsed MIME, re-derived from `raw` if absent).
-export async function processInboundEmail( inbound, email = null )
+// `force` is a person's explicit "reparse": the email's lines replace
+// the order's even if there are fewer of them (see upsertChannelOrder()).
+export async function processInboundEmail( inbound, email = null, {force = false} = {} )
 {
   email ??= await PostalMime.parse( inbound.raw )
 
@@ -68,11 +70,11 @@ export async function processInboundEmail( inbound, email = null )
 
   try
   {
-    const channelOrder = await sequelize.transaction( t => upsertChannelOrder( order, t ) )
+    const {channelOrder, updated} = await sequelize.transaction( t => upsertChannelOrder( order, t, force ) )
 
     await inbound.update( {channel, kind, status: 'parsed', error: null, channelOrderId: channelOrder.id} )
 
-    return {inboundEmailId: inbound.id, status: 'parsed', channel, kind, channelOrderId: channelOrder.id}
+    return {inboundEmailId: inbound.id, status: 'parsed', channel, kind, channelOrderId: channelOrder.id, updated}
   }
   catch( error )
   {
@@ -85,8 +87,9 @@ export async function processInboundEmail( inbound, email = null )
 // One Channel Order per (channel, externalOrderId). A repeat sighting
 // refreshes a still-'new' order, but never lets a less complete source
 // (e.g. Faire's four-line teaser) overwrite lines already filled in
-// more fully; once accepted/dismissed it's left alone entirely.
-async function upsertChannelOrder( order, transaction )
+// more fully - unless `force`d by a person reparsing; once accepted/
+// dismissed it's left alone entirely. -> {channelOrder, updated}.
+async function upsertChannelOrder( order, transaction, force = false )
 {
   const fields = {
     channel: order.channel,
@@ -116,12 +119,12 @@ async function upsertChannelOrder( order, transaction )
   let channelOrder = await ChannelOrder.findOne( {where, transaction, lock: transaction.LOCK.UPDATE} )
 
   if( channelOrder && channelOrder.status !== 'new' )
-    return channelOrder
+    return {channelOrder, updated: false}
 
   const existingLines = channelOrder ? await ChannelOrderLine.count( {where: {channelOrderId: channelOrder.id}, transaction} ) : 0
 
-  if( channelOrder && order.lines.length < existingLines )
-    return channelOrder
+  if( channelOrder && !force && order.lines.length < existingLines )
+    return {channelOrder, updated: false}
 
   if( channelOrder )
     await channelOrder.update( fields, {transaction} )
@@ -141,7 +144,28 @@ async function upsertChannelOrder( order, transaction )
     productId: line.sku ? productIdBySku.get( line.sku.trim().toLowerCase() ) ?? null : null,
   }) ), {transaction} )
 
-  return channelOrder
+  return {channelOrder, updated: true}
+}
+
+// Undoes processing of one InboundEmail: back to 'received', unlinked
+// from its Channel Order. That order (and its lines) is deleted when no
+// other email still feeds it - otherwise it's kept as those emails left
+// it. Refused once the order has been accepted or dismissed, so undo
+// can't quietly unwind a review decision.
+export async function undoInboundEmail( inbound )
+{
+  await sequelize.transaction( async transaction => {
+    const channelOrderId = inbound.channelOrderId
+    const channelOrder = channelOrderId ? await ChannelOrder.findByPk( channelOrderId, {transaction, lock: transaction.LOCK.UPDATE} ) : null
+
+    if( channelOrder && channelOrder.status !== 'new' )
+      throw new Error( `Its channel order is ${channelOrder.status} - restore it to new first` )
+
+    await inbound.update( {status: 'received', channel: null, kind: null, error: null, channelOrderId: null}, {transaction} )
+
+    if( channelOrder && !await InboundEmail.count( {where: {channelOrderId}, transaction} ) )
+      await channelOrder.destroy( {transaction} )
+  } )
 }
 
 // Exact SKU match against Products, ignoring case and surrounding
