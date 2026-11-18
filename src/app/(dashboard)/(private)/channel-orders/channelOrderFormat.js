@@ -45,4 +45,4 @@ export const ORDER_STATUS_COLORS = {new: 'info', accepted: 'success', dismissed:
 
 export const EMAIL_STATUS_COLORS = {received: 'warning', parsed: 'success', ignored: 'secondary', failed: 'error'}
 
-export const EMAIL_KIND_LABELS = {'new-order': 'New order', other: 'Other notice', unrecognized: 'Unrecognized'}
+export const EMAIL_KIND_LABELS = {'new-order': 'New order', other: 'Other notice', unrecognized: 'Unrecognized', forward: 'Forward'}

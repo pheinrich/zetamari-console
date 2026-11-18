@@ -20,7 +20,7 @@ const InboundEmail = sequelize.define(
     receivedAt: { type: DataTypes.DATE, allowNull: false, defaultValue: DataTypes.NOW },
     raw: { type: DataTypes.BLOB( 'medium' ), allowNull: false },
     channel: { type: DataTypes.STRING( 32 ) },
-    kind: { type: DataTypes.ENUM( 'new-order', 'other', 'unrecognized' ) },
+    kind: { type: DataTypes.ENUM( 'new-order', 'other', 'unrecognized', 'forward' ) },
     status: { type: DataTypes.ENUM( 'received', 'parsed', 'ignored', 'failed' ), allowNull: false, defaultValue: 'received' },
     error: { type: DataTypes.TEXT },
     channelOrderId: { type: DataTypes.INTEGER, allowNull: true, references: { model: ChannelOrder, key: 'id' } },

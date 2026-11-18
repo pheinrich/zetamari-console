@@ -11,6 +11,7 @@ import sequelize from '@/db/sequelize'
 import { parseOrderEmail } from '@/libs/channelOrders'
 import { fetchEtsyReceipt, withEtsyReceipt } from '@/libs/channelOrders/etsyApi'
 import { fetchFaireOrder, withFaireApiOrder } from '@/libs/channelOrders/faireApi'
+import { readForward } from '@/libs/channelOrders/forwarded'
 
 // Channels whose emails are completed from their own API: Faire's email
 // lists only some lines, Etsy's lines carry no SKUs. `fetch` takes the
@@ -24,7 +25,8 @@ const API_COMPLETION = {
 // processes it. Idempotent on Message-ID: redelivering an email that
 // already parsed is a no-op, while one that previously failed is
 // re-processed (so a sender's retry after a parser fix just works).
-export async function ingestRawEmail( raw )
+// `force` reprocesses even one that parsed (see processInboundEmail()).
+export async function ingestRawEmail( raw, {force = false} = {} )
 {
   await sequelize.sync()
 
@@ -34,7 +36,7 @@ export async function ingestRawEmail( raw )
 
   let inbound = await InboundEmail.findOne( {where: {messageId}} )
 
-  if( inbound && inbound.status !== 'failed' )
+  if( inbound && inbound.status !== 'failed' && !force )
     return {inboundEmailId: inbound.id, status: inbound.status, duplicate: true, channelOrderId: inbound.channelOrderId}
 
   inbound ??= await InboundEmail.create( {
@@ -45,7 +47,7 @@ export async function ingestRawEmail( raw )
     raw: bytes,
   } )
 
-  return processInboundEmail( inbound, email )
+  return processInboundEmail( inbound, email, {force} )
 }
 
 // Classifies + parses one stored InboundEmail and upserts its Channel
@@ -57,11 +59,27 @@ export async function processInboundEmail( inbound, email = null, {force = false
 {
   email ??= await PostalMime.parse( inbound.raw )
 
+  // Forwarded by hand (see forwarded.js): attached emails are each
+  // ingested as their own InboundEmail; an inline forward is parsed as
+  // the email it quotes.
+  const forward = await readForward( inbound.raw, email )
+
+  if( forward?.error )
+  {
+    await inbound.update( {channel: null, kind: 'forward', status: 'failed', error: forward.error, channelOrderId: null} )
+
+    return {inboundEmailId: inbound.id, status: 'failed', kind: 'forward', error: forward.error}
+  }
+
+  if( forward?.messages )
+    return processForwardedMessages( inbound, forward.messages, force )
+
+  const source = forward?.inline ?? {from: email.from?.address, subject: email.subject, html: email.html, text: email.text, date: email.date}
   let parsed
 
   try
   {
-    parsed = parseOrderEmail( {from: email.from?.address, subject: email.subject, html: email.html, text: email.text, date: email.date} )
+    parsed = parseOrderEmail( source )
   }
   catch( error )
   {
@@ -112,6 +130,38 @@ export async function processInboundEmail( inbound, email = null, {force = false
 
     return {inboundEmailId: inbound.id, status: 'failed', channel, kind, error: error.message}
   }
+}
+
+// A forward carrying emails as attachments: each is ingested as if it had
+// arrived on its own (deduplicated on its own Message-ID, so one already
+// received is left alone unless `force`d). The forward itself records
+// the outcome - 'parsed' when every attachment was stored and processed,
+// 'failed' with the reasons otherwise.
+async function processForwardedMessages( inbound, messages, force )
+{
+  const results = []
+
+  for( const raw of messages )
+  {
+    try
+    {
+      results.push( await ingestRawEmail( raw, {force} ) )
+    }
+    catch( error )
+    {
+      results.push( {status: 'failed', error: error.message} )
+    }
+  }
+
+  const failures = results.filter( r => r.status === 'failed' )
+
+  const error = failures.length
+    ? `${failures.length} of ${results.length} forwarded emails failed: ${failures.map( f => f.error ).join( '; ' )}`
+    : null
+
+  await inbound.update( {channel: null, kind: 'forward', status: failures.length ? 'failed' : 'parsed', error, channelOrderId: null} )
+
+  return {inboundEmailId: inbound.id, status: failures.length ? 'failed' : 'parsed', kind: 'forward', forwarded: results, ...(error && {error})}
 }
 
 // One Channel Order per (channel, externalOrderId). A repeat sighting
