@@ -22,8 +22,9 @@
  *     then any filed under one of the row's `aliases` (the misspelled
  *     SKUs the channels use).
  *
- * Wooden-base geometry is carried over: `geometryFrom` names the old
- * SKU(s) whose WoodenBaseInfo becomes this row's - QuickBooks' MSM...
+ * Wooden-base geometry is carried over: a wooden base keeps its own,
+ * else `geometryFrom` names the old SKU(s) whose WoodenBaseInfo becomes
+ * this row's - QuickBooks' MSM...
  * "substrates" are now wooden base + glass + hardware, and the geometry
  * the console kept on MSM<code> belongs to MW<code>. A shape type's
  * prototype wooden base follows its geometry.
@@ -226,13 +227,17 @@ try
   const geometryBySku = new Map( geometry.filter( g => skuOf.has( g.productId ) ).map( g => [lower( skuOf.get( g.productId ) ), g] ) )
   const moved = []   // [row, toSku, fromProductId]
 
-  for( const p of products.filter( p => p.geometryFrom ) )
+  // A wooden base keeps its own geometry (so the import can be re-run),
+  // else takes the first `geometryFrom` SKU's.
+  for( const p of products.filter( p => p.type === 'wooden base' || p.geometryFrom ) )
   {
-    const from = list( p.geometryFrom ).find( s => geometryBySku.has( lower( s ) ) )
+    const from = [...(p.type === 'wooden base' ? [p.sku] : []), ...list( p.geometryFrom )].find( s => geometryBySku.has( lower( s ) ) )
 
     if( !from )
     {
-      geometryNotFound.push( p.sku )
+      if( p.geometryFrom )
+        geometryNotFound.push( p.sku )
+
       continue
     }
 
