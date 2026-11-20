@@ -1,35 +1,13 @@
-import Link from 'next/link'
 import { notFound } from 'next/navigation'
 
 import Grid from '@mui/material/Grid2'
-import Card from '@mui/material/Card'
-import CardHeader from '@mui/material/CardHeader'
-import CardContent from '@mui/material/CardContent'
-import Chip from '@mui/material/Chip'
-import Divider from '@mui/material/Divider'
-import Typography from '@mui/material/Typography'
 
-import { readProduct, readProducts } from '@/db/actions/product'
-import { readSuppliers } from '@/db/actions/supplier'
-import { readProductCosts } from '@/db/actions/productCost'
-import { readProductAliases } from '@/db/actions/productAlias'
-import CustomAvatar from '@core/components/mui/Avatar'
-import classnames from 'classnames'
+import { readContours } from '@/db/actions/contour'
+import { readProduct } from '@/db/actions/product'
 
-import ProductDetailActions from './ProductDetailActions'
-import BeadInfoView from './BeadInfoView'
-import BirdhouseBaseInfoView from './BirdhouseBaseInfoView'
-import PictureFrameInfoView from './PictureFrameInfoView'
-import MillefioriInfoView from './MillefioriInfoView'
-import MirrorGlassInfoView from './MirrorGlassInfoView'
-import WoodenBaseInfoView from './WoodenBaseInfoView'
-import TileInfoView from './TileInfoView'
-import SupplierProductView from '../SupplierProductView'
-import BomEditor from '../BomEditor'
-import ProductImagesCard from '../ProductImagesCard'
-import ProductAliasesCard from '../ProductAliasesCard'
-import { productTypeMeta } from '../ProductTypeMeta'
-import { formatCurrency } from '../productFormat'
+import ProductHero from './ProductHero'
+import ProductTabs from './ProductTabs'
+import ProductOverview from './ProductOverview'
 
 export default async function ProductPage( {params} )
 {
@@ -39,183 +17,37 @@ export default async function ProductPage( {params} )
   if( !product )
     return notFound()
 
-  const [allProducts, allSuppliers, costs, aliases] = await Promise.all([
-    readProducts(),
-    readSuppliers(),
-    readProductCosts( product.id ),
-    readProductAliases( product.id ),
-  ])
+  // Only the contour-based types' details popups need the contour list.
+  const contourList = ['mirror glass', 'wooden base'].includes( product.type )
+    ? (await readContours()).map( (c) => ({id: c.id, name: c.name}) )
+    : []
 
-  const meta = productTypeMeta( product.type )
+  // Just what the hero pane shows, as a plain object for the client.
   const primaryImage = product.images?.[0]
+  const summary = {
+    id: product.id,
+    name: product.name,
+    sku: product.sku,
+    type: product.type,
+    status: product.status,
+    sellable: product.sellable,
+    description: product.description,
+    primaryImage: primaryImage ? {url: primaryImage.url, altText: primaryImage.altText} : null,
+    usedInCount: new Set( (product.usedInLines ?? []).map( (line) => line.parentProductId ) ).size,
+  }
 
   return (
-    <>
-      <Grid container spacing={6}>
-        <Grid size={{ xs: 12 }}>
-          <Card>
-            <CardContent className='flex flex-wrap items-center justify-between gap-6'>
-              <div className='flex items-center gap-4'>
-                {primaryImage ? (
-                  <img
-                    src={primaryImage.url}
-                    alt={primaryImage.altText || product.name}
-                    width={64}
-                    height={64}
-                    className='rounded bg-actionHover object-cover'
-                  />
-                ) : (
-                  <CustomAvatar skin='light' color={meta.color} size={64} variant='rounded'>
-                    <i className={classnames( meta.icon, 'text-2xl' )} />
-                  </CustomAvatar>
-                )}
-                <div className='flex flex-col gap-2'>
-                  <Typography variant='h4'>{product.name}</Typography>
-                  <div className='flex flex-wrap items-center gap-2'>
-                    <Typography color='text.secondary'>{product.sku}</Typography>
-                    <Chip label={meta.label} size='small' variant='tonal' color={meta.color} />
-                    <Chip
-                      label={product.status === 'hidden' ? 'Hidden' : 'Visible'}
-                      size='small'
-                      variant='tonal'
-                      color={product.status === 'hidden' ? 'default' : 'success'}
-                    />
-                    <Chip
-                      label={product.sellable ? 'Sellable' : 'Material Only'}
-                      size='small'
-                      variant='tonal'
-                      color={product.sellable ? 'primary' : 'secondary'}
-                    />
-                  </div>
-                </div>
-              </div>
-              <ProductDetailActions product={product} />
-            </CardContent>
-          </Card>
-        </Grid>
-
-        <Grid size={{ xs: 12, md: 8 }}>
-          <Grid container spacing={6}>
-            <Grid size={{ xs: 12 }}>
-              <Card>
-                <CardHeader title='Details' />
-                <CardContent>
-                  <Grid container spacing={4}>
-                    <Grid size={{ xs: 6, sm: 3 }}>
-                      <Typography variant='body2' color='text.secondary'>Units</Typography>
-                      <Typography>{product.units || '—'}</Typography>
-                    </Grid>
-                    <Grid size={{ xs: 6, sm: 3 }}>
-                      <Typography variant='body2' color='text.secondary'>Weight</Typography>
-                      <Typography>{product.weight ?? '—'}</Typography>
-                    </Grid>
-                    <Grid size={{ xs: 6, sm: 3 }}>
-                      <Typography variant='body2' color='text.secondary'>Shipping Weight</Typography>
-                      <Typography>{product.shippingWeight ?? '—'}</Typography>
-                    </Grid>
-                    <Grid size={{ xs: 6, sm: 3 }}>
-                      <Typography variant='body2' color='text.secondary'>Wholesale Price</Typography>
-                      <Typography>{formatCurrency( product.priceWholesale )}</Typography>
-                    </Grid>
-                    <Grid size={{ xs: 6, sm: 3 }}>
-                      <Typography variant='body2' color='text.secondary'>Retail Price</Typography>
-                      <Typography>{formatCurrency( product.priceRetail )}</Typography>
-                    </Grid>
-                    {product.description && (
-                      <Grid size={{ xs: 12 }}>
-                        <Divider className='mbe-4' />
-                        <Typography variant='body2' color='text.secondary'>Description</Typography>
-                        <Typography>{product.description}</Typography>
-                      </Grid>
-                    )}
-                  </Grid>
-                </CardContent>
-              </Card>
-            </Grid>
-
-            <Grid size={{ xs: 12 }}>
-              <Card>
-                <CardHeader title='Cost Breakdown' subheader='View/edit per-factor production cost estimates in the Edit view' />
-                <CardContent>
-                  <Typography color='text.secondary'>
-                    Cost breakdown is only available when editing the product. Click the Edit button at the top to review and adjust per-factor costs.
-                  </Typography>
-                </CardContent>
-              </Card>
-            </Grid>
-
-            {(product.beadInfo || product.birdhouseBaseInfo || product.pictureFrameInfo || product.millefioriInfo || product.mirrorGlassInfo || product.woodenBaseInfo || product.tileInfo) && (
-              <Grid size={{ xs: 12 }}>
-                <Card>
-                  <CardHeader title={`${meta.label} Details`} />
-                  <CardContent>
-                    { product.beadInfo && <BeadInfoView beadInfo={product.beadInfo} /> }
-                    { product.birdhouseBaseInfo && <BirdhouseBaseInfoView birdhouseBaseInfo={product.birdhouseBaseInfo} /> }
-                    { product.pictureFrameInfo && <PictureFrameInfoView pictureFrameInfo={product.pictureFrameInfo} /> }
-                    { product.millefioriInfo && <MillefioriInfoView millefioriInfo={product.millefioriInfo} /> }
-                    { product.mirrorGlassInfo && <MirrorGlassInfoView mirrorGlassInfo={product.mirrorGlassInfo} /> }
-                    { product.woodenBaseInfo && <WoodenBaseInfoView productId={product.id} woodenBaseInfo={product.woodenBaseInfo} /> }
-                    { product.tileInfo && <TileInfoView tileInfo={product.tileInfo} /> }
-                  </CardContent>
-                </Card>
-              </Grid>
-            )}
-
-            <Grid size={{ xs: 12 }}>
-              <Card>
-                <CardHeader title='Bill of Materials' />
-                <CardContent>
-                  <BomEditor
-                    productId={product.id}
-                    bomLines={product.bomLines || []}
-                    productOptions={allProducts.map( (p) => ({id: p.id, name: p.name, sku: p.sku, units: p.units}) )}
-                  />
-                </CardContent>
-              </Card>
-            </Grid>
-
-            {product.usedInLines?.length > 0 && (
-              <Grid size={{ xs: 12 }}>
-                <Card>
-                  <CardHeader title='Used As a Material In' />
-                  <CardContent>
-                    <ul className='flex flex-col gap-2 pis-5'>
-                      {product.usedInLines.map( (line) => (
-                        <li key={line.id}>
-                          <Link href={`/products/${line.parent.id}`}>{line.parent.name}</Link> (qty {line.quantity})
-                        </li>
-                      ) )}
-                    </ul>
-                  </CardContent>
-                </Card>
-              </Grid>
-            )}
-          </Grid>
-        </Grid>
-
-        <Grid size={{ xs: 12, md: 4 }}>
-          <Grid container spacing={6}>
-            <Grid size={{ xs: 12 }}>
-              <ProductImagesCard productId={product.id} images={product.images || []} />
-            </Grid>
-            <Grid size={{ xs: 12 }}>
-              <ProductAliasesCard aliases={aliases} />
-            </Grid>
-            <Grid size={{ xs: 12 }}>
-              <Card>
-                <CardHeader title='Supplier Pricing' />
-                <CardContent>
-                  <SupplierProductView
-                    product={product}
-                    suppliers={product.suppliers || []}
-                    supplierOptions={allSuppliers.map( (s) => ({id: s.id, name: s.name}) )}
-                  />
-                </CardContent>
-              </Card>
-            </Grid>
-          </Grid>
-        </Grid>
+    <Grid container spacing={6}>
+      <Grid size={{ xs: 12, md: 5, lg: 4 }}>
+        <ProductHero product={summary} />
       </Grid>
-    </>
+      <Grid size={{ xs: 12, md: 7, lg: 8 }}>
+        <ProductTabs
+          tabContent={{
+            overview: <ProductOverview product={product} usedInCount={summary.usedInCount} contourList={contourList} />,
+          }}
+        />
+      </Grid>
+    </Grid>
   )
 }

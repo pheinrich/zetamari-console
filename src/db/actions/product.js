@@ -24,6 +24,7 @@ import TileInfo from '@/db/models/TileInfo'
 import sequelize from '@/db/sequelize'
 import { auth } from '@/lib/auth'
 import { markProductsCostStale } from '@/db/actions/productCost'
+import { INFO_KEY, infoSchemas } from '@/libs/productInfo'
 
 export async function createProduct( data )
 {
@@ -354,6 +355,100 @@ export async function updateProduct( data )
   }
 }
 
+// Create or replace just a product's type-specific Info row (the Overview
+// tab's "<Type> Details" popup), for whatever type the product currently
+// has. `info` is validated against the same schema the full form uses.
+export async function updateProductInfo( id, info )
+{
+  const session = await auth()
+  if( !session )
+    unauthorized()
+
+  await sequelize.sync()
+
+  const product = await Product.findByPk( id )
+  if( !product )
+    notFound()
+
+  const key = INFO_KEY[product.type]
+  if( !key )
+    return {error: 'This product type has no type-specific details'}
+
+  const parse = infoSchemas[key].safeParse( info )
+  if( !parse.success )
+    return {error: 'Some details are missing or invalid', fieldErrors: parse.error.flatten().fieldErrors}
+
+  try
+  {
+    await sequelize.transaction( async t => {
+      await setProductInfo( {id: product.id, type: product.type, [key]: parse.data}, t )
+    })
+
+    // Info fields feed geometry/weight, and so this product's cost.
+    await markProductsCostStale( [product.id] )
+
+    return {success: true}
+  }
+  catch( error )
+  {
+    if( error instanceof Sequelize.ValidationError )
+      return {error: `Validation failed: ${error.errors.map( (e) => e.message ).join( '; ' )}`}
+
+    if( error instanceof Sequelize.ForeignKeyConstraintError )
+      return {error: 'One of the selected contours no longer exists'}
+
+    return {error: error.message || 'An unexpected error occurred while saving the details'}
+  }
+}
+
+// Update just the summary fields shown in the product page's hero pane
+// (and its Edit popup) - unlike updateProduct, this doesn't need the full
+// form payload. Changing the type drops the old type's Info row, since it
+// no longer describes the product; the new type's details are filled in
+// separately.
+export async function updateProductSummary( {id, name, sku, type, status, sellable, description} )
+{
+  const session = await auth()
+  if( !session )
+    unauthorized()
+
+  await sequelize.sync()
+
+  const product = await Product.findByPk( id )
+  if( !product )
+    notFound()
+
+  const newType = type || null
+  const typeChanged = newType !== product.type
+
+  try
+  {
+    await sequelize.transaction( async t => {
+      await product.update( {name, sku, type: newType, status, sellable, description}, {transaction: t} )
+
+      if( typeChanged )
+        await clearProductInfo( id, t )
+    })
+
+    // The type-specific Info rows feed geometry/weight, so a type change
+    // can change this product's computed cost.
+    if( typeChanged )
+      await markProductsCostStale( [id] )
+
+    return {success: true}
+  }
+  catch( error )
+  {
+    if( error instanceof Sequelize.UniqueConstraintError )
+      return {error: `Another product already uses that ${error.errors?.[0]?.path === 'name' ? 'name' : 'SKU'}`}
+
+    if( error instanceof Sequelize.ValidationError )
+      return {error: `Validation failed: ${error.errors.map( (e) => e.message ).join( '; ' )}`}
+
+    return {error: error.message || 'An unexpected error occurred while updating the product'}
+  }
+}
+
 export async function deleteProduct( id )
 {
   const session = await auth()
@@ -441,6 +536,109 @@ export async function setBomLineSupplier( id, supplierId )
   await markProductsCostStale( [line.parentProductId] )
 
   return line.toJSON()
+}
+
+// Every product id reachable from `productId` by following bill-of-
+// materials lines downward (its materials, their materials, ...). Listing
+// `productId` in the BOM of any of these would create a cycle.
+function bomDescendants( productId, edges )
+{
+  const materialsByParent = {}
+  for( const {parentProductId, materialProductId} of edges )
+    (materialsByParent[parentProductId] ??= []).push( materialProductId )
+
+  const seen = new Set()
+  const stack = [Number( productId )]
+
+  while( stack.length )
+    for( const id of materialsByParent[stack.pop()] ?? [] )
+      if( !seen.has( id ) )
+      {
+        seen.add( id )
+        stack.push( id )
+      }
+
+  return seen
+}
+
+// For the Overview tab's "Used as a material" review popup: every other
+// product, flagged with whether it currently lists `productId` in its
+// bill of materials, and whether it can't (it's already one of this
+// product's own materials, so listing this product would form a cycle).
+export async function readUsedInChoices( productId )
+{
+  const session = await auth()
+  if( !session )
+    unauthorized()
+
+  await sequelize.sync()
+
+  const id = Number( productId )
+  const [products, edges] = await Promise.all([
+    Product.findAll( {attributes: ['id', 'name', 'sku'], order: [['name', 'ASC']], raw: true} ),
+    BillOfMaterial.findAll( {attributes: ['parentProductId', 'materialProductId'], raw: true} ),
+  ])
+
+  const parents = new Set( edges.filter( (e) => e.materialProductId === id ).map( (e) => e.parentProductId ) )
+  const descendants = bomDescendants( id, edges )
+
+  return products
+    .filter( (p) => p.id !== id )
+    .map( (p) => ({
+      id: p.id,
+      name: p.name,
+      sku: p.sku,
+      usesThis: parents.has( p.id ),
+      wouldCycle: descendants.has( p.id ),
+    }) )
+}
+
+// Add `productId` (quantity 1) to the bills of materials of `addParentIds`,
+// and drop every line for it from those of `removeParentIds`.
+export async function updateProductUsedIn( productId, addParentIds, removeParentIds )
+{
+  const session = await auth()
+  if( !session )
+    unauthorized()
+
+  await sequelize.sync()
+
+  const id = Number( productId )
+  const add = addParentIds.map( Number )
+  const remove = removeParentIds.map( Number )
+
+  if( add.includes( id ) )
+    return {error: 'A product cannot list itself as a material.'}
+
+  try
+  {
+    await sequelize.transaction( async t => {
+      const edges = await BillOfMaterial.findAll( {attributes: ['parentProductId', 'materialProductId'], raw: true, transaction: t} )
+      const descendants = bomDescendants( id, edges )
+
+      if( add.some( (parentId) => descendants.has( parentId ) ) )
+        throw new Error( 'One of those products is already a material of this one, so listing this product in its bill of materials would form a cycle.' )
+
+      // Skip parents that already list this product (stale popup data).
+      const existing = new Set( edges.filter( (e) => e.materialProductId === id ).map( (e) => e.parentProductId ) )
+
+      await BillOfMaterial.bulkCreate(
+        add.filter( (parentId) => !existing.has( parentId ) ).map( (parentId) => ({parentProductId: parentId, materialProductId: id, quantity: 1}) ),
+        {transaction: t}
+      )
+
+      if( remove.length )
+        await BillOfMaterial.destroy( {where: {materialProductId: id, parentProductId: remove}, transaction: t} )
+    })
+
+    await markProductsCostStale( [...add, ...remove] )
+
+    return {success: true}
+  }
+  catch( error )
+  {
+    return {error: error.message || 'An unexpected error occurred while updating the bills of materials'}
+  }
 }
 
 export async function removeBomLine( id )

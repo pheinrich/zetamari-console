@@ -24,6 +24,8 @@ import Typography from '@mui/material/Typography'
 import { useFormSubmit } from '@/utils/formSubmitHook'
 import { createProduct, updateProduct } from '@/db/actions/product'
 import { PRODUCT_TYPE_META } from './ProductTypeMeta'
+import { INFO_KEY, infoSchemas, optionalPositiveInt, optionalPositiveNumber } from '@/libs/productInfo'
+import ProductInfoFields from './ProductInfoFields'
 import { formatCurrency } from './productFormat'
 import ProductImagesCard from './ProductImagesCard'
 import ProductCostBreakdown from './[id]/ProductCostBreakdown'
@@ -36,22 +38,6 @@ const noSpinnerSx = {
   '& input[type=number]::-webkit-outer-spin-button': {WebkitAppearance: 'none', margin: 0},
   '& input[type=number]::-webkit-inner-spin-button': {WebkitAppearance: 'none', margin: 0},
 }
-
-const optionalPositiveNumber = z.preprocess(
-  (val) => (val === '' || val == null ? undefined : val),
-  z.coerce.number().optional()
-)
-
-// Unlike optionalPositiveNumber, this is for ids referencing another
-// row (woodenBaseInfo.insideId/rabbetId, from the "None" option in their
-// Selects) - without the '' -> undefined preprocessing, z.coerce.number()
-// turns '' into 0 rather than leaving it absent, which then fails the
-// WoodenBaseInfo.insideId/rabbetId foreign key constraint (there's no
-// Contour with id 0) instead of just leaving the column null.
-const optionalPositiveInt = z.preprocess(
-  (val) => (val === '' || val == null ? undefined : val),
-  z.coerce.number().int().optional()
-)
 
 const optionalType = z.preprocess(
   (val) => (val === '' || val == null ? undefined : val),
@@ -72,84 +58,13 @@ const schema = z.object({
   priceWholesale: optionalPositiveNumber,
   priceRetail: optionalPositiveNumber,
 
-  beadInfo: z.object({
-    category: z.enum( ['glass', 'plastic', 'ceramic', 'shell', 'metal', 'rhinestone', 'cabochon', 'other'] ).optional(),
-    finish: z.enum( ['fire-polished', 'silvered', 'opaque', 'opaque luster', 'transparent', 'aurora borealis', 'plain'] ).optional(),
-    shape: z.enum( ['round', 'faceted round', 'bicone', 'drop', 'rondelle', 'rivoli', 'chaton', 'other'] ).optional(),
-    color: z.string().min( 1 ),
-    length: optionalPositiveNumber,
-    height: optionalPositiveNumber,
-    thickness: optionalPositiveNumber
-  }).optional(),
-
-  pictureFrameInfo: z.object({
-    width: optionalPositiveNumber,
-    height: optionalPositiveNumber,
-    thickness: optionalPositiveNumber,
-    channel: optionalPositiveNumber,
-    border: optionalPositiveNumber,
-    photoWidth: optionalPositiveNumber,
-    photoHeight: optionalPositiveNumber,
-  }).optional(),
-
-  millefioriInfo: z.object({
-    shape: z.enum( ['round', 'square'] ).optional(),
-    color: z.string().min( 1 ),
-    length: optionalPositiveNumber,
-    width: optionalPositiveNumber,
-    height: optionalPositiveNumber,
-  }).optional(),
-
-  mirrorGlassInfo: z.object({
-    shape: z.enum( ['chapel arch', 'circle', 'gothic arch', 'oval', 'rectangle', 'square', 'vesica piscis', 'other'] ).optional(),
-    width: optionalPositiveNumber,
-    height: optionalPositiveNumber,
-    thickness: optionalPositiveNumber,
-    bevel: optionalPositiveNumber,
-    // See MirrorGlassInfo.js - additive alongside `shape`, not yet a
-    // replacement for it, so both are optional here.
-    contourId: optionalPositiveInt,
-  }).optional(),
-
-  woodenBaseInfo: z.object({
-    outsideId: z.coerce.number().int(),
-    insideId: optionalPositiveInt,
-    rabbetId: optionalPositiveInt,
-    width: optionalPositiveNumber,
-    height: optionalPositiveNumber,
-    thickness: optionalPositiveNumber,
-    border: optionalPositiveNumber,
-
-    // How many copies of this exact shape fit on one standard sheet of
-    // plywood - blank (the common case) means "not yet known", so the
-    // Sheet Breakage (Wood) cost factor falls back to a live grid-packing
-    // estimate (see libs/costFactors.js); a real count, learned from
-    // actually nesting/cutting the shape, always wins over the estimate
-    // when entered here. optionalPositiveInt (not optionalPositiveNumber)
-    // for the same reason as insideId/rabbetId above - a blank field
-    // should leave the column null, not coerce to 0.
-    piecesPerSheet: optionalPositiveInt,
-
-    // Same idea, for this shape's glass cutout against the shop's mirror
-    // glass sheet stock instead of plywood - feeds Sheet Breakage (Glass)
-    // (see the 20260804000000-glass-sheet-breakage.js migration). Lives
-    // here (not on a separate Mirror Glass product) since the glass
-    // geometry that formula costs is this wooden base's own cutout.
-    glassPiecesPerSheet: optionalPositiveInt,
-  }).optional(),
-
-  tileInfo: z.object({
-    color: z.string().min( 1 ),
-    width: optionalPositiveNumber,
-    height: optionalPositiveNumber,
-    thickness: optionalPositiveNumber,
-  }).optional(),
-
-  birdhouseBaseInfo: z.object({
-    width: optionalPositiveNumber,
-    height: optionalPositiveNumber,
-    depth: optionalPositiveNumber,
-  }).optional(),
+  beadInfo: infoSchemas.beadInfo.optional(),
+  pictureFrameInfo: infoSchemas.pictureFrameInfo.optional(),
+  millefioriInfo: infoSchemas.millefioriInfo.optional(),
+  mirrorGlassInfo: infoSchemas.mirrorGlassInfo.optional(),
+  woodenBaseInfo: infoSchemas.woodenBaseInfo.optional(),
+  tileInfo: infoSchemas.tileInfo.optional(),
+  birdhouseBaseInfo: infoSchemas.birdhouseBaseInfo.optional(),
 
   // Only ever populated by the Duplicate flow (see duplicateCostRows/
   // dupBomLines below) - a snapshot of another product's cost-breakdown
@@ -448,286 +363,21 @@ export default function ProductForm( {contourList, initialData={}, costs, comput
               </Grid>
             )}
 
-            {type && (
+            {INFO_KEY[type] && (
               <Grid size={{ xs: 12 }}>
                 <Card>
                   <CardHeader title={`${PRODUCT_TYPE_META[type]?.label || 'Type'} Details`} />
                   <CardContent>
                     <Grid container spacing={5}>
-                      {type === 'bead' && (
-                        <>
-                          <Grid size={{ xs: 12, sm: 4 }}>
-                            <FormControl fullWidth>
-                              <InputLabel id='beadInfo-category'>Category</InputLabel>
-                              <Select labelId='beadInfo-category' label='Category' name='beadInfo.category' defaultValue={initialData?.beadInfo?.category || 'plastic'}>
-                                <MenuItem value='glass'>Glass</MenuItem>
-                                <MenuItem value='metal'>Metal</MenuItem>
-                                <MenuItem value='plastic'>Plastic</MenuItem>
-                                <MenuItem value='ceramic'>Ceramic</MenuItem>
-                                <MenuItem value='shell'>Shell</MenuItem>
-                                <MenuItem value='rhinestone'>Rhinestone</MenuItem>
-                                <MenuItem value='other'>Other</MenuItem>
-                              </Select>
-                            </FormControl>
-                          </Grid>
-                          <Grid size={{ xs: 12, sm: 4 }}>
-                            <FormControl fullWidth>
-                              <InputLabel id='beadInfo-finish'>Finish</InputLabel>
-                              <Select labelId='beadInfo-finish' label='Finish' name='beadInfo.finish' defaultValue={initialData?.beadInfo?.finish || 'plain'}>
-                                <MenuItem value='fire-polished'>Fire-Polished</MenuItem>
-                                <MenuItem value='silvered'>Silvered</MenuItem>
-                                <MenuItem value='opaque'>Opaque</MenuItem>
-                                <MenuItem value='opaque luster'>Opaque Luster</MenuItem>
-                                <MenuItem value='transparent'>Transparent</MenuItem>
-                                <MenuItem value='aurora borealis'>Aurora Borealis</MenuItem>
-                                <MenuItem value='plain'>Plain</MenuItem>
-                              </Select>
-                            </FormControl>
-                          </Grid>
-                          <Grid size={{ xs: 12, sm: 4 }}>
-                            <FormControl fullWidth>
-                              <InputLabel id='beadInfo-shape'>Shape</InputLabel>
-                              <Select labelId='beadInfo-shape' label='Shape' name='beadInfo.shape' defaultValue={initialData?.beadInfo?.shape || 'round'}>
-                                <MenuItem value='round'>Round</MenuItem>
-                                <MenuItem value='faceted round'>Faceted Round</MenuItem>
-                                <MenuItem value='rondelle'>Rondelle</MenuItem>
-                                <MenuItem value='drop'>Drop</MenuItem>
-                                <MenuItem value='bicone'>Bicone/Diamond</MenuItem>
-                                <MenuItem value='rivoli'>Rivoli</MenuItem>
-                                <MenuItem value='chaton'>Chaton</MenuItem>
-                                <MenuItem value='other'>Other</MenuItem>
-                              </Select>
-                            </FormControl>
-                          </Grid>
-                          <Grid size={{ xs: 12, sm: 3 }}>
-                            <TextField fullWidth label='Color' name='beadInfo.color' defaultValue={initialData?.beadInfo?.color || ''} required />
-                          </Grid>
-                          <Grid size={{ xs: 12, sm: 3 }}>
-                            <TextField fullWidth label='Length' name='beadInfo.length' defaultValue={initialData?.beadInfo?.length || ''} />
-                          </Grid>
-                          <Grid size={{ xs: 12, sm: 3 }}>
-                            <TextField fullWidth label='Height' name='beadInfo.height' defaultValue={initialData?.beadInfo?.height || ''} />
-                          </Grid>
-                          <Grid size={{ xs: 12, sm: 3 }}>
-                            <TextField fullWidth label='Thickness' name='beadInfo.thickness' defaultValue={initialData?.beadInfo?.thickness || ''} />
-                          </Grid>
-                        </>
-                      )}
-
-                      {type === 'picture frame' && (
-                        <>
-                          <Grid size={{ xs: 12, sm: 3 }}>
-                            <TextField fullWidth label='Width' name='pictureFrameInfo.width' defaultValue={initialData?.pictureFrameInfo?.width || ''} />
-                          </Grid>
-                          <Grid size={{ xs: 12, sm: 3 }}>
-                            <TextField fullWidth label='Height' name='pictureFrameInfo.height' defaultValue={initialData?.pictureFrameInfo?.height || ''} />
-                          </Grid>
-                          <Grid size={{ xs: 12, sm: 3 }}>
-                            <TextField fullWidth label='Thickness' name='pictureFrameInfo.thickness' defaultValue={initialData?.pictureFrameInfo?.thickness || ''} />
-                          </Grid>
-                          <Grid size={{ xs: 12, sm: 3 }}>
-                            <TextField fullWidth label='Channel' name='pictureFrameInfo.channel' defaultValue={initialData?.pictureFrameInfo?.channel} />
-                          </Grid>
-                          <Grid size={{ xs: 12, sm: 3 }}>
-                            <TextField fullWidth label='Border' name='pictureFrameInfo.border' defaultValue={initialData?.pictureFrameInfo?.border || '1'} />
-                          </Grid>
-                          <Grid size={{ xs: 12, sm: 3 }}>
-                            <TextField fullWidth label='Photo Width' name='pictureFrameInfo.photoWidth' defaultValue={initialData?.pictureFrameInfo?.photoWidth || 4} />
-                          </Grid>
-                          <Grid size={{ xs: 12, sm: 3 }}>
-                            <TextField fullWidth label='Photo Height' name='pictureFrameInfo.photoHeight' defaultValue={initialData?.pictureFrameInfo?.photoHeight || 6} />
-                          </Grid>
-                        </>
-                      )}
-
-                      {type === 'millefiori' && (
-                        <>
-                          <Grid size={{ xs: 12, sm: 4 }}>
-                            <FormControl fullWidth>
-                              <InputLabel id='millefioriInfo-shape'>Shape</InputLabel>
-                              <Select labelId='millefioriInfo-shape' label='Shape' name='millefioriInfo.shape' defaultValue={initialData?.millefioriInfo?.shape || 'round'}>
-                                <MenuItem value='round'>Round</MenuItem>
-                                <MenuItem value='square'>Square</MenuItem>
-                              </Select>
-                            </FormControl>
-                          </Grid>
-                          <Grid size={{ xs: 12, sm: 4 }}>
-                            <TextField fullWidth label='Color' name='millefioriInfo.color' defaultValue={initialData?.millefioriInfo?.color || ''} />
-                          </Grid>
-                          <Grid size={{ xs: 12, sm: 4 }}>
-                            <TextField fullWidth label='Length' name='millefioriInfo.length' defaultValue={initialData?.millefioriInfo?.length || ''} />
-                          </Grid>
-                          <Grid size={{ xs: 12, sm: 6 }}>
-                            <TextField fullWidth label='Width' name='millefioriInfo.width' defaultValue={initialData?.millefioriInfo?.width || ''} />
-                          </Grid>
-                          <Grid size={{ xs: 12, sm: 6 }}>
-                            <TextField fullWidth label='Height' name='millefioriInfo.height' defaultValue={initialData?.millefioriInfo?.height || ''} />
-                          </Grid>
-                        </>
-                      )}
-
-                      {type === 'mirror glass' && (
-                        <>
-                          <Grid size={{ xs: 12, sm: 4 }}>
-                            <FormControl fullWidth>
-                              <InputLabel id='mirrorGlassInfo-shape'>Shape</InputLabel>
-                              <Select labelId='mirrorGlassInfo-shape' label='Shape' name='mirrorGlassInfo.shape' defaultValue={initialData?.mirrorGlassInfo?.shape || 'circle'}>
-                                <MenuItem value='chapel arch'>Chapel Arch</MenuItem>
-                                <MenuItem value='circle'>Circle</MenuItem>
-                                <MenuItem value='gothic arch'>Gothic Arch</MenuItem>
-                                <MenuItem value='oval'>Oval</MenuItem>
-                                <MenuItem value='rectangle'>Rectangle</MenuItem>
-                                <MenuItem value='square'>Square</MenuItem>
-                                <MenuItem value='vesica piscis'>Vesica Piscis</MenuItem>
-                                <MenuItem value='other'>Other</MenuItem>
-                              </Select>
-                            </FormControl>
-                          </Grid>
-                          <Grid size={{ xs: 12, sm: 4 }}>
-                            <TextField fullWidth label='Width' name='mirrorGlassInfo.width' defaultValue={initialData?.mirrorGlassInfo?.width || ''} />
-                          </Grid>
-                          <Grid size={{ xs: 12, sm: 4 }}>
-                            <TextField fullWidth label='Height' name='mirrorGlassInfo.height' defaultValue={initialData?.mirrorGlassInfo?.height || ''} />
-                          </Grid>
-                          <Grid size={{ xs: 12, sm: 6 }}>
-                            <TextField fullWidth label='Thickness' name='mirrorGlassInfo.thickness' defaultValue={initialData?.mirrorGlassInfo?.thickness || ''} />
-                          </Grid>
-                          <Grid size={{ xs: 12, sm: 6 }}>
-                            <TextField fullWidth label='Bevel' name='mirrorGlassInfo.bevel' defaultValue={initialData?.mirrorGlassInfo?.bevel || 0} />
-                          </Grid>
-                          <Grid size={{ xs: 12, sm: 6 }}>
-                            <FormControl fullWidth>
-                              <InputLabel id='mirrorGlassInfo-contourId'>Contour (optional)</InputLabel>
-                              <Select
-                                labelId='mirrorGlassInfo-contourId'
-                                label='Contour (optional)'
-                                name='mirrorGlassInfo.contourId'
-                                defaultValue={initialData?.mirrorGlassInfo?.contourId || ''}
-                              >
-                                <MenuItem value=''>None (use Shape above)</MenuItem>
-                                {contourList.map( (contour) => (
-                                  <MenuItem key={`mgc-${contour.id}`} value={contour.id}>{contour.name}</MenuItem>
-                                ) )}
-                              </Select>
-                            </FormControl>
-                          </Grid>
-                        </>
-                      )}
-
-                      {type === 'wooden base' && (
-                        <>
-                          <Grid size={{ xs: 12, sm: 4 }}>
-                            <FormControl fullWidth required>
-                              <InputLabel id='woodenBaseInfo-outsideId'>Outside Contour</InputLabel>
-                              <Select
-                                labelId='woodenBaseInfo-outsideId'
-                                label='Outside Contour'
-                                name='woodenBaseInfo.outsideId'
-                                defaultValue={initialData?.woodenBaseInfo?.outsideId || ''}
-                              >
-                                {contourList.map( (contour) => (
-                                  <MenuItem key={`oc-${contour.id}`} value={contour.id}>{contour.name}</MenuItem>
-                                ) )}
-                              </Select>
-                            </FormControl>
-                          </Grid>
-                          <Grid size={{ xs: 12, sm: 4 }}>
-                            <FormControl fullWidth>
-                              <InputLabel id='woodenBaseInfo-insideId'>Inside Contour</InputLabel>
-                              <Select
-                                labelId='woodenBaseInfo-insideId'
-                                label='Inside Contour'
-                                name='woodenBaseInfo.insideId'
-                                defaultValue={initialData?.woodenBaseInfo?.insideId || ''}
-                              >
-                                <MenuItem value=''>None</MenuItem>
-                                {contourList.map( (contour) => (
-                                  <MenuItem key={`ic-${contour.id}`} value={contour.id}>{contour.name}</MenuItem>
-                                ) )}
-                              </Select>
-                            </FormControl>
-                          </Grid>
-                          <Grid size={{ xs: 12, sm: 4 }}>
-                            <FormControl fullWidth>
-                              <InputLabel id='woodenBaseInfo-rabbetId'>Rabbet Contour</InputLabel>
-                              <Select
-                                labelId='woodenBaseInfo-rabbetId'
-                                label='Rabbet Contour'
-                                name='woodenBaseInfo.rabbetId'
-                                defaultValue={initialData?.woodenBaseInfo?.rabbetId || ''}
-                              >
-                                <MenuItem value=''>None</MenuItem>
-                                {contourList.map( (contour) => (
-                                  <MenuItem key={`rc-${contour.id}`} value={contour.id}>{contour.name}</MenuItem>
-                                ) )}
-                              </Select>
-                            </FormControl>
-                          </Grid>
-                          <Grid size={{ xs: 12, sm: 3 }}>
-                            <TextField fullWidth label='Width' name='woodenBaseInfo.width' defaultValue={initialData?.woodenBaseInfo?.width || ''} />
-                          </Grid>
-                          <Grid size={{ xs: 12, sm: 3 }}>
-                            <TextField fullWidth label='Height' name='woodenBaseInfo.height' defaultValue={initialData?.woodenBaseInfo?.height || ''} />
-                          </Grid>
-                          <Grid size={{ xs: 12, sm: 3 }}>
-                            <TextField fullWidth label='Thickness' name='woodenBaseInfo.thickness' defaultValue={initialData?.woodenBaseInfo?.thickness || '0.455'} />
-                          </Grid>
-                          <Grid size={{ xs: 12, sm: 3 }}>
-                            <TextField fullWidth label='Border' name='woodenBaseInfo.border' defaultValue={initialData?.woodenBaseInfo?.border || '1'} />
-                          </Grid>
-                          <Grid size={{ xs: 12, sm: 3 }}>
-                            <TextField
-                              fullWidth
-                              label='Pieces Per Sheet (Wood)'
-                              name='woodenBaseInfo.piecesPerSheet'
-                              value={piecesPerSheet}
-                              onChange={e => setPiecesPerSheet( e.target.value )}
-                              helperText='Blank = compute automatically'
-                            />
-                          </Grid>
-                          <Grid size={{ xs: 12, sm: 3 }}>
-                            <TextField
-                              fullWidth
-                              label='Pieces Per Sheet (Glass)'
-                              name='woodenBaseInfo.glassPiecesPerSheet'
-                              value={glassPiecesPerSheet}
-                              onChange={e => setGlassPiecesPerSheet( e.target.value )}
-                              helperText='Blank = compute automatically'
-                            />
-                          </Grid>
-                        </>
-                      )}
-
-                      {type === 'birdhouse base' && (
-                        <>
-                          <Grid size={{ xs: 12, sm: 4 }}>
-                            <TextField fullWidth label='Width' name='birdhouseBaseInfo.width' defaultValue={initialData?.birdhouseBaseInfo?.width || ''} />
-                          </Grid>
-                          <Grid size={{ xs: 12, sm: 4 }}>
-                            <TextField fullWidth label='Height' name='birdhouseBaseInfo.height' defaultValue={initialData?.birdhouseBaseInfo?.height || ''} />
-                          </Grid>
-                          <Grid size={{ xs: 12, sm: 4 }}>
-                            <TextField fullWidth label='Depth' name='birdhouseBaseInfo.depth' defaultValue={initialData?.birdhouseBaseInfo?.depth || ''} />
-                          </Grid>
-                        </>
-                      )}
-
-                      {type === 'tile' && (
-                        <>
-                          <Grid size={{ xs: 12, sm: 3 }}>
-                            <TextField fullWidth label='Color' name='tileInfo.color' defaultValue={initialData?.tileInfo?.color || ''} required />
-                          </Grid>
-                          <Grid size={{ xs: 12, sm: 3 }}>
-                            <TextField fullWidth label='Width' name='tileInfo.width' defaultValue={initialData?.tileInfo?.width || ''} />
-                          </Grid>
-                          <Grid size={{ xs: 12, sm: 3 }}>
-                            <TextField fullWidth label='Height' name='tileInfo.height' defaultValue={initialData?.tileInfo?.height || ''} />
-                          </Grid>
-                          <Grid size={{ xs: 12, sm: 3 }}>
-                            <TextField fullWidth label='Thickness' name='tileInfo.thickness' defaultValue={initialData?.tileInfo?.thickness || ''} />
-                          </Grid>
-                        </>
-                      )}
+                      <ProductInfoFields
+                        type={type}
+                        info={initialData?.[INFO_KEY[type]]}
+                        contourList={contourList}
+                        piecesPerSheet={piecesPerSheet}
+                        onPiecesPerSheetChange={setPiecesPerSheet}
+                        glassPiecesPerSheet={glassPiecesPerSheet}
+                        onGlassPiecesPerSheetChange={setGlassPiecesPerSheet}
+                      />
                     </Grid>
                   </CardContent>
                 </Card>
