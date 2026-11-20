@@ -6,12 +6,12 @@ import { Op } from 'sequelize'
 import ChannelOrder from '@/db/models/ChannelOrder'
 import ChannelOrderLine from '@/db/models/ChannelOrderLine'
 import InboundEmail from '@/db/models/InboundEmail'
-import Product from '@/db/models/Product'
 import sequelize from '@/db/sequelize'
 import { parseOrderEmail } from '@/libs/channelOrders'
 import { fetchEtsyReceipt, withEtsyReceipt } from '@/libs/channelOrders/etsyApi'
 import { fetchFaireOrder, withFaireApiOrder } from '@/libs/channelOrders/faireApi'
 import { readForward } from '@/libs/channelOrders/forwarded'
+import { matchSkus } from '@/libs/channelOrders/matching'
 
 // Channels whose emails are completed from their own API: Faire's email
 // lists only some lines, Etsy's lines carry no SKUs. `fetch` takes the
@@ -217,7 +217,7 @@ async function upsertChannelOrder( order, transaction, force = false )
 }
 
 // A Channel Order's lines, replaced wholesale, each matched to a Product
-// by exact SKU.
+// by exact SKU or a Product Alias (see matching.js).
 async function replaceLines( channelOrderId, lines, transaction )
 {
   const productIdBySku = await matchSkus( lines.map( l => l.sku ), transaction )
@@ -292,22 +292,4 @@ export async function undoInboundEmail( inbound )
     if( channelOrder && !await InboundEmail.count( {where: {channelOrderId}, transaction} ) )
       await channelOrder.destroy( {transaction} )
   } )
-}
-
-// Exact SKU match against Products, ignoring case and surrounding
-// whitespace (the column's utf8mb3_unicode_ci collation already compares
-// case-insensitively; the Map key mirrors that). Anything fuzzier -
-// catching typo'd or renamed SKUs - belongs in the review step, where a
-// person confirms it, not here.
-async function matchSkus( skus, transaction )
-{
-  const wanted = [...new Set( skus.filter( Boolean ).map( s => s.trim() ) )]
-
-  if( !wanted.length )
-    return new Map()
-
-  const products = await Product.findAll( {where: {sku: wanted}, attributes: ['id', 'sku'], transaction} )
-
-
-  return new Map( products.map( p => [p.sku.trim().toLowerCase(), p.id] ) )
 }

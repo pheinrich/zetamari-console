@@ -12,6 +12,7 @@ import Typography from '@mui/material/Typography'
 import { readProduct, readProducts } from '@/db/actions/product'
 import { readSuppliers } from '@/db/actions/supplier'
 import { readProductCosts } from '@/db/actions/productCost'
+import { readProductAliases } from '@/db/actions/productAlias'
 import CustomAvatar from '@core/components/mui/Avatar'
 import classnames from 'classnames'
 
@@ -26,6 +27,7 @@ import TileInfoView from './TileInfoView'
 import SupplierProductView from '../SupplierProductView'
 import BomEditor from '../BomEditor'
 import ProductImagesCard from '../ProductImagesCard'
+import ProductAliasesCard from '../ProductAliasesCard'
 import { productTypeMeta } from '../ProductTypeMeta'
 import { formatCurrency } from '../productFormat'
 
@@ -37,10 +39,11 @@ export default async function ProductPage( {params} )
   if( !product )
     return notFound()
 
-  const [allProducts, allSuppliers, costs] = await Promise.all([
+  const [allProducts, allSuppliers, costs, aliases] = await Promise.all([
     readProducts(),
     readSuppliers(),
     readProductCosts( product.id ),
+    readProductAliases( product.id ),
   ])
 
   const meta = productTypeMeta( product.type )
@@ -194,6 +197,9 @@ export default async function ProductPage( {params} )
           <Grid container spacing={6}>
             <Grid size={{ xs: 12 }}>
               <ProductImagesCard productId={product.id} images={product.images || []} />
+            </Grid>
+            <Grid size={{ xs: 12 }}>
+              <ProductAliasesCard aliases={aliases} />
             </Grid>
             <Grid size={{ xs: 12 }}>
               <Card>

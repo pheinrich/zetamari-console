@@ -8,12 +8,13 @@ import CardContent from '@mui/material/CardContent'
 import Chip from '@mui/material/Chip'
 import Typography from '@mui/material/Typography'
 
-import { readChannelOrder } from '@/db/actions/channelOrder'
+import { readChannelOrder, readProductOptions } from '@/db/actions/channelOrder'
 import tableStyles from '@core/styles/table.module.css'
 import InboundEmailActions from '../../inbound-emails/InboundEmailActions'
 import {
   EMAIL_KIND_LABELS, EMAIL_STATUS_COLORS, ORDER_STATUS_COLORS, buyerLabel, channelLabel, dateTime, money,
 } from '../channelOrderFormat'
+import LineProductPicker from '../LineProductPicker'
 import ChannelOrderActions from './ChannelOrderActions'
 
 function Field( {label, children} )
@@ -38,11 +39,12 @@ function addressLines( a )
 
 // One Channel Order as its channel reported it - see CONTEXT.md's
 // Channel Order entry. Lines keep the channel's SKU/description/price;
-// "Product" is the console Product the SKU matched exactly, if any.
+// "Product" is the console Product the line matched (by SKU or Product
+// Alias, or by hand), with a picker to match it while the order is new.
 export default async function ChannelOrderPage( {params} )
 {
   const {id} = await params
-  const order = await readChannelOrder( id )
+  const [order, products] = await Promise.all( [readChannelOrder( id ), readProductOptions()] )
   const shipTo = addressLines( order.shipTo )
   const emailErrors = [...new Set( order.emails.map( e => e.error ).filter( Boolean ) )]
   const lineSum = order.Lines.reduce( (sum, l) => sum + Number( l.unitPrice ?? 0 ) * Number( l.quantity ?? 0 ), 0 )
@@ -142,11 +144,7 @@ export default async function ChannelOrderPage( {params} )
                   <tr key={line.id}>
                     <td>{line.sku || '—'}</td>
                     <td>{line.description || '—'}</td>
-                    <td>
-                      {line.Product
-                        ? <Link href={`/products/${line.Product.id}`}>{line.Product.name}</Link>
-                        : <Chip size='small' variant='tonal' color='warning' label='unmatched' />}
-                    </td>
+                    <td><LineProductPicker line={line} products={products} editable={order.status === 'new'} /></td>
                     <td>{line.quantity ?? '—'}</td>
                     <td>{money( line.unitPrice )}</td>
                     <td>{line.unitPrice !== null && line.quantity !== null ? money( Number( line.unitPrice ) * line.quantity ) : '—'}</td>

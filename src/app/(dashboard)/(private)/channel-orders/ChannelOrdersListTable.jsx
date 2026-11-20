@@ -52,6 +52,9 @@ const columnHelper = createColumnHelper()
 
 export default function ChannelOrdersListTable( {orderData, etsy, etsyOutcome} )
 {
+  // Lines still to match on orders under review - see /channel-orders/unmatched
+  const unmatchedCount = orderData.filter( o => o.status === 'new' ).reduce( (n, o) => n + o.lineCount - o.matchedCount, 0 )
+
   const router = useRouter()
   const { view, updateView, onSortingChange, onPaginationChange } = useTableViewState( 'channelOrders', DEFAULT_VIEW )
 
@@ -135,7 +138,16 @@ export default function ChannelOrdersListTable( {orderData, etsy, etsyOutcome} )
       <CardHeader
         title='Channel Orders'
         subheader='Orders received from sales channels, awaiting review'
-        action={<EtsyConnection etsy={etsy} />}
+        action={(
+          <div className='flex flex-wrap items-center gap-4'>
+            {unmatchedCount > 0 && (
+              <Button component={Link} href='/channel-orders/unmatched' variant='tonal' color='warning' startIcon={<i className='ri-links-line' />}>
+                {unmatchedCount} unmatched line{unmatchedCount === 1 ? '' : 's'}
+              </Button>
+            )}
+            <EtsyConnection etsy={etsy} />
+          </div>
+        )}
         className='pbe-4'
       />
       {etsyOutcome && (

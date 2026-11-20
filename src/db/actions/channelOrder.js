@@ -11,6 +11,7 @@ import InboundEmail from '@/db/models/InboundEmail'
 import Product from '@/db/models/Product'
 import sequelize from '@/db/sequelize'
 import { etsyConnection } from '@/libs/channelOrders/etsyApi'
+import { matchOpenLinesWithSku, rememberAlias } from '@/libs/channelOrders/matching'
 import { processInboundEmail, refreshChannelOrderFromApi, undoInboundEmail as undoProcessing } from '@/libs/channelOrders/ingest'
 import { auth } from '@/lib/auth'
 
@@ -72,6 +73,67 @@ export async function readChannelOrder( id )
   const emails = await InboundEmail.findAll( {where: {channelOrderId: id}, attributes: EMAIL_LIST_ATTRIBUTES, order: [['receivedAt', 'ASC']]} )
 
   return {...order.toJSON(), emails: emails.map( e => e.toJSON() )}
+}
+
+// Every Product, in just enough detail to pick one as a line's match
+// (~1,600 rows; the picker ranks and filters them in the browser).
+export async function readProductOptions()
+{
+  await requireSession()
+
+  const products = await Product.findAll( {attributes: ['id', 'sku', 'name', 'status'], order: [['sku', 'ASC']]} )
+
+  return products.map( p => p.toJSON() )
+}
+
+// Lines still to be matched on orders under review, each with its order,
+// for the unmatched-lines queue.
+export async function readUnmatchedLines()
+{
+  await requireSession()
+
+  const lines = await ChannelOrderLine.findAll( {
+    where: {productId: null},
+    include: [{model: ChannelOrder, where: {status: 'new'}, attributes: ['id', 'channel', 'externalOrderId', 'orderedOn', 'buyerCompany', 'buyerName']}],
+    order: [['sku', 'ASC'], ['id', 'ASC']],
+  } )
+
+  return lines.map( l => l.toJSON() )
+}
+
+// Matches one Channel Order Line to a Product (or unmatches it, with
+// productId null), on an order still under review. With `remember`, the
+// line's SKU also becomes a Product Alias - so later orders with that SKU
+// match on arrival - and every other open line with the same SKU is
+// matched now. Returns how many other lines that matched.
+export async function matchChannelOrderLine( lineId, productId, {remember = false} = {} )
+{
+  await requireSession()
+
+  const line = await ChannelOrderLine.findByPk( lineId, {include: [{model: ChannelOrder, attributes: ['status', 'channel']}]} )
+
+  if( !line )
+    notFound()
+
+  if( line.ChannelOrder.status !== 'new' )
+    return {error: `This order is ${line.ChannelOrder.status} - restore it to new first`}
+
+  if( productId && !await Product.count( {where: {id: productId}} ) )
+    return {error: 'That product no longer exists'}
+
+  return sequelize.transaction( async transaction => {
+    await line.update( {productId: productId ?? null}, {transaction} )
+
+    let alsoMatched = 0, remembered = false
+
+    if( remember && productId && line.sku )
+    {
+      remembered = await rememberAlias( line.sku, productId, line.ChannelOrder.channel, transaction )
+      alsoMatched = await matchOpenLinesWithSku( line.sku, productId, transaction )
+    }
+
+    return {success: true, remembered, alsoMatched}
+  } )
 }
 
 // Dismissing parks an order that won't become an Order (a class
