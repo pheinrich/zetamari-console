@@ -3,13 +3,16 @@
 import { notFound, unauthorized } from 'next/navigation'
 
 import PostalMime from 'postal-mime'
-import { Sequelize } from 'sequelize'
+import { Op, Sequelize } from 'sequelize'
 
 import ChannelOrder from '@/db/models/ChannelOrder'
 import ChannelOrderLine from '@/db/models/ChannelOrderLine'
 import InboundEmail from '@/db/models/InboundEmail'
+import Person from '@/db/models/Person'
 import Product from '@/db/models/Product'
 import sequelize from '@/db/sequelize'
+import { markOrdersScheduleStale } from '@/db/actions/scheduling'
+import { acceptChannelOrder as accept, previewAccept, unacceptChannelOrder as unaccept } from '@/libs/channelOrders/accept'
 import { etsyConnection } from '@/libs/channelOrders/etsyApi'
 import { matchOpenLinesWithSku, rememberAlias } from '@/libs/channelOrders/matching'
 import { processInboundEmail, refreshChannelOrderFromApi, undoInboundEmail as undoProcessing } from '@/libs/channelOrders/ingest'
@@ -134,6 +137,79 @@ export async function matchChannelOrderLine( lineId, productId, {remember = fals
 
     return {success: true, remembered, alsoMatched}
   } )
+}
+
+// --- Accepting into an Order (see libs/channelOrders/accept.js) ---
+
+// What the Accept dialog needs: blockers, lines, customer candidates.
+export async function readAcceptPreview( id )
+{
+  await requireSession()
+
+  const order = await ChannelOrder.findByPk( id )
+
+  if( !order )
+    notFound()
+
+  return previewAccept( order )
+}
+
+// People matching typed text by name, company or email - for choosing a
+// customer other than the suggested ones.
+export async function searchCustomers( text )
+{
+  await requireSession()
+
+  const words = (text ?? '').trim().split( /\s+/ ).filter( w => w.length > 1 ).slice( 0, 4 )
+
+  if( !words.length )
+    return []
+
+  const people = await Person.findAll( {
+    where: {[Op.and]: words.map( w => ({[Op.or]: ['firstName', 'lastName', 'company', 'email'].map( c => ({[c]: {[Op.like]: `%${w}%`}}) )}) )},
+    attributes: ['id', 'firstName', 'lastName', 'company', 'email'],
+    limit: 20,
+  } )
+
+  return people.map( p => ({
+    id: p.id,
+    label: [[p.firstName, p.lastName].filter( Boolean ).join( ' ' ), p.company].filter( Boolean ).join( ' — ' ) || p.email || `Person #${p.id}`,
+    email: p.email,
+  }) )
+}
+
+export async function acceptChannelOrder( id, choices )
+{
+  await requireSession()
+
+  try
+  {
+    const orderId = await accept( id, choices )
+
+    await markOrdersScheduleStale( [orderId] )
+
+    return {success: true, orderId}
+  }
+  catch( error )
+  {
+    return {error: error.message}
+  }
+}
+
+export async function unacceptChannelOrder( id )
+{
+  await requireSession()
+
+  try
+  {
+    await unaccept( id )
+
+    return {success: true}
+  }
+  catch( error )
+  {
+    return {error: error.message}
+  }
 }
 
 // Dismissing parks an order that won't become an Order (a class

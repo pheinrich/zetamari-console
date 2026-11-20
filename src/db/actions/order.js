@@ -7,6 +7,7 @@ import GroutingDay from '@/db/models/GroutingDay'
 import Order from '@/db/models/Order'
 import OrderProduct from '@/db/models/OrderProduct'
 import Piece from '@/db/models/Piece'
+import ChannelOrder from '@/db/models/ChannelOrder'
 import Product from '@/db/models/Product'
 import sequelize from '@/db/sequelize'
 import { auth } from '@/lib/auth'
@@ -119,7 +120,8 @@ export async function updateOrder( data )
 
 // Pieces has no onDelete: CASCADE on its orderId FK (unlike
 // OrderProducts, which does), so those have to be removed by hand
-// before the Order itself can be destroyed.
+// before the Order itself can be destroyed. A Channel Order it was
+// accepted from returns to 'new'.
 export async function deleteOrder( id )
 {
   const session = await auth()
@@ -133,6 +135,9 @@ export async function deleteOrder( id )
 
   await sequelize.transaction( async t => {
     await Piece.destroy( {where: {orderId: id}, transaction: t} )
+
+    // A Channel Order accepted into this one goes back to review
+    await ChannelOrder.update( {status: 'new', orderId: null}, {where: {orderId: id}, transaction: t} )
     await order.destroy( {transaction: t} )
   } )
 
@@ -162,7 +167,11 @@ export async function readOrder( id )
 
   await sequelize.sync()
 
-  const order = await Order.findByPk( id, {include: [{model: Person, as: 'Customer'}, GroutingDay]} )
+  const order = await Order.findByPk( id, {include: [
+    {model: Person, as: 'Customer'},
+    GroutingDay,
+    {model: ChannelOrder, attributes: ['id', 'channel', 'externalOrderId']},   // if accepted from one
+  ]} )
   if( !order )
     notFound()
 

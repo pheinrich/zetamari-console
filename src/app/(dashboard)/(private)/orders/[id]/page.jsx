@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import { notFound } from 'next/navigation'
 
 import Grid from '@mui/material/Grid2'
@@ -9,6 +10,7 @@ import Typography from '@mui/material/Typography'
 
 import { readOrder } from '@/db/actions/order'
 import { customerDisplayName } from '../../customers/customerFormat'
+import { channelLabel } from '../../channel-orders/channelOrderFormat'
 import OrderDetailActions from './OrderDetailActions'
 import tableStyles from '@core/styles/table.module.css'
 
@@ -43,6 +45,11 @@ export default async function OrderPage( {params} )
             <div className='flex flex-col gap-1'>
               <Typography variant='h4'>Order #{order.id}</Typography>
               <Typography color='text.secondary'>{customerDisplayName( order.Customer )}</Typography>
+              {order.ChannelOrder && (
+                <Link href={`/channel-orders/${order.ChannelOrder.id}`}>
+                  From {channelLabel( order.ChannelOrder.channel )} #{order.ChannelOrder.externalOrderId}
+                </Link>
+              )}
             </div>
             <div className='flex items-center gap-4'>
               {order.isAtRisk && <Chip color='error' label='At Risk' />}

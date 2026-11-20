@@ -1,21 +1,24 @@
 'use client'
 
-import { useTransition } from 'react'
+import { useState, useTransition } from 'react'
 
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 
 import { toast } from 'react-toastify'
 
 import Button from '@mui/material/Button'
 
-import { refreshChannelOrder, setChannelOrderStatus } from '@/db/actions/channelOrder'
+import { refreshChannelOrder, setChannelOrderStatus, unacceptChannelOrder } from '@/db/actions/channelOrder'
 
 import { channelLabel } from '../channelOrderFormat'
+import AcceptDialog from './AcceptDialog'
 
 export default function ChannelOrderActions( {order} )
 {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
+  const [accepting, setAccepting] = useState( false )
 
   function setStatus( status )
   {
@@ -49,9 +52,29 @@ export default function ChannelOrderActions( {order} )
     } )
   }
 
+  // Back to review: deletes the Order, while none of its Pieces is started
+  function unaccept()
+  {
+    startTransition( async () => {
+      const result = await unacceptChannelOrder( order.id )
+
+      if( result.error )
+        toast.error( result.error )
+      else
+      {
+        toast.success( `Order #${order.orderId} deleted - back to review` )
+        router.refresh()
+      }
+    } )
+  }
+
   if( order.status === 'new' )
     return (
       <div className='flex flex-wrap gap-4'>
+        <Button variant='contained' disabled={isPending} onClick={() => setAccepting( true )} startIcon={<i className='ri-checkbox-circle-line' />}>
+          Accept
+        </Button>
+        <AcceptDialog order={order} open={accepting} onClose={() => setAccepting( false )} />
         {apiChannel && (
           <Button variant='outlined' disabled={isPending} onClick={fetchFromApi} startIcon={<i className='ri-download-cloud-2-line' />}>
             Fetch from {apiChannel}
@@ -68,6 +91,20 @@ export default function ChannelOrderActions( {order} )
       <Button variant='outlined' disabled={isPending} onClick={() => setStatus( 'new' )} startIcon={<i className='ri-inbox-unarchive-line' />}>
         Restore
       </Button>
+    )
+
+  if( order.status === 'accepted' )
+    return (
+      <div className='flex flex-wrap gap-4'>
+        {order.orderId && (
+          <Button component={Link} href={`/orders/${order.orderId}`} variant='outlined' startIcon={<i className='ri-file-list-3-line' />}>
+            Order #{order.orderId}
+          </Button>
+        )}
+        <Button variant='outlined' color='secondary' disabled={isPending} onClick={unaccept} startIcon={<i className='ri-arrow-go-back-line' />}>
+          Unaccept
+        </Button>
+      </div>
     )
 
   return null
