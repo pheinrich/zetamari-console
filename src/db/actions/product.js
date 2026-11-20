@@ -210,9 +210,11 @@ export async function readProducts()
       order: [['sortOrder', 'ASC']],
     })
 
+    // Plain object, not the Sequelize instance: this result goes to a
+    // Client Component, which only accepts plain values.
     for( const link of links )
       if( !(link.productId in primaryImageByProductId) )
-        primaryImageByProductId[link.productId] = link.image
+        primaryImageByProductId[link.productId] = link.image?.toJSON() ?? null
   }
 
   return products.map( product => {
