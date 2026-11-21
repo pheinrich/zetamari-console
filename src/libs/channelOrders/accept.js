@@ -31,6 +31,11 @@ const CHANNELS = {
   // Drop-ship: Artful Home buys at wholesale and is the customer; its
   // purchaser (only ever a name and town) stays on the Channel Order.
   artfulhome: {sourceType: 'retail', sourceName: 'Artful Home', role: 'Wholesale Customer', channelIsCustomer: 'Artful Home'},
+
+  // Drop-ship too: the gallery is the customer, its purchaser (name and
+  // address) is the Channel Order's ship-to.
+  givingtree: {sourceType: 'retail', sourceName: 'The Giving Tree Gallery', role: 'Wholesale Customer', channelIsCustomer: 'The Giving Tree Gallery'},
+  plumbottom: {sourceType: 'retail', sourceName: 'Plum Bottom Gallery', role: 'Wholesale Customer', channelIsCustomer: 'Plum Bottom Gallery'},   // finds 'Plum Bottom Pottery and Gallery'
 }
 
 // Production items become Pieces: finished goods (no type) and kits.

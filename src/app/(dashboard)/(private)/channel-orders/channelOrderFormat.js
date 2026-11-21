@@ -4,8 +4,10 @@ const CHANNEL_LABELS = {
   artfulhome: 'Artful Home',
   etsy: 'Etsy',
   faire: 'Faire',
+  givingtree: 'Giving Tree Gallery',
   houzz: 'Houzz',
   indieme: 'IndieMe',
+  plumbottom: 'Plum Bottom Gallery',
   squarespace: 'Squarespace',
 }
 

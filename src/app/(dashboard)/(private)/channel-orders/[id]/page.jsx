@@ -90,7 +90,10 @@ export default async function ChannelOrderPage( {params} )
             <Field label='Requested ship'>{order.requestedShipDate}</Field>
             <Field label='Payment'>{order.paymentType}</Field>
             <Field label='Received'>{dateTime( order.createdAt )}</Field>
-            {order.notes && <Field label='Notes'>{order.notes}</Field>}
+            {/* Plum Bottom's notes are the gallery's whole hand-written message - keep its line breaks. */}
+            {order.notes && (
+              <Typography className='whitespace-pre-line'><strong>Notes:</strong> {order.notes}</Typography>
+            )}
           </CardContent>
         </Card>
       </Grid>

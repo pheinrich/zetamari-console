@@ -1,7 +1,9 @@
 import { ARTFUL_HOME_NEW_ORDER_SUBJECT, parseArtfulHomeOrder } from './artfulhome.js'
 import { ETSY_NEW_ORDER_SUBJECT, parseEtsyOrder } from './etsy.js'
 import { FAIRE_NEW_ORDER_SUBJECT, parseFaireOrder } from './faire.js'
+import { GIVING_TREE_NEW_ORDER_SUBJECT, parseGivingTreeOrder } from './givingtree.js'
 import { parseIndieMeOrder } from './indieme.js'
+import { PLUM_BOTTOM_NEW_ORDER_SUBJECT, parsePlumBottomOrder } from './plumbottom.js'
 import { SQUARESPACE_NEW_ORDER_SUBJECT, parseSquarespaceOrder } from './squarespace.js'
 import { clean } from './text.js'
 
@@ -56,6 +58,23 @@ const CHANNELS = [
     domains: ['artfulhome.com'],
     newOrder: ARTFUL_HOME_NEW_ORDER_SUBJECT,
     parse: ({text, subject}) => parseArtfulHomeOrder( needs( text, 'plain-text' ), subject ),
+  },
+  {
+    // Hand-written in Gmail by the gallery's staff, so only the
+    // "Drop Ship order for … PO…" subjects are orders - replies and other
+    // correspondence from the same address are 'other'.
+    channel: 'givingtree',
+    domains: ['thegivingtreegallery.com', 'givingtreegallery.com'],
+    newOrder: GIVING_TREE_NEW_ORDER_SUBJECT,
+    parse: ({text, subject, date}) => parseGivingTreeOrder( needs( text, 'plain-text' ), subject, date ),
+  },
+  {
+    // Hand-written notes with no fixed form - parsed best-effort and
+    // always staged as incomplete (see plumbottom.js).
+    channel: 'plumbottom',
+    domains: ['plumbottomgallery.com'],
+    newOrder: PLUM_BOTTOM_NEW_ORDER_SUBJECT,
+    parse: ({text, subject, date}) => parsePlumBottomOrder( needs( text, 'plain-text' ), subject, date ),
   },
   {
     // No parser yet - Houzz's last order notification was 2022-05. New
