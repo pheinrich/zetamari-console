@@ -18,20 +18,26 @@ import Tooltip from '@mui/material/Tooltip'
 
 import { matchChannelOrderLine } from '@/db/actions/channelOrder'
 import { suggestProducts } from '@/libs/channelOrders/suggest'
+import NewProductDialog from './NewProductDialog'
+
+// Always offered last, whatever's typed: nothing in the catalog fits.
+const CREATE = {id: 'create', create: true, sku: '', name: 'Create a new product…'}
 
 // Empty box: just the suggestions. Typing: every Product whose SKU or
 // name contains each typed word, in any order ("lace 10"), first 50.
+// Either way, "Create a new product…" comes last.
 function filterOptions( options, state )
 {
   const typed = state.inputValue.trim().toLowerCase().split( /\s+/ ).filter( Boolean )
 
   if( !typed.length )
-    return options.filter( o => o.suggested )
+    return [...options.filter( o => o.suggested ), CREATE]
 
-  return options.filter( o => !o.suggested && typed.every( w => `${o.sku} ${o.name}`.toLowerCase().includes( w ) ) ).slice( 0, 50 )
+  return [...options.filter( o => !o.suggested && typed.every( w => `${o.sku} ${o.name}`.toLowerCase().includes( w ) ) ).slice( 0, 50 ), CREATE]
 }
 
-const label = p => `${p.sku} - ${p.name}`
+const label = p => p.create ? p.name : `${p.sku} - ${p.name}`
+const group = o => o.create ? 'Not listed' : o.suggested ? 'Suggested' : 'All products'
 
 // The Product cell of a Channel Order Line: its match (a link), or
 // "unmatched" - and, while the order is under review, a picker to match
@@ -39,7 +45,8 @@ const label = p => `${p.sku} - ${p.name}`
 // suggest.js); typing searches every Product by SKU and name. When the
 // line's SKU isn't the chosen Product's own, "remember" (on by default)
 // keeps the SKU as a Product Alias, matching it on future orders and on
-// every other open line now.
+// every other open line now. "Create a new product…" makes one from the
+// line (NewProductDialog) and matches it.
 export default function LineProductPicker( {line, products, editable} )
 {
   const router = useRouter()
@@ -47,6 +54,9 @@ export default function LineProductPicker( {line, products, editable} )
   const [editing, setEditing] = useState( false )
   const [choice, setChoice] = useState( null )
   const [remember, setRemember] = useState( true )
+  const [typed, setTyped] = useState( '' )
+  const [creating, setCreating] = useState( false )
+  const [listOpen, setListOpen] = useState( false )
 
   // Suggestions first (grouped), then everything else - recomputed only while open
   const options = useMemo( () => {
@@ -62,21 +72,32 @@ export default function LineProductPicker( {line, products, editable} )
 
   function save( productId )
   {
-    startTransition( async () => {
-      const result = await matchChannelOrderLine( line.id, productId, {remember: Boolean( productId && skuDiffers && remember )} )
+    startTransition( () => match( productId, Boolean( productId && skuDiffers && remember ) ) )
+  }
 
-      if( result.error )
-        return toast.error( result.error )
+  // The new Product takes the line's SKU unless it was changed - then the
+  // line's SKU is remembered as an alias for it, as when picking one.
+  async function created( productId, sku )
+  {
+    setCreating( false )
+    await match( productId, Boolean( line.sku && sku.toLowerCase() !== line.sku.trim().toLowerCase() ) )
+  }
 
-      if( result.alsoMatched )
-        toast.success( `Matched - and ${result.alsoMatched} other line${result.alsoMatched === 1 ? '' : 's'} with SKU ${line.sku}` )
-      else
-        toast.success( productId ? 'Matched' : 'Unmatched' )
+  async function match( productId, rememberAlias )
+  {
+    const result = await matchChannelOrderLine( line.id, productId, {remember: rememberAlias} )
 
-      setEditing( false )
-      setChoice( null )
-      router.refresh()
-    } )
+    if( result.error )
+      return toast.error( result.error )
+
+    if( result.alsoMatched )
+      toast.success( `Matched - and ${result.alsoMatched} other line${result.alsoMatched === 1 ? '' : 's'} with SKU ${line.sku}` )
+    else
+      toast.success( productId ? 'Matched' : 'Unmatched' )
+
+    setEditing( false )
+    setChoice( null )
+    router.refresh()
   }
 
   if( !editing )
@@ -101,14 +122,21 @@ export default function LineProductPicker( {line, products, editable} )
         size='small'
         options={options}
         value={choice}
-        onChange={(e, value) => setChoice( value )}
+        open={listOpen && !creating}
+        onOpen={() => setListOpen( true )}
+        onClose={() => setListOpen( false )}
+        onChange={(e, value) => value?.create ? setCreating( true ) : setChoice( value )}
+        onInputChange={(e, value, reason) => reason === 'input' && setTyped( value )}
         filterOptions={filterOptions}
-        groupBy={o => o.suggested ? 'Suggested' : 'All products'}
+        groupBy={group}
         getOptionLabel={label}
-        getOptionKey={o => `${o.suggested ? 's' : 'a'}${o.id}`}
+        getOptionKey={o => o.create ? 'create' : `${o.suggested ? 's' : 'a'}${o.id}`}
         isOptionEqualToValue={(o, v) => o.id === v.id}
-        noOptionsText='No suggestions - type a SKU or name'
-        renderOption={({key, ...props}, o) => (
+        renderOption={({key, ...props}, o) => o.create ? (
+          <li key={key} {...props}>
+            <span className='flex items-center gap-2 text-primary'><i className='ri-add-line' />{o.name}</span>
+          </li>
+        ) : (
           <li key={key} {...props}>
             <div className='flex flex-col'>
               <span>{o.name}{o.status === 'hidden' && <Chip size='small' variant='tonal' label='hidden' className='mis-2' />}</span>
@@ -130,6 +158,13 @@ export default function LineProductPicker( {line, products, editable} )
         {line.Product && <Button size='small' color='warning' disabled={isPending} onClick={() => save( null )}>Unmatch</Button>}
         <Button size='small' color='secondary' disabled={isPending} onClick={() => { setEditing( false ); setChoice( null ) }}>Cancel</Button>
       </div>
+      <NewProductDialog
+        line={line}
+        initialName={typed.trim().length > 2 ? typed.trim() : null}
+        open={creating}
+        onClose={() => setCreating( false )}
+        onCreated={created}
+      />
     </div>
   )
 }
