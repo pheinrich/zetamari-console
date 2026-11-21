@@ -1,5 +1,5 @@
 // Next Imports
-import { Inter } from 'next/font/google'
+import localFont from 'next/font/local'
 
 // Theme Options Imports
 import overrides from './overrides'
@@ -9,7 +9,18 @@ import shadows from './shadows'
 import customShadows from './customShadows'
 import typography from './typography'
 
-const inter = Inter({ subsets: ['latin'], weight: ['300', '400', '500', '600', '700', '800', '900'] })
+// Inter's variable font (latin subset), self-hosted rather than loaded
+// with next/font/google: that fetches Google's stylesheet at build time,
+// and Google sometimes answers with fonts.gstatic.com/l/font?kit=... URLs
+// that Turbopack can't resolve, failing the Vercel build. Same file
+// Google serves for weights 300-900; SIL Open Font License.
+const inter = localFont({
+  src: '../../assets/fonts/inter-latin-variable.woff2',
+  weight: '300 900',
+  style: 'normal',
+  display: 'swap',
+  fallback: ['system-ui', 'arial'],
+})
 
 const theme = (settings, mode, direction) => {
   return {
