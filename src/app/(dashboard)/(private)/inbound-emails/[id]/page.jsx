@@ -45,7 +45,7 @@ export default async function InboundEmailPage( {params} )
             </div>
             <div className='flex flex-col items-end gap-4'>
               <Chip variant='tonal' color={EMAIL_STATUS_COLORS[email.status]} label={email.status} />
-              <InboundEmailActions email={email} />
+              <InboundEmailActions email={email} deletable afterDeleteHref='/inbound-emails' />
             </div>
           </CardContent>
         </Card>

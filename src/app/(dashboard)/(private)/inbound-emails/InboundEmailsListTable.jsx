@@ -163,7 +163,7 @@ export default function InboundEmailsListTable( {emailData} )
       columnHelper.display( {
         id: 'actions',
         header: 'Actions',
-        cell: ({ row }) => <InboundEmailActions email={row.original} compact />
+        cell: ({ row }) => <InboundEmailActions email={row.original} compact deletable />
       } ),
     ],
     []

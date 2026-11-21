@@ -10,42 +10,50 @@ import { clean } from './text.js'
 // reminders, retailer messages, newsletters). Keyed on the original
 // sender and subject, which a Gmail filter's auto-forward preserves.
 //
+// The channel comes from the sender's domain alone (any subdomain of
+// it): mail only reaches the intake address from the channels, so every
+// email from one of these domains is that channel's. Whether it's a new
+// order is the subject, plus - where a channel sends lookalike subjects
+// from other addresses - the exact sender (`orderFrom`).
+//
 // `kind` is one of:
 //   'new-order'    - parse it into a Channel Order
 //   'other'        - a known channel's non-order mail; stored, not parsed
-//   'unrecognized' - not from any known channel (e.g. Gmail's forwarding
-//                    confirmation, which needs a human to click through)
+//   'unrecognized' - not from any known channel's domain
 const CHANNELS = [
   {
     channel: 'indieme',
-    from: /@indieme\.com$/i,
+    domains: ['indieme.com'],
     newOrder: /^New IndieMe Marketplace Store Order$/,
     parse: ({html}) => parseIndieMeOrder( needs( html, 'HTML' ) ),
   },
   {
     channel: 'faire',
-    from: /@(?:[a-z]+\.)?faire\.com$/i,
+    domains: ['faire.com'],
     newOrder: FAIRE_NEW_ORDER_SUBJECT,
     parse: ({html, subject}) => parseFaireOrder( needs( html, 'HTML' ), subject ),
   },
   {
     channel: 'etsy',
-    from: /^transaction@etsy\.com$/i,
+    domains: ['etsy.com'],
+    orderFrom: /^transaction@etsy\.com$/i,
     newOrder: ETSY_NEW_ORDER_SUBJECT,
     parse: ({text, subject, date}) => parseEtsyOrder( needs( text, 'plain-text' ), subject, date ),
   },
   {
-    // Only the shop-owner notifications. Other Squarespace shops' receipts
-    // to Angie as a customer come from squarespace.info, and Squarespace's
-    // own marketing from mail.squarespace.com.
+    // Only no-reply@squarespace.com's shop-owner notifications are
+    // orders. Other Squarespace shops' receipts to Angie as a customer
+    // come from squarespace.info, and Squarespace's own marketing from
+    // mail.squarespace.com - both still Squarespace's, as 'other'.
     channel: 'squarespace',
-    from: /^no-reply@squarespace\.com$/i,
+    domains: ['squarespace.com', 'squarespace.info'],
+    orderFrom: /^no-reply@squarespace\.com$/i,
     newOrder: SQUARESPACE_NEW_ORDER_SUBJECT,
     parse: ({html, subject}) => parseSquarespaceOrder( needs( html, 'HTML' ), subject ),
   },
   {
     channel: 'artfulhome',
-    from: /@artfulhome\.com$/i,
+    domains: ['artfulhome.com'],
     newOrder: ARTFUL_HOME_NEW_ORDER_SUBJECT,
     parse: ({text, subject}) => parseArtfulHomeOrder( needs( text, 'plain-text' ), subject ),
   },
@@ -54,21 +62,33 @@ const CHANNELS = [
     // ones are still classified so they land as failed (visible, and
     // reprocessable once a parser exists) rather than silently ignored.
     channel: 'houzz',
-    from: /@houzz\.com$/i,
+    domains: ['houzz.com'],
     newOrder: /^New Houzz Order #[\d-]+$/,
     parse: null,
   },
 ]
 
+// "orders@mail.faire.com" -> "faire.com": the domain's last two labels,
+// which is the registered domain for every channel above.
+function senderDomain( address )
+{
+  const host = address.split( '@' ).pop().toLowerCase()
+
+  return host.split( '.' ).slice( -2 ).join( '.' )
+}
+
 export function classifyOrderEmail( {from, subject} )
 {
   const sender = clean( from )
-  const entry = CHANNELS.find( c => c.from.test( sender ) )
+  const domain = sender.includes( '@' ) ? senderDomain( sender ) : null
+  const entry = domain && CHANNELS.find( c => c.domains.includes( domain ) )
 
   if( !entry )
     return {channel: null, kind: 'unrecognized'}
 
-  return {channel: entry.channel, kind: entry.newOrder.test( clean( subject ) ) ? 'new-order' : 'other'}
+  const isOrder = (!entry.orderFrom || entry.orderFrom.test( sender )) && entry.newOrder.test( clean( subject ) )
+
+  return {channel: entry.channel, kind: isOrder ? 'new-order' : 'other'}
 }
 
 // -> {channel, kind, order} where `order` is the channel-neutral shape

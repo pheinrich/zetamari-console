@@ -42,8 +42,11 @@ function Action( {compact, size, label, icon, color, disabled, onClick} )
 // reparse always, since it's how a fixed parser is applied to old mail.
 // `afterUndoHref` is where to go after an undo, when the current page may
 // no longer exist (a channel order deleted along with its only email).
-// `compact` shows icon buttons, plus Delete, for the inbound emails list.
-export default function InboundEmailActions( {email, size = 'medium', afterUndoHref, compact = false} )
+// `compact` shows icon buttons, for the inbound emails list. Delete is
+// offered on the inbound email pages (`deletable`), not where the email is
+// shown as part of a channel order; `afterDeleteHref` is where to go after
+// deleting, when the current page is the email's own.
+export default function InboundEmailActions( {email, size = 'medium', afterUndoHref, compact = false, deletable = false, afterDeleteHref} )
 {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
@@ -98,7 +101,7 @@ export default function InboundEmailActions( {email, size = 'medium', afterUndoH
       {
         toast.success( 'Email deleted' )
         setConfirmDelete( false )
-        router.refresh()
+        afterDeleteHref ? router.push( afterDeleteHref ) : router.refresh()
       }
     } )
   }
@@ -117,9 +120,9 @@ export default function InboundEmailActions( {email, size = 'medium', afterUndoH
         disabled={isPending}
         onClick={handleReparse}
       />
-      {compact && (
+      {deletable && (
         <>
-          <Action compact size={size} label='Delete' icon='ri-delete-bin-7-line' color='error' disabled={isPending} onClick={() => setConfirmDelete( true )} />
+          <Action compact={compact} size={size} label='Delete' icon='ri-delete-bin-7-line' color='error' disabled={isPending} onClick={() => setConfirmDelete( true )} />
           <Dialog fullWidth maxWidth='xs' open={confirmDelete} onClose={() => !isPending && setConfirmDelete( false )} closeAfterTransition={false}>
             <DialogContent className='flex items-center flex-col text-center sm:pbs-16 sm:pbe-6 sm:pli-16'>
               <i className='ri-error-warning-line text-[88px] mbe-6 text-warning' />
