@@ -15,13 +15,22 @@ import Dialog from '@mui/material/Dialog'
 import DialogActions from '@mui/material/DialogActions'
 import DialogContent from '@mui/material/DialogContent'
 import DialogTitle from '@mui/material/DialogTitle'
+import InputAdornment from '@mui/material/InputAdornment'
+import MenuItem from '@mui/material/MenuItem'
+import Select from '@mui/material/Select'
 import TextField from '@mui/material/TextField'
+import ToggleButton from '@mui/material/ToggleButton'
+import ToggleButtonGroup from '@mui/material/ToggleButtonGroup'
 import Typography from '@mui/material/Typography'
+
+import { addDays, format, parseISO } from 'date-fns'
 
 import { acceptChannelOrder, readAcceptPreview, searchCustomers } from '@/db/actions/channelOrder'
 import tableStyles from '@core/styles/table.module.css'
 import DateField from '@/components/DateField'
 import { unitInputProps } from '@/utils/units'
+
+const PRESET_DAYS = [30, 60, 90]
 
 const REASONS = {'buyer ID': 'same buyer ID', email: 'same email', channel: 'the channel', company: 'same company', name: 'same name'}
 
@@ -37,6 +46,9 @@ export default function AcceptDialog( {order, open, onClose} )
   const [preview, setPreview] = useState( null )
   const [customer, setCustomer] = useState( null )
   const [promisedDate, setPromisedDate] = useState( '' )
+  const [leadTime, setLeadTime] = useState( null )   // 30 | 60 | 90 | 'custom' | null
+  const [customAmount, setCustomAmount] = useState( '' )
+  const [customUnit, setCustomUnit] = useState( 'weeks' )
   const [quantities, setQuantities] = useState( {} )
   const [search, setSearch] = useState( '' )
   const [found, setFound] = useState( [] )
@@ -55,6 +67,8 @@ export default function AcceptDialog( {order, open, onClose} )
     readAcceptPreview( order.id ).then( p => {
       setPreview( p )
       setPromisedDate( p.promisedDate ?? '' )
+      setLeadTime( null )
+      setCustomAmount( '' )
       setQuantities( {} )
       setCustomer( p.candidates.find( c => c.id === p.customerId ) ?? null )
     } )
@@ -78,6 +92,36 @@ export default function AcceptDialog( {order, open, onClose} )
 
     return [newOption, ...preview.candidates, ...found.filter( f => !ids.has( f.id ) )]
   }, [preview, found, newOption] )
+
+  // A lead time sets the promised date to the order date plus that many
+  // days; picking a date by hand afterwards clears the selection.
+  function chooseLeadTime( value )
+  {
+    setLeadTime( value )
+
+    if( value === 'custom' )
+      applyCustom( customAmount, customUnit )
+    else
+      setPromisedDate( addLeadDays( value ) )
+  }
+
+  function applyCustom( amount, unit )
+  {
+    setCustomAmount( amount )
+    setCustomUnit( unit )
+
+    const n = Number( amount )
+
+    if( amount !== '' && Number.isInteger( n ) && n > 0 )
+      setPromisedDate( addLeadDays( unit === 'weeks' ? n * 7 : n ) )
+  }
+
+  function addLeadDays( days )
+  {
+    const base = order.orderedOn ? parseISO( order.orderedOn ) : new Date()
+
+    return format( addDays( base, days ), 'yyyy-MM-dd' )
+  }
 
   const missingQuantity = preview?.lines.some( l => l.quantity === null && !(Number( quantities[l.id] ) > 0) )
   const blocking = preview?.blocking.filter( b => !/needs a quantity/.test( b ) ) ?? []
@@ -132,15 +176,63 @@ export default function AcceptDialog( {order, open, onClose} )
               </Typography>
             </div>
 
-            <DateField
-              label='Promised date'
-              clearable
-              value={promisedDate}
-              onChange={setPromisedDate}
-              helperText={`${order.requestedShipDate ? `The channel asked for: ${order.requestedShipDate}. ` : ''}Leave blank to compute it later.`}
-              slotProps={{inputLabel: {shrink: true}}}
-              boxProps={{sx: {maxInlineSize: 320}}}
-            />
+            <div className='flex flex-col gap-3'>
+              <Typography>
+                <strong>Order date:</strong> {order.orderedOn ? format( parseISO( order.orderedOn ), 'EEE, MMM d, yyyy' ) : 'not given (lead times count from today)'}
+              </Typography>
+
+              <div className='flex flex-wrap items-center gap-3'>
+                <ToggleButtonGroup
+                  size='small'
+                  exclusive
+                  value={leadTime}
+                  onChange={(e, value) => value !== null && chooseLeadTime( value )}
+                >
+                  {PRESET_DAYS.map( d => <ToggleButton key={d} value={d}>+{d} days</ToggleButton> )}
+                  <ToggleButton value='custom'>Custom</ToggleButton>
+                </ToggleButtonGroup>
+
+                {leadTime === 'custom' && (
+                  <TextField
+                    size='small'
+                    type='number'
+                    label='Lead time'
+                    value={customAmount}
+                    onChange={e => applyCustom( e.target.value, customUnit )}
+                    sx={{inlineSize: 200}}
+                    InputProps={{
+                      endAdornment: (
+                        <InputAdornment position='end'>
+                          <Select
+                            variant='standard'
+                            disableUnderline
+                            sx={{'& .MuiSelect-select': {paddingInlineEnd: '40px !important'}}}
+                            value={customUnit}
+                            onChange={e => applyCustom( customAmount, e.target.value )}
+                          >
+                            <MenuItem value='days'>days</MenuItem>
+                            <MenuItem value='weeks'>weeks</MenuItem>
+                          </Select>
+                        </InputAdornment>
+                      ),
+                    }}
+                  />
+                )}
+              </div>
+
+              <DateField
+                label='Promised date'
+                clearable
+                value={promisedDate}
+                onChange={date => {
+                  setPromisedDate( date )
+                  setLeadTime( null )
+                }}
+                helperText={`${order.requestedShipDate ? `The channel asked for: ${order.requestedShipDate}. ` : ''}Leave blank to compute it later.`}
+                slotProps={{inputLabel: {shrink: true}}}
+                boxProps={{sx: {maxInlineSize: 320}}}
+              />
+            </div>
 
             <table className={tableStyles.table}>
               <thead><tr><th>Product</th><th>Quantity</th><th>Pieces</th></tr></thead>
