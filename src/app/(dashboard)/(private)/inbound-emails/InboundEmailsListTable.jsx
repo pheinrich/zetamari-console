@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useTransition } from 'react'
+import { useMemo, useState, useTransition } from 'react'
 
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
@@ -11,6 +11,9 @@ import Button from '@mui/material/Button'
 import Card from '@mui/material/Card'
 import CardHeader from '@mui/material/CardHeader'
 import Chip from '@mui/material/Chip'
+import Dialog from '@mui/material/Dialog'
+import DialogActions from '@mui/material/DialogActions'
+import DialogContent from '@mui/material/DialogContent'
 import Divider from '@mui/material/Divider'
 import MenuItem from '@mui/material/MenuItem'
 import TablePagination from '@mui/material/TablePagination'
@@ -30,7 +33,7 @@ import {
   getPaginationRowModel,
 } from '@tanstack/react-table'
 
-import { reprocessFailedEmails } from '@/db/actions/channelOrder'
+import { deleteIgnoredEmails, reprocessFailedEmails } from '@/db/actions/channelOrder'
 import { useTableViewState } from '@/hooks/useTableViewState'
 import tableStyles from '@core/styles/table.module.css'
 import { EMAIL_KIND_LABELS, EMAIL_STATUS_COLORS, channelLabel, dateTime, money, orderAmount } from '../channel-orders/channelOrderFormat'
@@ -59,11 +62,14 @@ export default function InboundEmailsListTable( {emailData} )
 {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
+  const [isDeleting, startDelete] = useTransition()
+  const [confirmDeleteIgnored, setConfirmDeleteIgnored] = useState( false )
   const { view, updateView, onSortingChange, onPaginationChange } = useTableViewState( 'inboundEmails', DEFAULT_VIEW )
 
   const filters = {...DEFAULT_VIEW.filters, ...view.filters}
   const channels = useMemo( () => [...new Set( emailData.map( e => e.channel ).filter( Boolean ) )].sort(), [emailData] )
   const failedCount = emailData.filter( e => e.status === 'failed' ).length
+  const ignoredCount = emailData.filter( e => e.status === 'ignored' ).length
 
   const filteredData = useMemo(
     () => emailData.filter( e => (!filters.status || e.status === filters.status) && (!filters.channel || e.channel === filters.channel) ),
@@ -84,6 +90,21 @@ export default function InboundEmailsListTable( {emailData} )
     } )
   }
 
+  function handleDeleteIgnored()
+  {
+    startDelete( async () => {
+      const {total, failed} = await deleteIgnoredEmails()
+
+      if( failed )
+        toast.warning( `Deleted ${total - failed} of ${total} ignored emails; ${failed} still feed a reviewed channel order` )
+      else
+        toast.success( `Deleted ${total} ignored email${total === 1 ? '' : 's'}` )
+
+      setConfirmDeleteIgnored( false )
+      router.refresh()
+    } )
+  }
+
   const columns = useMemo(
     () => [
       columnHelper.accessor( 'receivedAt', {
@@ -93,17 +114,23 @@ export default function InboundEmailsListTable( {emailData} )
       columnHelper.accessor( o => channelLabel( o.channel ), {
         id: 'channel',
         header: 'Source',
-        cell: ({ row }) => (
-          <div className='flex flex-col'>
-            <Typography>{row.original.channel ? channelLabel( row.original.channel ) : '—'}</Typography>
-            <Typography variant='body2' color='text.secondary'>{row.original.fromAddress}</Typography>
-          </div>
-        )
+        cell: ({ row }) => {
+          const channel = row.original.channel ? channelLabel( row.original.channel ) : '—'
+
+          return (
+            <Tooltip title={<>{channel}<br />{row.original.fromAddress}</>}>
+              <div className='flex flex-col max-is-[160px]'>
+                <Typography noWrap>{channel}</Typography>
+                <Typography noWrap variant='body2' color='text.secondary'>{row.original.fromAddress}</Typography>
+              </div>
+            </Tooltip>
+          )
+        }
       } ),
       columnHelper.accessor( 'subject', {
         header: 'Subject',
         cell: ({ row }) => (
-          <div className='flex flex-col'>
+          <div className='flex flex-col min-is-[200px] max-is-[280px] whitespace-normal break-words'>
             <Link href={`/inbound-emails/${row.original.id}`}>{row.original.subject || '(no subject)'}</Link>
             <Typography variant='body2' color='text.secondary'>{EMAIL_KIND_LABELS[row.original.kind] ?? 'Not yet processed'}</Typography>
           </div>
@@ -136,7 +163,7 @@ export default function InboundEmailsListTable( {emailData} )
       columnHelper.display( {
         id: 'actions',
         header: 'Actions',
-        cell: ({ row }) => <InboundEmailActions email={row.original} size='small' />
+        cell: ({ row }) => <InboundEmailActions email={row.original} compact />
       } ),
     ],
     []
@@ -202,6 +229,15 @@ export default function InboundEmailsListTable( {emailData} )
           >
             {isPending ? 'Reprocessing...' : `Retry failed (${failedCount})`}
           </Button>
+          <Button
+            variant='outlined'
+            color='error'
+            disabled={isDeleting || !ignoredCount}
+            onClick={() => setConfirmDeleteIgnored( true )}
+            startIcon={<i className='ri-delete-bin-7-line' />}
+          >
+            {`Delete ignored (${ignoredCount})`}
+          </Button>
           <Button variant='outlined' component={Link} href='/channel-orders' startIcon={<i className='ri-inbox-line' />}>
             Channel Orders
           </Button>
@@ -259,6 +295,29 @@ export default function InboundEmailsListTable( {emailData} )
           )}
         </table>
       </div>
+      <Dialog
+        fullWidth
+        maxWidth='xs'
+        open={confirmDeleteIgnored}
+        onClose={() => !isDeleting && setConfirmDeleteIgnored( false )}
+        closeAfterTransition={false}
+      >
+        <DialogContent className='flex items-center flex-col text-center sm:pbs-16 sm:pbe-6 sm:pli-16'>
+          <i className='ri-error-warning-line text-[88px] mbe-6 text-warning' />
+          <Typography variant='h4'>Delete {ignoredCount} ignored email{ignoredCount === 1 ? '' : 's'}?</Typography>
+          <Typography color='text.secondary' className='mbs-2'>
+            These are notices that weren&rsquo;t orders. The stored emails are removed for good.
+          </Typography>
+        </DialogContent>
+        <DialogActions className='justify-center pbs-0 sm:pbe-16 sm:pli-16'>
+          <Button variant='contained' color='error' disabled={isDeleting} onClick={handleDeleteIgnored}>
+            {isDeleting ? 'Deleting...' : 'Delete'}
+          </Button>
+          <Button variant='outlined' color='secondary' disabled={isDeleting} onClick={() => setConfirmDeleteIgnored( false )}>
+            Cancel
+          </Button>
+        </DialogActions>
+      </Dialog>
       <TablePagination
         rowsPerPageOptions={[10, 25, 50]}
         component='div'

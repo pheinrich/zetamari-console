@@ -11,16 +11,17 @@ export const ARTFUL_HOME_NEW_ORDER_SUBJECT = /^(?:New Artful Home Order PO #|Pur
 // description ("Mosaic Mirror"), Artful Home's own item number
 // ("P07859-P00152" - not a console SKU) and, in newer emails, a
 // variation ("Small"). No price, quantity or customer - Artful Home
-// drop-ships to its customer and keeps those in Artist Center - so the
-// order is staged `linesComplete: false` for someone to fill in from
-// there.
+// drop-ships to its customer and keeps those in Artist Center.
+//
+// Every unit ordered gets its own item block, though, so quantity is
+// implied: identical blocks collapse into one line whose quantity is how
+// many times it appears, and the order's lines are complete.
 //
 // Item numbers are looked up in ARTFUL_HOME_ITEMS (artfulhomeSkus.js):
 // a mapped line gets our SKU, so it can match its Product like any other
 // channel's, with the item number kept in the description; an unmapped
 // one keeps its item number as the line's SKU, unmatched. The table's
-// wholesale price, when present, fills in the unit price. Quantity stays
-// unknown, so the order is still staged incomplete.
+// wholesale price, when present, fills in the unit price.
 export function parseArtfulHomeOrder( text, subject )
 {
   const subjectMatch = clean( subject ).match( ARTFUL_HOME_NEW_ORDER_SUBJECT )
@@ -37,7 +38,7 @@ export function parseArtfulHomeOrder( text, subject )
   }
 
   // Each item starts at its "Title:" line.
-  const lines = body.split( /^(?=Title\s*:)/m ).slice( 1 ).map( block => {
+  const items = body.split( /^(?=Title\s*:)/m ).slice( 1 ).map( block => {
     const item = value( 'Item', block )
     const variation = value( 'Variation Title', block )
     const known = artfulHomeItem( item )
@@ -52,9 +53,24 @@ export function parseArtfulHomeOrder( text, subject )
         sku && item ? `Artful Home item ${item}` : null,
       ].filter( Boolean ).join( ', ' ) || null,
       unitPrice: known?.wholesale ?? null,
-      quantity: null,
     }
   } )
+
+  // One line per distinct item, in first-seen order, counting repeats.
+  const byKey = new Map()
+
+  for( const item of items )
+  {
+    const key = `${item.sku}\u0000${item.description}`
+    const line = byKey.get( key )
+
+    if( line )
+      line.quantity += 1
+    else
+      byKey.set( key, {...item, quantity: 1} )
+  }
+
+  const lines = [...byKey.values()]
 
   if( !lines.length )
     throw new Error( 'Artful Home order email has no "Title:" items - template may have changed' )
@@ -68,7 +84,7 @@ export function parseArtfulHomeOrder( text, subject )
     buyer: {company: 'Artful Home', name: null, email: null, phone: null, externalId: null},
     shipTo: null,
     lines,
-    linesComplete: false,
+    linesComplete: true,
     expectedLineCount: lines.length,
     subtotal: null,
     shipping: null,

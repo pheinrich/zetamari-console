@@ -15,7 +15,7 @@ import { markOrdersScheduleStale } from '@/db/actions/scheduling'
 import { acceptChannelOrder as accept, previewAccept, unacceptChannelOrder as unaccept } from '@/libs/channelOrders/accept'
 import { etsyConnection } from '@/libs/channelOrders/etsyApi'
 import { matchOpenLinesWithSku, rememberAlias } from '@/libs/channelOrders/matching'
-import { processInboundEmail, refreshChannelOrderFromApi, undoInboundEmail as undoProcessing } from '@/libs/channelOrders/ingest'
+import { deleteInboundEmail as deleteEmail, processInboundEmail, refreshChannelOrderFromApi, undoInboundEmail as undoProcessing } from '@/libs/channelOrders/ingest'
 import { auth } from '@/lib/auth'
 
 // Review of order intake - Channel Orders staged from sales-channel
@@ -347,4 +347,50 @@ export async function undoInboundEmail( id )
   {
     return {error: error.message}
   }
+}
+
+// Delete one stored email - see ingest.js's deleteInboundEmail().
+export async function deleteInboundEmail( id )
+{
+  await requireSession()
+
+  const email = await InboundEmail.findByPk( id )
+
+  if( !email )
+    notFound()
+
+  try
+  {
+    await deleteEmail( email )
+
+    return {success: true}
+  }
+  catch( error )
+  {
+    return {error: error.message}
+  }
+}
+
+// Delete every ignored email (notices that aren't orders). Any that
+// can't go (a channel order past 'new' still linked) are left and counted.
+export async function deleteIgnoredEmails()
+{
+  await requireSession()
+
+  const ignored = await InboundEmail.findAll( {where: {status: 'ignored'}, attributes: ['id', 'channelOrderId']} )
+  let failed = 0
+
+  for( const email of ignored )
+  {
+    try
+    {
+      await deleteEmail( email )
+    }
+    catch
+    {
+      failed += 1
+    }
+  }
+
+  return {total: ignored.length, failed}
 }

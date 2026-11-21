@@ -280,6 +280,21 @@ export async function refreshChannelOrderFromApi( channelOrder )
 // can't quietly unwind a review decision.
 export async function undoInboundEmail( inbound )
 {
+  await detachInboundEmail( inbound, transaction => inbound.update( {status: 'received', channel: null, kind: null, error: null, channelOrderId: null}, {transaction} ) )
+}
+
+// Delete a stored email outright. Same rules as undo: refused while its
+// channel order is past 'new', and that order goes too if this was its
+// only email.
+export async function deleteInboundEmail( inbound )
+{
+  await detachInboundEmail( inbound, transaction => inbound.destroy( {transaction} ) )
+}
+
+// Run `change` (which unlinks `inbound` from its channel order), then drop
+// the channel order if no other email feeds it.
+async function detachInboundEmail( inbound, change )
+{
   await sequelize.transaction( async transaction => {
     const channelOrderId = inbound.channelOrderId
     const channelOrder = channelOrderId ? await ChannelOrder.findByPk( channelOrderId, {transaction, lock: transaction.LOCK.UPDATE} ) : null
@@ -287,7 +302,7 @@ export async function undoInboundEmail( inbound )
     if( channelOrder && channelOrder.status !== 'new' )
       throw new Error( `Its channel order is ${channelOrder.status} - restore it to new first` )
 
-    await inbound.update( {status: 'received', channel: null, kind: null, error: null, channelOrderId: null}, {transaction} )
+    await change( transaction )
 
     if( channelOrder && !await InboundEmail.count( {where: {channelOrderId}, transaction} ) )
       await channelOrder.destroy( {transaction} )

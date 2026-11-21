@@ -133,8 +133,8 @@ function blockers( order, lines, quantities = {} )
     problems.push( `This order is already ${order.status}` )
 
   // Incomplete means lines are missing (Faire's teaser email: fewer lines
-  // than it says there are) or just details are - Artful Home sends no
-  // quantities, which the person accepting fills in, checked below.
+  // than it says there are) or just details are; a missing quantity is
+  // filled in by the person accepting, checked below.
   if( !order.linesComplete && lines.length < (order.expectedLineCount ?? 0) )
     problems.push( `Only ${lines.length} of ${order.expectedLineCount} lines - fetch the rest from the channel first` )
 
