@@ -33,6 +33,7 @@ import { customerDisplayName } from '../customers/customerFormat'
 import AppFullCalendar from '@/libs/styles/AppFullCalendar'
 import AppReactDatepicker from '@/libs/styles/AppReactDatepicker'
 import EventCalendarSidebar from './EventCalendarSidebar'
+import { useConfirm } from '@/contexts/confirmContext'
 
 // The 6 colors AppFullCalendar.js's `.event-bg-*` classes style, doing
 // double duty as the "Event Filters" sidebar's calendar categories (see
@@ -103,6 +104,7 @@ export default function EventCalendar( {basicEvents, personOptions} )
 {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
+  const confirm = useConfirm()
   const [draft, setDraft] = useState( null )
   const [calendarApi, setCalendarApi] = useState( null )
   const [leftSidebarOpen, setLeftSidebarOpen] = useState( false )
@@ -182,9 +184,9 @@ export default function EventCalendar( {basicEvents, personOptions} )
     } )
   }
 
-  function handleDelete()
+  async function handleDelete()
   {
-    if( !window.confirm( `Delete "${draft.title}"? This can't be undone.` ) )
+    if( !await confirm( `Delete "${draft.title}"? This can't be undone.`, {confirmText: 'Delete', destructive: true} ) )
       return
 
     startTransition( async () => {

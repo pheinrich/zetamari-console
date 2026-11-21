@@ -9,15 +9,17 @@ import Button from '@mui/material/Button'
 
 import { deleteCustomer } from '@/db/actions/person'
 import { customerDisplayName } from '../customerFormat'
+import { useConfirm } from '@/contexts/confirmContext'
 
 export default function CustomerDetailActions( {customer} )
 {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
+  const confirm = useConfirm()
 
-  function handleDelete()
+  async function handleDelete()
   {
-    if( !confirm( `Delete ${customerDisplayName( customer )}? This also removes their sources and class attendance history.` ) )
+    if( !await confirm( `Delete ${customerDisplayName( customer )}? This also removes their sources and class attendance history.`, {confirmText: 'Delete', destructive: true} ) )
       return
 
     startTransition( async () => {

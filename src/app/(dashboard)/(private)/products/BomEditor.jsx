@@ -17,6 +17,8 @@ import { addBomLine, updateBomLine, removeBomLine, setBomLineSupplier } from '@/
 import { resolveSupplierCost } from '@/libs/costFactors'
 import { formatCurrency } from './productFormat'
 import tableStyles from '@core/styles/table.module.css'
+import { useConfirm } from '@/contexts/confirmContext'
+import { unitInputProps } from '@/utils/units'
 
 const noSpinnerSx = {
   '& input[type=number]': {MozAppearance: 'textfield'},
@@ -41,6 +43,7 @@ export default function BomEditor( {productId, bomLines, productOptions} )
 {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
+  const confirm = useConfirm()
   const [materialProductId, setMaterialProductId] = useState( '' )
   const [quantity, setQuantity] = useState( '1' )
   const [error, setError] = useState( null )
@@ -83,9 +86,9 @@ export default function BomEditor( {productId, bomLines, productOptions} )
     })
   }
 
-  function handleRemove( lineId )
+  async function handleRemove( lineId )
   {
-    if( !confirm( 'Remove this material from the bill of materials?' ) )
+    if( !await confirm( 'Remove this material from the bill of materials?', {confirmText: 'Remove', destructive: true} ) )
       return
 
     startTransition( async () => {
@@ -133,10 +136,10 @@ export default function BomEditor( {productId, bomLines, productOptions} )
                         defaultValue={line.quantity}
                         onBlur={(e) => handleUpdateQuantity( line.id, e.target.value )}
                         disabled={isPending}
+                        InputProps={unitInputProps( line.material.units )}
                         sx={noSpinnerSx}
-                        className='is-24'
+                        className='is-36'
                       />
-                      <Typography variant='body2'>{line.material.units}</Typography>
                     </div>
                   </td>
                   <td>
@@ -206,8 +209,9 @@ export default function BomEditor( {productId, bomLines, productOptions} )
           inputProps={{step: '0.0001', min: '0'}}
           value={quantity}
           onChange={(e) => setQuantity( e.target.value )}
+          InputProps={unitInputProps( available.find( (p) => p.id === materialProductId )?.units )}
           sx={noSpinnerSx}
-          className='is-24'
+          className='is-36'
         />
         <Button variant='outlined' disabled={isPending || !materialProductId} onClick={handleAdd}>
           Add

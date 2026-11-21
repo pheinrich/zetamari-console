@@ -16,6 +16,7 @@ import Typography from '@mui/material/Typography'
 import { addCustomerSource, removeCustomerSource } from '@/db/actions/person'
 import { SOURCE_TYPE_META, sourceTypeLabel, sourceTypeUsesEvent } from '../sourceTypeMeta'
 import tableStyles from '@core/styles/table.module.css'
+import { useConfirm } from '@/contexts/confirmContext'
 
 // Manages a customer's CustomerSource rows - the multi-source attribution
 // Angie asked for (a record may come from her website, her accounting
@@ -27,6 +28,7 @@ export default function CustomerSourceEditor( {customerId, sources, eventOptions
 {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
+  const confirm = useConfirm()
   const [sourceType, setSourceType] = useState( 'website' )
   const [sourceName, setSourceName] = useState( '' )
   const [eventId, setEventId] = useState( '' )
@@ -62,9 +64,9 @@ export default function CustomerSourceEditor( {customerId, sources, eventOptions
     })
   }
 
-  function handleRemove( id )
+  async function handleRemove( id )
   {
-    if( !confirm( 'Remove this source?' ) )
+    if( !await confirm( 'Remove this source?', {confirmText: 'Remove', destructive: true} ) )
       return
 
     startTransition( async () => {

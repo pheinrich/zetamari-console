@@ -23,6 +23,9 @@ import Typography from '@mui/material/Typography'
 import { addLiveClassAttendee, updateLiveClassAttendee, removeLiveClassAttendee } from '@/db/actions/liveClass'
 import { customerDisplayName } from '../../customers/customerFormat'
 import tableStyles from '@core/styles/table.module.css'
+import { useConfirm } from '@/contexts/confirmContext'
+import DateField from '@/components/DateField'
+import { unitInputProps } from '@/utils/units'
 
 const STATUS_OPTIONS = ['enrolled', 'waitlisted', 'cancelled', 'completed']
 
@@ -36,6 +39,7 @@ export default function LiveClassAttendeeEditor( {liveClassId, attendees, custom
 {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
+  const confirm = useConfirm()
   const [customer, setCustomer] = useState( null )
   const [firstName, setFirstName] = useState( '' )
   const [lastName, setLastName] = useState( '' )
@@ -113,9 +117,9 @@ export default function LiveClassAttendeeEditor( {liveClassId, attendees, custom
     })
   }
 
-  function handleRemove( attendeeId )
+  async function handleRemove( attendeeId )
   {
-    if( !confirm( 'Remove this attendee?' ) )
+    if( !await confirm( 'Remove this attendee?', {confirmText: 'Remove', destructive: true} ) )
       return
 
     startTransition( async () => {
@@ -202,17 +206,17 @@ export default function LiveClassAttendeeEditor( {liveClassId, attendees, custom
                     defaultValue={attendee.discountPercent ?? ''}
                     onBlur={e => handleDiscountChange( attendee.id, e.target.value )}
                     disabled={isPending}
+                    InputProps={unitInputProps( '%' )}
                     className='is-24'
                   />
                 </td>
                 <td>
-                  <TextField
-                    type='date'
+                  <DateField
                     size='small'
                     defaultValue={attendee.enrolledOn || ''}
-                    onBlur={e => handleEnrolledOnChange( attendee.id, e.target.value )}
+                    onChange={v => handleEnrolledOnChange( attendee.id, v )}
                     disabled={isPending}
-                    className='is-40'
+                    boxProps={{className: 'is-40'}}
                   />
                 </td>
                 <td>

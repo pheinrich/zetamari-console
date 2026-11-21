@@ -24,6 +24,7 @@ import { createProduct } from '@/db/actions/product'
 import { MIRROR_GLASS_SHAPE_VALUES, resolveMirrorGlassShape } from './mirrorGlassShape'
 import CreateWoodenBaseDialog from './CreateWoodenBaseDialog'
 import CreateMirrorGlassDialog from './CreateMirrorGlassDialog'
+import { unitInputProps } from '@/utils/units'
 
 // Which Pricing-tab "Include" rows (see configurationCost.js's
 // PRICING_ROWS) correspond to a real, BOM-able Product material - the
@@ -246,8 +247,9 @@ export default function CreateNewProductDialog( {open, onClose, label, substrate
                       type='number'
                       label='Qty'
                       size='small'
-                      sx={{width: 90}}
+                      sx={{width: 140, flexShrink: 0}}
                       inputProps={{step: '0.0001', min: '0'}}
+                      InputProps={unitInputProps( selected[category.key]?.units )}
                       value={quantities[category.key] ?? 1}
                       onChange={evt => setQuantities( prev => ({...prev, [category.key]: evt.target.value}) )}
                     />

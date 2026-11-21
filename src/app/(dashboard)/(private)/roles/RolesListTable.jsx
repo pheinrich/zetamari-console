@@ -30,6 +30,7 @@ import {
 import { deleteRole } from '@/db/actions/role'
 import { useTableViewState } from '@/hooks/useTableViewState'
 import tableStyles from '@core/styles/table.module.css'
+import { useConfirm } from '@/contexts/confirmContext'
 
 const DEFAULT_VIEW = {
   sorting: [{id: 'name', desc: false}],
@@ -51,11 +52,12 @@ export default function RolesListTable( {roleData} )
 {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
+  const confirm = useConfirm()
   const { view, updateView, onSortingChange, onPaginationChange } = useTableViewState( 'roles', DEFAULT_VIEW )
 
-  function handleDelete( role )
+  async function handleDelete( role )
   {
-    if( !confirm( `Delete ${role.name}? Anyone assigned this role will lose it.` ) )
+    if( !await confirm( `Delete ${role.name}? Anyone assigned this role will lose it.`, {confirmText: 'Delete', destructive: true} ) )
       return
 
     startTransition( async () => {

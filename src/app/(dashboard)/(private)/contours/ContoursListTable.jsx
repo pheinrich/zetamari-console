@@ -37,6 +37,7 @@ import ContourThumbnail from './ContourThumbnail'
 import { deleteContour } from '@/db/actions/contour'
 import { useTableViewState } from '@/hooks/useTableViewState'
 import tableStyles from '@core/styles/table.module.css'
+import { useConfirm } from '@/contexts/confirmContext'
 
 const DEFAULT_VIEW = {
   sorting: [],
@@ -57,6 +58,7 @@ export default function ContoursListTable( {contourData} )
 {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
+  const confirm = useConfirm()
   const { view, updateView, onSortingChange, onPaginationChange } = useTableViewState( 'contours', DEFAULT_VIEW )
   const kind = view.filters.kind
 
@@ -67,9 +69,9 @@ export default function ContoursListTable( {contourData} )
     return true
   } ), [contourData, kind] )
 
-  function handleDelete( contour )
+  async function handleDelete( contour )
   {
-    if( !confirm( `Delete ${contour.name}? This will fail if it's still referenced by a substrate product.` ) )
+    if( !await confirm( `Delete ${contour.name}? This will fail if it's still referenced by a substrate product.`, {confirmText: 'Delete', destructive: true} ) )
       return
 
     startTransition( async () => {

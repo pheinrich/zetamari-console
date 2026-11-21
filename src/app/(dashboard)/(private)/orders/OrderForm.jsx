@@ -12,7 +12,6 @@ import CardContent from '@mui/material/CardContent'
 import Button from '@mui/material/Button'
 import IconButton from '@mui/material/IconButton'
 import Alert from '@mui/material/Alert'
-import InputAdornment from '@mui/material/InputAdornment'
 import TextField from '@mui/material/TextField'
 import Typography from '@mui/material/Typography'
 import Autocomplete from '@mui/material/Autocomplete'
@@ -24,6 +23,8 @@ import Select from '@mui/material/Select'
 import { useFormSubmit } from '@/utils/formSubmitHook'
 import { createOrder } from '@/db/actions/order'
 import { customerDisplayName } from '../customers/customerFormat'
+import DateField from '@/components/DateField'
+import { unitInputProps } from '@/utils/units'
 
 const schema = z.object({
   customerId: z.coerce.number().positive( 'Choose a customer' ),
@@ -51,6 +52,10 @@ export default function OrderForm( {customerOptions, productOptions} )
   const [rowKeys, setRowKeys] = useState( [0] )
   const [customer, setCustomer] = useState( null )
   const [promisedDate, setPromisedDate] = useState( '' )
+
+  // Each row's chosen product (by row key), only to show its units on the
+  // Quantity field - the Select itself stays uncontrolled.
+  const [rowProductIds, setRowProductIds] = useState( {} )
 
   const { handleSubmit, loading, errors, success } = useFormSubmit({
     schema,
@@ -118,29 +123,14 @@ export default function OrderForm( {customerOptions, productOptions} )
                   />
                 </Grid>
                 <Grid size={{ xs: 12, sm: 6 }}>
-                  <TextField
+                  <DateField
                     fullWidth
-                    type='date'
                     label='Promised Date (optional)'
                     name='promisedDate'
                     value={promisedDate}
-                    onChange={e => setPromisedDate( e.target.value )}
-                    slotProps={{
-                      inputLabel: { shrink: true },
-                      input: {
-                        // A native date input has no way to clear its
-                        // value except the browser's own (easy-to-miss)
-                        // built-in "x" - this is a real button instead,
-                        // only shown once there's something to clear.
-                        endAdornment: promisedDate && (
-                          <InputAdornment position='end'>
-                            <IconButton size='small' onClick={() => setPromisedDate( '' )} aria-label='Clear promised date'>
-                              <i className='ri-close-line' />
-                            </IconButton>
-                          </InputAdornment>
-                        ),
-                      },
-                    }}
+                    onChange={setPromisedDate}
+                    clearable
+                    slotProps={{inputLabel: {shrink: true}}}
                     helperText="Leave blank to let scheduling compute one from the backlog. Set this only when the customer requested a specific date."
                   />
                 </Grid>
@@ -163,6 +153,7 @@ export default function OrderForm( {customerOptions, productOptions} )
                         label='Product'
                         name={`lines[${index}][productId]`}
                         defaultValue=''
+                        onChange={e => setRowProductIds( prev => ({...prev, [key]: e.target.value}) )}
                       >
                         <MenuItem value=''>Choose a product</MenuItem>
                         {productOptions.map( p => (
@@ -176,7 +167,10 @@ export default function OrderForm( {customerOptions, productOptions} )
                       name={`lines[${index}][quantity]`}
                       defaultValue={1}
                       className='min-is-[140px]'
-                      slotProps={{ htmlInput: { min: 1, step: 1 } }}
+                      slotProps={{
+                        htmlInput: { min: 1, step: 1 },
+                        input: unitInputProps( productOptions.find( p => p.id === rowProductIds[key] )?.units || 'each' ),
+                      }}
                     />
                     <IconButton onClick={() => removeRow( key )} disabled={1 === rowKeys.length} aria-label='Remove line'>
                       <i className='ri-delete-bin-7-line' />

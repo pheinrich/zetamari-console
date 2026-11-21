@@ -8,15 +8,17 @@ import { toast } from 'react-toastify'
 import Button from '@mui/material/Button'
 
 import { deleteEvent } from '@/db/actions/event'
+import { useConfirm } from '@/contexts/confirmContext'
 
 export default function EventDetailActions( {event} )
 {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
+  const confirm = useConfirm()
 
-  function handleDelete()
+  async function handleDelete()
   {
-    if( !confirm( `Delete ${event.name}? This also removes its occurrences and unlinks it from any customer sources.` ) )
+    if( !await confirm( `Delete ${event.name}? This also removes its occurrences and unlinks it from any customer sources.`, {confirmText: 'Delete', destructive: true} ) )
       return
 
     startTransition( async () => {

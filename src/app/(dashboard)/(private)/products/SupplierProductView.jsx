@@ -15,6 +15,8 @@ import Typography from '@mui/material/Typography'
 
 import { setSupplierProductPrice, updateSupplierProductPrice, removeSupplierProductPrice } from '@/db/actions/supplier'
 import tableStyles from '@core/styles/table.module.css'
+import { useConfirm } from '@/contexts/confirmContext'
+import { dollarInputProps } from '@/utils/units'
 
 // A product can come from zero or more suppliers, each charging its own
 // price. `suppliers` is the product's eager-loaded Supplier list (each with
@@ -25,6 +27,7 @@ export default function SupplierProductView( {product, suppliers, supplierOption
 {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
+  const confirm = useConfirm()
   const [supplierId, setSupplierId] = useState( '' )
   const [partNumber, setPartNumber] = useState( '' )
   const [cost, setCost] = useState( '' )
@@ -61,9 +64,9 @@ export default function SupplierProductView( {product, suppliers, supplierOption
     })
   }
 
-  function handleRemove( linkId )
+  async function handleRemove( linkId )
   {
-    if( !confirm( "Remove this supplier's pricing for this product?" ) )
+    if( !await confirm( "Remove this supplier's pricing for this product?", {confirmText: 'Remove', destructive: true} ) )
       return
 
     startTransition( async () => {
@@ -97,7 +100,8 @@ export default function SupplierProductView( {product, suppliers, supplierOption
                     defaultValue={supplier.SupplierProduct.cost ?? ''}
                     onBlur={(e) => handleUpdateCost( supplier.SupplierProduct.id, e.target.value )}
                     disabled={isPending}
-                    className='is-24'
+                    InputProps={dollarInputProps( product.units )}
+                    className='is-44'
                   />
                 </td>
                 <td>
@@ -141,7 +145,8 @@ export default function SupplierProductView( {product, suppliers, supplierOption
           inputProps={{step: '0.00001', min: '0'}}
           value={cost}
           onChange={(e) => setCost( e.target.value )}
-          className='is-24'
+          InputProps={dollarInputProps( product.units )}
+          className='is-44'
         />
         <Button variant='outlined' disabled={isPending || !supplierId} onClick={handleAdd}>
           Add

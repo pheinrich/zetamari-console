@@ -4,15 +4,18 @@ import { useRef, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'react-toastify'
 
+import { useConfirm } from '@/contexts/confirmContext'
+
 export default function ActionButton( {action, id, label, labelPending, targetUrl, confirmMsg, successMsg, failMsg} )
 {
   const formRef = useRef( null )
   const [isPending, startTransition] = useTransition()
   const router = useRouter()
+  const confirm = useConfirm()
 
-  function handleClick()
+  async function handleClick()
   {
-    const confirmed = confirm( confirmMsg )
+    const confirmed = await confirm( confirmMsg )
     if( !confirmed )
       return
 

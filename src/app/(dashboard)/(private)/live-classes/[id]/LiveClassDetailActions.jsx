@@ -8,15 +8,17 @@ import { toast } from 'react-toastify'
 import Button from '@mui/material/Button'
 
 import { deleteLiveClass } from '@/db/actions/liveClass'
+import { useConfirm } from '@/contexts/confirmContext'
 
 export default function LiveClassDetailActions( {liveClass} )
 {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
+  const confirm = useConfirm()
 
-  function handleDelete()
+  async function handleDelete()
   {
-    if( !confirm( `Delete ${liveClass.name}? This also removes its attendee roster.` ) )
+    if( !await confirm( `Delete ${liveClass.name}? This also removes its attendee roster.`, {confirmText: 'Delete', destructive: true} ) )
       return
 
     startTransition( async () => {

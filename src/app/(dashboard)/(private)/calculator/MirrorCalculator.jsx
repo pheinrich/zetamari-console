@@ -41,6 +41,7 @@ import StatsSummary, { presetInclude } from './StatsSummary'
 import LightboxStrip from './LightboxStrip'
 import ComparisonTable from './ComparisonTable'
 import ViewSettingsDialog from './ViewSettingsDialog'
+import { useConfirm } from '@/contexts/confirmContext'
 
 const TAB_KEYS = TABS.map( t => t.key )
 const PRICING_COLUMN_KEYS = PRICING_COLUMNS.map( c => c.key )
@@ -94,6 +95,7 @@ function reportHref( pathname, params )
 export default function MirrorCalculator( {initialState, contours, substrateProducts, products, shapeTypes, shopSettings, costFactors, fromExplicitLink, galleryFromExplicitLink} )
 {
   const dispatch = useDispatch()
+  const confirm = useConfirm()
   const storedSnapshot = useSelector( state => state.visualizerReducer.snapshot )
 
   const startState = {
@@ -307,11 +309,11 @@ export default function MirrorCalculator( {initialState, contours, substrateProd
     setSelectedId( prev => (prev === id ? null : prev) )
   }
 
-  function clearLightbox()
+  async function clearLightbox()
   {
     if( 0 === gallery.length )
       return
-    if( !window.confirm( `Remove all ${gallery.length} saved prototype${1 === gallery.length ? '' : 's'} from the lightbox? This can't be undone.` ) )
+    if( !await confirm( `Remove all ${gallery.length} saved prototype${1 === gallery.length ? '' : 's'} from the lightbox? This can't be undone.`, {confirmText: 'Remove All', destructive: true} ) )
       return
 
     setGallery( [] )

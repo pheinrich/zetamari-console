@@ -15,6 +15,7 @@ import Tooltip from '@mui/material/Tooltip'
 import Typography from '@mui/material/Typography'
 
 import { deleteInboundEmail, reprocessInboundEmail, undoInboundEmail } from '@/db/actions/channelOrder'
+import { useConfirm } from '@/contexts/confirmContext'
 
 // One action as a labelled button, or (compact) an icon with a tooltip.
 function Action( {compact, size, label, icon, color, disabled, onClick} )
@@ -50,6 +51,7 @@ export default function InboundEmailActions( {email, size = 'medium', afterUndoH
 {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
+  const confirm = useConfirm()
   const [confirmDelete, setConfirmDelete] = useState( false )
 
   function handleReparse()
@@ -68,13 +70,13 @@ export default function InboundEmailActions( {email, size = 'medium', afterUndoH
     } )
   }
 
-  function handleUndo()
+  async function handleUndo()
   {
     const message = email.channelOrderId
       ? 'Undo parsing this email? Its channel order is deleted too, unless another email also feeds it.'
       : 'Undo processing this email? It goes back to "received".'
 
-    if( !confirm( message ) )
+    if( !await confirm( message, {confirmText: 'Undo', destructive: true} ) )
       return
 
     startTransition( async () => {

@@ -10,7 +10,6 @@ import CardContent from '@mui/material/CardContent'
 import Button from '@mui/material/Button'
 import Alert from '@mui/material/Alert'
 import Divider from '@mui/material/Divider'
-import InputAdornment from '@mui/material/InputAdornment'
 import TextField from '@mui/material/TextField'
 import Typography from '@mui/material/Typography'
 
@@ -28,6 +27,7 @@ import {
 import { woodSheetAreaSqIn, woodenBaseRatePerSqIn } from '@/libs/woodenBaseRates'
 import { glassSheetAreaSqIn, glassSheetRatePerSqIn } from '@/libs/glassSheetRates'
 import tableStyles from '@core/styles/table.module.css'
+import { dollarInputProps, formatDollarsPer, unitInputProps } from '@/utils/units'
 
 const CATEGORY_LABELS = {material: 'Material', machine: 'Machine', labor: 'Labor'}
 const CATEGORY_ORDER = ['material', 'machine', 'labor']
@@ -59,15 +59,6 @@ const COMPUTED_RATE_CAPTIONS = {
 
 const optionalString = z.preprocess( (val) => (val === '' ? undefined : val), z.string().optional() )
 const optionalNumber = z.preprocess( (val) => (val === '' || val == null ? undefined : val), z.coerce.number().min( 0 ).optional() )
-
-// More decimal places than formatCurrency() (products/productFormat.js)
-// bothers with - that's built for whole-dollar retail/wholesale prices,
-// while a per-inch or per-minute bit cost is typically a small fraction
-// of a cent and would just round away to "$0.00" at 2 decimals.
-function formatDollars( amount )
-{
-  return `$${(amount || 0).toFixed( 4 )}`
-}
 
 // These process constants are typically entered with several digits
 // after the decimal point, where the native up/down spinner increments
@@ -195,7 +186,7 @@ export default function SettingsForm( {initialData={}, costFactors=[]} )
                     name='feedRateInPerMin'
                     defaultValue={initialData?.feedRateInPerMin ?? ''}
                     inputProps={{step: 'any', min: '0'}}
-                    InputProps={{endAdornment: <InputAdornment position='end'>in/min</InputAdornment>}}
+                    InputProps={unitInputProps( 'in / min' )}
                     sx={noSpinnerSx}
                   />
                 </Grid>
@@ -207,7 +198,7 @@ export default function SettingsForm( {initialData={}, costFactors=[]} )
                     name='powerDrawKw'
                     defaultValue={initialData?.powerDrawKw ?? ''}
                     inputProps={{step: 'any', min: '0'}}
-                    InputProps={{endAdornment: <InputAdornment position='end'>kW</InputAdornment>}}
+                    InputProps={unitInputProps( 'kW' )}
                     sx={noSpinnerSx}
                   />
                 </Grid>
@@ -219,13 +210,13 @@ export default function SettingsForm( {initialData={}, costFactors=[]} )
                     name='electricityRatePerKwh'
                     defaultValue={initialData?.electricityRatePerKwh ?? ''}
                     inputProps={{step: 'any', min: '0'}}
-                    InputProps={{endAdornment: <InputAdornment position='end'>$/kWh</InputAdornment>}}
+                    InputProps={dollarInputProps( 'kWh' )}
                     sx={noSpinnerSx}
                   />
                 </Grid>
                 <Grid size={{ xs: 12 }}>
                   <Typography variant='body2' color='text.secondary'>
-                    Utilities rate: {formatDollars( utilitiesCostPerHour( initialData ) )}/hr (Power Draw × Electricity Rate) - feeds
+                    Utilities rate: {formatDollarsPer( utilitiesCostPerHour( initialData ), 'hr' )} (Power Draw × Electricity Rate) - feeds
                     Utilities below. Recalculated when you save.
                   </Typography>
                 </Grid>
@@ -242,7 +233,7 @@ export default function SettingsForm( {initialData={}, costFactors=[]} )
                     name='bitLifeSheetsPerBit'
                     defaultValue={initialData?.bitLifeSheetsPerBit ?? ''}
                     inputProps={{step: 'any', min: '0'}}
-                    InputProps={{endAdornment: <InputAdornment position='end'>sheets/bit</InputAdornment>}}
+                    InputProps={unitInputProps( 'sheets / bit' )}
                     sx={noSpinnerSx}
                   />
                 </Grid>
@@ -254,7 +245,7 @@ export default function SettingsForm( {initialData={}, costFactors=[]} )
                     name='cuttingTimeMinPerSheet'
                     defaultValue={initialData?.cuttingTimeMinPerSheet ?? ''}
                     inputProps={{step: 'any', min: '0'}}
-                    InputProps={{endAdornment: <InputAdornment position='end'>min/sheet</InputAdornment>}}
+                    InputProps={unitInputProps( 'min / sheet' )}
                     sx={noSpinnerSx}
                   />
                 </Grid>
@@ -266,16 +257,16 @@ export default function SettingsForm( {initialData={}, costFactors=[]} )
                     name='bitCostPerBit'
                     defaultValue={initialData?.bitCostPerBit ?? ''}
                     inputProps={{step: 'any', min: '0'}}
-                    InputProps={{endAdornment: <InputAdornment position='end'>$/bit</InputAdornment>}}
+                    InputProps={dollarInputProps( 'bit' )}
                     sx={noSpinnerSx}
                   />
                 </Grid>
                 <Grid size={{ xs: 12 }}>
                   <Typography variant='body2' color='text.secondary'>
                     Working life: {bitLifeMinutes( initialData ).toFixed( 1 )} min ({bitLifeInches( initialData ).toFixed( 1 )} in cut) per
-                    bit. Bit cost: {formatDollars( bitCostPerSheet( initialData ) )}/sheet, {formatDollars( bitCostPerMinute( initialData ) )}/min,
-                    {' '}{formatDollars( bitCostPerInch( initialData ) )}/in cut - feeds Machine Wear below
-                    at {formatDollars( bitCostPerHour( initialData ) )}/hr. Recalculated when you save.
+                    bit. Bit cost: {formatDollarsPer( bitCostPerSheet( initialData ), 'sheet' )}, {formatDollarsPer( bitCostPerMinute( initialData ), 'min' )},
+                    {' '}{formatDollarsPer( bitCostPerInch( initialData ), 'in' )} cut - feeds Machine Wear below
+                    at {formatDollarsPer( bitCostPerHour( initialData ), 'hr' )}. Recalculated when you save.
                   </Typography>
                 </Grid>
               </Grid>
@@ -291,7 +282,7 @@ export default function SettingsForm( {initialData={}, costFactors=[]} )
                     name='profilingKerfIn'
                     defaultValue={initialData?.profilingKerfIn ?? ''}
                     inputProps={{step: 'any', min: '0'}}
-                    InputProps={{endAdornment: <InputAdornment position='end'>in</InputAdornment>}}
+                    InputProps={unitInputProps( 'in' )}
                     sx={noSpinnerSx}
                   />
                 </Grid>
@@ -324,7 +315,7 @@ export default function SettingsForm( {initialData={}, costFactors=[]} )
                     name='sandingRateSqInPerHr'
                     defaultValue={initialData?.sandingRateSqInPerHr ?? ''}
                     inputProps={{step: 'any', min: '0'}}
-                    InputProps={{endAdornment: <InputAdornment position='end'>sq-in/hr</InputAdornment>}}
+                    InputProps={unitInputProps( 'sq-in / hr' )}
                     sx={noSpinnerSx}
                   />
                 </Grid>
@@ -336,7 +327,7 @@ export default function SettingsForm( {initialData={}, costFactors=[]} )
                     name='gluingRateSqInPerHr'
                     defaultValue={initialData?.gluingRateSqInPerHr ?? ''}
                     inputProps={{step: 'any', min: '0'}}
-                    InputProps={{endAdornment: <InputAdornment position='end'>sq-in/hr</InputAdornment>}}
+                    InputProps={unitInputProps( 'sq-in / hr' )}
                     sx={noSpinnerSx}
                   />
                 </Grid>
@@ -348,7 +339,7 @@ export default function SettingsForm( {initialData={}, costFactors=[]} )
                     name='groutingRateSqInPerHr'
                     defaultValue={initialData?.groutingRateSqInPerHr ?? ''}
                     inputProps={{step: 'any', min: '0'}}
-                    InputProps={{endAdornment: <InputAdornment position='end'>sq-in/hr</InputAdornment>}}
+                    InputProps={unitInputProps( 'sq-in / hr' )}
                     sx={noSpinnerSx}
                   />
                 </Grid>
@@ -360,7 +351,7 @@ export default function SettingsForm( {initialData={}, costFactors=[]} )
                     name='pickingRateSqInPerHr'
                     defaultValue={initialData?.pickingRateSqInPerHr ?? 300}
                     inputProps={{step: 'any', min: '0'}}
-                    InputProps={{endAdornment: <InputAdornment position='end'>sq-in/hr</InputAdornment>}}
+                    InputProps={unitInputProps( 'sq-in / hr' )}
                     sx={noSpinnerSx}
                   />
                 </Grid>
@@ -385,7 +376,7 @@ export default function SettingsForm( {initialData={}, costFactors=[]} )
                     name='markupPercent'
                     defaultValue={initialData?.markupPercent ?? 25}
                     inputProps={{step: 'any', min: '0'}}
-                    InputProps={{endAdornment: <InputAdornment position='end'>%</InputAdornment>}}
+                    InputProps={unitInputProps( '%' )}
                     helperText='Applied to the whole COGS figure (Material+Machine+Assistant labor) on the way to Wholesale'
                     sx={noSpinnerSx}
                   />
@@ -398,7 +389,7 @@ export default function SettingsForm( {initialData={}, costFactors=[]} )
                     name='retailMultiplier'
                     defaultValue={initialData?.retailMultiplier ?? 1}
                     inputProps={{step: 'any', min: '0'}}
-                    InputProps={{endAdornment: <InputAdornment position='end'>x Wholesale</InputAdornment>}}
+                    InputProps={unitInputProps( 'x Wholesale' )}
                     sx={noSpinnerSx}
                   />
                 </Grid>
@@ -423,7 +414,7 @@ export default function SettingsForm( {initialData={}, costFactors=[]} )
                     name='sheetCostPerSheet'
                     defaultValue={initialData?.sheetCostPerSheet ?? ''}
                     inputProps={{step: 'any', min: '0'}}
-                    InputProps={{endAdornment: <InputAdornment position='end'>$/sheet</InputAdornment>}}
+                    InputProps={dollarInputProps( 'sheet' )}
                     sx={noSpinnerSx}
                   />
                 </Grid>
@@ -435,7 +426,7 @@ export default function SettingsForm( {initialData={}, costFactors=[]} )
                     name='sheetWidthIn'
                     defaultValue={initialData?.sheetWidthIn ?? 48.5}
                     inputProps={{step: 'any', min: '0'}}
-                    InputProps={{endAdornment: <InputAdornment position='end'>in</InputAdornment>}}
+                    InputProps={unitInputProps( 'in' )}
                     sx={noSpinnerSx}
                   />
                 </Grid>
@@ -447,13 +438,13 @@ export default function SettingsForm( {initialData={}, costFactors=[]} )
                     name='sheetHeightIn'
                     defaultValue={initialData?.sheetHeightIn ?? 96.5}
                     inputProps={{step: 'any', min: '0'}}
-                    InputProps={{endAdornment: <InputAdornment position='end'>in</InputAdornment>}}
+                    InputProps={unitInputProps( 'in' )}
                     sx={noSpinnerSx}
                   />
                 </Grid>
                 <Grid size={{ xs: 12 }}>
                   <Typography variant='body2' color='text.secondary'>
-                    Sheet area: {woodSheetAreaSqIn( initialData ).toFixed( 1 )} sq-in. Wooden Base rate: {formatDollars( woodenBaseRatePerSqIn( initialData ) )}/sq-in
+                    Sheet area: {woodSheetAreaSqIn( initialData ).toFixed( 1 )} sq-in. Wooden Base rate: {formatDollarsPer( woodenBaseRatePerSqIn( initialData ), 'sq-in' )}
                     (Sheet Cost ÷ Sheet Area) - feeds Wooden Base and Sheet Breakage (Wood) in Cost Factor Rates below. Recalculated when you save.
                   </Typography>
                 </Grid>
@@ -478,7 +469,7 @@ export default function SettingsForm( {initialData={}, costFactors=[]} )
                     name='glassSheetCostPerSheet'
                     defaultValue={initialData?.glassSheetCostPerSheet ?? ''}
                     inputProps={{step: 'any', min: '0'}}
-                    InputProps={{endAdornment: <InputAdornment position='end'>$/sheet</InputAdornment>}}
+                    InputProps={dollarInputProps( 'sheet' )}
                     sx={noSpinnerSx}
                   />
                 </Grid>
@@ -490,7 +481,7 @@ export default function SettingsForm( {initialData={}, costFactors=[]} )
                     name='glassSheetWidthIn'
                     defaultValue={initialData?.glassSheetWidthIn ?? ''}
                     inputProps={{step: 'any', min: '0'}}
-                    InputProps={{endAdornment: <InputAdornment position='end'>in</InputAdornment>}}
+                    InputProps={unitInputProps( 'in' )}
                     sx={noSpinnerSx}
                   />
                 </Grid>
@@ -502,13 +493,13 @@ export default function SettingsForm( {initialData={}, costFactors=[]} )
                     name='glassSheetHeightIn'
                     defaultValue={initialData?.glassSheetHeightIn ?? ''}
                     inputProps={{step: 'any', min: '0'}}
-                    InputProps={{endAdornment: <InputAdornment position='end'>in</InputAdornment>}}
+                    InputProps={unitInputProps( 'in' )}
                     sx={noSpinnerSx}
                   />
                 </Grid>
                 <Grid size={{ xs: 12 }}>
                   <Typography variant='body2' color='text.secondary'>
-                    Sheet area: {glassSheetAreaSqIn( initialData ).toFixed( 1 )} sq-in. Breakage reference rate: {formatDollars( glassSheetRatePerSqIn( initialData ) )}/sq-in
+                    Sheet area: {glassSheetAreaSqIn( initialData ).toFixed( 1 )} sq-in. Breakage reference rate: {formatDollarsPer( glassSheetRatePerSqIn( initialData ), 'sq-in' )}
                     (Sheet Cost ÷ Sheet Area) - feeds only Sheet Breakage (Glass) in Cost Factor Rates below. Recalculated when you save.
                   </Typography>
                 </Grid>
@@ -533,7 +524,7 @@ export default function SettingsForm( {initialData={}, costFactors=[]} )
                     name='tesseraeWeightPerSqIn'
                     defaultValue={initialData?.tesseraeWeightPerSqIn ?? ''}
                     inputProps={{step: 'any', min: '0'}}
-                    InputProps={{endAdornment: <InputAdornment position='end'>/sq-in</InputAdornment>}}
+                    InputProps={unitInputProps( 'lb / sq-in' )}
                     sx={noSpinnerSx}
                   />
                 </Grid>
@@ -545,7 +536,7 @@ export default function SettingsForm( {initialData={}, costFactors=[]} )
                     name='mirrorGlassWeightPerSqIn'
                     defaultValue={initialData?.mirrorGlassWeightPerSqIn ?? ''}
                     inputProps={{step: 'any', min: '0'}}
-                    InputProps={{endAdornment: <InputAdornment position='end'>/sq-in</InputAdornment>}}
+                    InputProps={unitInputProps( 'lb / sq-in' )}
                     sx={noSpinnerSx}
                   />
                 </Grid>
@@ -557,7 +548,7 @@ export default function SettingsForm( {initialData={}, costFactors=[]} )
                     name='groutWeightPerSqIn'
                     defaultValue={initialData?.groutWeightPerSqIn ?? ''}
                     inputProps={{step: 'any', min: '0'}}
-                    InputProps={{endAdornment: <InputAdornment position='end'>/sq-in</InputAdornment>}}
+                    InputProps={unitInputProps( 'lb / sq-in' )}
                     sx={noSpinnerSx}
                   />
                 </Grid>
@@ -569,7 +560,7 @@ export default function SettingsForm( {initialData={}, costFactors=[]} )
                     name='woodenBaseWeightPerSqIn'
                     defaultValue={initialData?.woodenBaseWeightPerSqIn ?? ''}
                     inputProps={{step: 'any', min: '0'}}
-                    InputProps={{endAdornment: <InputAdornment position='end'>/sq-in</InputAdornment>}}
+                    InputProps={unitInputProps( 'lb / sq-in' )}
                     sx={noSpinnerSx}
                   />
                 </Grid>
@@ -615,7 +606,7 @@ export default function SettingsForm( {initialData={}, costFactors=[]} )
                                   </>
                                 ) : isComputedRate ? (
                                   <>
-                                    <Typography>{formatDollars( factor.rate )} / {factor.rateUnit || factor.unit}</Typography>
+                                    <Typography>{formatDollarsPer( factor.rate, factor.rateUnit || factor.unit )}</Typography>
                                     <Typography variant='caption' color='text.secondary'>
                                       {COMPUTED_RATE_CAPTIONS[factor.key]}
                                     </Typography>
@@ -628,10 +619,7 @@ export default function SettingsForm( {initialData={}, costFactors=[]} )
                                     inputProps={{step: 'any', min: '0'}}
                                     name={`rates.${index}.rate`}
                                     defaultValue={factor.rate ?? 0}
-                                    InputProps={{
-                                      startAdornment: '$',
-                                      endAdornment: <span className='whitespace-nowrap'>/ {factor.rateUnit || factor.unit}</span>,
-                                    }}
+                                    InputProps={dollarInputProps( factor.rateUnit || factor.unit )}
                                     sx={noSpinnerSx}
                                     className='is-40'
                                   />
@@ -647,7 +635,7 @@ export default function SettingsForm( {initialData={}, costFactors=[]} )
                                       inputProps={{step: 'any', min: '0', max: '100'}}
                                       name={`rates.${index}.defaultOwnerSharePercent`}
                                       defaultValue={factor.defaultOwnerSharePercent ?? 100}
-                                      InputProps={{endAdornment: '%'}}
+                                      InputProps={unitInputProps( '%' )}
                                       sx={noSpinnerSx}
                                       className='is-28'
                                     />

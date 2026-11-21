@@ -33,6 +33,7 @@ import { deleteOrder } from '@/db/actions/order'
 import { useTableViewState } from '@/hooks/useTableViewState'
 import { customerDisplayName } from '../customers/customerFormat'
 import tableStyles from '@core/styles/table.module.css'
+import { useConfirm } from '@/contexts/confirmContext'
 
 const DEFAULT_VIEW = {
   sorting: [{id: 'promisedDate', desc: false}],
@@ -65,6 +66,7 @@ export default function OrdersListTable( {orderData} )
 {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
+  const confirm = useConfirm()
   const { view, updateView, onSortingChange, onPaginationChange } = useTableViewState( 'orders', DEFAULT_VIEW )
 
   const filters = {...DEFAULT_VIEW.filters, ...view.filters}
@@ -75,9 +77,9 @@ export default function OrdersListTable( {orderData} )
     [orderData, filters.atRiskOnly]
   )
 
-  function handleDelete( order )
+  async function handleDelete( order )
   {
-    if( !confirm( `Delete order #${order.id}? This removes its Pieces and cannot be undone.` ) )
+    if( !await confirm( `Delete order #${order.id}? This removes its Pieces and cannot be undone.`, {confirmText: 'Delete', destructive: true} ) )
       return
 
     startTransition( async () => {

@@ -31,6 +31,7 @@ import { deleteEvent } from '@/db/actions/event'
 import { useTableViewState } from '@/hooks/useTableViewState'
 import CustomAvatar from '@core/components/mui/Avatar'
 import tableStyles from '@core/styles/table.module.css'
+import { useConfirm } from '@/contexts/confirmContext'
 
 const DEFAULT_VIEW = {
   sorting: [{id: 'startDate', desc: true}],
@@ -52,11 +53,12 @@ export default function EventsListTable( {eventData} )
 {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
+  const confirm = useConfirm()
   const { view, updateView, onSortingChange, onPaginationChange } = useTableViewState( 'events', DEFAULT_VIEW )
 
-  function handleDelete( event )
+  async function handleDelete( event )
   {
-    if( !confirm( `Delete ${event.name}? This unlinks it from any customer sources that reference it.` ) )
+    if( !await confirm( `Delete ${event.name}? This unlinks it from any customer sources that reference it.`, {confirmText: 'Delete', destructive: true} ) )
       return
 
     startTransition( async () => {

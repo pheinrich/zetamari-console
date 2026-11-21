@@ -31,6 +31,7 @@ import { deleteSupplier } from '@/db/actions/supplier'
 import { useTableViewState } from '@/hooks/useTableViewState'
 import CustomAvatar from '@core/components/mui/Avatar'
 import tableStyles from '@core/styles/table.module.css'
+import { useConfirm } from '@/contexts/confirmContext'
 
 const DEFAULT_VIEW = {
   sorting: [],
@@ -50,11 +51,12 @@ export default function SuppliersListTable( {supplierData} )
 {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
+  const confirm = useConfirm()
   const { view, updateView, onSortingChange, onPaginationChange } = useTableViewState( 'suppliers', DEFAULT_VIEW )
 
-  function handleDelete( supplier )
+  async function handleDelete( supplier )
   {
-    if( !confirm( `Delete ${supplier.name}? This also removes its pricing on all products.` ) )
+    if( !await confirm( `Delete ${supplier.name}? This also removes its pricing on all products.`, {confirmText: 'Delete', destructive: true} ) )
       return
 
     startTransition( async () => {

@@ -34,6 +34,7 @@ import { formatCurrency } from '../products/productFormat'
 import LiveClassTableFilters from './LiveClassTableFilters'
 import CustomAvatar from '@core/components/mui/Avatar'
 import tableStyles from '@core/styles/table.module.css'
+import { useConfirm } from '@/contexts/confirmContext'
 
 const DEFAULT_VIEW = {
   sorting: [{id: 'startDate', desc: true}],
@@ -74,14 +75,15 @@ export default function LiveClassesListTable( {liveClassData} )
 {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
+  const confirm = useConfirm()
   const [filteredData, setFilteredData] = useState( liveClassData )
   const { view, updateView, onSortingChange, onPaginationChange } = useTableViewState( 'liveClasses', DEFAULT_VIEW )
 
   useEffect( () => { setFilteredData( liveClassData ) }, [liveClassData] )
 
-  function handleDelete( liveClass )
+  async function handleDelete( liveClass )
   {
-    if( !confirm( `Delete ${liveClass.name}? This also removes its attendee roster.` ) )
+    if( !await confirm( `Delete ${liveClass.name}? This also removes its attendee roster.`, {confirmText: 'Delete', destructive: true} ) )
       return
 
     startTransition( async () => {

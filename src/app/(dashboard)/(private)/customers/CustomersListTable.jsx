@@ -34,6 +34,7 @@ import { useTableViewState } from '@/hooks/useTableViewState'
 import { multiFieldFuzzyFilter } from '@/utils/multiFieldFuzzyFilter'
 import CustomAvatar from '@core/components/mui/Avatar'
 import tableStyles from '@core/styles/table.module.css'
+import { useConfirm } from '@/contexts/confirmContext'
 
 const DEFAULT_VIEW = {
   sorting: [],
@@ -90,15 +91,16 @@ export default function CustomersListTable( {customerData} )
 {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
+  const confirm = useConfirm()
   const [data, setData] = useState( customerData )
   const [filteredData, setFilteredData] = useState( customerData )
   const { view, updateView, onSortingChange, onPaginationChange } = useTableViewState( 'customers', DEFAULT_VIEW )
 
   useEffect( () => { setData( customerData ) }, [customerData] )
 
-  function handleDelete( customer )
+  async function handleDelete( customer )
   {
-    if( !confirm( `Delete ${customerDisplayName( customer )}? This also removes their sources and class attendance history.` ) )
+    if( !await confirm( `Delete ${customerDisplayName( customer )}? This also removes their sources and class attendance history.`, {confirmText: 'Delete', destructive: true} ) )
       return
 
     startTransition( async () => {

@@ -36,6 +36,7 @@ import StepperWrapper from '@core/styles/stepper'
 import StepperCustomDot from '@components/stepper-dot'
 import { customerDisplayName } from '../customers/customerFormat'
 import tableStyles from './ProductionTable.module.css'
+import DateField from '@/components/DateField'
 
 // CONTEXT.md's Production Phase order - every Piece.phase ENUM value,
 // regardless of whether a given piece's own sequence (kit vs finished,
@@ -285,21 +286,21 @@ export default function ProductionTable( {pieces} )
           value={view.globalFilter ?? ''}
           onChange={e => updateView( {globalFilter: e.target.value} )}
         />
-        <TextField
+        <DateField
           size='small'
-          type='date'
           label='Order From'
+          clearable
           slotProps={{inputLabel: {shrink: true}}}
           value={filters.orderDateFrom}
-          onChange={e => updateFilters( {orderDateFrom: e.target.value} )}
+          onChange={v => updateFilters( {orderDateFrom: v} )}
         />
-        <TextField
+        <DateField
           size='small'
-          type='date'
           label='Order To'
+          clearable
           slotProps={{inputLabel: {shrink: true}}}
           value={filters.orderDateTo}
-          onChange={e => updateFilters( {orderDateTo: e.target.value} )}
+          onChange={v => updateFilters( {orderDateTo: v} )}
         />
         <FormControl size='small' className='min-is-[10rem]'>
           <InputLabel id='production-status-filter'>Status</InputLabel>
@@ -315,37 +316,37 @@ export default function ProductionTable( {pieces} )
             <MenuItem value='shipped'>Shipped</MenuItem>
           </Select>
         </FormControl>
-        <TextField
+        <DateField
           size='small'
-          type='date'
           label='Grouting From'
+          clearable
           slotProps={{inputLabel: {shrink: true}}}
           value={filters.groutingDateFrom}
-          onChange={e => updateFilters( {groutingDateFrom: e.target.value} )}
+          onChange={v => updateFilters( {groutingDateFrom: v} )}
         />
-        <TextField
+        <DateField
           size='small'
-          type='date'
           label='Grouting To'
+          clearable
           slotProps={{inputLabel: {shrink: true}}}
           value={filters.groutingDateTo}
-          onChange={e => updateFilters( {groutingDateTo: e.target.value} )}
+          onChange={v => updateFilters( {groutingDateTo: v} )}
         />
-        <TextField
+        <DateField
           size='small'
-          type='date'
           label='Ship From'
+          clearable
           slotProps={{inputLabel: {shrink: true}}}
           value={filters.shipDateFrom}
-          onChange={e => updateFilters( {shipDateFrom: e.target.value} )}
+          onChange={v => updateFilters( {shipDateFrom: v} )}
         />
-        <TextField
+        <DateField
           size='small'
-          type='date'
           label='Ship To'
+          clearable
           slotProps={{inputLabel: {shrink: true}}}
           value={filters.shipDateTo}
-          onChange={e => updateFilters( {shipDateTo: e.target.value} )}
+          onChange={v => updateFilters( {shipDateTo: v} )}
         />
       </CardContent>
       <Divider />

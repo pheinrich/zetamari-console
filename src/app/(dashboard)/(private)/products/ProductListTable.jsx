@@ -36,6 +36,7 @@ import CustomAvatar from '@core/components/mui/Avatar'
 import OptionMenu from '@core/components/option-menu'
 
 import tableStyles from '@core/styles/table.module.css'
+import { useConfirm } from '@/contexts/confirmContext'
 
 const DEFAULT_VIEW = {
   sorting: [],
@@ -80,6 +81,7 @@ export default function ProductListTable( {productData, supplierData=[]} )
 {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
+  const confirm = useConfirm()
   const [data, setData] = useState( productData )
   const [filteredData, setFilteredData] = useState( productData )
   const { view, updateView, onSortingChange, onPaginationChange } = useTableViewState( 'products', DEFAULT_VIEW )
@@ -130,9 +132,9 @@ export default function ProductListTable( {productData, supplierData=[]} )
     })
   }
 
-  function handleDelete( product )
+  async function handleDelete( product )
   {
-    if( !confirm( `Delete ${product.name}? This is blocked if it's still used as a material in another product.` ) )
+    if( !await confirm( `Delete ${product.name}? This is blocked if it's still used as a material in another product.`, {confirmText: 'Delete', destructive: true} ) )
       return
 
     startTransition( async () => {

@@ -15,6 +15,7 @@ import TextField from '@mui/material/TextField'
 import Typography from '@mui/material/Typography'
 
 import { addProductImage, removeProductImage, reorderProductImage } from '@/db/actions/product'
+import { useConfirm } from '@/contexts/confirmContext'
 
 // Images live in S3 and are referenced by URL (no upload widget here - see
 // the product list restyle conversation for why). The same image may be
@@ -24,6 +25,7 @@ export default function ProductImagesCard( {productId, images} )
 {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
+  const confirm = useConfirm()
   const [url, setUrl] = useState( '' )
   const [altText, setAltText] = useState( '' )
   const [error, setError] = useState( null )
@@ -49,9 +51,9 @@ export default function ProductImagesCard( {productId, images} )
     })
   }
 
-  function handleRemove( productImageId )
+  async function handleRemove( productImageId )
   {
-    if( !confirm( 'Remove this image from the product? (The image itself is not deleted - only the link to this product.)' ) )
+    if( !await confirm( 'Remove this image from the product? (The image itself is not deleted - only the link to this product.)', {confirmText: 'Remove', destructive: true} ) )
       return
 
     startTransition( async () => {

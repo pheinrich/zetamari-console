@@ -30,6 +30,7 @@ import { formatCurrency } from './productFormat'
 import ProductImagesCard from './ProductImagesCard'
 import ProductCostBreakdown from './[id]/ProductCostBreakdown'
 import tableStyles from '@core/styles/table.module.css'
+import { dollarInputProps, unitInputProps } from '@/utils/units'
 
 // Same spinner-hiding treatment used on the Cost Breakdown/BOM editors -
 // quantities here are typically several digits past the decimal point.
@@ -207,11 +208,11 @@ export default function ProductForm( {contourList, initialData={}, costs, comput
                     </Grid>
                     <Grid size={{ xs: 12, sm: 6 }}>
                       <div className='flex flex-col gap-1'>
-                        <TextField fullWidth label='Weight' name='weight' value={weight} onChange={e => setWeight( e.target.value )} />
+                        <TextField fullWidth label='Weight' name='weight' value={weight} onChange={e => setWeight( e.target.value )} InputProps={unitInputProps( 'lb' )} />
                         {null != computedWeight && (
                           <div className='flex items-center justify-between gap-2'>
                             <Typography variant='caption' color='text.secondary'>
-                              Computed: {computedWeight.toFixed( 3 )}
+                              Computed: {computedWeight.toFixed( 3 )} lb
                             </Typography>
                             <Button type='button' size='small' onClick={() => setWeight( computedWeight.toFixed( 3 ) )}>
                               Copy from Computed Weight
@@ -226,6 +227,7 @@ export default function ProductForm( {contourList, initialData={}, costs, comput
                         label='Shipping Weight'
                         name='shippingWeight'
                         defaultValue={initialData?.shippingWeight || ''}
+                        InputProps={unitInputProps( 'lb' )}
                         helperText='Packaging included, if different from Weight above'
                       />
                     </Grid>
@@ -339,10 +341,10 @@ export default function ProductForm( {contourList, initialData={}, costs, comput
                                     name={`bomLines.${i}.quantity`}
                                     value={line.quantity}
                                     onChange={e => handleDupBomQuantityChange( i, e.target.value )}
+                                    InputProps={unitInputProps( line.units )}
                                     sx={noSpinnerSx}
-                                    className='is-24'
+                                    className='is-36'
                                   />
-                                  <Typography variant='body2'>{line.units}</Typography>
                                 </div>
                                 <input type='hidden' name={`bomLines.${i}.materialProductId`} value={line.materialProductId} />
                                 <input type='hidden' name={`bomLines.${i}.supplierId`} value={line.supplierId} />
@@ -433,6 +435,7 @@ export default function ProductForm( {contourList, initialData={}, costs, comput
                       name='priceWholesale'
                       value={priceWholesale}
                       onChange={e => setPriceWholesale( e.target.value )}
+                      InputProps={dollarInputProps()}
                     />
                     {costs && (
                       <div className='flex items-center justify-between gap-2'>
@@ -452,6 +455,7 @@ export default function ProductForm( {contourList, initialData={}, costs, comput
                       name='priceRetail'
                       value={priceRetail}
                       onChange={e => setPriceRetail( e.target.value )}
+                      InputProps={dollarInputProps()}
                     />
                     {costs && (
                       <div className='flex items-center justify-between gap-2'>

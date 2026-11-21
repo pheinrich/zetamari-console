@@ -8,15 +8,17 @@ import { toast } from 'react-toastify'
 import Button from '@mui/material/Button'
 
 import { deleteOrder } from '@/db/actions/order'
+import { useConfirm } from '@/contexts/confirmContext'
 
 export default function OrderDetailActions( {order} )
 {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
+  const confirm = useConfirm()
 
-  function handleDelete()
+  async function handleDelete()
   {
-    if( !confirm( `Delete order #${order.id}? This removes its Pieces and cannot be undone.` ) )
+    if( !await confirm( `Delete order #${order.id}? This removes its Pieces and cannot be undone.`, {confirmText: 'Delete', destructive: true} ) )
       return
 
     startTransition( async () => {

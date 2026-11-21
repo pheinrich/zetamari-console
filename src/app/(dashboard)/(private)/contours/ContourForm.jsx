@@ -22,6 +22,7 @@ import NextLink from 'next/link'
 
 import { useFormSubmit } from '@/utils/formSubmitHook'
 import { createContour, updateContour } from '@/db/actions/contour'
+import { useConfirm } from '@/contexts/confirmContext'
 
 const optionalString = z.preprocess( (val) => (val === '' || val == null ? undefined : val), z.string().optional() )
 
@@ -51,6 +52,7 @@ const schema = z.object({
 export default function ContourForm( {initialData={}, shapeTypes=[]} )
 {
   const router = useRouter()
+  const confirm = useConfirm()
   const isEdit = Boolean( initialData?.id )
   const [hasSvgData, setHasSvgData] = useState( Boolean( initialData?.svgData ) )
   const [shapeName, setShapeName] = useState( initialData?.shape?.name || '' )
@@ -73,21 +75,23 @@ export default function ContourForm( {initialData={}, shapeTypes=[]} )
       router.push( '/contours' )
   }, [success, router] )
 
-  function handleFormSubmit( e )
+  async function handleFormSubmit( e )
   {
     const svgData = e.target.elements.svgData?.value
 
     if( !svgData || !svgData.trim() )
     {
-      const proceed = confirm(
-        'Creating a Contour with no path data establishes it as a fundamental shape. Do you wish to proceed?'
+      // Stop the native submit before awaiting the dialog - handleSubmit()
+      // below reads the form off e.target, which still works afterward.
+      e.preventDefault()
+
+      const proceed = await confirm(
+        'Creating a Contour with no path data establishes it as a fundamental shape. Do you wish to proceed?',
+        {confirmText: 'Create Contour'}
       )
 
       if( !proceed )
-      {
-        e.preventDefault()
         return
-      }
     }
 
     handleSubmit( e )

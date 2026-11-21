@@ -10,9 +10,7 @@ import Card from '@mui/material/Card'
 import CardHeader from '@mui/material/CardHeader'
 import CardContent from '@mui/material/CardContent'
 import Button from '@mui/material/Button'
-import IconButton from '@mui/material/IconButton'
 import Alert from '@mui/material/Alert'
-import InputAdornment from '@mui/material/InputAdornment'
 import TextField from '@mui/material/TextField'
 import Typography from '@mui/material/Typography'
 import Autocomplete from '@mui/material/Autocomplete'
@@ -20,6 +18,7 @@ import Autocomplete from '@mui/material/Autocomplete'
 import { useFormSubmit } from '@/utils/formSubmitHook'
 import { updateOrder } from '@/db/actions/order'
 import { customerDisplayName } from '../customers/customerFormat'
+import DateField from '@/components/DateField'
 
 const schema = z.object({
   id: z.coerce.number(),
@@ -90,25 +89,14 @@ export default function OrderEditForm( {order, customerOptions} )
                   />
                 </Grid>
                 <Grid size={{ xs: 12, sm: 6 }}>
-                  <TextField
+                  <DateField
                     fullWidth
-                    type='date'
                     label='Promised Date (optional)'
                     name='promisedDate'
                     value={promisedDate}
-                    onChange={e => setPromisedDate( e.target.value )}
-                    slotProps={{
-                      inputLabel: { shrink: true },
-                      input: {
-                        endAdornment: promisedDate && (
-                          <InputAdornment position='end'>
-                            <IconButton size='small' onClick={() => setPromisedDate( '' )} aria-label='Clear promised date'>
-                              <i className='ri-close-line' />
-                            </IconButton>
-                          </InputAdornment>
-                        ),
-                      },
-                    }}
+                    onChange={setPromisedDate}
+                    clearable
+                    slotProps={{inputLabel: {shrink: true}}}
                     helperText="Clear to let scheduling compute one from the backlog again. Set this only when the customer requested a specific date."
                   />
                 </Grid>

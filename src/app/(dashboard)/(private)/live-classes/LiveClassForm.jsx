@@ -21,6 +21,7 @@ import Typography from '@mui/material/Typography'
 
 import { useFormSubmit } from '@/utils/formSubmitHook'
 import { createLiveClass, updateLiveClass } from '@/db/actions/liveClass'
+import { dollarInputProps } from '@/utils/units'
 
 const optionalString = z.preprocess( (val) => (val === '' ? undefined : val), z.string().optional() )
 
@@ -146,6 +147,7 @@ export default function LiveClassForm( {initialData={}, locationOptions=[]} )
                     label='Cost'
                     name='cost'
                     inputProps={{step: '0.01', min: '0'}}
+                    InputProps={dollarInputProps()}
                     defaultValue={initialData?.cost ?? ''}
                   />
                 </Grid>

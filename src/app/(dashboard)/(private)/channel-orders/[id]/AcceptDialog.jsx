@@ -20,6 +20,8 @@ import Typography from '@mui/material/Typography'
 
 import { acceptChannelOrder, readAcceptPreview, searchCustomers } from '@/db/actions/channelOrder'
 import tableStyles from '@core/styles/table.module.css'
+import DateField from '@/components/DateField'
+import { unitInputProps } from '@/utils/units'
 
 const REASONS = {'buyer ID': 'same buyer ID', email: 'same email', channel: 'the channel', company: 'same company', name: 'same name'}
 
@@ -130,14 +132,14 @@ export default function AcceptDialog( {order, open, onClose} )
               </Typography>
             </div>
 
-            <TextField
-              type='date'
+            <DateField
               label='Promised date'
+              clearable
               value={promisedDate}
-              onChange={e => setPromisedDate( e.target.value )}
+              onChange={setPromisedDate}
               helperText={`${order.requestedShipDate ? `The channel asked for: ${order.requestedShipDate}. ` : ''}Leave blank to compute it later.`}
               slotProps={{inputLabel: {shrink: true}}}
-              sx={{maxInlineSize: 320}}
+              boxProps={{sx: {maxInlineSize: 320}}}
             />
 
             <table className={tableStyles.table}>
@@ -154,7 +156,8 @@ export default function AcceptDialog( {order, open, onClose} )
                           placeholder='Qty'
                           value={quantities[line.id] ?? ''}
                           onChange={e => setQuantities( q => ({...q, [line.id]: e.target.value}) )}
-                          sx={{inlineSize: 90}}
+                          InputProps={unitInputProps( line.product?.units )}
+                          sx={{inlineSize: 140}}
                         />
                       )}
                     </td>

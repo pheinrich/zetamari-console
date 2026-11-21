@@ -30,6 +30,7 @@ import {
 import { deletePermission } from '@/db/actions/permission'
 import { useTableViewState } from '@/hooks/useTableViewState'
 import tableStyles from '@core/styles/table.module.css'
+import { useConfirm } from '@/contexts/confirmContext'
 
 const DEFAULT_VIEW = {
   sorting: [{id: 'name', desc: false}],
@@ -51,11 +52,12 @@ export default function PermissionsListTable( {permissionData} )
 {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
+  const confirm = useConfirm()
   const { view, updateView, onSortingChange, onPaginationChange } = useTableViewState( 'permissions', DEFAULT_VIEW )
 
-  function handleDelete( permission )
+  async function handleDelete( permission )
   {
-    if( !confirm( `Delete ${permission.name}? This removes it from any roles that grant it.` ) )
+    if( !await confirm( `Delete ${permission.name}? This removes it from any roles that grant it.`, {confirmText: 'Delete', destructive: true} ) )
       return
 
     startTransition( async () => {

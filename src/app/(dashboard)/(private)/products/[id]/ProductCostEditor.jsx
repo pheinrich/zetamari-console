@@ -20,6 +20,7 @@ import {
 } from '@/db/actions/productCost'
 import { formatCurrency } from '../productFormat'
 import tableStyles from '@core/styles/table.module.css'
+import { unitInputProps } from '@/utils/units'
 
 const CATEGORY_LABELS = {material: 'Material', machine: 'Machine', labor: 'Labor'}
 const CATEGORY_ORDER = ['material', 'machine', 'labor']
@@ -189,10 +190,10 @@ export default function ProductCostEditor( {productId, costs} )
                               defaultValue={row.effectiveQuantity.toFixed( 3 )}
                               onBlur={e => handleCommit( row.factor.id, e.target.value )}
                               disabled={isPending}
+                              InputProps={unitInputProps( row.factor.unit )}
                               sx={noSpinnerSx}
-                              className='is-28'
+                              className='is-40'
                             />
-                            <Typography variant='body2' color='text.secondary'>{row.factor.unit}</Typography>
                           </div>
                           {isOverridden && (
                             <Typography variant='caption' color='text.secondary'>
@@ -215,10 +216,10 @@ export default function ProductCostEditor( {productId, costs} )
                                 defaultValue={row.effectiveOwnerSharePercent}
                                 onBlur={e => handleCommitOwnerShare( row.factor.id, e.target.value )}
                                 disabled={isPending}
+                                InputProps={unitInputProps( '%' )}
                                 sx={noSpinnerSx}
-                                className='is-20'
+                                className='is-24'
                               />
-                              <Typography variant='body2' color='text.secondary'>%</Typography>
                               {isOwnerShareOverridden && (
                                 <Tooltip title='Revert to the default % Owner'>
                                   <span>

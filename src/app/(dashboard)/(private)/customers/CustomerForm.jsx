@@ -21,6 +21,7 @@ import Autocomplete from '@mui/material/Autocomplete'
 
 import { useFormSubmit } from '@/utils/formSubmitHook'
 import { createCustomer, updateCustomer } from '@/db/actions/person'
+import { unitInputProps } from '@/utils/units'
 
 const optionalString = z.preprocess( (val) => (val === '' ? undefined : val), z.string().optional() )
 
@@ -211,9 +212,10 @@ export default function CustomerForm( {initialData={}, roleOptions=[]} )
                   <TextField
                     fullWidth
                     type='number'
-                    label='Class Discount %'
+                    label='Class Discount'
                     name='discountPercent'
                     inputProps={{step: '1', min: '0', max: '100'}}
+                    InputProps={unitInputProps( '%' )}
                     defaultValue={initialData?.discountPercent ?? ''}
                     helperText='Set automatically to 20% on the 4th class - adjust here any time after that.'
                   />

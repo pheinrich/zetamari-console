@@ -23,6 +23,7 @@ import { createBasicEvent, updateBasicEvent, deleteBasicEvent } from '@/db/actio
 import { customerDisplayName } from '../customers/customerFormat'
 import AppReactDatepicker from '@/libs/styles/AppReactDatepicker'
 import tableStyles from '@core/styles/table.module.css'
+import { useConfirm } from '@/contexts/confirmContext'
 
 const COLOR_OPTIONS = ['primary', 'secondary', 'success', 'error', 'warning', 'info']
 
@@ -54,6 +55,7 @@ export default function OccurrenceEditor( {eventId, liveClassId, occurrences, pe
 {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
+  const confirm = useConfirm()
   const [title, setTitle] = useState( '' )
   const [startDatetime, setStartDatetime] = useState( null )
   const [endDatetime, setEndDatetime] = useState( null )
@@ -112,9 +114,9 @@ export default function OccurrenceEditor( {eventId, liveClassId, occurrences, pe
     })
   }
 
-  function handleRemove( id )
+  async function handleRemove( id )
   {
-    if( !confirm( 'Remove this occurrence?' ) )
+    if( !await confirm( 'Remove this occurrence?', {confirmText: 'Remove', destructive: true} ) )
       return
 
     startTransition( async () => {

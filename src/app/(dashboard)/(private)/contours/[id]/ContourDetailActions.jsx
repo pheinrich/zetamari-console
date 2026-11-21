@@ -8,15 +8,17 @@ import { toast } from 'react-toastify'
 import Button from '@mui/material/Button'
 
 import { deleteContour } from '@/db/actions/contour'
+import { useConfirm } from '@/contexts/confirmContext'
 
 export default function ContourDetailActions( {contour} )
 {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
+  const confirm = useConfirm()
 
-  function handleDelete()
+  async function handleDelete()
   {
-    if( !confirm( `Delete ${contour.name}? This will fail if it's still referenced by a substrate product.` ) )
+    if( !await confirm( `Delete ${contour.name}? This will fail if it's still referenced by a substrate product.`, {confirmText: 'Delete', destructive: true} ) )
       return
 
     startTransition( async () => {

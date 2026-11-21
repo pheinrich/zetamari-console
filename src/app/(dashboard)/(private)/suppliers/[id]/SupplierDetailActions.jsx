@@ -8,15 +8,17 @@ import { toast } from 'react-toastify'
 import Button from '@mui/material/Button'
 
 import { deleteSupplier } from '@/db/actions/supplier'
+import { useConfirm } from '@/contexts/confirmContext'
 
 export default function SupplierDetailActions( {supplier} )
 {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
+  const confirm = useConfirm()
 
-  function handleDelete()
+  async function handleDelete()
   {
-    if( !confirm( `Delete ${supplier.name}? This also removes its pricing on all products.` ) )
+    if( !await confirm( `Delete ${supplier.name}? This also removes its pricing on all products.`, {confirmText: 'Delete', destructive: true} ) )
       return
 
     startTransition( async () => {

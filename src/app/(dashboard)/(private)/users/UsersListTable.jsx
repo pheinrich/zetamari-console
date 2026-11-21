@@ -32,6 +32,7 @@ import { customerDisplayName } from '../customers/customerFormat'
 import { useTableViewState } from '@/hooks/useTableViewState'
 import CustomAvatar from '@core/components/mui/Avatar'
 import tableStyles from '@core/styles/table.module.css'
+import { useConfirm } from '@/contexts/confirmContext'
 
 const DEFAULT_VIEW = {
   sorting: [],
@@ -61,11 +62,12 @@ export default function UsersListTable( {userData} )
 {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
+  const confirm = useConfirm()
   const { view, updateView, onSortingChange, onPaginationChange } = useTableViewState( 'users', DEFAULT_VIEW )
 
-  function handleDelete( user )
+  async function handleDelete( user )
   {
-    if( !confirm( `Delete ${customerDisplayName( user )}? This cannot be undone.` ) )
+    if( !await confirm( `Delete ${customerDisplayName( user )}? This cannot be undone.`, {confirmText: 'Delete', destructive: true} ) )
       return
 
     startTransition( async () => {
