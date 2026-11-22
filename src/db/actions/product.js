@@ -130,7 +130,7 @@ export async function readProduct( id, eager )
           model: Supplier,
           as: 'suppliers',
           through: {
-            attributes: ['partNumber', 'url', 'cost']
+            attributes: ['id', 'partNumber', 'url', 'cost']
           }
         },
         {

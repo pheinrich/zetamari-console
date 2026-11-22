@@ -218,5 +218,14 @@ export async function removeSupplierProductPrice( id )
 
   await link.destroy()
 
+  // BOM lines that pinned this supplier for this material would otherwise
+  // resolve to $0 (resolveSupplierCost finds no price for it) - fall them
+  // back to the cheapest remaining supplier instead, the same as deleting
+  // the supplier outright does via the column's ON DELETE SET NULL.
+  await BillOfMaterial.update(
+    {supplierId: null},
+    {where: {materialProductId: link.productId, supplierId: link.supplierId}}
+  )
+
   await markProductsUsingMaterialStale( link.productId )
 }

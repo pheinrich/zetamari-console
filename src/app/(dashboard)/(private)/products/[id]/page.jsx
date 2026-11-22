@@ -9,8 +9,10 @@ import { readContours } from '@/db/actions/contour'
 import { readBomMaterialChoices, readProduct } from '@/db/actions/product'
 
 import { readProductImages } from '@/db/actions/productImage'
+import { readSuppliers } from '@/db/actions/supplier'
 
 import BomEditor from '../BomEditor'
+import SupplierProductView from '../SupplierProductView'
 import ProductImagesTab from './ProductImagesTab'
 
 import ProductHero from './ProductHero'
@@ -20,7 +22,12 @@ import ProductOverview from './ProductOverview'
 export default async function ProductPage( {params} )
 {
   const {id} = await params
-  const [product, materialChoices, images] = await Promise.all( [readProduct( id, true ), readBomMaterialChoices( id ), readProductImages( id )] )
+  const [product, materialChoices, images, allSuppliers] = await Promise.all( [
+    readProduct( id, true ),
+    readBomMaterialChoices( id ),
+    readProductImages( id ),
+    readSuppliers(),
+  ] )
 
   if( !product )
     return notFound()
@@ -62,6 +69,19 @@ export default async function ProductPage( {params} )
               </Card>
             ),
             images: <ProductImagesTab productId={product.id} images={images} />,
+            suppliers: (
+              <Card>
+                <CardHeader title='Suppliers' subheader='Where this product is bought, and what each supplier charges. Bills of materials use the cheapest price unless a line picks a supplier.' />
+                <CardContent>
+                  <SupplierProductView
+                    product={{id: product.id, units: product.units}}
+                    suppliers={product.suppliers ?? []}
+                    supplierOptions={allSuppliers.map( (s) => ({id: s.id, name: s.name}) ).sort( (a, b) => a.name.localeCompare( b.name ) )}
+                    usedInLines={product.usedInLines ?? []}
+                  />
+                </CardContent>
+              </Card>
+            ),
           }}
         />
       </Grid>
