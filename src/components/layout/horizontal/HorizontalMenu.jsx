@@ -86,6 +86,9 @@ const HorizontalMenu = ({}) => {
           <MenuItem href='/products' icon={<i className='ri-shapes-line' />}>
             products
           </MenuItem>
+          <MenuItem href='/images' icon={<i className='ri-image-line' />}>
+            images
+          </MenuItem>
         </SubMenu>
 
         <SubMenu label='customer' icon={<i className='ri-user-line' />}>

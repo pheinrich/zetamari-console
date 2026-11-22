@@ -8,7 +8,10 @@ import Grid from '@mui/material/Grid2'
 import { readContours } from '@/db/actions/contour'
 import { readBomMaterialChoices, readProduct } from '@/db/actions/product'
 
+import { readProductImages } from '@/db/actions/productImage'
+
 import BomEditor from '../BomEditor'
+import ProductImagesTab from './ProductImagesTab'
 
 import ProductHero from './ProductHero'
 import ProductTabs from './ProductTabs'
@@ -17,7 +20,7 @@ import ProductOverview from './ProductOverview'
 export default async function ProductPage( {params} )
 {
   const {id} = await params
-  const [product, materialChoices] = await Promise.all( [readProduct( id, true ), readBomMaterialChoices( id )] )
+  const [product, materialChoices, images] = await Promise.all( [readProduct( id, true ), readBomMaterialChoices( id ), readProductImages( id )] )
 
   if( !product )
     return notFound()
@@ -58,6 +61,7 @@ export default async function ProductPage( {params} )
                 </CardContent>
               </Card>
             ),
+            images: <ProductImagesTab productId={product.id} images={images} />,
           }}
         />
       </Grid>

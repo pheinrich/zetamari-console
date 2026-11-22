@@ -71,6 +71,9 @@ const VerticalMenu = ({ scrollMenu }) => {
           <MenuItem href='/products' icon={<i className='ri-shapes-line' />}>
             products
           </MenuItem>
+          <MenuItem href='/images' icon={<i className='ri-image-line' />}>
+            images
+          </MenuItem>
         </MenuSection>
         <MenuSection label='customer'>
           <MenuItem href='/customers' icon={<i className='ri-user-line' />}>
