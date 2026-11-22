@@ -14,6 +14,9 @@ const SupplierProduct = sequelize.define(
     partNumber: { type: DataTypes.STRING, allowNull: false },
     url: { type: DataTypes.STRING },
     cost: { type: DataTypes.FLOAT },
+    // The supplier/part # to cost this product at by default, over the
+    // cheapest (see setPreferredSupplierProduct). At most one per product.
+    preferred: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: false },
   },
   {
     timestamps: false,

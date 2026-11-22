@@ -77,7 +77,7 @@ export async function readSupplier( id, eager )
         {
           model: Product,
           as: 'products',
-          through: {attributes: ['id', 'partNumber', 'url', 'cost']},
+          through: {attributes: ['id', 'partNumber', 'url', 'cost', 'preferred']},
         },
       ],
     })
@@ -228,4 +228,39 @@ export async function removeSupplierProductPrice( id )
   )
 
   await markProductsUsingMaterialStale( link.productId )
+}
+
+// Marks one supplier/part # row as the product's preferred source - what
+// BOM lines that don't pick their own supplier are costed at, instead of
+// the cheapest (libs/costFactors.js's resolveSupplierCost). `id` null
+// clears the preference. Any other preferred row for the same product is
+// cleared in the same transaction, keeping it to one per product.
+export async function setPreferredSupplierProduct( productId, id )
+{
+  const session = await auth()
+  if( !session )
+    unauthorized()
+
+  await sequelize.sync()
+
+  if( id )
+  {
+    const link = await SupplierProduct.findByPk( id )
+    if( !link || link.productId !== Number( productId ) )
+      return {error: 'That supplier is not listed for this product.'}
+
+    if( null == link.cost )
+      return {error: 'Give this supplier a cost before making it preferred.'}
+  }
+
+  await sequelize.transaction( async (transaction) => {
+    await SupplierProduct.update( {preferred: false}, {where: {productId, preferred: true}, transaction} )
+
+    if( id )
+      await SupplierProduct.update( {preferred: true}, {where: {id}, transaction} )
+  })
+
+  await markProductsUsingMaterialStale( productId )
+
+  return {success: true}
 }

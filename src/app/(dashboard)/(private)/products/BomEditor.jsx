@@ -140,6 +140,7 @@ export default function BomEditor( {productId, bomLines, productOptions} )
           <tbody>
             {bomLines.map( (line) => {
               const suppliers = line.material.suppliers || []
+              const preferred = suppliers.find( (s) => s.SupplierProduct?.preferred && null != s.SupplierProduct?.cost )
               const unitCost = resolveSupplierCost( line.material, line.supplierId )
               const lineCost = (line.quantity || 0) * unitCost
 
@@ -179,7 +180,7 @@ export default function BomEditor( {productId, bomLines, productOptions} )
                           onChange={(e) => handleUpdateSupplier( line.id, e.target.value || null )}
                           disabled={isPending}
                         >
-                          <MenuItem value=''>Cheapest (auto)</MenuItem>
+                          <MenuItem value=''>{preferred ? `Preferred (${preferred.name})` : 'Cheapest (auto)'}</MenuItem>
                           {suppliers.map( (s) => (
                             <MenuItem key={s.id} value={s.id}>{s.name}</MenuItem>
                           ) )}

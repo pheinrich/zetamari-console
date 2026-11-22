@@ -117,9 +117,11 @@ export function convertToRateUnit( quantity, factor )
 }
 
 // A BOM line's per-unit cost: whichever supplier it explicitly names
-// (`line.supplierId`), or the cheapest available SupplierProduct.cost
-// for that material if it doesn't name one. `material.suppliers` is
-// expected to be eager-loaded with the join's `cost` attribute (see
+// (`line.supplierId`); failing that, the material's preferred supplier
+// (SupplierProduct.preferred) if it has a price; failing that, the
+// cheapest available SupplierProduct.cost. `material.suppliers` is
+// expected to be eager-loaded with the join's `cost` and `preferred`
+// attributes (see
 // productCost.js's loadProductForCosting) - each entry is a Supplier row
 // with its SupplierProduct join data nested under `.SupplierProduct`,
 // matching the same shape already used on the product detail page's
@@ -127,11 +129,15 @@ export function convertToRateUnit( quantity, factor )
 export function resolveSupplierCost( material, supplierId )
 {
   const priced = (material?.suppliers ?? [])
-    .map( s => ({id: s.id, cost: s.SupplierProduct?.cost}) )
+    .map( s => ({id: s.id, cost: s.SupplierProduct?.cost, preferred: Boolean( s.SupplierProduct?.preferred )}) )
     .filter( s => null != s.cost )
 
   if( supplierId )
     return priced.find( s => s.id === supplierId )?.cost ?? 0
+
+  const preferred = priced.find( s => s.preferred )
+  if( preferred )
+    return preferred.cost
 
   return priced.length ? Math.min( ...priced.map( s => s.cost ) ) : 0
 }

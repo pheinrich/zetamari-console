@@ -12,7 +12,7 @@ import TextField from '@mui/material/TextField'
 import Tooltip from '@mui/material/Tooltip'
 import Typography from '@mui/material/Typography'
 
-import { setSupplierProductPrice, updateSupplierProductPrice, removeSupplierProductPrice } from '@/db/actions/supplier'
+import { setSupplierProductPrice, updateSupplierProductPrice, removeSupplierProductPrice, setPreferredSupplierProduct } from '@/db/actions/supplier'
 import tableStyles from '@core/styles/table.module.css'
 import { useConfirm } from '@/contexts/confirmContext'
 import { dollarInputProps } from '@/utils/units'
@@ -52,12 +52,13 @@ function numberOrNull( value )
 
 // A product can come from zero or more suppliers, each charging its own
 // price. `suppliers` is the product's eager-loaded Supplier list (each with
-// a `.SupplierProduct` join row - id, partNumber, url, cost - attached by
-// Sequelize); `supplierOptions` is every supplier available to add;
-// `usedInLines` are the BOM lines consuming this product, so each supplier
-// can show how many of them have pinned it (see BomEditor's supplier
-// picker - unpinned lines use the cheapest price, flagged here). Rendered
-// inside a Card by the caller, which supplies the title.
+// a `.SupplierProduct` join row - id, partNumber, url, cost, preferred -
+// attached by Sequelize); `supplierOptions` is every supplier available to
+// add; `usedInLines` are the BOM lines consuming this product, so each
+// supplier can show how many of them have chosen it (see BomEditor's
+// supplier picker). Lines that don't choose one use the preferred row
+// (starred here) if it has a cost, else the cheapest. Rendered inside a
+// Card by the caller, which supplies the title.
 export default function SupplierProductView( {product, suppliers, supplierOptions, usedInLines = []} )
 {
   const router = useRouter()
@@ -77,6 +78,7 @@ export default function SupplierProductView( {product, suppliers, supplierOption
 
   const priced = rows.filter( (s) => null != s.SupplierProduct.cost )
   const cheapestId = priced.length > 1 ? priced[0].id : null
+  const preferredLinkId = rows.find( (s) => s.SupplierProduct.preferred )?.SupplierProduct.id ?? null
 
   const pinnedCount = {}
   for( const line of usedInLines )
@@ -104,6 +106,18 @@ export default function SupplierProductView( {product, suppliers, supplierOption
       save( link.id, {[field]: value} )
   }
 
+  function handleTogglePreferred( link )
+  {
+    setError( null )
+    startTransition( async () => {
+      const result = await setPreferredSupplierProduct( product.id, link.preferred ? null : link.id )
+      if( result?.error )
+        setError( result.error )
+
+      router.refresh()
+    })
+  }
+
   function handleAdd()
   {
     if( !newSupplier )
@@ -127,10 +141,16 @@ export default function SupplierProductView( {product, suppliers, supplierOption
 
   async function handleRemove( supplier )
   {
-    const pinned = pinnedCount[supplier.id] ?? 0
-    const message = pinned
-      ? `Remove ${supplier.name} from this product? ${pinned} bill-of-materials line${1 === pinned ? '' : 's'} pinned to this supplier will switch to the cheapest remaining price.`
-      : `Remove ${supplier.name} from this product?`
+    const chosen = pinnedCount[supplier.id] ?? 0
+    const notes = []
+
+    if( supplier.SupplierProduct.preferred )
+      notes.push( "It's the preferred supplier; bills of materials will fall back to the cheapest price." )
+
+    if( chosen )
+      notes.push( `${chosen} bill-of-materials line${1 === chosen ? '' : 's'} that chose this supplier will switch to the default.` )
+
+    const message = [`Remove ${supplier.name} from this product?`, ...notes].join( ' ' )
 
     if( !await confirm( message, {confirmText: 'Remove', destructive: true} ) )
       return
@@ -158,7 +178,8 @@ export default function SupplierProductView( {product, suppliers, supplierOption
             {rows.map( (supplier) => {
               const link = supplier.SupplierProduct
               const href = safeHref( link.url )
-              const pinned = pinnedCount[supplier.id] ?? 0
+              const chosen = pinnedCount[supplier.id] ?? 0
+              const isPreferred = link.id === preferredLinkId
 
               return (
                 <tr key={link.id}>
@@ -166,10 +187,18 @@ export default function SupplierProductView( {product, suppliers, supplierOption
                     <div className='flex flex-col items-start gap-1'>
                       <Link href={`/suppliers/${supplier.id}`}>{supplier.name}</Link>
                       <div className='flex flex-wrap gap-1'>
+                        {isPreferred && (null == link.cost
+                          ? (
+                            <Tooltip title='Not used until it has a cost - bills of materials use the cheapest price meanwhile'>
+                              <Chip size='small' variant='tonal' color='warning' label='Preferred · no cost' />
+                            </Tooltip>
+                          )
+                          : <Chip size='small' variant='tonal' color='primary' label='Preferred' />
+                        )}
                         {supplier.id === cheapestId && <Chip size='small' variant='tonal' color='success' label='Cheapest' />}
-                        {pinned > 0 && (
-                          <Tooltip title='Bill-of-materials lines that use this supplier instead of the cheapest'>
-                            <Chip size='small' variant='tonal' color='info' label={`Pinned by ${pinned}`} />
+                        {chosen > 0 && (
+                          <Tooltip title='Bill-of-materials lines that chose this supplier themselves, over the default'>
+                            <Chip size='small' variant='tonal' color='info' label={`Chosen by ${chosen} BOM line${1 === chosen ? '' : 's'}`} />
                           </Tooltip>
                         )}
                       </div>
@@ -218,9 +247,23 @@ export default function SupplierProductView( {product, suppliers, supplierOption
                     </div>
                   </td>
                   <td>
-                    <IconButton size='small' disabled={isPending} onClick={() => handleRemove( supplier )}>
-                      <i className='ri-delete-bin-7-line' />
-                    </IconButton>
+                    <div className='flex items-center'>
+                      <Tooltip title={isPreferred ? 'Stop preferring this supplier' : null == link.cost ? 'Add a cost to make this preferred' : 'Prefer this supplier over the cheapest'}>
+                        <span>
+                          <IconButton
+                            size='small'
+                            color={isPreferred ? 'primary' : 'default'}
+                            disabled={isPending || (!isPreferred && null == link.cost)}
+                            onClick={() => handleTogglePreferred( link )}
+                          >
+                            <i className={isPreferred ? 'ri-star-fill' : 'ri-star-line'} />
+                          </IconButton>
+                        </span>
+                      </Tooltip>
+                      <IconButton size='small' disabled={isPending} onClick={() => handleRemove( supplier )}>
+                        <i className='ri-delete-bin-7-line' />
+                      </IconButton>
+                    </div>
                   </td>
                 </tr>
               )

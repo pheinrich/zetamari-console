@@ -349,7 +349,7 @@ export default function ProductForm( {contourList, initialData={}, costs, comput
                                 <input type='hidden' name={`bomLines.${i}.materialProductId`} value={line.materialProductId} />
                                 <input type='hidden' name={`bomLines.${i}.supplierId`} value={line.supplierId} />
                               </td>
-                              <td>{line.supplierName || 'Cheapest (auto)'}</td>
+                              <td>{line.supplierName || 'Default (auto)'}</td>
                               <td>
                                 <IconButton size='small' onClick={() => handleDupBomRemove( i )}>
                                   <i className='ri-delete-bin-7-line' />

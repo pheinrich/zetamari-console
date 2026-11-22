@@ -130,7 +130,7 @@ export async function readProduct( id, eager )
           model: Supplier,
           as: 'suppliers',
           through: {
-            attributes: ['id', 'partNumber', 'url', 'cost']
+            attributes: ['id', 'partNumber', 'url', 'cost', 'preferred']
           }
         },
         {
@@ -155,7 +155,7 @@ export async function readProduct( id, eager )
             {
               model: Product,
               as: 'material',
-              include: [{ model: Supplier, as: 'suppliers', through: {attributes: ['cost']} }],
+              include: [{ model: Supplier, as: 'suppliers', through: {attributes: ['cost', 'preferred']} }],
             },
             { model: Supplier, as: 'supplier' },
           ],
@@ -520,8 +520,8 @@ export async function updateBomLine( id, quantity )
 }
 
 // Which of the material's suppliers this line's "bom" CostFactor cost
-// should use - null (the default) means "the cheapest one available,"
-// recomputed live rather than stored, so it tracks supplier price
+// should use - null (the default) means "the material's preferred
+// supplier, else the cheapest one available," recomputed live rather than stored, so it tracks supplier price
 // changes automatically until someone picks a specific supplier here
 // (see libs/costFactors.js's resolveSupplierCost). Only meaningful, and
 // only exposed as a picker in BomEditor.jsx, once a material has more

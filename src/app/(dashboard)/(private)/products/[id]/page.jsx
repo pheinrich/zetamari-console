@@ -71,7 +71,7 @@ export default async function ProductPage( {params} )
             images: <ProductImagesTab productId={product.id} images={images} />,
             suppliers: (
               <Card>
-                <CardHeader title='Suppliers' subheader='Where this product is bought, and what each supplier charges. Bills of materials use the cheapest price unless a line picks a supplier.' />
+                <CardHeader title='Suppliers' subheader='Where this product is bought, and what each supplier charges. Bills of materials use the starred (preferred) supplier, else the cheapest, unless a line picks its own.' />
                 <CardContent>
                   <SupplierProductView
                     product={{id: product.id, units: product.units}}

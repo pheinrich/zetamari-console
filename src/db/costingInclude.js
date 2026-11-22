@@ -48,7 +48,7 @@ export const COSTING_INCLUDE = [
     association: 'bomLines',
     include: [{
       association: 'material',
-      include: [{association: 'suppliers', through: {attributes: ['cost']}}],
+      include: [{association: 'suppliers', through: {attributes: ['cost', 'preferred']}}],
     }],
   },
 ]
