@@ -4,10 +4,10 @@ import { useState, useTransition } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 
+import Autocomplete from '@mui/material/Autocomplete'
 import Button from '@mui/material/Button'
 import FormControl from '@mui/material/FormControl'
 import IconButton from '@mui/material/IconButton'
-import InputLabel from '@mui/material/InputLabel'
 import MenuItem from '@mui/material/MenuItem'
 import Select from '@mui/material/Select'
 import TextField from '@mui/material/TextField'
@@ -18,7 +18,15 @@ import { resolveSupplierCost } from '@/libs/costFactors'
 import { formatCurrency } from './productFormat'
 import tableStyles from '@core/styles/table.module.css'
 import { useConfirm } from '@/contexts/confirmContext'
-import { unitInputProps } from '@/utils/units'
+import { formatDollarsPer, unitInputProps } from '@/utils/units'
+
+// Every typed word, in any order, somewhere in the SKU or name ("lace 10").
+function filterMaterials( options, state )
+{
+  const typed = state.inputValue.trim().toLowerCase().split( /\s+/ ).filter( Boolean )
+
+  return options.filter( o => typed.every( w => `${o.sku} ${o.name}`.toLowerCase().includes( w ) ) ).slice( 0, 100 )
+}
 
 const noSpinnerSx = {
   '& input[type=number]': {MozAppearance: 'textfield'},
@@ -30,8 +38,10 @@ const noSpinnerSx = {
 // from, and how many of each. `bomLines` are the current lines (each with
 // its `material` product eager-loaded, including `material.suppliers` with
 // their per-supplier cost, plus the line's own chosen `supplier`/
-// `supplierId`); `productOptions` is every product this one could add as a
-// material (excluding itself). Rendered inside a Card by the caller, which
+// `supplierId`); `productOptions` is every other product (from
+// readBomMaterialChoices), each flagged `wouldCycle` if it's made from this
+// one - those, and materials already listed, show but can't be picked.
+// Rendered inside a Card by the caller, which
 // supplies the "Bill of Materials" title.
 //
 // Each line's cost (quantity x its supplier's price) feeds the "Bill of
@@ -44,26 +54,37 @@ export default function BomEditor( {productId, bomLines, productOptions} )
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
   const confirm = useConfirm()
-  const [materialProductId, setMaterialProductId] = useState( '' )
+  const [material, setMaterial] = useState( null )
   const [quantity, setQuantity] = useState( '1' )
   const [error, setError] = useState( null )
 
   const usedIds = new Set( bomLines.map( (l) => l.materialProductId ) )
-  const available = productOptions.filter( (p) => p.id !== productId && !usedIds.has( p.id ) )
+  const options = productOptions.filter( (p) => p.id !== productId )
+
+  function unavailable( p )
+  {
+    if( usedIds.has( p.id ) )
+      return 'already listed'
+
+    if( p.wouldCycle )
+      return 'made from this product'
+
+    return null
+  }
 
   function handleAdd()
   {
-    if( !materialProductId )
+    if( !material )
       return
 
     setError( null )
     startTransition( async () => {
-      const result = await addBomLine( productId, Number( materialProductId ), Number( quantity ) )
+      const result = await addBomLine( productId, material.id, Number( quantity ) )
       if( result?.error )
         setError( result.error )
       else
       {
-        setMaterialProductId( '' )
+        setMaterial( null )
         setQuantity( '1' )
         router.refresh()
       }
@@ -111,6 +132,7 @@ export default function BomEditor( {productId, bomLines, productOptions} )
               <th>Material</th>
               <th>Quantity</th>
               <th>Supplier</th>
+              <th>Unit cost</th>
               <th>Cost</th>
               <th></th>
             </tr>
@@ -165,6 +187,7 @@ export default function BomEditor( {productId, bomLines, productOptions} )
                       </FormControl>
                     )}
                   </td>
+                  <td>{suppliers.length ? formatDollarsPer( unitCost, line.material.units || 'each' ) : '—'}</td>
                   <td>{formatCurrency( lineCost )}</td>
                   <td>
                     <IconButton size='small' disabled={isPending} onClick={() => handleRemove( line.id )}>
@@ -175,11 +198,11 @@ export default function BomEditor( {productId, bomLines, productOptions} )
               )
             } )}
             {bomLines.length === 0 && (
-              <tr><td colSpan={5}>No materials added yet.</td></tr>
+              <tr><td colSpan={6}>No materials added yet.</td></tr>
             )}
             {bomLines.length > 0 && (
               <tr>
-                <td colSpan={3}><Typography variant='body2' className='font-medium'>Total</Typography></td>
+                <td colSpan={4}><Typography variant='body2' className='font-medium'>Total</Typography></td>
                 <td><Typography variant='body2' className='font-medium'>{formatCurrency( total )}</Typography></td>
                 <td></td>
               </tr>
@@ -189,19 +212,26 @@ export default function BomEditor( {productId, bomLines, productOptions} )
       </div>
 
       <div className='flex flex-wrap items-end gap-4'>
-        <FormControl size='small' className='min-is-[220px]'>
-          <InputLabel id='bom-material-select'>Add a material</InputLabel>
-          <Select
-            labelId='bom-material-select'
-            label='Add a material'
-            value={materialProductId}
-            onChange={(e) => setMaterialProductId( e.target.value )}
-          >
-            {available.map( (p) => (
-              <MenuItem key={p.id} value={p.id}>{p.name} ({p.sku})</MenuItem>
-            ) )}
-          </Select>
-        </FormControl>
+        <Autocomplete
+          size='small'
+          options={options}
+          value={material}
+          onChange={(e, value) => setMaterial( value )}
+          filterOptions={filterMaterials}
+          getOptionLabel={(p) => `${p.sku} - ${p.name}`}
+          getOptionDisabled={(p) => Boolean( unavailable( p ) )}
+          isOptionEqualToValue={(o, v) => o.id === v.id}
+          renderOption={({key, ...props}, p) => (
+            <li key={key} {...props}>
+              <div className='flex flex-col'>
+                <span>{p.name}</span>
+                <small className='text-textSecondary'>{p.sku}{unavailable( p ) && ` · ${unavailable( p )}`}</small>
+              </div>
+            </li>
+          )}
+          renderInput={(params) => <TextField {...params} label='Add a material' placeholder='Search SKU or name' />}
+          sx={{minInlineSize: 320, flex: 1, maxInlineSize: 480}}
+        />
         <TextField
           type='number'
           size='small'
@@ -209,11 +239,11 @@ export default function BomEditor( {productId, bomLines, productOptions} )
           inputProps={{step: '0.0001', min: '0'}}
           value={quantity}
           onChange={(e) => setQuantity( e.target.value )}
-          InputProps={unitInputProps( available.find( (p) => p.id === materialProductId )?.units )}
+          InputProps={unitInputProps( material?.units )}
           sx={noSpinnerSx}
           className='is-36'
         />
-        <Button variant='outlined' disabled={isPending || !materialProductId} onClick={handleAdd}>
+        <Button variant='outlined' disabled={isPending || !material} onClick={handleAdd}>
           Add
         </Button>
       </div>

@@ -480,6 +480,11 @@ export async function addBomLine( parentProductId, materialProductId, quantity )
 
   await sequelize.sync()
 
+  const edges = await BillOfMaterial.findAll( {attributes: ['parentProductId', 'materialProductId'], raw: true} )
+
+  if( bomDescendants( materialProductId, edges ).has( Number( parentProductId ) ) )
+    return {error: 'That product is already made (directly or further down) from this one, so adding it as a material would form a cycle.'}
+
   try
   {
     const line = await BillOfMaterial.create( {parentProductId, materialProductId, quantity} )
@@ -559,6 +564,32 @@ function bomDescendants( productId, edges )
       }
 
   return seen
+}
+
+// For the Bill of Materials tab's material picker: every other product,
+// flagged `wouldCycle` when it's made (at any depth) from `productId` -
+// listing it as one of this product's materials would form a cycle.
+export async function readBomMaterialChoices( productId )
+{
+  const session = await auth()
+
+  if( !session )
+    unauthorized()
+
+  await sequelize.sync()
+
+  const id = Number( productId )
+  const [products, edges] = await Promise.all([
+    Product.findAll( {attributes: ['id', 'name', 'sku', 'type', 'units', 'status'], order: [['name', 'ASC']], raw: true} ),
+    BillOfMaterial.findAll( {attributes: ['parentProductId', 'materialProductId'], raw: true} ),
+  ])
+
+  // Ancestors: follow the edges upward instead, by flipping them.
+  const ancestors = bomDescendants( id, edges.map( e => ({parentProductId: e.materialProductId, materialProductId: e.parentProductId}) ) )
+
+  return products
+    .filter( (p) => p.id !== id )
+    .map( (p) => ({...p, wouldCycle: ancestors.has( p.id )}) )
 }
 
 // For the Overview tab's "Used as a material" review popup: every other

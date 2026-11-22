@@ -1,9 +1,14 @@
 import { notFound } from 'next/navigation'
 
+import Card from '@mui/material/Card'
+import CardContent from '@mui/material/CardContent'
+import CardHeader from '@mui/material/CardHeader'
 import Grid from '@mui/material/Grid2'
 
 import { readContours } from '@/db/actions/contour'
-import { readProduct } from '@/db/actions/product'
+import { readBomMaterialChoices, readProduct } from '@/db/actions/product'
+
+import BomEditor from '../BomEditor'
 
 import ProductHero from './ProductHero'
 import ProductTabs from './ProductTabs'
@@ -12,7 +17,7 @@ import ProductOverview from './ProductOverview'
 export default async function ProductPage( {params} )
 {
   const {id} = await params
-  const product = await readProduct( id, true )
+  const [product, materialChoices] = await Promise.all( [readProduct( id, true ), readBomMaterialChoices( id )] )
 
   if( !product )
     return notFound()
@@ -45,6 +50,14 @@ export default async function ProductPage( {params} )
         <ProductTabs
           tabContent={{
             overview: <ProductOverview product={product} usedInCount={summary.usedInCount} contourList={contourList} />,
+            bom: (
+              <Card>
+                <CardHeader title='Bill of Materials' subheader='The products this one is made from, and how much of each goes into one.' />
+                <CardContent>
+                  <BomEditor productId={product.id} bomLines={product.bomLines ?? []} productOptions={materialChoices} />
+                </CardContent>
+              </Card>
+            ),
           }}
         />
       </Grid>
