@@ -313,18 +313,27 @@ export async function reprocessInboundEmail( id )
   return processInboundEmail( email, null, {force: true} )
 }
 
-// Retry every failed email - e.g. after a parser fix is deployed.
-export async function reprocessFailedEmails()
+// Batch "Redo" over the given emails - reprocessInboundEmail() for each.
+// Counts those still failing, and those parsed but left unchanged because
+// their channel order was already reviewed.
+export async function reprocessInboundEmails( ids )
 {
   await requireSession()
 
-  const failed = await InboundEmail.findAll( {where: {status: 'failed'}} )
-  const results = []
+  const emails = await InboundEmail.findAll( {where: {id: ids}} )
+  let failed = 0, unchanged = 0
 
-  for( const email of failed )
-    results.push( await processInboundEmail( email ) )
+  for( const email of emails )
+  {
+    const result = await processInboundEmail( email, null, {force: true} )
 
-  return {total: results.length, failed: results.filter( r => r.status === 'failed' ).length}
+    if( result.status === 'failed' )
+      failed += 1
+    else if( result.status === 'parsed' && !result.updated )
+      unchanged += 1
+  }
+
+  return {total: emails.length, failed, unchanged}
 }
 
 // "Undo": back to unprocessed - see ingest.js's undoInboundEmail().
@@ -349,6 +358,38 @@ export async function undoInboundEmail( id )
   }
 }
 
+// Batch "Undo" - undoInboundEmail() for each of the given emails that has
+// been processed. Any that can't be (a channel order past 'new') are left
+// and counted.
+export async function undoInboundEmails( ids )
+{
+  return eachDetached( ids, {status: {[Op.ne]: 'received'}}, undoProcessing )
+}
+
+// Run an undo/delete over the given emails (narrowed by `where`), one at
+// a time so each sees what the last did to a shared channel order.
+async function eachDetached( ids, where, action )
+{
+  await requireSession()
+
+  const emails = await InboundEmail.findAll( {where: {...where, id: ids}} )
+  let failed = 0
+
+  for( const email of emails )
+  {
+    try
+    {
+      await action( email )
+    }
+    catch
+    {
+      failed += 1
+    }
+  }
+
+  return {total: emails.length, failed}
+}
+
 // Delete one stored email - see ingest.js's deleteInboundEmail().
 export async function deleteInboundEmail( id )
 {
@@ -371,26 +412,10 @@ export async function deleteInboundEmail( id )
   }
 }
 
-// Delete every ignored email (notices that aren't orders). Any that
-// can't go (a channel order past 'new' still linked) are left and counted.
-export async function deleteIgnoredEmails()
+// Batch delete - deleteInboundEmail() for each of the given emails. Any
+// that can't go (a channel order past 'new' still linked) are left and
+// counted.
+export async function deleteInboundEmails( ids )
 {
-  await requireSession()
-
-  const ignored = await InboundEmail.findAll( {where: {status: 'ignored'}, attributes: ['id', 'channelOrderId']} )
-  let failed = 0
-
-  for( const email of ignored )
-  {
-    try
-    {
-      await deleteEmail( email )
-    }
-    catch
-    {
-      failed += 1
-    }
-  }
-
-  return {total: ignored.length, failed}
+  return eachDetached( ids, {}, deleteEmail )
 }

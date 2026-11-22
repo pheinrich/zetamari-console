@@ -10,6 +10,7 @@ import { toast } from 'react-toastify'
 import Button from '@mui/material/Button'
 import Card from '@mui/material/Card'
 import CardHeader from '@mui/material/CardHeader'
+import Checkbox from '@mui/material/Checkbox'
 import Chip from '@mui/material/Chip'
 import Dialog from '@mui/material/Dialog'
 import DialogActions from '@mui/material/DialogActions'
@@ -33,7 +34,8 @@ import {
   getPaginationRowModel,
 } from '@tanstack/react-table'
 
-import { deleteIgnoredEmails, reprocessFailedEmails } from '@/db/actions/channelOrder'
+import { deleteInboundEmails, reprocessInboundEmails, undoInboundEmails } from '@/db/actions/channelOrder'
+import { useConfirm } from '@/contexts/confirmContext'
 import { useTableViewState } from '@/hooks/useTableViewState'
 import tableStyles from '@core/styles/table.module.css'
 import { EMAIL_KIND_LABELS, EMAIL_STATUS_COLORS, channelLabel, dateTime, money, orderAmount } from '../channel-orders/channelOrderFormat'
@@ -62,51 +64,95 @@ export default function InboundEmailsListTable( {emailData} )
 {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
-  const [isDeleting, startDelete] = useTransition()
-  const [confirmDeleteIgnored, setConfirmDeleteIgnored] = useState( false )
+  const confirm = useConfirm()
+  const [confirmDelete, setConfirmDelete] = useState( false )
+  const [rowSelection, setRowSelection] = useState( {} )
   const { view, updateView, onSortingChange, onPaginationChange } = useTableViewState( 'inboundEmails', DEFAULT_VIEW )
 
   const filters = {...DEFAULT_VIEW.filters, ...view.filters}
   const channels = useMemo( () => [...new Set( emailData.map( e => e.channel ).filter( Boolean ) )].sort(), [emailData] )
-  const failedCount = emailData.filter( e => e.status === 'failed' ).length
-  const ignoredCount = emailData.filter( e => e.status === 'ignored' ).length
 
   const filteredData = useMemo(
     () => emailData.filter( e => (!filters.status || e.status === filters.status) && (!filters.channel || e.channel === filters.channel) ),
     [emailData, filters.status, filters.channel]
   )
 
-  function handleReprocessFailed()
+  const plural = n => `${n} email${n === 1 ? '' : 's'}`
+
+  // Each batch action ends the same way: clear the selection, show what
+  // happened, and reload the list.
+  function finishBatch( message, warning )
   {
+    warning ? toast.warning( warning ) : toast.success( message )
+    setRowSelection( {} )
+    router.refresh()
+  }
+
+  async function handleRevert()
+  {
+    const message = revertable.some( e => e.channelOrderId )
+      ? `Undo parsing ${plural( revertable.length )}? Their channel orders are deleted too, unless another email also feeds them.`
+      : `Undo processing ${plural( revertable.length )}? They go back to "received".`
+
+    if( !await confirm( message, {confirmText: 'Revert', destructive: true} ) )
+      return
+
     startTransition( async () => {
-      const {total, failed} = await reprocessFailedEmails()
+      const {total, failed} = await undoInboundEmails( revertable.map( e => e.id ) )
 
-      if( failed )
-        toast.warning( `${total - failed} of ${total} failed emails now parse; ${failed} still fail` )
-      else
-        toast.success( `All ${total} failed emails reprocessed` )
-
-      router.refresh()
+      finishBatch(
+        `Reverted ${plural( total )}`,
+        failed && `Reverted ${total - failed} of ${plural( total )}; ${failed} feed a reviewed channel order`
+      )
     } )
   }
 
-  function handleDeleteIgnored()
+  function handleRetry()
   {
-    startDelete( async () => {
-      const {total, failed} = await deleteIgnoredEmails()
+    startTransition( async () => {
+      const {total, failed, unchanged} = await reprocessInboundEmails( selectedIds )
+      const notes = [failed && `${failed} failed`, unchanged && `${unchanged} left unchanged (channel order already reviewed)`].filter( Boolean )
 
-      if( failed )
-        toast.warning( `Deleted ${total - failed} of ${total} ignored emails; ${failed} still feed a reviewed channel order` )
-      else
-        toast.success( `Deleted ${total} ignored email${total === 1 ? '' : 's'}` )
+      finishBatch( `Reparsed ${plural( total )}`, notes.length && `Reparsed ${plural( total )}: ${notes.join( ', ' )}` )
+    } )
+  }
 
-      setConfirmDeleteIgnored( false )
-      router.refresh()
+  function handleDelete()
+  {
+    startTransition( async () => {
+      const {total, failed} = await deleteInboundEmails( selectedIds )
+
+      setConfirmDelete( false )
+      finishBatch(
+        `Deleted ${plural( total )}`,
+        failed && `Deleted ${total - failed} of ${plural( total )}; ${failed} feed a reviewed channel order`
+      )
     } )
   }
 
   const columns = useMemo(
     () => [
+      columnHelper.display( {
+        id: 'select',
+        header: ({ table }) => (
+          <Checkbox
+            size='small'
+            checked={table.getIsAllRowsSelected()}
+            indeterminate={table.getIsSomeRowsSelected()}
+            onChange={table.getToggleAllRowsSelectedHandler()}
+            inputProps={{'aria-label': 'Select all emails'}}
+          />
+        ),
+        cell: ({ row }) => (
+          <Checkbox
+            size='small'
+            checked={row.getIsSelected()}
+            onClick={e => e.stopPropagation()}
+            onChange={row.getToggleSelectedHandler()}
+            inputProps={{'aria-label': 'Select email'}}
+          />
+        )
+      } ),
       columnHelper.accessor( 'receivedAt', {
         header: 'Received',
         cell: ({ getValue }) => <Typography className='whitespace-nowrap'>{dateTime( getValue() )}</Typography>
@@ -173,7 +219,10 @@ export default function InboundEmailsListTable( {emailData} )
     data: filteredData,
     columns,
     filterFns: { fuzzy: fuzzyFilter },
-    state: { sorting: view.sorting, pagination: view.pagination, globalFilter: view.globalFilter },
+    state: { sorting: view.sorting, pagination: view.pagination, globalFilter: view.globalFilter, rowSelection },
+    getRowId: row => String( row.id ),
+    enableRowSelection: true,
+    onRowSelectionChange: setRowSelection,
     globalFilterFn: fuzzyFilter,
     onSortingChange,
     onPaginationChange,
@@ -183,6 +232,13 @@ export default function InboundEmailsListTable( {emailData} )
     getSortedRowModel: getSortedRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
   })
+
+  // Selected rows still shown (a filter or search can hide some); the batch
+  // buttons act on those that support their action - see InboundEmailActions.
+  const selectedEmails = table.getFilteredSelectedRowModel().rows.map( r => r.original )
+  const selectedIds = selectedEmails.map( e => e.id )
+  const revertable = selectedEmails.filter( e => e.status !== 'received' )
+  const withCount = (label, n) => n ? `${label} (${n})` : label
 
   return (
     <Card>
@@ -223,23 +279,30 @@ export default function InboundEmailsListTable( {emailData} )
         <div className='flex flex-wrap gap-4 max-sm:is-full'>
           <Button
             variant='outlined'
-            disabled={isPending || !failedCount}
-            onClick={handleReprocessFailed}
+            color='secondary'
+            disabled={isPending || !revertable.length}
+            onClick={handleRevert}
+            startIcon={<i className='ri-arrow-go-back-line' />}
+          >
+            {withCount( 'Revert', revertable.length )}
+          </Button>
+          <Button
+            variant='outlined'
+            color='secondary'
+            disabled={isPending || !selectedIds.length}
+            onClick={handleRetry}
             startIcon={<i className='ri-refresh-line' />}
           >
-            {isPending ? 'Reprocessing...' : `Retry failed (${failedCount})`}
+            {withCount( 'Retry', selectedIds.length )}
           </Button>
           <Button
             variant='outlined'
             color='error'
-            disabled={isDeleting || !ignoredCount}
-            onClick={() => setConfirmDeleteIgnored( true )}
+            disabled={isPending || !selectedIds.length}
+            onClick={() => setConfirmDelete( true )}
             startIcon={<i className='ri-delete-bin-7-line' />}
           >
-            {`Delete ignored (${ignoredCount})`}
-          </Button>
-          <Button variant='outlined' component={Link} href='/channel-orders' startIcon={<i className='ri-inbox-line' />}>
-            Channel Orders
+            {withCount( 'Delete', selectedIds.length )}
           </Button>
         </div>
       </div>
@@ -287,7 +350,7 @@ export default function InboundEmailsListTable( {emailData} )
                   onClick={() => router.push( `/inbound-emails/${row.original.id}` )}
                 >
                   {row.getVisibleCells().map( cell => (
-                    <td key={cell.id}>{flexRender( cell.column.columnDef.cell, cell.getContext() )}</td>
+                    <td key={cell.id} className={cell.column.id === 'select' ? 'is-[1%]' : undefined}>{flexRender( cell.column.columnDef.cell, cell.getContext() )}</td>
                   ) )}
                 </tr>
               ) )}
@@ -298,22 +361,24 @@ export default function InboundEmailsListTable( {emailData} )
       <Dialog
         fullWidth
         maxWidth='xs'
-        open={confirmDeleteIgnored}
-        onClose={() => !isDeleting && setConfirmDeleteIgnored( false )}
+        open={confirmDelete}
+        onClose={() => !isPending && setConfirmDelete( false )}
         closeAfterTransition={false}
       >
         <DialogContent className='flex items-center flex-col text-center sm:pbs-16 sm:pbe-6 sm:pli-16'>
           <i className='ri-error-warning-line text-[88px] mbe-6 text-warning' />
-          <Typography variant='h4'>Delete {ignoredCount} ignored email{ignoredCount === 1 ? '' : 's'}?</Typography>
+          <Typography variant='h4'>Delete {plural( selectedIds.length )}?</Typography>
           <Typography color='text.secondary' className='mbs-2'>
-            These are notices that weren&rsquo;t orders. The stored emails are removed for good.
+            {selectedEmails.some( e => e.channelOrderId )
+              ? 'The stored emails are removed for good, along with their channel orders unless another email also feeds them.'
+              : 'The stored emails are removed for good.'}
           </Typography>
         </DialogContent>
         <DialogActions className='justify-center pbs-0 sm:pbe-16 sm:pli-16'>
-          <Button variant='contained' color='error' disabled={isDeleting} onClick={handleDeleteIgnored}>
-            {isDeleting ? 'Deleting...' : 'Delete'}
+          <Button variant='contained' color='error' disabled={isPending} onClick={handleDelete}>
+            {isPending ? 'Deleting...' : 'Delete'}
           </Button>
-          <Button variant='outlined' color='secondary' disabled={isDeleting} onClick={() => setConfirmDeleteIgnored( false )}>
+          <Button variant='outlined' color='secondary' disabled={isPending} onClick={() => setConfirmDelete( false )}>
             Cancel
           </Button>
         </DialogActions>

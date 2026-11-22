@@ -190,15 +190,6 @@ export default function ChannelOrdersListTable( {orderData, etsy, etsyOutcome} )
             {channels.map( c => <MenuItem key={c} value={c}>{channelLabel( c )}</MenuItem> )}
           </TextField>
         </div>
-        <Button
-          variant='outlined'
-          component={Link}
-          href='/inbound-emails'
-          startIcon={<i className='ri-mail-line' />}
-          className='max-sm:is-full is-auto'
-        >
-          Inbound Emails
-        </Button>
       </div>
       <div className='overflow-x-auto'>
         <table className={tableStyles.table}>

@@ -18,13 +18,16 @@ import { deleteInboundEmail, reprocessInboundEmail, undoInboundEmail } from '@/d
 import { useConfirm } from '@/contexts/confirmContext'
 
 // One action as a labelled button, or (compact) an icon with a tooltip.
-function Action( {compact, size, label, icon, color, disabled, onClick} )
+// Compact icons all take the default color, like other list tables'
+// row actions; labelled buttons are secondary (gray) to match, but
+// `color` can override that (Delete stays red).
+function Action( {compact, size, label, icon, color = 'secondary', disabled, onClick} )
 {
   if( compact )
     return (
       <Tooltip title={label}>
         <span>
-          <IconButton size='small' color={color} disabled={disabled} onClick={onClick} aria-label={label}>
+          <IconButton size='small' disabled={disabled} onClick={onClick} aria-label={label}>
             <i className={`${icon} text-[22px]`} />
           </IconButton>
         </span>
@@ -111,14 +114,13 @@ export default function InboundEmailActions( {email, size = 'medium', afterUndoH
   return (
     <div className={compact ? 'flex flex-nowrap gap-1' : 'flex flex-wrap gap-2'} onClick={e => e.stopPropagation()}>
       {email.status !== 'received' && (
-        <Action compact={compact} size={size} label='Undo parse' icon='ri-arrow-go-back-line' color='secondary' disabled={isPending} onClick={handleUndo} />
+        <Action compact={compact} size={size} label='Revert' icon='ri-arrow-go-back-line' disabled={isPending} onClick={handleUndo} />
       )}
       <Action
         compact={compact}
         size={size}
-        label={email.status === 'received' ? 'Parse' : 'Reparse'}
+        label='Retry'
         icon='ri-refresh-line'
-        color='primary'
         disabled={isPending}
         onClick={handleReparse}
       />
