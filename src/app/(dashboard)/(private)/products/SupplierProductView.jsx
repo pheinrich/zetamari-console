@@ -4,13 +4,10 @@ import { useState, useTransition } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 
+import Autocomplete from '@mui/material/Autocomplete'
 import Button from '@mui/material/Button'
 import Chip from '@mui/material/Chip'
-import FormControl from '@mui/material/FormControl'
 import IconButton from '@mui/material/IconButton'
-import InputLabel from '@mui/material/InputLabel'
-import MenuItem from '@mui/material/MenuItem'
-import Select from '@mui/material/Select'
 import TextField from '@mui/material/TextField'
 import Tooltip from '@mui/material/Tooltip'
 import Typography from '@mui/material/Typography'
@@ -40,6 +37,14 @@ function safeHref( url )
   return /^https?:\/\//i.test( withScheme ) ? withScheme : null
 }
 
+// Every typed word, in any order, somewhere in the supplier's name.
+function filterSuppliers( options, state )
+{
+  const typed = state.inputValue.trim().toLowerCase().split( /\s+/ ).filter( Boolean )
+
+  return options.filter( o => typed.every( w => o.name.toLowerCase().includes( w ) ) )
+}
+
 function numberOrNull( value )
 {
   return '' === value || null == value ? null : Number( value )
@@ -58,14 +63,13 @@ export default function SupplierProductView( {product, suppliers, supplierOption
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
   const confirm = useConfirm()
-  const [supplierId, setSupplierId] = useState( '' )
+  const [newSupplier, setNewSupplier] = useState( null )
   const [partNumber, setPartNumber] = useState( '' )
   const [cost, setCost] = useState( '' )
   const [url, setUrl] = useState( '' )
   const [error, setError] = useState( null )
 
   const usedIds = new Set( suppliers.map( (s) => s.id ) )
-  const available = supplierOptions.filter( (s) => !usedIds.has( s.id ) )
 
   // Cheapest first, unpriced last.
   const rows = [...suppliers].sort( (a, b) =>
@@ -102,17 +106,17 @@ export default function SupplierProductView( {product, suppliers, supplierOption
 
   function handleAdd()
   {
-    if( !supplierId )
+    if( !newSupplier )
       return
 
     setError( null )
     startTransition( async () => {
-      const result = await setSupplierProductPrice( Number( supplierId ), product.id, partNumber.trim(), numberOrNull( cost ), url.trim() || null )
+      const result = await setSupplierProductPrice( newSupplier.id, product.id, partNumber.trim(), numberOrNull( cost ), url.trim() || null )
       if( result?.error )
         setError( result.error )
       else
       {
-        setSupplierId( '' )
+        setNewSupplier( null )
         setPartNumber( '' )
         setCost( '' )
         setUrl( '' )
@@ -229,20 +233,26 @@ export default function SupplierProductView( {product, suppliers, supplierOption
       </div>
 
       <div className='flex flex-wrap items-end gap-4'>
-        <FormControl size='small' className='min-is-[180px]'>
-          <InputLabel id='supplier-select'>Add a supplier</InputLabel>
-          <Select
-            labelId='supplier-select'
-            label='Add a supplier'
-            value={supplierId}
-            onChange={(e) => setSupplierId( e.target.value )}
-            disabled={0 === available.length}
-          >
-            {available.map( (s) => (
-              <MenuItem key={s.id} value={s.id}>{s.name}</MenuItem>
-            ) )}
-          </Select>
-        </FormControl>
+        <Autocomplete
+          size='small'
+          options={supplierOptions}
+          value={newSupplier}
+          onChange={(e, value) => setNewSupplier( value )}
+          filterOptions={filterSuppliers}
+          getOptionLabel={(s) => s.name}
+          getOptionDisabled={(s) => usedIds.has( s.id )}
+          isOptionEqualToValue={(o, v) => o.id === v.id}
+          renderOption={({key, ...props}, s) => (
+            <li key={key} {...props}>
+              <div className='flex flex-col'>
+                <span>{s.name}</span>
+                {usedIds.has( s.id ) && <small className='text-textSecondary'>already listed</small>}
+              </div>
+            </li>
+          )}
+          renderInput={(params) => <TextField {...params} label='Add a supplier' placeholder='Search suppliers' />}
+          sx={{minInlineSize: 240, flex: 1, maxInlineSize: 360}}
+        />
         <TextField
           size='small'
           label='Part #'
@@ -269,7 +279,7 @@ export default function SupplierProductView( {product, suppliers, supplierOption
           onChange={(e) => setUrl( e.target.value )}
           className='min-is-[200px]'
         />
-        <Button variant='outlined' disabled={isPending || !supplierId} onClick={handleAdd}>
+        <Button variant='outlined' disabled={isPending || !newSupplier} onClick={handleAdd}>
           Add
         </Button>
       </div>
