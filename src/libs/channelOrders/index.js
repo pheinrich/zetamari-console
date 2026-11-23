@@ -87,25 +87,77 @@ const CHANNELS = [
   },
 ]
 
-// "orders@mail.faire.com" -> "faire.com": the domain's last two labels,
-// which is the registered domain for every channel above.
-function senderDomain( address )
+// "mail.faire.com" -> "faire.com": the host's last two labels, which is
+// the registered domain for every channel above.
+function registeredDomain( host )
 {
-  const host = address.split( '@' ).pop().toLowerCase()
+  return host.toLowerCase().split( '.' ).slice( -2 ).join( '.' )
+}
 
-  return host.split( '.' ).slice( -2 ).join( '.' )
+function channelFor( host )
+{
+  return CHANNELS.find( c => c.domains.includes( registeredDomain( host ) ) )
+}
+
+// -> {entry, address} for the channel that sent `sender`, where `address`
+// is the channel's own address (for `orderFrom`), or null when it can't
+// be recovered. Usually that's just the sender's domain, but a forwarder
+// that rewrites the sender moves the channel's domain into the local-
+// part, '='-separated:
+//   SRS (envelope rewriting):    SRS0=hash=tt=etsy.com=transaction@fwd.example
+//                                SRS1=hash=fwd.example==hash=tt=etsy.com=transaction@…
+//   DMARC rewriting (Groups,     transaction=etsy.com@list.example
+//   Mailman):
+//   Constant Contact:            service-indieme.com@shared1.ccsend.com
+// Otherwise any '='/'+'-separated piece of the local-part naming a
+// channel's domain (e.g. etsy.com@relay.example) still identifies the
+// channel, just not its original address.
+function senderChannel( sender )
+{
+  const at = sender.lastIndexOf( '@' )
+
+  if( at < 0 )
+    return null
+
+  const local = sender.slice( 0, at )
+  const entry = channelFor( sender.slice( at + 1 ) )
+
+  if( entry )
+    return {entry, address: sender}
+
+  const parts = local.split( '=' )
+  const srs = /^SRS[01]$/i.test( parts[0] ) && parts.length >= 5
+
+  if( srs && channelFor( parts.at( -2 ) ) )
+    return {entry: channelFor( parts.at( -2 ) ), address: `${parts.at( -1 )}@${parts.at( -2 )}`}
+
+  if( !srs && parts.length >= 2 && channelFor( parts.at( -1 ) ) )
+    return {entry: channelFor( parts.at( -1 ) ), address: `${parts.slice( 0, -1 ).join( '=' )}@${parts.at( -1 )}`}
+
+  for( const piece of local.split( /[=+]/ ) )
+  {
+    // "service-indieme.com" -> service @ indieme.com; "etsy.com" -> no
+    // user. The host is everything after the last '-', which holds for
+    // every channel domain above (none has a hyphen).
+    const [, user, host] = piece.match( /^(?:(.+)-)?([^-]+\.[^-.]+)$/ ) ?? []
+    const named = host && channelFor( host )
+
+    if( named )
+      return {entry: named, address: user ? `${user}@${host}` : null}
+  }
+
+  return null
 }
 
 export function classifyOrderEmail( {from, subject} )
 {
-  const sender = clean( from )
-  const domain = sender.includes( '@' ) ? senderDomain( sender ) : null
-  const entry = domain && CHANNELS.find( c => c.domains.includes( domain ) )
+  const found = senderChannel( clean( from ) )
 
-  if( !entry )
+  if( !found )
     return {channel: null, kind: 'unrecognized'}
 
-  const isOrder = (!entry.orderFrom || entry.orderFrom.test( sender )) && entry.newOrder.test( clean( subject ) )
+  const {entry, address} = found
+  const isOrder = (!entry.orderFrom || (address != null && entry.orderFrom.test( address ))) && entry.newOrder.test( clean( subject ) )
 
   return {channel: entry.channel, kind: isOrder ? 'new-order' : 'other'}
 }
