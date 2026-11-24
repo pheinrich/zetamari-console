@@ -26,8 +26,8 @@ const schema = z.object({
   promisedDate: z.preprocess( val => (val === '' || val == null ? undefined : val), z.string().optional() ),
 })
 
-// Edits Customer/Promised Date only - see updateOrder()'s doc comment
-// for why line items aren't editable here.
+// Edits Customer/Promised Date only - line items are edited in place on
+// the Order page (orders/[id]/OrderLinesTable.jsx).
 export default function OrderEditForm( {order, customerOptions} )
 {
   const router = useRouter()
@@ -97,7 +97,7 @@ export default function OrderEditForm( {order, customerOptions} )
                     onChange={setPromisedDate}
                     clearable
                     slotProps={{inputLabel: {shrink: true}}}
-                    helperText="Clear to let scheduling compute one from the backlog again. Set this only when the customer requested a specific date."
+                    helperText="Clear to ship by default, 3 business days after the order. Set this when the customer asked for a date."
                   />
                 </Grid>
               </Grid>

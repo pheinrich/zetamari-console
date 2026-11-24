@@ -30,6 +30,12 @@ export function buyerLabel( order )
   return [order.buyerCompany, order.buyerName].filter( Boolean ).join( ' — ' ) || '—'
 }
 
+// 'YYYY-MM-DD' -> "Wed, Nov 26, 2026"
+export function shipDateText( date )
+{
+  return date ? new Date( `${date}T00:00:00` ).toLocaleDateString( 'en-US', {weekday: 'short', month: 'short', day: 'numeric', year: 'numeric'} ) : '—'
+}
+
 export function dateTime( value )
 {
   return value ? new Date( value ).toLocaleString( 'en-US', {dateStyle: 'medium', timeStyle: 'short'} ) : '—'

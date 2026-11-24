@@ -86,6 +86,7 @@ export function parseSquarespaceOrder( html, subject )
     externalOrderId,
     orderedOn: dateOnly( placed ),
     requestedShipDate: null,
+    shippingMethod: shipping?.method ?? null,
     paymentType: billing?.payment ?? null,
     buyer: {company: null, name: billing?.name ?? null, email: billing?.email ?? null, phone: billing?.phone ?? null, externalId: null},
     shipTo: shipping ? {...shipping.address, phone: billing?.phone ?? null, email: billing?.email ?? null} : null,
@@ -114,13 +115,15 @@ function brLines( $, el )
 
 // "Name / street... / City, ST, ZIP / Country" then, for billing, the
 // payment method ("CC: XXXX-4378", "Link", ...), email and phone; for
-// shipping, a nested <div> with the shipping method (dropped).
+// shipping, a nested <div> with the shipping method ("UPS Ground (2-7
+// days)").
 function parseAddressCell( $, cell )
 {
   if( !cell?.length )
     return null
 
   const block = cell.children( 'div' ).first().clone()
+  const method = brLines( $, block.children( 'div' ).first() ).join( ' ' ) || null
 
   block.children( 'div' ).remove()
 
@@ -138,6 +141,7 @@ function parseAddressCell( $, cell )
     email,
     phone: phoneNumber,
     payment,
+    method,
     address: {
       name: name ?? null,
       company: null,

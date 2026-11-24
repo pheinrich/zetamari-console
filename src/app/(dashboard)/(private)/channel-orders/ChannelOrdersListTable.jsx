@@ -30,6 +30,7 @@ import {
 
 import { useTableViewState } from '@/hooks/useTableViewState'
 import tableStyles from '@core/styles/table.module.css'
+import { channelOrderShipDate } from '@/utils/shipDate'
 import { ORDER_STATUS_COLORS, buyerLabel, channelLabel, money, orderAmount } from './channelOrderFormat'
 
 // Defaults to the review queue - orders still 'new'.
@@ -80,6 +81,23 @@ export default function ChannelOrdersListTable( {orderData, etsy, etsyOutcome} )
       columnHelper.accessor( 'orderedOn', {
         header: 'Ordered',
         cell: ({ getValue }) => <Typography>{getValue() || '—'}</Typography>
+      } ),
+
+      // The channel's requested date, else the 3-business-day default (in
+      // grey), with how it ships beneath when the channel said
+      columnHelper.accessor( o => channelOrderShipDate( o ).date ?? '', {
+        id: 'shipBy',
+        header: 'Ship by',
+        cell: ({ row }) => {
+          const {date, origin} = channelOrderShipDate( row.original )
+
+          return (
+            <div className='flex flex-col'>
+              <Typography color={origin === 'default' ? 'text.secondary' : undefined}>{date || '—'}</Typography>
+              {row.original.shippingMethod && <Typography variant='body2' color='text.secondary'>{row.original.shippingMethod}</Typography>}
+            </div>
+          )
+        }
       } ),
       columnHelper.accessor( o => buyerLabel( o ), {
         id: 'buyer',

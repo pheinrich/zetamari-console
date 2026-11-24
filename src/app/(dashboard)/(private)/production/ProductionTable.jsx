@@ -76,6 +76,8 @@ function originMarker( origin )
     return {icon: 'ri-checkbox-circle-fill', className: 'text-success', label: 'Committed'}
   if( 'computed' === origin )
     return {icon: 'ri-time-line', className: 'text-textSecondary', label: 'Projected'}
+  if( 'default' === origin )
+    return {icon: 'ri-calendar-line', className: 'text-textSecondary', label: 'Default: 3 business days after the order'}
 
   return null
 }
@@ -162,7 +164,7 @@ export default function ProductionTable( {pieces} )
       if( !inRange( order.GroutingDay?.date ?? null, filters.groutingDateFrom, filters.groutingDateTo ) )
         return false
 
-      if( !inRange( order.promisedDate, filters.shipDateFrom, filters.shipDateTo ) )
+      if( !inRange( order.shipDate, filters.shipDateFrom, filters.shipDateTo ) )
         return false
 
       if( search )
@@ -193,7 +195,7 @@ export default function ProductionTable( {pieces} )
     // Ship-date soonest-first - the point of this screen is "what
     // should I work on," and urgency beats arrival order.
     for( const phase of PHASE_ORDER )
-      grouped[phase].sort( (a, b) => (a.Order.promisedDate ?? '').localeCompare( b.Order.promisedDate ?? '' ) )
+      grouped[phase].sort( (a, b) => (a.Order.shipDate ?? '').localeCompare( b.Order.shipDate ?? '' ) )
 
     return grouped
   }, [filteredPieces] )
@@ -436,7 +438,7 @@ export default function ProductionTable( {pieces} )
                         <DateCell date={piece.Order?.GroutingDay?.date} origin={piece.Order?.GroutingDay?.origin} />
                       </td>
                       <td>
-                        <DateCell date={piece.Order?.promisedDate} origin={piece.Order?.promisedDateOrigin} />
+                        <DateCell date={piece.Order?.shipDate} origin={piece.Order?.shipDateOrigin} />
                       </td>
                       <td>
                         <div className='flex items-center gap-1'>

@@ -72,6 +72,9 @@ export function parseEtsyOrder( text, subject, date )
   }
 
   const email = body.match( /^\* Email (\S+@\S+)$/m )?.[1] ?? null
+
+  // "Shipping: $0.00 (USPS Priority Mail)" - the parenthesized method
+  const shippingMethod = clean( value( 'Shipping' )?.match( /\(([^)]+)\)\s*$/ )?.[1] ) || null
   const discount = money( value( 'Discount' ) )
 
   return {
@@ -79,6 +82,7 @@ export function parseEtsyOrder( text, subject, date )
     externalOrderId,
     orderedOn: pacificDate( date ),
     requestedShipDate: shipBy,
+    shippingMethod,
     paymentType: null,
     buyer: {company: null, name: shipTo.name, email, phone: null, externalId: noteMatch ? clean( noteMatch[1] ) : null},
     shipTo,

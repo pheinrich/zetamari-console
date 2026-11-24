@@ -5,7 +5,7 @@ import { notFound, unauthorized } from 'next/navigation'
 import PostalMime from 'postal-mime'
 import { Op, Sequelize } from 'sequelize'
 
-import ChannelOrder from '@/db/models/ChannelOrder'
+import ChannelOrder, { ChannelOrderOrder } from '@/db/models/ChannelOrder'
 import ChannelOrderLine from '@/db/models/ChannelOrderLine'
 import InboundEmail from '@/db/models/InboundEmail'
 import Person from '@/db/models/Person'
@@ -73,9 +73,13 @@ export async function readChannelOrder( id )
   if( !order )
     notFound()
 
-  const emails = await InboundEmail.findAll( {where: {channelOrderId: id}, attributes: EMAIL_LIST_ATTRIBUTES, order: [['receivedAt', 'ASC']]} )
+  const [emails, links] = await Promise.all( [
+    InboundEmail.findAll( {where: {channelOrderId: id}, attributes: EMAIL_LIST_ATTRIBUTES, order: [['receivedAt', 'ASC']]} ),
+    ChannelOrderOrder.findAll( {where: {channelOrderId: id}, order: [['orderId', 'ASC']]} ),
+  ] )
 
-  return {...order.toJSON(), emails: emails.map( e => e.toJSON() )}
+  // The Order(s) it was accepted into - several once one has been split
+  return {...order.toJSON(), emails: emails.map( e => e.toJSON() ), orderIds: links.map( l => l.orderId )}
 }
 
 // Every Product, in just enough detail to pick one as a line's match

@@ -9,12 +9,16 @@ import OrderProduct from '@/db/models/OrderProduct'
 import Piece from '@/db/models/Piece'
 import ChannelOrder from '@/db/models/ChannelOrder'
 import Product from '@/db/models/Product'
+import { makesPieces } from '@/libs/channelOrders/accept'
+import * as orderLines from '@/libs/orderLines'
+import { orderShipDate } from '@/utils/shipDate'
 import sequelize from '@/db/sequelize'
 import { auth } from '@/lib/auth'
 import { markAllOrdersScheduleStale, markOrdersScheduleStale } from '@/db/actions/scheduling'
 
 // `lines` is [{productId, quantity}, ...] from the intake form's
-// repeatable rows. Spawns one Piece per unit of quantity, phase
+// repeatable rows. Spawns one Piece per unit of quantity of each
+// production item (makesPieces() - finished goods and kits), phase
 // 'Design', auto-generated 1:1 with the OrderProduct line rather than a
 // separate staff-triggered step - Piece rows are what scheduling
 // actually operates on from here on; OrderProduct.quantity stays the
@@ -48,6 +52,9 @@ export async function createOrder( data )
 
         await OrderProduct.create( {orderId: order.id, productId: line.productId, quantity}, {transaction: t} )
 
+        if( !makesPieces( await Product.findByPk( line.productId, {attributes: ['id', 'type'], transaction: t} ) ) )
+          continue
+
         const pieces = Array.from( {length: quantity}, () => ({orderId: order.id, productId: line.productId, phase: 'Design'}) )
         await Piece.bulkCreate( pieces, {transaction: t} )
       }
@@ -71,11 +78,8 @@ export async function createOrder( data )
   }
 }
 
-// Edits Customer/Promised Date only - not line items. Once an Order's
-// Pieces exist (and may already be mid-phase), changing quantities/
-// products would mean adding/removing/reassigning Pieces with
-// production progress, which needs its own design pass; this is
-// intentionally the smaller, safe subset for now. Clearing
+// Edits Customer/Promised Date only - line items are edited in place on
+// the Order page (setOrderLineQuantity() and friends below). Clearing
 // promisedDate resets promisedDateOrigin to null too, same as leaving
 // it blank at intake - the engine recomputes it as Computed on next
 // read.
@@ -118,34 +122,98 @@ export async function updateOrder( data )
   }
 }
 
-// Pieces has no onDelete: CASCADE on its orderId FK (unlike
-// OrderProducts, which does), so those have to be removed by hand
-// before the Order itself can be destroyed. A Channel Order it was
-// accepted from returns to 'new'.
+// Pieces has no onDelete: CASCADE on its orderId FK, so they're removed
+// by hand (libs/orderLines.js's deleteOrders()). A Channel Order left
+// with no Order returns to 'new'.
 export async function deleteOrder( id )
+{
+  return deleteOrders( [id] )
+}
+
+export async function deleteOrders( ids )
+{
+  return run( async () => {
+    await orderLines.deleteOrders( ids )
+
+    // Freed Capacity/a freed Grouting Day slot can change other orders'
+    // projections too.
+    await markAllOrdersScheduleStale()
+  } )
+}
+
+// --- Changing an Order's lines (see libs/orderLines.js) ---
+
+// Each returns {success: true, ...} or {error} - never throws to the page.
+async function run( work )
 {
   const session = await auth()
   if( !session )
     unauthorized()
 
   await sequelize.sync()
-  const order = await Order.findByPk( id )
-  if( !order )
-    notFound()
 
-  await sequelize.transaction( async t => {
-    await Piece.destroy( {where: {orderId: id}, transaction: t} )
+  try
+  {
+    return {success: true, ...await work()}
+  }
+  catch( error )
+  {
+    return {error: error.message || 'Something went wrong'}
+  }
+}
 
-    // A Channel Order accepted into this one goes back to review
-    await ChannelOrder.update( {status: 'new', orderId: null}, {where: {orderId: id}, transaction: t} )
-    await order.destroy( {transaction: t} )
+export async function setOrderLineQuantity( orderId, productId, quantity )
+{
+  return run( async () => {
+    await orderLines.setOrderLineQuantity( orderId, productId, quantity )
+    await markOrdersScheduleStale( [orderId] )
   } )
+}
 
-  // Freed Capacity/a freed Grouting Day slot can change other orders'
-  // projections too.
-  await markAllOrdersScheduleStale()
+export async function removeOrderLines( orderId, productIds )
+{
+  return run( async () => {
+    await orderLines.removeOrderLines( orderId, productIds )
+    await markOrdersScheduleStale( [orderId] )
+  } )
+}
 
-  return {success: true}
+export async function addOrderLine( orderId, productId, quantity )
+{
+  return run( async () => {
+    await orderLines.addOrderLine( orderId, productId, quantity )
+    await markOrdersScheduleStale( [orderId] )
+  } )
+}
+
+// moves: [{productId, quantity}] -> {orderId} of the new Order
+export async function splitOrder( orderId, moves )
+{
+  return run( async () => {
+    const newId = await orderLines.splitOrder( orderId, moves )
+
+    await markOrdersScheduleStale( [orderId, newId] )
+
+    return {orderId: newId}
+  } )
+}
+
+// -> {orderId} of the surviving (oldest) Order
+export async function combineOrders( orderIds )
+{
+  return run( async () => ({orderId: await orderLines.combineOrders( orderIds )}) )
+}
+
+// Every Product, just enough to pick one to add to an Order.
+export async function readOrderProductOptions()
+{
+  const session = await auth()
+  if( !session )
+    unauthorized()
+
+  const products = await Product.findAll( {attributes: ['id', 'sku', 'name', 'status', 'type', 'units'], order: [['sku', 'ASC']]} )
+
+  return products.map( p => ({...p.toJSON(), makesPieces: makesPieces( p )}) )
 }
 
 // isAtRisk is derived, not stored - CONTEXT.md's Projected Completion
@@ -156,7 +224,9 @@ function withAtRisk( orderJson )
   const isAtRisk = !!(orderJson.projectedCompletionDate && orderJson.promisedDate
     && orderJson.projectedCompletionDate > orderJson.promisedDate)
 
-  return {...orderJson, isAtRisk}
+  const ship = orderShipDate( orderJson )
+
+  return {...orderJson, isAtRisk, shipDate: ship.date, shipDateOrigin: ship.origin}
 }
 
 export async function readOrder( id )
@@ -170,7 +240,7 @@ export async function readOrder( id )
   const order = await Order.findByPk( id, {include: [
     {model: Person, as: 'Customer'},
     GroutingDay,
-    {model: ChannelOrder, attributes: ['id', 'channel', 'externalOrderId']},   // if accepted from one
+    {model: ChannelOrder, attributes: ['id', 'channel', 'externalOrderId', 'shippingMethod'], through: {attributes: []}},   // accepted from - several once combined
   ]} )
   if( !order )
     notFound()
@@ -184,7 +254,7 @@ export async function readOrder( id )
     ? await Product.findAll( {where: {id: orderProducts.map( l => l.productId )}} )
     : []
   const productById = Object.fromEntries( products.map( p => [p.id, p.toJSON()] ) )
-  const lines = orderProducts.map( l => ({...l.toJSON(), Product: productById[l.productId]}) )
+  const lines = orderProducts.map( l => ({...l.toJSON(), Product: productById[l.productId], makesPieces: makesPieces( productById[l.productId] )}) )
 
   // Piece counts grouped by product + phase - shown per product line in
   // the Products table (a flat shop-wide phase count wasn't useful on
@@ -203,6 +273,7 @@ export async function readOrder( id )
   return {
     ...withAtRisk( order.toJSON() ),
     itemCount: lines.length,
+    unitCount: lines.reduce( (n, l) => n + Number( l.quantity ?? 0 ), 0 ),
     lines: lines.map( l => ({...l, phaseCounts: phaseCountsByProductId[l.productId] ?? {}}) ),
   }
 }
@@ -218,7 +289,14 @@ export async function readOrders()
 
   await sequelize.sync()
 
-  const orders = await Order.findAll( {include: [{model: Person, as: 'Customer'}, GroutingDay], order: [['createdOn', 'DESC']]} )
+  const orders = await Order.findAll( {
+    include: [
+      {model: Person, as: 'Customer'},
+      GroutingDay,
+      {model: ChannelOrder, attributes: ['id', 'channel', 'externalOrderId', 'shippingMethod'], through: {attributes: []}},
+    ],
+    order: [['createdOn', 'DESC']],
+  } )
   if( 0 === orders.length )
     return []
 
@@ -227,13 +305,21 @@ export async function readOrders()
   // per group exactly the same way.
   const counts = await OrderProduct.findAll( {
     where: {orderId: orders.map( o => o.id )},
-    attributes: ['orderId', [Sequelize.fn( 'COUNT', Sequelize.col( 'orderId' ) ), 'count']],
+    attributes: [
+      'orderId',
+      [Sequelize.fn( 'COUNT', Sequelize.col( 'orderId' ) ), 'count'],
+      [Sequelize.fn( 'SUM', Sequelize.col( 'quantity' ) ), 'units'],
+    ],
     group: ['orderId'],
   } )
 
   const countByOrderId = {}
+  const unitsByOrderId = {}
   for( const c of counts )
+  {
     countByOrderId[c.orderId] = Number( c.get( 'count' ) )
+    unitsByOrderId[c.orderId] = Number( c.get( 'units' ) )
+  }
 
-  return orders.map( o => withAtRisk( {...o.toJSON(), itemCount: countByOrderId[o.id] || 0} ) )
+  return orders.map( o => withAtRisk( {...o.toJSON(), itemCount: countByOrderId[o.id] || 0, unitCount: unitsByOrderId[o.id] || 0} ) )
 }

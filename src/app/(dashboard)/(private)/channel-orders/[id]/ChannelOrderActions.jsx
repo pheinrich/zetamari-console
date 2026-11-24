@@ -52,7 +52,7 @@ export default function ChannelOrderActions( {order} )
     } )
   }
 
-  // Back to review: deletes the Order, while none of its Pieces is started
+  // Back to review: deletes its Order(s), while none of their Pieces is started
   function unaccept()
   {
     startTransition( async () => {
@@ -62,7 +62,9 @@ export default function ChannelOrderActions( {order} )
         toast.error( result.error )
       else
       {
-        toast.success( `Order #${order.orderId} deleted - back to review` )
+        const deleted = order.orderIds.map( id => `#${id}` ).join( ', ' )
+
+        toast.success( deleted ? `Order ${deleted} deleted - back to review` : 'Back to review' )
         router.refresh()
       }
     } )
@@ -96,11 +98,11 @@ export default function ChannelOrderActions( {order} )
   if( order.status === 'accepted' )
     return (
       <div className='flex flex-wrap gap-4'>
-        {order.orderId && (
-          <Button component={Link} href={`/orders/${order.orderId}`} variant='outlined' startIcon={<i className='ri-file-list-3-line' />}>
-            Order #{order.orderId}
+        {order.orderIds.map( id => (
+          <Button key={id} component={Link} href={`/orders/${id}`} variant='outlined' startIcon={<i className='ri-file-list-3-line' />}>
+            Order #{id}
           </Button>
-        )}
+        ) )}
         <Button variant='outlined' color='secondary' disabled={isPending} onClick={unaccept} startIcon={<i className='ri-arrow-go-back-line' />}>
           Unaccept
         </Button>

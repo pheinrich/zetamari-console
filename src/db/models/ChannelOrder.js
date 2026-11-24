@@ -23,6 +23,7 @@ const ChannelOrder = sequelize.define(
     status: { type: DataTypes.ENUM( 'new', 'accepted', 'dismissed' ), allowNull: false, defaultValue: 'new' },
     orderedOn: { type: DataTypes.DATEONLY },
     requestedShipDate: { type: DataTypes.STRING },
+    shippingMethod: { type: DataTypes.STRING },   // the delivery mechanism the channel named, if any
     paymentType: { type: DataTypes.STRING },
 
     buyerCompany: { type: DataTypes.STRING },
@@ -44,7 +45,6 @@ const ChannelOrder = sequelize.define(
     notes: { type: DataTypes.TEXT },
 
     customerId: { type: DataTypes.INTEGER, allowNull: true, references: { model: Person, key: 'id' } },
-    orderId: { type: DataTypes.INTEGER, allowNull: true, references: { model: Order, key: 'id' } },
     createdAt: { type: DataTypes.DATE, allowNull: false, defaultValue: DataTypes.NOW },
   },
   {
@@ -55,7 +55,20 @@ const ChannelOrder = sequelize.define(
 Person.hasMany( ChannelOrder, {foreignKey: 'customerId', as: 'ChannelOrdersAsCustomer'} )
 ChannelOrder.belongsTo( Person, {foreignKey: 'customerId', as: 'Customer'} )
 
-Order.hasOne( ChannelOrder, {foreignKey: 'orderId'} )
-ChannelOrder.belongsTo( Order, {foreignKey: 'orderId'} )
+// Linked to Orders many-to-many, since Orders can be split and combined
+// (see the 20261123000000-channel-order-links-and-shipping-method.js
+// migration). 'accepted' means it has at least one Order.
+export const ChannelOrderOrder = sequelize.define(
+  'ChannelOrderOrder',
+  {
+    channelOrderId: { type: DataTypes.INTEGER, primaryKey: true, references: { model: 'ChannelOrders', key: 'id' } },
+    orderId: { type: DataTypes.INTEGER, primaryKey: true, references: { model: Order, key: 'id' } },
+  },
+  {
+    timestamps: false,
+  })
+
+ChannelOrder.belongsToMany( Order, {through: ChannelOrderOrder, foreignKey: 'channelOrderId', otherKey: 'orderId'} )
+Order.belongsToMany( ChannelOrder, {through: ChannelOrderOrder, foreignKey: 'orderId', otherKey: 'channelOrderId'} )
 
 export default ChannelOrder

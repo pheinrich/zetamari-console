@@ -1,6 +1,6 @@
 import { Op } from 'sequelize'
 
-import ChannelOrder from '@/db/models/ChannelOrder'
+import ChannelOrder, { ChannelOrderOrder } from '@/db/models/ChannelOrder'
 import ChannelOrderLine from '@/db/models/ChannelOrderLine'
 import CustomerSource from '@/db/models/CustomerSource'
 import Order from '@/db/models/Order'
@@ -11,13 +11,16 @@ import Piece from '@/db/models/Piece'
 import Product from '@/db/models/Product'
 import Role from '@/db/models/Role'
 import sequelize from '@/db/sequelize'
+import { parseRequestedDate } from '@/utils/shipDate'
 
 // Accepting a reviewed Channel Order into an Order - see CONTEXT.md's
 // Channel Order entry. The Order gets what hand entry gives it
 // (db/actions/order.js's createOrder()): a customer, a promised date,
 // an OrderProduct per product and a Piece per unit of each production
 // item. Everything the channel reported - prices, shipping, tax,
-// commission, ship-to - stays on the Channel Order, linked by orderId.
+// commission, ship-to - stays on the Channel Order, linked to the Order
+// through ChannelOrderOrder (many-to-many, since Orders can later be
+// split and combined).
 
 // How each channel appears among a customer's CustomerSources (names as
 // the existing imported rows spell them), and the Role its customers get.
@@ -53,33 +56,6 @@ function splitName( name )
   const words = (name ?? '').trim().split( /\s+/ ).filter( Boolean )
 
   return {firstName: words.slice( 0, -1 ).join( ' ' ) || words[0] || null, lastName: words.length > 1 ? words.at( -1 ) : null}
-}
-
-// The channel's free-text ship-by ("May 20", "2026-12-01", "ASAP") as a
-// date, if it is one - a year-less date is taken as the next one on or
-// after the order date.
-export function parseRequestedDate( text, orderedOn )
-{
-  if( !text )
-    return null
-
-  if( /^\d{4}-\d{2}-\d{2}/.test( text ) )
-    return text.slice( 0, 10 )
-
-  if( !/[a-z]{3}/i.test( text ) || !/\d/.test( text ) )
-    return null
-
-  const base = orderedOn ? new Date( `${orderedOn}T00:00:00` ) : new Date()
-  const hasYear = /\b\d{4}\b/.test( text )
-  let date = new Date( hasYear ? text : `${text} ${base.getFullYear()}` )
-
-  if( Number.isNaN( date.getTime() ) )
-    return null
-
-  if( !hasYear && date < base )
-    date = new Date( date.setFullYear( date.getFullYear() + 1 ) )
-
-  return `${date.getFullYear()}-${String( date.getMonth() + 1 ).padStart( 2, '0' )}-${String( date.getDate() ).padStart( 2, '0' )}`
 }
 
 // Existing People who may be this order's customer, best first, each with
@@ -286,15 +262,18 @@ export async function acceptChannelOrder( channelOrderId, {customerId, promisedD
         await Piece.bulkCreate( Array.from( {length: quantity}, () => ({orderId: created.id, productId: product.id, phase: 'Design'}) ), {transaction} )
     }
 
-    await order.update( {status: 'accepted', orderId: created.id, customerId: customer.id}, {transaction} )
+    await ChannelOrderOrder.create( {channelOrderId: order.id, orderId: created.id}, {transaction} )
+    await order.update( {status: 'accepted', customerId: customer.id}, {transaction} )
 
     return created.id
   } )
 }
 
 // Undoes an accept while nothing has been started - every Piece still in
-// Design: deletes the Order (its products and Pieces) and returns the
-// Channel Order to 'new'. A customer it created is kept.
+// Design: deletes the Order(s) it became (their products and Pieces) and
+// returns the Channel Order to 'new'. A customer it created is kept. Not
+// once one of its Orders also carries another Channel Order (combined) -
+// that Order has to be split or changed by hand instead.
 export async function unacceptChannelOrder( channelOrderId )
 {
   return sequelize.transaction( async transaction => {
@@ -303,18 +282,30 @@ export async function unacceptChannelOrder( channelOrderId )
     if( !order || order.status !== 'accepted' )
       throw new Error( 'This order isn\'t accepted' )
 
-    if( order.orderId )
+    const orderIds = (await ChannelOrderOrder.findAll( {where: {channelOrderId}, transaction} )).map( l => l.orderId )
+
+    if( orderIds.length )
     {
-      const started = await Piece.count( {where: {orderId: order.orderId, phase: {[Op.ne]: 'Design'}}, transaction} )
+      const shared = await ChannelOrderOrder.findOne( {where: {orderId: orderIds, channelOrderId: {[Op.ne]: channelOrderId}}, transaction} )
+
+      if( shared )
+        throw new Error( `Order #${shared.orderId} also carries another channel order - change it there instead` )
+
+      const started = await Piece.count( {where: {orderId: orderIds, phase: {[Op.ne]: 'Design'}}, transaction} )
 
       if( started )
-        throw new Error( `Work has started on ${started} piece${started === 1 ? '' : 's'} - change Order #${order.orderId} itself instead` )
+        throw new Error( `Work has started on ${started} piece${started === 1 ? '' : 's'} - change ${orderList( orderIds )} itself instead` )
 
-      await Piece.destroy( {where: {orderId: order.orderId}, transaction} )
-      await OrderProduct.destroy( {where: {orderId: order.orderId}, transaction} )
-      await Order.destroy( {where: {id: order.orderId}, transaction} )
+      await Piece.destroy( {where: {orderId: orderIds}, transaction} )
+      await OrderProduct.destroy( {where: {orderId: orderIds}, transaction} )
+      await ChannelOrderOrder.destroy( {where: {channelOrderId}, transaction} )
+      await Order.destroy( {where: {id: orderIds}, transaction} )
     }
 
-    await order.update( {status: 'new', orderId: null, customerId: null}, {transaction} )
+    await order.update( {status: 'new', customerId: null}, {transaction} )
+
+    return orderIds
   } )
 }
+
+const orderList = ids => ids.length === 1 ? `Order #${ids[0]}` : `Orders ${ids.map( id => `#${id}` ).join( ', ' )}`

@@ -12,9 +12,10 @@ import { readChannelOrder, readProductOptions } from '@/db/actions/channelOrder'
 import tableStyles from '@core/styles/table.module.css'
 import InboundEmailActions from '../../inbound-emails/InboundEmailActions'
 import {
-  EMAIL_KIND_LABELS, EMAIL_STATUS_COLORS, ORDER_STATUS_COLORS, buyerLabel, channelLabel, dateTime, money,
+  EMAIL_KIND_LABELS, EMAIL_STATUS_COLORS, ORDER_STATUS_COLORS, buyerLabel, channelLabel, dateTime, money, shipDateText,
 } from '../channelOrderFormat'
 import LineProductPicker from '../LineProductPicker'
+import { channelOrderShipDate } from '@/utils/shipDate'
 import ChannelOrderActions from './ChannelOrderActions'
 
 function Field( {label, children} )
@@ -40,12 +41,14 @@ function addressLines( a )
 // One Channel Order as its channel reported it - see CONTEXT.md's
 // Channel Order entry. Lines keep the channel's SKU/description/price;
 // "Product" is the console Product the line matched (by SKU or Product
-// Alias, or by hand), with a picker to match it while the order is new.
+// Alias, or by hand), with a picker to match it while the order is new,
+// and the channel's description beneath it.
 export default async function ChannelOrderPage( {params} )
 {
   const {id} = await params
   const [order, products] = await Promise.all( [readChannelOrder( id ), readProductOptions()] )
   const shipTo = addressLines( order.shipTo )
+  const shipBy = channelOrderShipDate( order )
   const emailErrors = [...new Set( order.emails.map( e => e.error ).filter( Boolean ) )]
   const lineSum = order.Lines.reduce( (sum, l) => sum + Number( l.unitPrice ?? 0 ) * Number( l.quantity ?? 0 ), 0 )
 
@@ -87,7 +90,15 @@ export default async function ChannelOrderPage( {params} )
           <CardHeader title='Order' />
           <CardContent className='flex flex-col gap-2'>
             <Field label='Ordered'>{order.orderedOn}</Field>
-            <Field label='Requested ship'>{order.requestedShipDate}</Field>
+            <Field label='Ship by'>
+              {shipDateText( shipBy.date )}
+              {shipBy.date && (
+                <Typography component='span' variant='body2' color='text.secondary'>
+                  {shipBy.origin === 'requested' ? ` (requested "${order.requestedShipDate}")` : ` (default: 3 business days${order.requestedShipDate ? `; asked for "${order.requestedShipDate}"` : ''})`}
+                </Typography>
+              )}
+            </Field>
+            <Field label='Ship via'>{order.shippingMethod}</Field>
             <Field label='Payment'>{order.paymentType}</Field>
             <Field label='Received'>{dateTime( order.createdAt )}</Field>
             {/* Plum Bottom's notes are the gallery's whole hand-written message - keep its line breaks. */}
@@ -140,21 +151,26 @@ export default async function ChannelOrderPage( {params} )
           <div className='overflow-x-auto'>
             <table className={tableStyles.table}>
               <thead>
-                <tr><th>Channel SKU</th><th>Description</th><th>Product</th><th>Qty</th><th>Unit price</th><th>Line total</th></tr>
+                <tr><th>Channel SKU</th><th>Product</th><th>Qty</th><th>Unit price</th><th>Line total</th></tr>
               </thead>
               <tbody>
                 {order.Lines.map( line => (
                   <tr key={line.id}>
                     <td>{line.sku || '—'}</td>
-                    <td>{line.description || '—'}</td>
-                    <td><LineProductPicker line={line} products={products} editable={order.status === 'new'} /></td>
+                    {/* The match above the channel's own description, which wraps rather than widening the row */}
+                    <td className='min-is-[240px] max-is-[560px] whitespace-normal'>
+                      <LineProductPicker line={line} products={products} editable={order.status === 'new'} />
+                      {line.description && (
+                        <Typography variant='body2' color='text.secondary' className='break-words mbs-1'>{line.description}</Typography>
+                      )}
+                    </td>
                     <td>{line.quantity ?? '—'}</td>
                     <td>{money( line.unitPrice )}</td>
                     <td>{line.unitPrice !== null && line.quantity !== null ? money( Number( line.unitPrice ) * line.quantity ) : '—'}</td>
                   </tr>
                 ) )}
                 <tr>
-                  <td colSpan={5} className='text-end'><strong>Lines total</strong></td>
+                  <td colSpan={4} className='text-end'><strong>Lines total</strong></td>
                   <td><strong>{money( lineSum )}</strong></td>
                 </tr>
               </tbody>

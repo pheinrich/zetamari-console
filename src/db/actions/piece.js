@@ -15,6 +15,7 @@ import { auth } from '@/lib/auth'
 import { COSTING_INCLUDE } from '@/db/costingInclude'
 import { getPhaseSequence, getPieceDurationHours } from '@/libs/pieceScheduling'
 import { markOrdersScheduleStale } from '@/db/actions/scheduling'
+import { orderShipDate } from '@/utils/shipDate'
 
 // Order-level status the /production table filters on - not a stored
 // column, derived fresh each read from what's already on hand. 'shipped'
@@ -45,7 +46,9 @@ function orderStatus( order, orderPieces, productsById )
 // promisedDateOrigin/groutingDayId are current, same as readOrders() -
 // the grouting/ship-date columns would otherwise show stale projections.
 // Each piece's flattened Order carries a computed `status` (see
-// orderStatus() above), mirroring order.js's withAtRisk() pattern.
+// orderStatus() above), mirroring order.js's withAtRisk() pattern, and
+// its ship date (utils/shipDate.js - the Promised Date, else 3 business
+// days after the order).
 export async function readPiecesForProduction()
 {
   const session = await auth()
@@ -71,10 +74,14 @@ export async function readPiecesForProduction()
   for( const p of piecesJson )
     (piecesByOrderId[p.orderId] ??= []).push( p )
 
-  return piecesJson.map( p => ({
-    ...p,
-    Order: {...p.Order, status: orderStatus( p.Order, piecesByOrderId[p.orderId], productsById )},
-  }) )
+  return piecesJson.map( p => {
+    const ship = orderShipDate( p.Order )
+
+    return {
+      ...p,
+      Order: {...p.Order, status: orderStatus( p.Order, piecesByOrderId[p.orderId], productsById ), shipDate: ship.date, shipDateOrigin: ship.origin},
+    }
+  } )
 }
 
 // Shared setup for advancePieces()/revertPieces() - both need the same

@@ -131,7 +131,7 @@ export default function OrderForm( {customerOptions, productOptions} )
                     onChange={setPromisedDate}
                     clearable
                     slotProps={{inputLabel: {shrink: true}}}
-                    helperText="Leave blank to let scheduling compute one from the backlog. Set this only when the customer requested a specific date."
+                    helperText="Leave blank to ship by default, 3 business days after the order. Set this when the customer asked for a date."
                   />
                 </Grid>
               </Grid>

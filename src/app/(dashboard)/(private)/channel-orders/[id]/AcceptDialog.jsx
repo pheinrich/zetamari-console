@@ -28,6 +28,7 @@ import { addDays, format, parseISO } from 'date-fns'
 import { acceptChannelOrder, readAcceptPreview, searchCustomers } from '@/db/actions/channelOrder'
 import tableStyles from '@core/styles/table.module.css'
 import DateField from '@/components/DateField'
+import { defaultShipDate } from '@/utils/shipDate'
 import { unitInputProps } from '@/utils/units'
 
 const PRESET_DAYS = [30, 60, 90]
@@ -228,7 +229,7 @@ export default function AcceptDialog( {order, open, onClose} )
                   setPromisedDate( date )
                   setLeadTime( null )
                 }}
-                helperText={`${order.requestedShipDate ? `The channel asked for: ${order.requestedShipDate}. ` : ''}Leave blank to compute it later.`}
+                helperText={`${order.requestedShipDate ? `The channel asked for: ${order.requestedShipDate}. ` : ''}Leave blank to ship by default on ${defaultShipDate( order.orderedOn ?? new Date() )}, 3 business days after the order.`}
                 slotProps={{inputLabel: {shrink: true}}}
                 boxProps={{sx: {maxInlineSize: 320}}}
               />

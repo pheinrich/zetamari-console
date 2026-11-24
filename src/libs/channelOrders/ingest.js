@@ -176,6 +176,7 @@ async function upsertChannelOrder( order, transaction, force = false )
     externalOrderId: order.externalOrderId,
     orderedOn: order.orderedOn,
     requestedShipDate: order.requestedShipDate,
+    shippingMethod: order.shippingMethod ?? null,
     paymentType: order.paymentType,
     buyerCompany: order.buyer.company,
     buyerName: order.buyer.name,

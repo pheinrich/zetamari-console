@@ -8,34 +8,29 @@ import CardContent from '@mui/material/CardContent'
 import Chip from '@mui/material/Chip'
 import Typography from '@mui/material/Typography'
 
-import { readOrder } from '@/db/actions/order'
+import { readOrder, readOrderProductOptions } from '@/db/actions/order'
 import { customerDisplayName } from '../../customers/customerFormat'
-import { channelLabel } from '../../channel-orders/channelOrderFormat'
+import { channelLabel, shipDateText } from '../../channel-orders/channelOrderFormat'
 import OrderDetailActions from './OrderDetailActions'
-import tableStyles from '@core/styles/table.module.css'
+import OrderLinesTable from './OrderLinesTable'
 
-function originLabel( origin )
-{
-  if( 'explicit' === origin )
-    return 'Explicit (customer requested)'
-  if( 'computed' === origin )
-    return 'Computed (from backlog)'
-
-  return 'Not yet set'
+const ORIGIN_LABELS = {
+  explicit: 'Explicit (customer requested)',
+  computed: 'Computed (from backlog)',
+  default: 'Default (3 business days after the order)',
 }
 
-// Read-only aside from Edit/Delete - enough to see the recalculation
-// engine's output (Promised Date/origin, Projected Completion Date,
-// at-risk state, assigned Grouting Day, per-product phase progress)
-// without the kanban/at-risk-list UI. See the implementation plan's
-// Verification section.
+// An Order: its scheduling dates, and its products - edited in place
+// (OrderLinesTable). Customer and Promised Date are changed via Edit.
 export default async function OrderPage( {params} )
 {
   const {id} = await params
-  const order = await readOrder( id )
+  const [order, products] = await Promise.all( [readOrder( id ), readOrderProductOptions()] )
 
   if( !order )
     return notFound()
+
+  const shipVia = [...new Set( order.ChannelOrders.map( c => c.shippingMethod ).filter( Boolean ) )]
 
   return (
     <Grid container spacing={6}>
@@ -45,11 +40,11 @@ export default async function OrderPage( {params} )
             <div className='flex flex-col gap-1'>
               <Typography variant='h4'>Order #{order.id}</Typography>
               <Typography color='text.secondary'>{customerDisplayName( order.Customer )}</Typography>
-              {order.ChannelOrder && (
-                <Link href={`/channel-orders/${order.ChannelOrder.id}`}>
-                  From {channelLabel( order.ChannelOrder.channel )} #{order.ChannelOrder.externalOrderId}
+              {order.ChannelOrders.map( c => (
+                <Link key={c.id} href={`/channel-orders/${c.id}`}>
+                  From {channelLabel( c.channel )} #{c.externalOrderId}
                 </Link>
-              )}
+              ) )}
             </div>
             <div className='flex items-center gap-4'>
               {order.isAtRisk && <Chip color='error' label='At Risk' />}
@@ -63,8 +58,9 @@ export default async function OrderPage( {params} )
         <Card>
           <CardHeader title='Scheduling' />
           <CardContent className='flex flex-col gap-3'>
-            <Typography><strong>Promised Date:</strong> {order.promisedDate || 'Not yet computed'}</Typography>
-            <Typography><strong>Origin:</strong> {originLabel( order.promisedDateOrigin )}</Typography>
+            <Typography><strong>Ship by:</strong> {shipDateText( order.shipDate )}</Typography>
+            <Typography><strong>Origin:</strong> {ORIGIN_LABELS[order.shipDateOrigin] ?? 'Not yet set'}</Typography>
+            {shipVia.length > 0 && <Typography><strong>Ship via:</strong> {shipVia.join( ', ' )}</Typography>}
             <Typography><strong>Projected Completion Date:</strong> {order.projectedCompletionDate || 'Not yet computed'}</Typography>
             <Typography><strong>Grouting Day:</strong> {order.GroutingDay?.date || 'None (kit-only order, or not yet ready for Grouting)'}</Typography>
           </CardContent>
@@ -72,40 +68,7 @@ export default async function OrderPage( {params} )
       </Grid>
 
       <Grid size={{ xs: 12 }}>
-        <Card>
-          <CardHeader title='Products' />
-          <CardContent>
-            <div className='overflow-x-auto'>
-              <table className={tableStyles.table}>
-                <thead>
-                  <tr><th>Product</th><th>SKU</th><th>Quantity</th><th>Progress</th></tr>
-                </thead>
-                <tbody>
-                  {order.lines.map( line => (
-                    // OrderProduct has no id column (see its model's
-                    // doc comment) - orderId+productId is unique per
-                    // line in practice.
-                    <tr key={`${line.orderId}-${line.productId}`}>
-                      <td>{line.Product?.name}</td>
-                      <td>{line.Product?.sku}</td>
-                      <td>{line.quantity}</td>
-                      <td>
-                        <div className='flex flex-wrap gap-2'>
-                          {Object.entries( line.phaseCounts ).map( ([phase, count]) => (
-                            <Chip key={phase} size='small' variant='tonal' label={`${phase} × ${count}`} />
-                          ) )}
-                          {0 === Object.keys( line.phaseCounts ).length && (
-                            <Typography variant='body2' color='text.secondary'>No pieces</Typography>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  ) )}
-                </tbody>
-              </table>
-            </div>
-          </CardContent>
-        </Card>
+        <OrderLinesTable order={order} products={products} />
       </Grid>
     </Grid>
   )
