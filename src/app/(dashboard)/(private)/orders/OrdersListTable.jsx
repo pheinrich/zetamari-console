@@ -1,8 +1,10 @@
 'use client'
 
 import { useMemo, useState, useTransition } from 'react'
+
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+
 import { toast } from 'react-toastify'
 
 import Card from '@mui/material/Card'
@@ -153,6 +155,7 @@ export default function OrdersListTable( {orderData} )
       } ),
       columnHelper.accessor( 'id', {
         header: 'Order',
+
         // Also its own link (not just relying on the row click below) -
         // keeps this keyboard-focusable and openable in a new tab.
         cell: ({ row }) => <Link href={`/orders/${row.original.id}`}>#{row.original.id}</Link>
@@ -219,6 +222,7 @@ export default function OrdersListTable( {orderData} )
       columnHelper.accessor( 'actions', {
         header: 'Actions',
         cell: ({ row }) => (
+
           // Row itself navigates on click (see the <tr onClick> below) -
           // stopPropagation here so these buttons don't also trigger it.
           <div className='flex items-center' onClick={e => e.stopPropagation()}>

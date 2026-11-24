@@ -1,7 +1,9 @@
 'use server'
 
 import { notFound, unauthorized } from 'next/navigation'
+
 import { Sequelize } from 'sequelize'
+
 import Person from '@/db/models/Person'
 import GroutingDay from '@/db/models/GroutingDay'
 import Order from '@/db/models/Order'
@@ -30,6 +32,7 @@ import { markAllOrdersScheduleStale, markOrdersScheduleStale } from '@/db/action
 export async function createOrder( data )
 {
   const session = await auth()
+
   if( !session )
     unauthorized()
 
@@ -47,6 +50,7 @@ export async function createOrder( data )
       for( const line of data.lines || [] )
       {
         const quantity = Number( line.quantity ) || 0
+
         if( quantity <= 0 )
           continue
 
@@ -56,6 +60,7 @@ export async function createOrder( data )
           continue
 
         const pieces = Array.from( {length: quantity}, () => ({orderId: order.id, productId: line.productId, phase: 'Design'}) )
+
         await Piece.bulkCreate( pieces, {transaction: t} )
       }
 
@@ -71,6 +76,7 @@ export async function createOrder( data )
     if( error instanceof Sequelize.ValidationError )
     {
       const message = error.errors.map( e => e.message ).join( '; ' )
+
       return {error: `Validation failed: ${message}`}
     }
 
@@ -86,11 +92,13 @@ export async function createOrder( data )
 export async function updateOrder( data )
 {
   const session = await auth()
+
   if( !session )
     unauthorized()
 
   await sequelize.sync()
   const order = await Order.findByPk( data.id )
+
   if( !order )
     notFound()
 
@@ -115,6 +123,7 @@ export async function updateOrder( data )
     if( error instanceof Sequelize.ValidationError )
     {
       const message = error.errors.map( e => e.message ).join( '; ' )
+
       return {error: `Validation failed: ${message}`}
     }
 
@@ -147,6 +156,7 @@ export async function deleteOrders( ids )
 async function run( work )
 {
   const session = await auth()
+
   if( !session )
     unauthorized()
 
@@ -208,6 +218,7 @@ export async function combineOrders( orderIds )
 export async function readOrderProductOptions()
 {
   const session = await auth()
+
   if( !session )
     unauthorized()
 
@@ -232,6 +243,7 @@ function withAtRisk( orderJson )
 export async function readOrder( id )
 {
   const session = await auth()
+
   if( !session )
     unauthorized()
 
@@ -242,6 +254,7 @@ export async function readOrder( id )
     GroutingDay,
     {model: ChannelOrder, attributes: ['id', 'channel', 'externalOrderId', 'shippingMethod'], through: {attributes: []}},   // accepted from - several once combined
   ]} )
+
   if( !order )
     notFound()
 
@@ -250,9 +263,11 @@ export async function readOrder( id )
   // approach customer.js's readCustomerOrders() already uses for this
   // exact table.
   const orderProducts = await OrderProduct.findAll( {where: {orderId: id}} )
+
   const products = orderProducts.length
     ? await Product.findAll( {where: {id: orderProducts.map( l => l.productId )}} )
     : []
+
   const productById = Object.fromEntries( products.map( p => [p.id, p.toJSON()] ) )
   const lines = orderProducts.map( l => ({...l.toJSON(), Product: productById[l.productId], makesPieces: makesPieces( productById[l.productId] )}) )
 
@@ -267,6 +282,7 @@ export async function readOrder( id )
   } )
 
   const phaseCountsByProductId = {}
+
   for( const row of pieceBreakdown )
     (phaseCountsByProductId[row.productId] ??= {})[row.phase] = Number( row.get( 'count' ) )
 
@@ -284,6 +300,7 @@ export async function readOrder( id )
 export async function readOrders()
 {
   const session = await auth()
+
   if( !session )
     unauthorized()
 
@@ -297,6 +314,7 @@ export async function readOrders()
     ],
     order: [['createdOn', 'DESC']],
   } )
+
   if( 0 === orders.length )
     return []
 
@@ -315,6 +333,7 @@ export async function readOrders()
 
   const countByOrderId = {}
   const unitsByOrderId = {}
+
   for( const c of counts )
   {
     countByOrderId[c.orderId] = Number( c.get( 'count' ) )
