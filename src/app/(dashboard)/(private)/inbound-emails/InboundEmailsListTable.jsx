@@ -58,6 +58,13 @@ const fuzzyFilter = (row, columnId, value, addMeta) => {
 
 const columnHelper = createColumnHelper()
 
+// The Channel filter's value for emails from no known channel (kind
+// 'unrecognized') - not a channel name, so it can't collide with one.
+const UNRECOGNIZED = '!unrecognized'
+
+const matchesChannel = ( email, channel ) =>
+  !channel || (channel === UNRECOGNIZED ? email.kind === 'unrecognized' : email.channel === channel)
+
 // Everything POSTed to /api/inbound/order-email, order or not - see
 // CONTEXT.md's Inbound Email entry.
 export default function InboundEmailsListTable( {emailData} )
@@ -73,7 +80,7 @@ export default function InboundEmailsListTable( {emailData} )
   const channels = useMemo( () => [...new Set( emailData.map( e => e.channel ).filter( Boolean ) )].sort(), [emailData] )
 
   const filteredData = useMemo(
-    () => emailData.filter( e => (!filters.status || e.status === filters.status) && (!filters.channel || e.channel === filters.channel) ),
+    () => emailData.filter( e => (!filters.status || e.status === filters.status) && matchesChannel( e, filters.channel ) ),
     [emailData, filters.status, filters.channel]
   )
 
@@ -273,6 +280,8 @@ export default function InboundEmailsListTable( {emailData} )
             className='min-is-[160px]'
           >
             <MenuItem value=''>All</MenuItem>
+            <MenuItem value={UNRECOGNIZED}>Unrecognized</MenuItem>
+            {channels.length > 0 && <Divider />}
             {channels.map( c => <MenuItem key={c} value={c}>{channelLabel( c )}</MenuItem> )}
           </TextField>
         </div>
