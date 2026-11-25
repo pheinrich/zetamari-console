@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState, useTransition } from 'react'
+import { useEffect, useMemo, useRef, useState, useTransition } from 'react'
 
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
@@ -18,14 +18,21 @@ import DialogActions from '@mui/material/DialogActions'
 import DialogContent from '@mui/material/DialogContent'
 import DialogTitle from '@mui/material/DialogTitle'
 import IconButton from '@mui/material/IconButton'
+import Popover from '@mui/material/Popover'
 import TextField from '@mui/material/TextField'
 import Tooltip from '@mui/material/Tooltip'
 import Typography from '@mui/material/Typography'
 
 import { addOrderLine, removeOrderLines, setOrderLineQuantity, splitOrder } from '@/db/actions/order'
 import { useConfirm } from '@/contexts/confirmContext'
+import NumberSpinner from '@/components/NumberSpinner'
 import tableStyles from '@core/styles/table.module.css'
-import { unitInputProps } from '@/utils/units'
+import { getPhaseSequence } from '@/libs/pieceScheduling'
+import { formatUnit, unitInputProps } from '@/utils/units'
+
+// A quantity is saved this long after it was last stepped or typed, so a
+// run of clicks on the spinner is one save, not one per click
+const SAVE_DELAY = 400
 
 const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`
 const withCount = (label, n) => n ? `${label} (${n})` : label
@@ -62,7 +69,8 @@ export default function OrderLinesTable( {order, products} )
   const confirm = useConfirm()
   const [isPending, startTransition] = useTransition()
   const [selected, setSelected] = useState( new Set() )
-  const [drafts, setDrafts] = useState( {} )   // productId -> typed quantity
+  const [drafts, setDrafts] = useState( {} )   // productId -> quantity stepped or typed, not yet saved
+  const saveTimers = useRef( {} )   // productId -> pending save
   const [addKey, setAddKey] = useState( 0 )   // bumped to reset the add row after each add
   const [splitting, setSplitting] = useState( false )
 
@@ -111,16 +119,20 @@ export default function OrderLinesTable( {order, products} )
     } )
   }
 
-  async function commitQuantity( line )
+  // Saves a line's quantity once it stops changing for SAVE_DELAY
+  function scheduleQuantity( line, quantity )
   {
-    const typed = drafts[line.productId]
+    clearTimeout( saveTimers.current[line.productId] )
 
-    if( typed === undefined )
-      return
+    saveTimers.current[line.productId] = setTimeout( () => {
+      delete saveTimers.current[line.productId]
+      commitQuantity( line, quantity )
+    }, SAVE_DELAY )
+  }
 
-    const quantity = Number( typed )
-
-    if( typed === '' || quantity === Number( line.quantity ) )
+  async function commitQuantity( line, quantity )
+  {
+    if( quantity === null || quantity === Number( line.quantity ) )
       return setDrafts( d => ({...d, [line.productId]: undefined}) )
 
     if( quantity === 0 )
@@ -194,7 +206,7 @@ export default function OrderLinesTable( {order, products} )
               </th>
               <th>Product</th>
               <th>Quantity</th>
-              <th>Progress</th>
+              <th>Stock</th>
               <th>Actions</th>
             </tr>
           </thead>
@@ -222,34 +234,18 @@ export default function OrderLinesTable( {order, products} )
                   <ProductCell product={line.Product} />
                 </td>
                 <td>
-                  <TextField
-                    size='small'
-                    type='number'
-                    value={drafts[line.productId] ?? line.quantity}
-                    disabled={isPending}
-                    onChange={e => setDrafts( d => ({...d, [line.productId]: e.target.value}) )}
-                    onBlur={() => commitQuantity( line )}
-                    onKeyDown={e => {
-                      if( e.key === 'Enter' )
-                        e.target.blur()
-                      else if( e.key === 'Escape' )
-                        setDrafts( d => ({...d, [line.productId]: undefined}) )
-                    }}
-                    slotProps={{
-                      htmlInput: {min: 0, step: line.makesPieces ? 1 : 'any', 'aria-label': 'Quantity'},
-                      input: unitInputProps( line.Product?.units || 'each' ),
-                    }}
-                    sx={{inlineSize: 150}}
+                  <QuantitySpinner
+                    value={drafts[line.productId] ?? Number( line.quantity )}
+                    units={line.Product?.units}
+                    whole={line.makesPieces}
+                    onValueChange={n => setDrafts( d => ({...d, [line.productId]: n}) )}
+                    onValueCommitted={n => scheduleQuantity( line, n )}
                   />
                 </td>
                 <td className='whitespace-normal'>
-                  <div className='flex flex-wrap gap-2'>
-                    {Object.entries( line.phaseCounts ).map( ([phase, count]) => (
-                      <Chip key={phase} size='small' variant='tonal' label={`${phase} × ${count}`} />
-                    ) )}
-                    {!Object.keys( line.phaseCounts ).length && (
-                      <Typography variant='body2' color='text.secondary'>{line.makesPieces ? 'No pieces' : 'Not made here'}</Typography>
-                    )}
+                  <div className='flex flex-wrap items-center gap-2'>
+                    {line.makesPieces ? <ReadyChip line={line} /> : <StockChip stock={line.stock} />}
+                    {Object.keys( line.phaseCounts ).length > 1 && <PhasesButton line={line} />}
                   </div>
                 </td>
                 <td>
@@ -308,6 +304,80 @@ export default function OrderLinesTable( {order, products} )
   )
 }
 
+// A product that isn't made here, by its Stock against what's still to be
+// picked of it: untracked, it simply comes from inventory; tracked,
+// whether there's enough on hand.
+function StockChip( {stock} )
+{
+  if( !stock?.tracked )
+    return <Chip size='small' variant='tonal' color='info' label='From inventory' />
+
+  if( stock.onHand >= stock.needed )
+    return <Chip size='small' variant='tonal' color='success' label='In stock' />
+
+  if( stock.onHand <= 0 )
+    return <Chip size='small' variant='tonal' color='error' label='Out of stock' />
+
+  return <Chip size='small' variant='tonal' color='warning' label={`${stock.onHand} available`} />
+}
+
+// A built product's Pieces that are Ready, against its quantity - colored
+// like StockChip: all there, none, or some.
+function ReadyChip( {line} )
+{
+  const ready = line.phaseCounts.Ready ?? 0
+  const color = ready >= Number( line.quantity ) ? 'success' : ready > 0 ? 'warning' : 'error'
+
+  return <Chip size='small' variant='tonal' color={color} label={`${ready} ready`} />
+}
+
+// When a row's Pieces are spread over several phases: a button opening
+// its production status - each phase of the product's sequence, in
+// order, with how many of its Pieces are there.
+function PhasesButton( {line} )
+{
+  const [anchor, setAnchor] = useState( null )
+  const sequence = getPhaseSequence( line.Product )
+  const total = Object.values( line.phaseCounts ).reduce( (n, c) => n + c, 0 )
+  const furthest = sequence.findLastIndex( phase => line.phaseCounts[phase] )
+
+  return (
+    <>
+      <Tooltip title='Show phases'>
+        <IconButton size='small' onClick={e => setAnchor( e.currentTarget )} aria-label='Show phases'>
+          <i className='ri-bar-chart-horizontal-line text-[20px] text-textSecondary' />
+        </IconButton>
+      </Tooltip>
+      <Popover
+        open={!!anchor}
+        anchorEl={anchor}
+        onClose={() => setAnchor( null )}
+        anchorOrigin={{vertical: 'bottom', horizontal: 'left'}}
+      >
+        <div className='flex flex-col gap-2 p-4 min-is-[300px]'>
+          <Typography variant='subtitle2'>{line.Product?.name} - {total} {total === 1 ? 'piece' : 'pieces'}</Typography>
+          {sequence.map( (phase, i) => {
+            const count = line.phaseCounts[phase] ?? 0
+
+            return (
+              <div key={phase} className='flex items-center gap-3'>
+                <Typography variant='body2' color={i > furthest ? 'text.disabled' : undefined} className='is-[5.5rem] shrink-0'>{phase}</Typography>
+                <div className='flex-1 bs-2.5 rounded-full bg-actionHover overflow-hidden'>
+                  <div
+                    className={`bs-full rounded-full ${phase === 'Ready' ? 'bg-success' : 'bg-primary'}`}
+                    style={{inlineSize: `${total ? (count / total) * 100 : 0}%`}}
+                  />
+                </div>
+                <Typography variant='body2' className='is-6 text-end'>{count || ''}</Typography>
+              </div>
+            )
+          } )}
+        </div>
+      </Popover>
+    </>
+  )
+}
+
 // Name (linked) and SKU, with the product's description beneath -
 // smaller, and wrapping rather than widening the row.
 export function ProductCell( {product} )
@@ -328,10 +398,34 @@ export function ProductCell( {product} )
   )
 }
 
+// A line's quantity as a number spinner, with its units beside it (unless
+// 'each'). Whole numbers only for a built product; at least 0.
+export function QuantitySpinner( {value, units, whole, onValueChange, onValueCommitted, disabled} )
+{
+  const unit = units && units !== 'each' ? formatUnit( units ) : null
+
+  return (
+    <div className='flex items-center gap-2'>
+      <NumberSpinner
+        size='small'
+        value={value}
+        min={0}
+        step={whole ? 1 : 'any'}
+        disabled={disabled}
+        inputWidth='4rem'
+        aria-label='Quantity'
+        onValueChange={onValueChange}
+        onValueCommitted={onValueCommitted}
+      />
+      {unit && <Typography variant='body2' color='text.secondary' className='whitespace-nowrap'>{unit}</Typography>}
+    </div>
+  )
+}
+
 // Always at the foot of the table. Cleared after each add (by its parent
 // remounting it), and focused again then so several can be added in a
 // row - but not on page load.
-function AddLineRow( {products, disabled, autoFocus, onAdd} )
+export function AddLineRow( {products, disabled, autoFocus, onAdd} )
 {
   const [product, setProduct] = useState( null )
   const [quantity, setQuantity] = useState( '1' )
@@ -362,18 +456,12 @@ function AddLineRow( {products, disabled, autoFocus, onAdd} )
           renderInput={params => <TextField {...params} autoFocus={autoFocus} placeholder='Add a product: search SKU or name' />}
         />
       </td>
-      <td>
-        <TextField
-          size='small'
-          type='number'
-          value={quantity}
-          onChange={e => setQuantity( e.target.value )}
-          onKeyDown={e => e.key === 'Enter' && valid && onAdd( product, Number( quantity ) )}
-          slotProps={{
-            htmlInput: {min: 0, step: product?.makesPieces === false ? 'any' : 1, 'aria-label': 'Quantity'},
-            input: unitInputProps( product?.units || 'each' ),
-          }}
-          sx={{inlineSize: 150}}
+      <td onKeyDown={e => e.key === 'Enter' && valid && onAdd( product, Number( quantity ) )}>
+        <QuantitySpinner
+          value={quantity === '' ? null : Number( quantity )}
+          units={product?.units}
+          whole={product?.makesPieces !== false}
+          onValueChange={n => setQuantity( n === null ? '' : String( n ) )}
         />
       </td>
       <td colSpan={2}>

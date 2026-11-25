@@ -12,6 +12,7 @@ import Piece from '@/db/models/Piece'
 import ChannelOrder from '@/db/models/ChannelOrder'
 import Product from '@/db/models/Product'
 import Shipment, { ShipmentLine } from '@/db/models/Shipment'
+import StockItem from '@/db/models/StockItem'
 import { makesPieces } from '@/libs/channelOrders/accept'
 import * as orderLines from '@/libs/orderLines'
 import { orderShipDate } from '@/utils/shipDate'
@@ -316,9 +317,25 @@ export async function readOrder( id )
   for( const row of pieceBreakdown )
     (phaseCountsByProductId[row.productId] ??= {})[row.phase] = Number( row.get( 'count' ) )
 
-  // Each Shipment line's claimed Pieces that are Ready, for built products
   const {shipments, fulfillment} = (await fulfillmentByOrderId( [order.id] ))[order.id]
 
+  // Stock of each product, against what's still to be picked of it (what
+  // was picked already came out of Stock): {tracked, onHand, needed}
+  const stockRows = lines.length ? await StockItem.findAll( {where: {productId: lines.map( l => l.productId )}} ) : []
+  const onHandByProductId = new Map( stockRows.map( r => [r.productId, Number( r.quantity )] ) )
+  const pickedByProductId = new Map()
+
+  for( const sh of shipments )
+    for( const l of sh.Lines )
+      pickedByProductId.set( l.productId, (pickedByProductId.get( l.productId ) ?? 0) + Number( l.picked ) )
+
+  const stockFor = line => ({
+    tracked: onHandByProductId.has( line.productId ),
+    onHand: onHandByProductId.get( line.productId ) ?? null,
+    needed: Math.max( 0, Number( line.quantity ?? 0 ) - (pickedByProductId.get( line.productId ) ?? 0) ),
+  })
+
+  // Each Shipment line's claimed Pieces that are Ready, for built products
   const readyRows = await Piece.findAll( {
     where: {orderId: id, shipmentId: {[Op.ne]: null}, phase: 'Ready'},
     attributes: ['shipmentId', 'productId', [Sequelize.fn( 'COUNT', Sequelize.col( 'id' ) ), 'count']],
@@ -334,11 +351,18 @@ export async function readOrder( id )
     fulfillment,
     shipments: shipments.map( s => ({
       ...s,
-      Lines: s.Lines.map( l => ({...l, quantity: Number( l.quantity ), makesPieces: makesPieces( l.Product ), ready: readyCount[`${s.id}:${l.productId}`] ?? 0}) ),
+      Lines: s.Lines.map( l => ({
+        ...l,
+        quantity: Number( l.quantity ),
+        picked: Number( l.picked ),
+        makesPieces: makesPieces( l.Product ),
+        ready: readyCount[`${s.id}:${l.productId}`] ?? 0,
+        onHand: onHandByProductId.get( l.productId ) ?? null,   // null: Stock not tracked
+      }) ),
     }) ),
     itemCount: lines.length,
     unitCount: lines.reduce( (n, l) => n + Number( l.quantity ?? 0 ), 0 ),
-    lines: lines.map( l => ({...l, phaseCounts: phaseCountsByProductId[l.productId] ?? {}}) ),
+    lines: lines.map( l => ({...l, phaseCounts: phaseCountsByProductId[l.productId] ?? {}, stock: stockFor( l )}) ),
   }
 }
 

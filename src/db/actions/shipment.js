@@ -51,6 +51,12 @@ export async function deleteShipment( id )
   return run( () => shipments.deleteShipment( id ) )
 }
 
+// How much of one Shipment line has been picked -> {picked, step}
+export async function setShipmentLinePicked( lineId, picked )
+{
+  return run( () => shipments.setLinePicked( lineId, picked ) )
+}
+
 export async function advanceShipment( id )
 {
   return run( async () => ({step: await shipments.advanceShipment( id )}) )
@@ -83,6 +89,6 @@ export async function readShipments()
   return rows.map( s => ({
     ...s.toJSON(),
     step: shipmentStep( s ),
-    Lines: s.Lines.map( l => ({...l.toJSON(), quantity: Number( l.quantity )}) ),
+    Lines: s.Lines.map( l => ({...l.toJSON(), quantity: Number( l.quantity ), picked: Number( l.picked )}) ),
   }) )
 }

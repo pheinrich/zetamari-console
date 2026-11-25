@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useTransition } from 'react'
+import { useEffect, useRef, useState, useTransition } from 'react'
 
 import { useRouter } from 'next/navigation'
 
@@ -21,8 +21,11 @@ import TextField from '@mui/material/TextField'
 import Tooltip from '@mui/material/Tooltip'
 import Typography from '@mui/material/Typography'
 
-import { advanceShipment, createShipment, deleteShipment, revertShipment, updateShipment } from '@/db/actions/shipment'
+import {
+  advanceShipment, createShipment, deleteShipment, revertShipment, setShipmentLinePicked, updateShipment,
+} from '@/db/actions/shipment'
 import { useConfirm } from '@/contexts/confirmContext'
+import NumberSpinner from '@/components/NumberSpinner'
 import tableStyles from '@core/styles/table.module.css'
 import { unitInputProps } from '@/utils/units'
 import {
@@ -42,16 +45,18 @@ const FULFILLMENT_TEXT = {
   'in fulfillment': 'Being fulfilled',
 }
 
-// An Order's Shipments - see CONTEXT.md's Shipment entry. Each is worked
-// a step at a time (Picking, Packing, Paperwork, Hand-off), with the last
-// step undoable; its products change, and it can be deleted, only while
-// at Picking.
+// An Order's Shipments - see CONTEXT.md's Shipment entry. Picking is
+// done row by row - each product's pick count stepped up as it's
+// collected, and Picking is done once every row is fully picked - then
+// Packing, Paperwork and Hand-off a step at a time, the last undoable.
+// Its products change, and it can be deleted, only until it's packed.
 export default function OrderShipments( {order} )
 {
   const router = useRouter()
   const confirm = useConfirm()
   const [isPending, startTransition] = useTransition()
   const [editing, setEditing] = useState( null )   // null, 'new', or a Shipment
+  const [, startRefresh] = useTransition()
 
   const allocated = order.fulfillment.allocated
   const left = order.lines.reduce( (n, l) => n + Math.max( 0, Number( l.quantity ) - (allocated[l.productId] ?? 0) ), 0 )
@@ -77,6 +82,20 @@ export default function OrderShipments( {order} )
       setEditing( null )
       router.refresh()
     } )
+  }
+
+  // A pick count saved in the background - the counter already shows it,
+  // so nothing waits on the save or the refresh after it. -> the result
+  async function pick( line, picked )
+  {
+    const result = await setShipmentLinePicked( line.id, picked )
+
+    if( result.error )
+      toast.error( result.error )
+
+    startRefresh( () => router.refresh() )
+
+    return result
   }
 
   async function remove( shipment )
@@ -108,6 +127,7 @@ export default function OrderShipments( {order} )
             key={shipment.id}
             shipment={shipment}
             disabled={isPending}
+            onPick={pick}
             onAdvance={() => act( () => advanceShipment( shipment.id ), r => `Shipment #${shipment.id}: ${r.step} done` )}
             onRevert={() => act( () => revertShipment( shipment.id ), r => `Shipment #${shipment.id}: back to ${r.step}` )}
             onEdit={() => setEditing( shipment )}
@@ -129,11 +149,14 @@ export default function OrderShipments( {order} )
   )
 }
 
-function ShipmentPanel( {shipment, disabled, onAdvance, onRevert, onEdit, onDelete} )
+function ShipmentPanel( {shipment, disabled, onPick, onAdvance, onRevert, onEdit, onDelete} )
 {
   const index = SHIPMENT_STEPS.findIndex( s => s.step === shipment.step )
-  const next = SHIPMENT_STEPS[index]
+  const next = SHIPMENT_STEPS[index]?.step === 'Picking' ? null : SHIPMENT_STEPS[index]   // Picking is done by the rows
   const last = SHIPMENT_STEPS.filter( s => shipment[s.doneAt] ).at( -1 )
+  const undo = last?.step === 'Picking' ? null : last   // un-picking is unchecking
+  const pickable = !shipment.packedAt
+  const pickedRows = shipment.Lines.filter( l => l.picked >= l.quantity ).length
   const shipTo = addressLines( shipment.shipTo )
   const carrier = [shipment.carrier, shipment.service].filter( Boolean ).join( ' · ' )
 
@@ -146,13 +169,18 @@ function ShipmentPanel( {shipment, disabled, onAdvance, onRevert, onEdit, onDele
           {shipment.transportMode && <Chip size='small' variant='outlined' label={TRANSPORT_MODE_LABELS[shipment.transportMode]} />}
         </div>
         <div className='flex items-center gap-1'>
+          {shipment.step === 'Picking' && (
+            <Typography variant='body2' color='text.secondary' className='mie-2'>
+              {pickedRows} of {shipment.Lines.length} picked - count products off as you collect them
+            </Typography>
+          )}
           {next && (
             <Button size='small' variant='contained' disabled={disabled} onClick={onAdvance}>
               Mark {next.action.toLowerCase()}
             </Button>
           )}
-          {last && (
-            <Tooltip title={`Undo ${last.step}`}>
+          {undo && (
+            <Tooltip title={`Undo ${undo.step}`}>
               <span>
                 <IconButton size='small' disabled={disabled} onClick={onRevert}>
                   <i className='ri-arrow-go-back-line text-[22px] text-textSecondary' />
@@ -167,7 +195,7 @@ function ShipmentPanel( {shipment, disabled, onAdvance, onRevert, onEdit, onDele
               </IconButton>
             </span>
           </Tooltip>
-          {!shipment.pickedAt && (
+          {!shipment.packedAt && (
             <Tooltip title='Delete'>
               <span>
                 <IconButton size='small' disabled={disabled} onClick={onDelete}>
@@ -182,7 +210,7 @@ function ShipmentPanel( {shipment, disabled, onAdvance, onRevert, onEdit, onDele
       <div className='overflow-x-auto'>
         <table className={tableStyles.table}>
           <thead>
-            <tr><th>Product</th><th>Quantity</th><th>Pieces</th></tr>
+            <tr><th>Product</th><th className='text-center'>Quantity</th><th className='text-center'>Picked</th></tr>
           </thead>
           <tbody>
             {shipment.Lines.map( line => (
@@ -191,11 +219,9 @@ function ShipmentPanel( {shipment, disabled, onAdvance, onRevert, onEdit, onDele
                   <Typography component='span'>{line.Product?.name}</Typography>{' '}
                   <Typography component='span' variant='body2' color='text.secondary'>{line.Product?.sku}</Typography>
                 </td>
-                <td>{line.quantity} {line.Product?.units && line.Product.units !== 'each' ? line.Product.units : ''}</td>
-                <td>
-                  {line.makesPieces
-                    ? <Chip size='small' variant='tonal' color={line.ready >= line.quantity ? 'success' : 'warning'} label={`${line.ready} of ${line.quantity} ready`} />
-                    : <Typography variant='body2' color='text.secondary'>From stock</Typography>}
+                <td className='text-center'>{line.quantity} {line.Product?.units && line.Product.units !== 'each' ? line.Product.units : ''}</td>
+                <td className='text-center'>
+                  <PickCounter line={line} disabled={disabled || !pickable} onPick={onPick} />
                 </td>
               </tr>
             ) )}
@@ -233,13 +259,88 @@ function ShipmentPanel( {shipment, disabled, onAdvance, onRevert, onEdit, onDele
   )
 }
 
+// How much of a row has been picked, as a number spinner - tinted red
+// while none is, amber while some is, green once all of it is. It's held
+// to what can be picked: for a built product, its Pieces that are Ready;
+// for a tracked one, what's on hand (which already excludes what this row
+// picked before). A fractional quantity's last step picks just the rest.
+//
+// The count changes the moment it's stepped or typed; changes in quick
+// succession are saved together, once they stop (SAVE_DELAY), and a
+// failed save puts the count back to what's stored.
+const SAVE_DELAY = 400
+
+function PickCounter( {line, disabled, onPick} )
+{
+  const [value, setValue] = useState( line.picked )
+  const timer = useRef( null )
+  const saving = useRef( 0 )
+  const stored = useRef( line.picked )
+
+  stored.current = line.picked
+
+  // A refresh brings the stored count - unless a newer one is still on its way
+  useEffect( () => {
+    if( !timer.current && !saving.current )
+      setValue( line.picked )
+  }, [line.picked] )
+
+  useEffect( () => () => clearTimeout( timer.current ), [] )
+
+  function step( n )
+  {
+    setValue( n )
+    clearTimeout( timer.current )
+
+    timer.current = setTimeout( async () => {
+      timer.current = null
+      saving.current++
+
+      const result = await onPick( line, n )
+
+      saving.current--
+
+      if( result?.error && !timer.current && !saving.current )
+        setValue( stored.current )
+    }, SAVE_DELAY )
+  }
+
+  const limit = line.makesPieces ? line.ready : line.onHand === null ? Infinity : line.picked + Math.max( 0, line.onHand )
+  const most = Math.min( line.quantity, limit )
+  const color = value >= line.quantity ? 'success' : value > 0 ? 'warning' : 'error'
+
+  const limited = value < line.quantity && value >= most
+  const why = line.makesPieces ? 'No more of its pieces are Ready' : 'No more in stock'
+
+  return (
+    <div className='flex justify-center'>
+      <Tooltip title={limited ? why : ''}>
+        <span>
+          <NumberSpinner
+            size='small'
+            value={value}
+            min={0}
+            max={most}
+            step={1}
+            disabled={disabled}
+            color={color}
+            inputWidth='3.5rem'
+            aria-label='Picked'
+            onValueChange={n => n !== null && n !== value && step( Math.min( most, Math.max( 0, n ) ) )}
+          />
+        </span>
+      </Tooltip>
+    </div>
+  )
+}
+
 // Creating a Shipment (products, how it travels, notes - its ship-to and
 // carrier start from the channel order or customer) or editing one (all
-// of it; products only while at Picking).
+// of it; products only until it's packed).
 function ShipmentDialog( {open, order, shipment, disabled, onClose, onSave} )
 {
   const creating = !shipment
-  const locked = !!shipment?.pickedAt
+  const locked = !!shipment?.packedAt
   const [quantities, setQuantities] = useState( {} )
   const [fields, setFields] = useState( {} )
   const [shipTo, setShipTo] = useState( {} )
@@ -324,7 +425,7 @@ function ShipmentDialog( {open, order, shipment, disabled, onClose, onSave} )
               ) )}
             </tbody>
           </table>
-          {locked && <Typography variant='body2' color='text.secondary' className='mbs-2'>Already picked - move it back to Picking to change its products.</Typography>}
+          {locked && <Typography variant='body2' color='text.secondary' className='mbs-2'>Already packed - undo Packing to change its products.</Typography>}
         </div>
 
         <TextField select size='small' label='Transport' value={fields.transportMode ?? ''} onChange={set( 'transportMode' )} className='max-is-[260px]'>

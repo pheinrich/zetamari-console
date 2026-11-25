@@ -48,6 +48,9 @@ export const ShipmentLine = sequelize.define(
     shipmentId: { type: DataTypes.INTEGER, allowNull: false, references: { model: 'Shipments', key: 'id' } },
     productId: { type: DataTypes.INTEGER, allowNull: false, references: { model: Product, key: 'id' } },
     quantity: { type: DataTypes.DECIMAL( 12, 3 ), allowNull: false },
+
+    // How much of it has been picked so far (0 to quantity)
+    picked: { type: DataTypes.DECIMAL( 12, 3 ), allowNull: false, defaultValue: 0 },
   },
   {
     timestamps: false,

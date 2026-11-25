@@ -1,6 +1,7 @@
 import { Op } from 'sequelize'
 
 import ChannelOrder, { ChannelOrderOrder } from '@/db/models/ChannelOrder'
+import StockItem from '@/db/models/StockItem'
 import Order from '@/db/models/Order'
 import OrderProduct from '@/db/models/OrderProduct'
 import Person from '@/db/models/Person'
@@ -20,11 +21,14 @@ import { CARRIER_MODES, SHIPMENT_STEPS, TRANSPORT_MODES } from '@/utils/shipment
 //   than the Order has left that isn't on another Shipment.
 // - A built product (makesPieces()) ships as Pieces: the Shipment claims
 //   that many of the Order's unclaimed Pieces, most advanced first, and
-//   can't finish Picking until they're all Ready.
-// - Finishing Picking takes each product out of Stock (where tracked);
-//   undoing it puts it back.
-// - Its products can only change, and it can only be deleted, while
-//   it's still at Picking.
+//   no more of them can be picked than are Ready. Any other product, when
+//   its Stock is tracked, can't be picked beyond what's on hand.
+// - Picking is done line by line (ShipmentLine.picked): each change takes
+//   that much out of Stock (where tracked), or puts it back. Picking is
+//   done - pickedAt set - exactly while every line is fully picked.
+// - Its products can only change, and it can only be deleted, until it's
+//   packed; whatever was picked of a product it no longer carries goes
+//   back into Stock.
 //
 // Each runs in a transaction and throws an Error a person can read.
 
@@ -240,8 +244,28 @@ export async function createShipment( orderId, fields )
   } )
 }
 
+// Sets pickedAt exactly while every line is fully picked.
+async function syncPicked( shipment, transaction )
+{
+  const lines = await ShipmentLine.findAll( {where: {shipmentId: shipment.id}, transaction} )
+  const done = lines.length > 0 && lines.every( l => Number( l.picked ) >= Number( l.quantity ) )
+
+  if( done && !shipment.pickedAt )
+    await shipment.update( {pickedAt: new Date()}, {transaction} )
+  else if( !done && shipment.pickedAt )
+    await shipment.update( {pickedAt: null}, {transaction} )
+}
+
+// How many of a built line's claimed Pieces are Ready.
+async function readyPieces( shipmentId, productId, transaction )
+{
+  return Piece.count( {where: {shipmentId, productId, phase: 'Ready'}, transaction} )
+}
+
 // Changes a Shipment's details, and its products when `fields.lines` is
-// given (only while still at Picking).
+// given (only until it's packed). What was picked of a product it still
+// carries stays picked (up to its new quantity, and the Pieces Ready);
+// anything picked beyond that goes back into Stock.
 export async function updateShipment( id, fields )
 {
   return sequelize.transaction( async transaction => {
@@ -250,34 +274,126 @@ export async function updateShipment( id, fields )
 
     if( lines !== undefined )
     {
-      if( shipment.pickedAt )
-        throw new Error( 'Its products can\'t change once it\'s been picked - move it back to Picking first' )
+      if( shipment.packedAt )
+        throw new Error( 'Its products can\'t change once it\'s packed - undo Packing first' )
 
       await Order.findByPk( shipment.orderId, {transaction, lock: transaction.LOCK.UPDATE} )
+
+      const before = await ShipmentLine.findAll( {where: {shipmentId: id}, transaction} )
+      const pickedBefore = new Map( before.map( l => [l.productId, Number( l.picked )] ) )
+
       await releaseLines( shipment, transaction )
       await addLines( shipment, await checkLines( shipment.orderId, lines, transaction ), transaction )
+
+      for( const line of await ShipmentLine.findAll( {where: {shipmentId: id}, include: Product, transaction} ) )
+      {
+        const had = pickedBefore.get( line.productId ) ?? 0
+        const cap = makesPieces( line.Product ) ? await readyPieces( id, line.productId, transaction ) : Infinity
+        const keep = Math.min( had, Number( line.quantity ), cap )
+
+        pickedBefore.delete( line.productId )
+
+        if( keep )
+          await line.update( {picked: keep}, {transaction} )
+
+        if( had > keep )
+          await adjustStock( line.productId, had - keep, transaction )
+      }
+
+      // Products it no longer carries: whatever was picked goes back
+      for( const [productId, had] of pickedBefore )
+        if( had )
+          await adjustStock( productId, had, transaction )
+
+      await syncPicked( shipment, transaction )
     }
 
     await shipment.update( details( rest ), {transaction} )
   } )
 }
 
+// Only until it's packed; anything picked goes back into Stock.
 export async function deleteShipment( id )
 {
   return sequelize.transaction( async transaction => {
     const shipment = await lockShipment( id, transaction )
 
-    if( shipment.pickedAt )
-      throw new Error( 'Only a shipment still at Picking can be deleted - move it back first' )
+    if( shipment.packedAt )
+      throw new Error( 'A packed shipment can\'t be deleted - undo Packing first' )
+
+    for( const line of await ShipmentLine.findAll( {where: {shipmentId: id}, transaction} ) )
+      if( Number( line.picked ) )
+        await adjustStock( line.productId, Number( line.picked ), transaction )
 
     await releaseLines( shipment, transaction )
     await shipment.destroy( {transaction} )
   } )
 }
 
-// Marks the Shipment's current step done. Picking needs every claimed
-// Piece Ready, and takes its products out of Stock; Paperwork needs a
-// transport mode (and a carrier, for the carrier modes). -> the step done.
+// Sets how much of one Shipment line has been picked (0 to its
+// quantity; for a built product, no more than its Pieces that are Ready;
+// for a tracked one, no more than is on hand), moving the difference out
+// of or back into Stock. Only until the Shipment is packed.
+// -> {picked, step}
+export async function setLinePicked( lineId, picked )
+{
+  return sequelize.transaction( async transaction => {
+    const line = await ShipmentLine.findByPk( lineId, {include: Product, transaction} )
+
+    if( !line )
+      throw new Error( 'That shipment line no longer exists' )
+
+    const shipment = await lockShipment( line.shipmentId, transaction )
+
+    if( shipment.packedAt )
+      throw new Error( 'It\'s already packed - undo Packing to change what was picked' )
+
+    const quantity = Number( line.quantity )
+    const n = Number( picked )
+
+    if( picked === '' || picked == null || !Number.isFinite( n ) || n < 0 || n > quantity )
+      throw new Error( `${what( line.Product )}: picked must be 0 to ${quantity}` )
+
+    if( makesPieces( line.Product ) )
+    {
+      if( !Number.isInteger( n ) )
+        throw new Error( `${what( line.Product )}: pieces are picked whole` )
+
+      const ready = await readyPieces( shipment.id, line.productId, transaction )
+
+      if( n > ready )
+        throw new Error( `${what( line.Product )}: only ${ready} of its pieces ${ready === 1 ? 'is' : 'are'} Ready` )
+    }
+
+    const delta = n - Number( line.picked )
+
+    // What's on hand already excludes what this line picked before
+    if( delta > 0 && !makesPieces( line.Product ) )
+    {
+      const stock = await StockItem.findOne( {where: {productId: line.productId}, transaction, lock: transaction.LOCK.UPDATE} )
+      const onHand = stock ? Math.max( 0, Number( stock.quantity ) ) : Infinity
+
+      if( delta > onHand )
+        throw new Error( onHand
+          ? `${what( line.Product )}: only ${onHand} more in stock - ${Number( line.picked ) + onHand} can be picked`
+          : `${what( line.Product )}: none in stock` )
+    }
+
+    if( delta )
+    {
+      await adjustStock( line.productId, -delta, transaction )
+      await line.update( {picked: n}, {transaction} )
+    }
+
+    await syncPicked( shipment, transaction )
+
+    return {picked: n, step: shipment.pickedAt ? 'Packing' : 'Picking'}
+  } )
+}
+
+// Marks the Shipment's current step done - not Picking, which is done
+// line by line (setLinePicked()). Paperwork needs a transport mode (and a
+// carrier, for the carrier modes). -> the step done.
 export async function advanceShipment( id )
 {
   return sequelize.transaction( async transaction => {
@@ -288,27 +404,7 @@ export async function advanceShipment( id )
       throw new Error( 'This shipment has already been handed off' )
 
     if( next.step === 'Picking' )
-    {
-      const lines = await ShipmentLine.findAll( {where: {shipmentId: id}, include: Product, transaction} )
-
-      if( !lines.length )
-        throw new Error( 'Add something to ship first' )
-
-      for( const line of lines.filter( l => makesPieces( l.Product ) ) )
-      {
-        const pieces = await Piece.findAll( {where: {shipmentId: id, productId: line.productId}, transaction} )
-        const waiting = pieces.filter( p => p.phase !== 'Ready' ).length
-
-        if( pieces.length < Number( line.quantity ) )
-          throw new Error( `${what( line.Product )}: ${Number( line.quantity ) - pieces.length} of its pieces are missing - edit the shipment to claim them again` )
-
-        if( waiting )
-          throw new Error( `${what( line.Product )}: ${waiting} of its pieces ${waiting === 1 ? 'isn\'t' : 'aren\'t'} Ready yet` )
-      }
-
-      for( const line of lines )
-        await adjustStock( line.productId, -Number( line.quantity ), transaction )
-    }
+      throw new Error( 'Check off its products as they\'re picked' )
 
     if( next.step === 'Paperwork' )
     {
@@ -325,20 +421,16 @@ export async function advanceShipment( id )
   } )
 }
 
-// Undoes the Shipment's last step done; undoing Picking puts its
-// products back in Stock. -> the step undone.
+// Undoes the Shipment's last step done - back to Packing at most; to
+// un-pick, uncheck its products. -> the step undone.
 export async function revertShipment( id )
 {
   return sequelize.transaction( async transaction => {
     const shipment = await lockShipment( id, transaction )
     const last = SHIPMENT_STEPS.filter( s => shipment[s.doneAt] ).at( -1 )
 
-    if( !last )
-      throw new Error( 'Nothing to undo - it\'s still at Picking' )
-
-    if( last.step === 'Picking' )
-      for( const line of await ShipmentLine.findAll( {where: {shipmentId: id}, transaction} ) )
-        await adjustStock( line.productId, Number( line.quantity ), transaction )
+    if( !last || last.step === 'Picking' )
+      throw new Error( 'Nothing to undo - uncheck its products to un-pick them' )
 
     await shipment.update( {[last.doneAt]: null}, {transaction} )
 
@@ -346,16 +438,23 @@ export async function revertShipment( id )
   } )
 }
 
-// Pieces claimed by a Shipment past Picking - they've left the shelf, so
-// their phase and Order are settled.
+// Pieces claimed by a Shipment line that's been at least partly picked -
+// picking doesn't say which of its Pieces left the shelf, so none of them
+// can step back out of Ready until that line is un-picked.
 export async function pickedPieceIds( pieceIds, transaction )
 {
-  const pieces = await Piece.findAll( {
-    where: {id: pieceIds, shipmentId: {[Op.ne]: null}},
-    include: {model: Shipment, where: {pickedAt: {[Op.ne]: null}}, attributes: []},
-    attributes: ['id'],
+  const pieces = await Piece.findAll( {where: {id: pieceIds, shipmentId: {[Op.ne]: null}}, attributes: ['id', 'shipmentId', 'productId'], transaction} )
+
+  if( !pieces.length )
+    return new Set()
+
+  const lines = await ShipmentLine.findAll( {
+    where: {shipmentId: [...new Set( pieces.map( p => p.shipmentId ) )], picked: {[Op.gt]: 0}},
+    attributes: ['shipmentId', 'productId'],
     transaction,
   } )
 
-  return new Set( pieces.map( p => p.id ) )
+  const picked = new Set( lines.map( l => `${l.shipmentId}:${l.productId}` ) )
+
+  return new Set( pieces.filter( p => picked.has( `${p.shipmentId}:${p.productId}` ) ).map( p => p.id ) )
 }

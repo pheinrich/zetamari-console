@@ -1,14 +1,11 @@
+import { readOrderProductOptions } from '@/db/actions/order'
 import { readCustomers } from '@/db/actions/person'
-import { readProducts } from '@/db/actions/product'
 import OrderForm from '../OrderForm'
 
+// The same products an Order's page offers to add (readOrderProductOptions())
 export default async function NewOrderPage()
 {
-  const [customers, products] = await Promise.all( [readCustomers(), readProducts()] )
+  const [customers, products] = await Promise.all( [readCustomers(), readOrderProductOptions()] )
 
-  // Order lines are sellable end items, not raw materials (Product is a
-  // unified Product/Material table - see Product.js's doc comment).
-  const productOptions = products.filter( p => p.sellable )
-
-  return <OrderForm customerOptions={customers} productOptions={productOptions} />
+  return <OrderForm customerOptions={customers} productOptions={products} />
 }
