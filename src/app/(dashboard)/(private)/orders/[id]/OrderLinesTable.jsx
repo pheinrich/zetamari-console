@@ -63,7 +63,7 @@ export default function OrderLinesTable( {order, products} )
   const [isPending, startTransition] = useTransition()
   const [selected, setSelected] = useState( new Set() )
   const [drafts, setDrafts] = useState( {} )   // productId -> typed quantity
-  const [adding, setAdding] = useState( false )
+  const [addKey, setAddKey] = useState( 0 )   // bumped to reset the add row after each add
   const [splitting, setSplitting] = useState( false )
 
   const lines = order.lines
@@ -153,14 +153,6 @@ export default function OrderLinesTable( {order, products} )
         subheader={`${plural( lines.length, 'product' )}, ${plural( order.unitCount, 'item' )}`}
         action={(
           <div className='flex flex-wrap gap-4'>
-            <Button
-              variant='outlined'
-              disabled={isPending || adding}
-              onClick={() => setAdding( true )}
-              startIcon={<i className='ri-add-line' />}
-            >
-              Add
-            </Button>
             <Tooltip title={order.unitCount <= 1 ? 'A single item can\'t be split' : 'Move the selected products to a new order'}>
               <span>
                 <Button
@@ -207,8 +199,8 @@ export default function OrderLinesTable( {order, products} )
             </tr>
           </thead>
           <tbody>
-            {!lines.length && !adding && (
-              <tr><td colSpan={5} className='text-center'>No products - add one</td></tr>
+            {!lines.length && (
+              <tr><td colSpan={5} className='text-center'>No products yet</td></tr>
             )}
             {lines.map( line => (
 
@@ -271,24 +263,23 @@ export default function OrderLinesTable( {order, products} )
                 </td>
               </tr>
             ) )}
-            {adding && (
-              <AddLineRow
-                products={products}
-                disabled={isPending}
-                onCancel={() => setAdding( false )}
-                onAdd={(product, quantity) => act(
-                  async () => {
-                    const result = await addOrderLine( order.id, product.id, quantity )
+            <AddLineRow
+              key={addKey}
+              products={products}
+              disabled={isPending}
+              autoFocus={addKey > 0}
+              onAdd={(product, quantity) => act(
+                async () => {
+                  const result = await addOrderLine( order.id, product.id, quantity )
 
-                    if( !result.error )
-                      setAdding( false )
+                  if( !result.error )
+                    setAddKey( k => k + 1 )
 
-                    return result
-                  },
-                  `Added ${product.name}`
-                )}
-              />
-            )}
+                  return result
+                },
+                `Added ${product.name}`
+              )}
+            />
           </tbody>
         </table>
       </div>
@@ -337,7 +328,10 @@ export function ProductCell( {product} )
   )
 }
 
-function AddLineRow( {products, disabled, onAdd, onCancel} )
+// Always at the foot of the table. Cleared after each add (by its parent
+// remounting it), and focused again then so several can be added in a
+// row - but not on page load.
+function AddLineRow( {products, disabled, autoFocus, onAdd} )
 {
   const [product, setProduct] = useState( null )
   const [quantity, setQuantity] = useState( '1' )
@@ -365,7 +359,7 @@ function AddLineRow( {products, disabled, onAdd, onCancel} )
             </li>
           )}
           openOnFocus
-          renderInput={params => <TextField {...params} autoFocus placeholder='Search SKU or name' />}
+          renderInput={params => <TextField {...params} autoFocus={autoFocus} placeholder='Add a product: search SKU or name' />}
         />
       </td>
       <td>
@@ -383,10 +377,7 @@ function AddLineRow( {products, disabled, onAdd, onCancel} )
         />
       </td>
       <td colSpan={2}>
-        <div className='flex gap-2'>
-          <Button size='small' variant='contained' disabled={disabled || !valid} onClick={() => onAdd( product, Number( quantity ) )}>Add</Button>
-          <Button size='small' color='secondary' disabled={disabled} onClick={onCancel}>Cancel</Button>
-        </div>
+        <Button size='small' variant='contained' disabled={disabled || !valid} onClick={() => onAdd( product, Number( quantity ) )}>Add</Button>
       </td>
     </tr>
   )
