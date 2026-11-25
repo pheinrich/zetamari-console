@@ -19,8 +19,11 @@ const FORWARDERS = /^(?:angie|peter)@zetamari\.com$/i
 // A From header is easy to forge, so a forward is only trusted when
 // Amazon SES (which receives the mail) found it really came from
 // zetamari.com: SES records its DMARC verdict in an Authentication-
-// Results header it adds, which zetamari.com's DreamHost DKIM signature
-// passes.
+// Results header it adds. zetamari.com's mail is sent by Google
+// Workspace, which passes by signing with zetamari.com's DKIM key (or by
+// SPF, if zetamari.com's record includes _spf.google.com) - so a forward
+// is only trusted once Workspace DKIM signing is turned on for the
+// domain. The check names no sender, so it holds whoever sends for us.
 const SES_DMARC_PASS = /^amazonses\.com;[\s\S]*\bdmarc=pass\b[^;]*header\.from=zetamari\.com\b/i
 
 // -> null for anything that isn't a forward by one of us (process it as
