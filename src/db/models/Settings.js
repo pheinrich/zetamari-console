@@ -94,10 +94,11 @@ import sequelize from '@/db/sequelize.js'
 // only the breakage surcharge is sheet-derived (see
 // libs/glassSheetRates.js).
 //
-// pickingRateSqInPerHr (added by 20260805000000-labor-picking-cost-
-// factor.js) is the same sq-in/hr-throughput idea as sanding/gluing/
-// grouting above, feeding the new "Picking" Labor CostFactor
-// (laborPicking) - but unlike those three (nullable, defaulting to 0
+// assemblyRateSqInPerHr (added as pickingRateSqInPerHr by 20260805000000-
+// labor-picking-cost-factor.js, renamed by 20261124010000-picking-to-
+// assembly.js) is the same sq-in/hr-throughput idea as sanding/gluing/
+// grouting above, feeding the new "Assembly" Labor CostFactor
+// (laborAssembly) - but unlike those three (nullable, defaulting to 0
 // minutes until a shop configures them), this one gets a real, non-null
 // default (300) baked in at the column level, same "universal enough to
 // ship a sane default" treatment as markupPercent/retailMultiplier/
@@ -134,7 +135,7 @@ const Settings = sequelize.define(
     glassSheetCostPerSheet: { type: DataTypes.FLOAT },
     glassSheetWidthIn: { type: DataTypes.FLOAT },
     glassSheetHeightIn: { type: DataTypes.FLOAT },
-    pickingRateSqInPerHr: { type: DataTypes.FLOAT, allowNull: false, defaultValue: 300 },
+    assemblyRateSqInPerHr: { type: DataTypes.FLOAT, allowNull: false, defaultValue: 300 },
   },
   {
     timestamps: false,

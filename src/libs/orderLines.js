@@ -15,7 +15,7 @@ import { makesPieces } from '@/libs/channelOrders/accept'
 
 // CONTEXT.md's Production Phases in order - how far along a Piece is,
 // whichever sequence (kit or finished) its product follows.
-const PHASES = ['Design', 'CNC', 'Sanding', 'Picking', 'Gluing', 'Grouting', 'Glass', 'Finishing']
+const PHASES = ['Design', 'CNC', 'Sanding', 'Assembly', 'Gluing', 'Grouting', 'Glass', 'Finishing']
 
 const leastAdvancedFirst = (a, b) => PHASES.indexOf( a.phase ) - PHASES.indexOf( b.phase ) || b.id - a.id
 const mostAdvancedFirst = (a, b) => -leastAdvancedFirst( a, b )

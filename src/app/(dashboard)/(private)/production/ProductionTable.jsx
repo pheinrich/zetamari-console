@@ -44,7 +44,7 @@ import DateField from '@/components/DateField'
 // of them. Glass will almost always be empty (advancePieces() auto-
 // skips it whenever its duration is 0), but still shown for the rare
 // piece actually sitting there with real hand-cut time pending.
-const PHASE_ORDER = ['Design', 'CNC', 'Sanding', 'Picking', 'Gluing', 'Grouting', 'Glass', 'Finishing']
+const PHASE_ORDER = ['Design', 'CNC', 'Sanding', 'Assembly', 'Gluing', 'Grouting', 'Glass', 'Finishing']
 
 const DEFAULT_VIEW = {
   activeTab: null, // null = "auto-pick the first non-empty phase" (see activePhase below)

@@ -36,7 +36,7 @@ const PRICING_ROWS = [
   { section: 'Labor', key: 'laborGluing', label: 'Gluing' },
   { section: 'Labor', key: 'laborGrouting', label: 'Grouting' },
   { section: 'Labor', key: 'laborGlass', label: 'Glass Cutting' },
-  { section: 'Labor', key: 'laborPicking', label: 'Picking' },
+  { section: 'Labor', key: 'laborAssembly', label: 'Assembly' },
   { section: 'Labor', key: 'laborFinishing', label: 'Finishing' },
 ]
 

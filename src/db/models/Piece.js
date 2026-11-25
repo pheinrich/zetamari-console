@@ -26,7 +26,7 @@ const Piece = sequelize.define(
     productId: { type: DataTypes.INTEGER, allowNull: false, references: { model: Product, key: 'id' } },
     orderId: { type: DataTypes.INTEGER, allowNull: false, references: { model: Order, key: 'id' } },
     phase: {
-      type: DataTypes.ENUM( 'Design', 'CNC', 'Sanding', 'Picking', 'Gluing', 'Grouting', 'Glass', 'Finishing' ),
+      type: DataTypes.ENUM( 'Design', 'CNC', 'Sanding', 'Assembly', 'Gluing', 'Grouting', 'Glass', 'Finishing' ),
       allowNull: false,
       defaultValue: 'Design',
     },

@@ -50,7 +50,7 @@ const NUMERIC_FIELDS = [
   'glassSheetCostPerSheet',
   'glassSheetWidthIn',
   'glassSheetHeightIn',
-  'pickingRateSqInPerHr',
+  'assemblyRateSqInPerHr',
 ]
 
 export async function readSettings()
@@ -67,7 +67,7 @@ export async function readSettings()
 
 // Unlike the other NUMERIC_FIELDS (which are nullable - "not yet
 // configured" is a meaningful, distinct state from 0), markupPercent/
-// retailMultiplier, sheetWidthIn/sheetHeightIn, and pickingRateSqInPerHr
+// retailMultiplier, sheetWidthIn/sheetHeightIn, and assemblyRateSqInPerHr
 // are `allowNull: false` (see Settings.js) - a blank field falls back to
 // its own default rather than null, per-field since their defaults
 // differ.
@@ -76,7 +76,7 @@ const BLANK_FALLBACK = {
   retailMultiplier: 1,
   sheetWidthIn: 48.5,
   sheetHeightIn: 96.5,
-  pickingRateSqInPerHr: 300,
+  assemblyRateSqInPerHr: 300,
 }
 
 export async function updateSettings( data )

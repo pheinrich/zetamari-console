@@ -79,7 +79,7 @@ const schema = z.object({
   sandingRateSqInPerHr: optionalNumber,
   gluingRateSqInPerHr: optionalNumber,
   groutingRateSqInPerHr: optionalNumber,
-  pickingRateSqInPerHr: optionalNumber,
+  assemblyRateSqInPerHr: optionalNumber,
   markupPercent: optionalNumber,
   retailMultiplier: optionalNumber,
   tesseraeWeightPerSqIn: optionalNumber,
@@ -303,7 +303,7 @@ export default function SettingsForm( {initialData={}, costFactors=[]} )
           <Card>
             <CardHeader
               title='Labor Heuristics'
-              subheader='Seed the Sanding/Gluing/Grouting/Picking labor-hour defaults, scaled by a product’s mosaic surface area'
+              subheader='Seed the Sanding/Gluing/Grouting/Assembly labor-hour defaults, scaled by a product’s mosaic surface area'
             />
             <CardContent>
               <Grid container spacing={5}>
@@ -347,9 +347,9 @@ export default function SettingsForm( {initialData={}, costFactors=[]} )
                   <TextField
                     fullWidth
                     type='number'
-                    label='Picking Rate'
-                    name='pickingRateSqInPerHr'
-                    defaultValue={initialData?.pickingRateSqInPerHr ?? 300}
+                    label='Assembly Rate'
+                    name='assemblyRateSqInPerHr'
+                    defaultValue={initialData?.assemblyRateSqInPerHr ?? 300}
                     inputProps={{step: 'any', min: '0'}}
                     InputProps={unitInputProps( 'sq-in / hr' )}
                     sx={noSpinnerSx}

@@ -12,11 +12,11 @@ import { computeDefaultQuantities, convertToRateUnit } from './costFactors'
 // and in what order, depends on its Product's type. A 'kit' product
 // (customer assembles it themselves) never enters Grouting at all;
 // every other ("finished") product does. Glass comes after either
-// branch and before Finishing in both - Picking is kit-specific prep,
+// branch and before Finishing in both - Assembly is kit-specific prep,
 // Gluing+Grouting is the finished-product path, Glass is hand-cutting
 // needed by either when glass doesn't arrive pre-cut.
 export const PHASE_SEQUENCES = {
-  kit: ['Design', 'CNC', 'Sanding', 'Picking', 'Glass', 'Finishing'],
+  kit: ['Design', 'CNC', 'Sanding', 'Assembly', 'Glass', 'Finishing'],
   finished: ['Design', 'CNC', 'Sanding', 'Gluing', 'Grouting', 'Glass', 'Finishing'],
 }
 
@@ -26,7 +26,7 @@ export const PHASE_TO_COST_FACTOR_KEY = {
   Design: 'laborDesign',
   CNC: 'laborCnc',
   Sanding: 'laborSanding',
-  Picking: 'laborPicking',
+  Assembly: 'laborAssembly',
   Gluing: 'laborGluing',
   Grouting: 'laborGrouting',
   Glass: 'laborGlass',

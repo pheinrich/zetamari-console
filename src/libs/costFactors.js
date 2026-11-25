@@ -312,10 +312,10 @@ export function computeDefaultQuantities( product, settings )
   const groutingRate = settings?.groutingRateSqInPerHr || 0
 
   // Unlike the three above (nullable, defaulting to 0 minutes until a
-  // shop configures them), pickingRateSqInPerHr is `allowNull: false`
+  // shop configures them), assemblyRateSqInPerHr is `allowNull: false`
   // with a real default (300 - see db/models/Settings.js), so a shop that
-  // never touches Settings still gets a non-zero Picking estimate here.
-  const pickingRate = settings?.pickingRateSqInPerHr || 0
+  // never touches Settings still gets a non-zero Assembly estimate here.
+  const assemblyRate = settings?.assemblyRateSqInPerHr || 0
 
   // Already a dollar figure, not a physical quantity - see the "bom"
   // CostFactor's unit ('$') and its rate profiles (seeded at 1, a
@@ -379,7 +379,7 @@ export function computeDefaultQuantities( product, settings )
     // mosaic-area-times-throughput-rate shape as Sanding/Gluing/Grouting
     // above. See the 20260805000000-labor-picking-cost-factor.js
     // migration.
-    laborPicking: pickingRate > 0 ? (mosaicArea / pickingRate) * 60 : 0,
+    laborAssembly: assemblyRate > 0 ? (mosaicArea / assemblyRate) * 60 : 0,
     laborFinishing: LABOR_FINISHING_MIN,
   }
 }
