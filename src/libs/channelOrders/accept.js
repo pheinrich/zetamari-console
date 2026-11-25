@@ -10,6 +10,7 @@ import '@/db/models/PersonRole'   // wires Person.belongsToMany( Role ) - addRol
 import Piece from '@/db/models/Piece'
 import Product from '@/db/models/Product'
 import Role from '@/db/models/Role'
+import Shipment from '@/db/models/Shipment'
 import sequelize from '@/db/sequelize'
 import { parseRequestedDate } from '@/utils/shipDate'
 
@@ -270,7 +271,7 @@ export async function acceptChannelOrder( channelOrderId, {customerId, promisedD
 }
 
 // Undoes an accept while nothing has been started - every Piece still in
-// Design: deletes the Order(s) it became (their products and Pieces) and
+// Design, and no Shipment made: deletes the Order(s) it became (their products and Pieces) and
 // returns the Channel Order to 'new'. A customer it created is kept. Not
 // once one of its Orders also carries another Channel Order (combined) -
 // that Order has to be split or changed by hand instead.
@@ -295,6 +296,9 @@ export async function unacceptChannelOrder( channelOrderId )
 
       if( started )
         throw new Error( `Work has started on ${started} piece${started === 1 ? '' : 's'} - change ${orderList( orderIds )} itself instead` )
+
+      if( await Shipment.count( {where: {orderId: orderIds}, transaction} ) )
+        throw new Error( `There are shipments on ${orderList( orderIds )} - delete them first` )
 
       await Piece.destroy( {where: {orderId: orderIds}, transaction} )
       await OrderProduct.destroy( {where: {orderId: orderIds}, transaction} )

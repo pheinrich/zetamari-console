@@ -24,5 +24,5 @@ export async function markOrdersScheduleStale( orderIds )
 // open backlog as needing a future recompute.
 export async function markAllOrdersScheduleStale()
 {
-  await Order.update( {scheduleStale: true}, {where: {completedOn: null}} )
+  await Order.update( {scheduleStale: true}, {where: {}} )   // shipped ones too - harmless, nothing recomputes
 }

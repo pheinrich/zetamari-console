@@ -8,8 +8,10 @@ const Order = sequelize.define(
   {
     id: { type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
     createdOn: { type: DataTypes.DATEONLY, defaultValue: DataTypes.NOW },
-    completedOn: { type: DataTypes.DATEONLY },
-    packedOn: { type: DataTypes.DATEONLY },
+
+    // When it was packed and shipped aren't stored: they're derived from
+    // its Shipments (libs/shipments.js's orderFulfillment()) - see the
+    // 20261124030000-shipments.js migration.
 
     // CONTEXT.md's Promised Date / Projected Completion Date split (see
     // docs/adr/0003-* and the 20260816030000-order-scheduling-dates.js

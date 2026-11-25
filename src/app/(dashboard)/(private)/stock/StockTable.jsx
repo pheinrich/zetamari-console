@@ -174,6 +174,8 @@ export default function StockTable( {stock, products} )
                 input: unitInputProps( item.Product?.units || 'each' ),
               }}
               sx={{inlineSize: 150}}
+              error={item.quantity < 0}
+              helperText={item.quantity < 0 ? 'More picked than counted - recount' : undefined}
             />
           )
         },

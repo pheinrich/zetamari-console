@@ -2,7 +2,7 @@
 
 import { notFound, unauthorized } from 'next/navigation'
 
-import { Sequelize } from 'sequelize'
+import { Op, Sequelize } from 'sequelize'
 
 import Person from '@/db/models/Person'
 import GroutingDay from '@/db/models/GroutingDay'
@@ -11,9 +11,11 @@ import OrderProduct from '@/db/models/OrderProduct'
 import Piece from '@/db/models/Piece'
 import ChannelOrder from '@/db/models/ChannelOrder'
 import Product from '@/db/models/Product'
+import Shipment, { ShipmentLine } from '@/db/models/Shipment'
 import { makesPieces } from '@/libs/channelOrders/accept'
 import * as orderLines from '@/libs/orderLines'
 import { orderShipDate } from '@/utils/shipDate'
+import { orderFulfillment, shipmentStep } from '@/utils/shipments'
 import sequelize from '@/db/sequelize'
 import { auth } from '@/lib/auth'
 import { markAllOrdersScheduleStale, markOrdersScheduleStale } from '@/db/actions/scheduling'
@@ -240,6 +242,34 @@ function withAtRisk( orderJson )
   return {...orderJson, isAtRisk, shipDate: ship.date, shipDateOrigin: ship.origin}
 }
 
+// Each Order's Shipments (with their lines and products) and the
+// fulfillment derived from them - see utils/shipments.js's
+// orderFulfillment(). -> orderId -> {shipments, fulfillment}
+async function fulfillmentByOrderId( orderIds )
+{
+  const [shipments, lines] = await Promise.all( [
+    Shipment.findAll( {
+      where: {orderId: orderIds},
+      include: {model: ShipmentLine, as: 'Lines', include: {model: Product, attributes: ['id', 'sku', 'name', 'type', 'units']}},
+      order: [['id', 'ASC']],
+    } ),
+    OrderProduct.findAll( {where: {orderId: orderIds}, attributes: ['orderId', 'productId', 'quantity']} ),
+  ] )
+
+  const result = Object.fromEntries( orderIds.map( id => [id, {shipments: [], lines: []}] ) )
+
+  for( const s of shipments )
+    result[s.orderId]?.shipments.push( {...s.toJSON(), step: shipmentStep( s )} )
+
+  for( const l of lines )
+    result[l.orderId]?.lines.push( l.toJSON() )
+
+  for( const entry of Object.values( result ) )
+    entry.fulfillment = orderFulfillment( entry.lines, entry.shipments )
+
+  return result
+}
+
 export async function readOrder( id )
 {
   const session = await auth()
@@ -286,8 +316,26 @@ export async function readOrder( id )
   for( const row of pieceBreakdown )
     (phaseCountsByProductId[row.productId] ??= {})[row.phase] = Number( row.get( 'count' ) )
 
+  // Each Shipment line's claimed Pieces that are Ready, for built products
+  const {shipments, fulfillment} = (await fulfillmentByOrderId( [order.id] ))[order.id]
+
+  const readyRows = await Piece.findAll( {
+    where: {orderId: id, shipmentId: {[Op.ne]: null}, phase: 'Ready'},
+    attributes: ['shipmentId', 'productId', [Sequelize.fn( 'COUNT', Sequelize.col( 'id' ) ), 'count']],
+    group: ['shipmentId', 'productId'],
+  } )
+
+  const readyCount = Object.fromEntries( readyRows.map( r => [`${r.shipmentId}:${r.productId}`, Number( r.get( 'count' ) )] ) )
+
   return {
     ...withAtRisk( order.toJSON() ),
+    packedOn: fulfillment.packedOn,
+    completedOn: fulfillment.completedOn,
+    fulfillment,
+    shipments: shipments.map( s => ({
+      ...s,
+      Lines: s.Lines.map( l => ({...l, quantity: Number( l.quantity ), makesPieces: makesPieces( l.Product ), ready: readyCount[`${s.id}:${l.productId}`] ?? 0}) ),
+    }) ),
     itemCount: lines.length,
     unitCount: lines.reduce( (n, l) => n + Number( l.quantity ?? 0 ), 0 ),
     lines: lines.map( l => ({...l, phaseCounts: phaseCountsByProductId[l.productId] ?? {}}) ),
@@ -340,5 +388,18 @@ export async function readOrders()
     unitsByOrderId[c.orderId] = Number( c.get( 'units' ) )
   }
 
-  return orders.map( o => withAtRisk( {...o.toJSON(), itemCount: countByOrderId[o.id] || 0, unitCount: unitsByOrderId[o.id] || 0} ) )
+  const fulfillments = await fulfillmentByOrderId( orders.map( o => o.id ) )
+
+  return orders.map( o => {
+    const {fulfillment} = fulfillments[o.id]
+
+    return withAtRisk( {
+      ...o.toJSON(),
+      itemCount: countByOrderId[o.id] || 0,
+      unitCount: unitsByOrderId[o.id] || 0,
+      packedOn: fulfillment.packedOn,
+      completedOn: fulfillment.completedOn,
+      fulfillmentStatus: fulfillment.status,
+    } )
+  } )
 }

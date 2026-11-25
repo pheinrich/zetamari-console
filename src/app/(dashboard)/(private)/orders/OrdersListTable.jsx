@@ -40,6 +40,11 @@ import tableStyles from '@core/styles/table.module.css'
 import { useConfirm } from '@/contexts/confirmContext'
 import { channelLabel, shipDateText } from '../channel-orders/channelOrderFormat'
 
+// The Order's fulfillment (utils/shipments.js's orderFulfillment()), least to most along
+const FULFILLMENT_ORDER = [null, 'in fulfillment', 'partly shipped', 'shipped']
+const FULFILLMENT_LABELS = {'in fulfillment': 'In fulfillment', 'partly shipped': 'Partly shipped', shipped: 'Shipped'}
+const FULFILLMENT_COLORS = {'in fulfillment': 'info', 'partly shipped': 'warning', shipped: 'success'}
+
 const DEFAULT_VIEW = {
   sorting: [{id: 'shipDate', desc: false}],
   pagination: {pageIndex: 0, pageSize: 10},
@@ -72,7 +77,7 @@ function whyNotCombine( orders )
   if( new Set( orders.map( o => o.customerId ) ).size > 1 )
     return 'Only one customer\'s orders can be combined'
 
-  if( orders.some( o => o.completedOn ) )
+  if( orders.some( o => o.fulfillmentStatus === 'shipped' || o.fulfillmentStatus === 'partly shipped' ) )
     return 'Shipped orders can\'t be combined'
 
   return null
@@ -201,6 +206,18 @@ export default function OrdersListTable( {orderData} )
               {via && <Typography variant='body2' color='text.secondary'>{via}</Typography>}
             </div>
           )
+        }
+      } ),
+      columnHelper.accessor( o => FULFILLMENT_ORDER.indexOf( o.fulfillmentStatus ?? null ), {
+        id: 'fulfillment',
+        header: 'Shipping',
+        cell: ({ row }) => {
+          const o = row.original
+          const label = FULFILLMENT_LABELS[o.fulfillmentStatus]
+
+          return label
+            ? <Chip size='small' variant='tonal' color={FULFILLMENT_COLORS[o.fulfillmentStatus]} label={o.completedOn ? `${label} ${o.completedOn}` : label} />
+            : <Typography color='text.secondary'>—</Typography>
         }
       } ),
       columnHelper.accessor( 'projectedCompletionDate', {

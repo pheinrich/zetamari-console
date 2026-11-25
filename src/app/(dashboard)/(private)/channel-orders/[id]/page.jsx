@@ -17,25 +17,11 @@ import {
 import LineProductPicker from '../LineProductPicker'
 import { channelOrderShipDate } from '@/utils/shipDate'
 import ChannelOrderActions from './ChannelOrderActions'
+import { addressLines } from '@/utils/shipments'
 
 function Field( {label, children} )
 {
   return <Typography><strong>{label}:</strong> {children || '—'}</Typography>
-}
-
-function addressLines( a )
-{
-  if( !a )
-    return []
-
-  return [
-    a.company,
-    a.name,
-    a.street1,
-    a.street2,
-    [[a.city, a.state].filter( Boolean ).join( ', ' ), a.postalCode].filter( Boolean ).join( ' ' ),
-    a.country,
-  ].filter( Boolean )
 }
 
 // One Channel Order as its channel reported it - see CONTEXT.md's

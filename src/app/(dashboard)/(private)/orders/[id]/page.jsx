@@ -13,6 +13,7 @@ import { customerDisplayName } from '../../customers/customerFormat'
 import { channelLabel, shipDateText } from '../../channel-orders/channelOrderFormat'
 import OrderDetailActions from './OrderDetailActions'
 import OrderLinesTable from './OrderLinesTable'
+import OrderShipments from './OrderShipments'
 
 const ORIGIN_LABELS = {
   explicit: 'Explicit (customer requested)',
@@ -61,6 +62,8 @@ export default async function OrderPage( {params} )
             <Typography><strong>Ship by:</strong> {shipDateText( order.shipDate )}</Typography>
             <Typography><strong>Origin:</strong> {ORIGIN_LABELS[order.shipDateOrigin] ?? 'Not yet set'}</Typography>
             {shipVia.length > 0 && <Typography><strong>Ship via:</strong> {shipVia.join( ', ' )}</Typography>}
+            {order.packedOn && <Typography><strong>Packed:</strong> {order.packedOn}</Typography>}
+            {order.completedOn && <Typography><strong>Shipped:</strong> {order.completedOn}</Typography>}
             <Typography><strong>Projected Completion Date:</strong> {order.projectedCompletionDate || 'Not yet computed'}</Typography>
             <Typography><strong>Grouting Day:</strong> {order.GroutingDay?.date || 'None (kit-only order, or not yet ready for Grouting)'}</Typography>
           </CardContent>
@@ -69,6 +72,10 @@ export default async function OrderPage( {params} )
 
       <Grid size={{ xs: 12 }}>
         <OrderLinesTable order={order} products={products} />
+      </Grid>
+
+      <Grid size={{ xs: 12 }}>
+        <OrderShipments order={order} />
       </Grid>
     </Grid>
   )

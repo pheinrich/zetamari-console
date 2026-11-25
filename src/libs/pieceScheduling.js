@@ -15,10 +15,15 @@ import { computeDefaultQuantities, convertToRateUnit } from './costFactors'
 // branch and before Finishing in both - Assembly is kit-specific prep,
 // Gluing+Grouting is the finished-product path, Glass is hand-cutting
 // needed by either when glass doesn't arrive pre-cut.
+//
+// Both end at Ready - made, waiting to ship (no work, so no duration).
 export const PHASE_SEQUENCES = {
-  kit: ['Design', 'CNC', 'Sanding', 'Assembly', 'Glass', 'Finishing'],
-  finished: ['Design', 'CNC', 'Sanding', 'Gluing', 'Grouting', 'Glass', 'Finishing'],
+  kit: ['Design', 'CNC', 'Sanding', 'Assembly', 'Glass', 'Finishing', 'Ready'],
+  finished: ['Design', 'CNC', 'Sanding', 'Gluing', 'Grouting', 'Glass', 'Finishing', 'Ready'],
 }
+
+// Every phase, least to most advanced, whichever sequence a Piece follows.
+export const PHASE_ORDER = ['Design', 'CNC', 'Sanding', 'Assembly', 'Gluing', 'Grouting', 'Glass', 'Finishing', 'Ready']
 
 // Matches Piece.phase's ENUM values to the CostFactor.key each phase's
 // duration is computed from.

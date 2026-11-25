@@ -14,4 +14,6 @@ So a Piece keeps tracking production only, and a **Shipment** (see CONTEXT.md) c
 
 "Picking" is the industry term for gathering an order's products, so the kit-only Production Phase and Labor stage that had that name (sorting a kit's tesserae) was renamed **Assembly**, along with its CostFactor key (`laborAssembly`) and Settings rate (`assemblyRateSqInPerHr`).
 
-Stock comes first, deliberately simple: a hand-maintained table of tracked Products and quantities. Shipment builds on the existing `Shipment` model (Order has many; carrier and tracking), which already allows several per Order. Drawing Stock down when a Shipment is picked is left until both exist.
+Stock is deliberately simple: a table of tracked Products and quantities, correctable by hand, that also moves by itself for tracked Products — up one when a Piece reaches **Ready** (a phase added after Finishing, since Finishing had no "done" state for a Shipment to wait on), down by a Shipment's quantities when it finishes Picking. It may go negative rather than block shipping on a stale count.
+
+Shipment builds on the existing `Shipment` model (Order has many; carrier and tracking), which already allowed several per Order. Each step is a timestamp (`pickedAt`, `packedAt`, `documentedAt`, `handedOffAt`), so the current step is derived and the history kept. `Orders.packedOn`/`completedOn` were dropped: an Order is packed or shipped once Shipments that far along cover all its lines, so the dates are derived, and the migration turned each Order that had them into a Shipment carrying those dates.

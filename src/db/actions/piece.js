@@ -2,11 +2,14 @@
 
 import { unauthorized } from 'next/navigation'
 
+import { Op } from 'sequelize'
+
 import Person from '@/db/models/Person'
 import GroutingDay from '@/db/models/GroutingDay'
 import Order from '@/db/models/Order'
 import Piece from '@/db/models/Piece'
 import Product from '@/db/models/Product'
+import Shipment from '@/db/models/Shipment'
 import Settings from '@/db/models/Settings'
 import CostFactor from '@/db/models/CostFactor'
 import ProductCostOverride from '@/db/models/ProductCostOverride'
@@ -14,20 +17,21 @@ import sequelize from '@/db/sequelize'
 import { auth } from '@/lib/auth'
 import { COSTING_INCLUDE } from '@/db/costingInclude'
 import { getPhaseSequence, getPieceDurationHours } from '@/libs/pieceScheduling'
+import { pickedPieceIds } from '@/libs/shipments'
+import { adjustStock } from '@/libs/stock'
 import { markOrdersScheduleStale } from '@/db/actions/scheduling'
 import { orderShipDate } from '@/utils/shipDate'
 
 // Order-level status the /production table filters on - not a stored
-// column, derived fresh each read from what's already on hand. 'shipped'
-// mirrors completedOn directly; a merely-packedOn order still reads as
-// 'in-progress' (packed isn't shipped). 'new' means every one of the
-// order's Pieces is still sitting untouched at its sequence's first
-// phase (always 'Design' - see PHASE_SEQUENCES) - anything else that
-// isn't shipped is 'in-progress'.
+// column, derived fresh each read from the order's Pieces still shown
+// (those not yet handed off on a Shipment). 'ready' means they're all
+// Ready - made, waiting to ship; 'new' means they're all still untouched
+// at their sequence's first phase (always 'Design' - see
+// PHASE_SEQUENCES); anything else is 'in-progress'.
 function orderStatus( order, orderPieces, productsById )
 {
-  if( order.completedOn )
-    return 'shipped'
+  if( orderPieces.every( p => p.phase === 'Ready' ) )
+    return 'ready'
 
   const allAtFirstPhase = orderPieces.every( p => {
     const sequence = getPhaseSequence( productsById[p.productId] )
@@ -38,7 +42,7 @@ function orderStatus( order, orderPieces, productsById )
   return allAtFirstPhase ? 'new' : 'in-progress'
 }
 
-// Every open (not yet completed) order's Pieces, for the /production
+// Every Piece not yet handed off on a Shipment, for the /production
 // table - grouped/filtered/tabbed client-side. Both associations are
 // declared directly on Piece.js, unlike OrderProduct's, so a plain eager
 // include works here without the manual-join workaround order.js needs.
@@ -61,8 +65,10 @@ export async function readPiecesForProduction()
   const pieces = await Piece.findAll( {
     include: [
       Product,
-      {model: Order, where: {completedOn: null}, include: [{model: Person, as: 'Customer'}, GroutingDay]},
+      {model: Order, include: [{model: Person, as: 'Customer'}, GroutingDay]},
+      {model: Shipment, required: false, attributes: ['id', 'pickedAt', 'handedOffAt']},
     ],
+    where: {[Op.or]: [{shipmentId: null}, {'$Shipment.handedOffAt$': null}]},   // not yet shipped
     order: [['id', 'ASC']],
   } )
 
@@ -177,6 +183,11 @@ export async function advancePieces( pieceIds )
         continue // already at the last real phase - nothing to advance to
 
       await piece.update( {phase: sequence[nextIndex]}, {transaction: t} )
+
+      // Made: counted into Stock (when its Product's stock is tracked)
+      if( sequence[nextIndex] === 'Ready' )
+        await adjustStock( piece.productId, 1, t )
+
       advanced++
       affectedOrderIds.add( piece.orderId )
     }
@@ -210,8 +221,12 @@ export async function revertPieces( pieceIds )
   const affectedOrderIds = new Set()
 
   await sequelize.transaction( async t => {
+    const picked = await pickedPieceIds( ctx.pieces.map( p => p.id ), t )
+
     for( const piece of ctx.pieces )
     {
+      if( picked.has( piece.id ) )
+        continue // picked for a Shipment - undo that first
       const product = ctx.productsById[piece.productId]
       const sequence = getPhaseSequence( product )
       const currentIndex = sequence.indexOf( piece.phase )
@@ -227,6 +242,11 @@ export async function revertPieces( pieceIds )
         continue // already at the first phase - nothing to revert to
 
       await piece.update( {phase: sequence[prevIndex]}, {transaction: t} )
+
+      // Back from Ready: no longer made, so out of Stock again
+      if( sequence[currentIndex] === 'Ready' )
+        await adjustStock( piece.productId, -1, t )
+
       reverted++
       affectedOrderIds.add( piece.orderId )
     }

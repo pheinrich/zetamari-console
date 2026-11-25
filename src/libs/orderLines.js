@@ -1,3 +1,5 @@
+import { Op } from 'sequelize'
+
 import ChannelOrder, { ChannelOrderOrder } from '@/db/models/ChannelOrder'
 import Order from '@/db/models/Order'
 import OrderProduct from '@/db/models/OrderProduct'
@@ -5,6 +7,9 @@ import Piece from '@/db/models/Piece'
 import Product from '@/db/models/Product'
 import sequelize from '@/db/sequelize'
 import { makesPieces } from '@/libs/channelOrders/accept'
+import { PHASE_ORDER } from '@/libs/pieceScheduling'
+import { allocatedByProduct } from '@/libs/shipments'
+import Shipment from '@/db/models/Shipment'
 
 // Changing an Order's lines after it exists: quantities, removing and
 // adding products, splitting some of it off into a new Order, combining
@@ -13,11 +18,8 @@ import { makesPieces } from '@/libs/channelOrders/accept'
 // and kits - see makesPieces()), none for supplies and bases sold as-is.
 // Each runs in its own transaction and throws an Error a person can read.
 
-// CONTEXT.md's Production Phases in order - how far along a Piece is,
-// whichever sequence (kit or finished) its product follows.
-const PHASES = ['Design', 'CNC', 'Sanding', 'Assembly', 'Gluing', 'Grouting', 'Glass', 'Finishing']
-
-const leastAdvancedFirst = (a, b) => PHASES.indexOf( a.phase ) - PHASES.indexOf( b.phase ) || b.id - a.id
+// How far along a Piece is, whichever sequence (kit or finished) its product follows
+const leastAdvancedFirst = (a, b) => PHASE_ORDER.indexOf( a.phase ) - PHASE_ORDER.indexOf( b.phase ) || b.id - a.id
 const mostAdvancedFirst = (a, b) => -leastAdvancedFirst( a, b )
 
 const what = product => product?.sku || product?.name || `Product #${product?.id}`
@@ -67,9 +69,15 @@ async function linesOf( orderId, transaction )
 }
 
 // Sets one product's quantity on an Order (0 removes the line), adding
-// Design-phase Pieces or removing the least advanced ones to match.
+// Design-phase Pieces or removing the least advanced ones to match - never
+// below what's on its Shipments, nor removing a Piece a Shipment claimed.
 async function setLine( orderId, product, quantity, transaction )
 {
+  const shipping = (await allocatedByProduct( orderId, transaction )).get( product.id ) ?? 0
+
+  if( quantity < shipping )
+    throw new Error( `${what( product )}: ${shipping} ${shipping === 1 ? 'is' : 'are'} on shipments - take ${shipping === 1 ? 'it' : 'them'} off first` )
+
   await OrderProduct.destroy( {where: {orderId, productId: product.id}, transaction} )
 
   if( quantity > 0 )
@@ -79,7 +87,11 @@ async function setLine( orderId, product, quantity, transaction )
   const wanted = makesPieces( product ) ? quantity : 0
 
   if( pieces.length > wanted )
-    await Piece.destroy( {where: {id: pieces.sort( leastAdvancedFirst ).slice( 0, pieces.length - wanted ).map( p => p.id )}, transaction} )
+  {
+    const unclaimed = pieces.filter( p => !p.shipmentId ).sort( leastAdvancedFirst )
+
+    await Piece.destroy( {where: {id: unclaimed.slice( 0, pieces.length - wanted ).map( p => p.id )}, transaction} )
+  }
   else if( pieces.length < wanted )
     await Piece.bulkCreate( Array.from( {length: wanted - pieces.length}, () => ({orderId, productId: product.id, phase: 'Design'}) ), {transaction} )
 }
@@ -99,6 +111,11 @@ export async function removeOrderLines( orderId, productIds )
 {
   return sequelize.transaction( async transaction => {
     await lockOrder( orderId, transaction )
+
+    const allocated = await allocatedByProduct( orderId, transaction )
+
+    if( productIds.some( id => allocated.get( Number( id ) ) ) )
+      throw new Error( 'Some of those products are on shipments - take them off first' )
 
     await OrderProduct.destroy( {where: {orderId, productId: productIds}, transaction} )
     await Piece.destroy( {where: {orderId, productId: productIds}, transaction} )
@@ -132,6 +149,7 @@ export async function splitOrder( orderId, moves )
   return sequelize.transaction( async transaction => {
     const order = await lockOrder( orderId, transaction )
     const lines = await linesOf( orderId, transaction )
+    const allocated = await allocatedByProduct( orderId, transaction )
     const units = [...lines.values()].reduce( (n, l) => n + l.quantity, 0 )
 
     if( units <= 1 )
@@ -150,6 +168,11 @@ export async function splitOrder( orderId, moves )
 
       if( quantity > line.quantity )
         throw new Error( `${what( line.product )}: only ${line.quantity} on this order` )
+
+      const shipping = allocated.get( line.product.id ) ?? 0
+
+      if( quantity > line.quantity - shipping )
+        throw new Error( `${what( line.product )}: ${shipping} of it ${shipping === 1 ? 'is' : 'are'} on shipments, so only ${line.quantity - shipping} can move` )
     }
 
     const moved = moving.reduce( (n, m) => n + m.quantity, 0 )
@@ -182,7 +205,7 @@ export async function splitOrder( orderId, moves )
 
       if( makesPieces( product ) )
       {
-        const pieces = await Piece.findAll( {where: {orderId, productId: product.id}, transaction} )
+        const pieces = await Piece.findAll( {where: {orderId, productId: product.id, shipmentId: null}, transaction} )
         const taking = pieces.sort( mostAdvancedFirst ).slice( 0, quantity ).map( p => p.id )
 
         await Piece.update( {orderId: created.id}, {where: {id: taking}, transaction} )
@@ -221,10 +244,10 @@ export async function combineOrders( orderIds )
     if( new Set( orders.map( o => o.customerId ) ).size > 1 )
       throw new Error( 'Only orders for the same customer can be combined' )
 
-    const shipped = orders.filter( o => o.completedOn )
+    const shipped = [...new Set( (await Shipment.findAll( {where: {orderId: ids, handedOffAt: {[Op.ne]: null}}, transaction} )).map( s => s.orderId ) )]
 
     if( shipped.length )
-      throw new Error( `Order ${shipped.map( o => `#${o.id}` ).join( ', ' )} has already shipped` )
+      throw new Error( `Order ${shipped.map( id => `#${id}` ).join( ', ' )} has already shipped, at least in part` )
 
     const [survivor, ...others] = orders
     const otherIds = others.map( o => o.id )
@@ -280,6 +303,7 @@ export async function deleteOrders( orderIds )
     const channelOrderIds = [...new Set( links.map( l => l.channelOrderId ) )]
 
     await Piece.destroy( {where: {orderId: ids}, transaction} )
+    await Shipment.destroy( {where: {orderId: ids}, transaction} )   // and their lines, by cascade
     await OrderProduct.destroy( {where: {orderId: ids}, transaction} )
     await ChannelOrderOrder.destroy( {where: {orderId: ids}, transaction} )
     await Order.destroy( {where: {id: ids}, transaction} )
