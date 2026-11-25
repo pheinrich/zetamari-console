@@ -44,7 +44,7 @@ function startedLost( line, quantity )
 }
 
 // Typing searches SKU and name by each word, in any order; first 50.
-function filterProducts( options, state )
+export function filterProducts( options, state )
 {
   const typed = state.inputValue.trim().toLowerCase().split( /\s+/ ).filter( Boolean )
 
