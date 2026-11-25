@@ -4,9 +4,11 @@ import sequelize from '@/db/sequelize.js'
 import Product from '@/db/models/Product'
 
 // A channel SKU known to mean a console Product - a misspelled or outdated
-// version of its SKU (IndieMe's ZMCi7-Joy for ZMCi07-Joy). Keyed on the
-// SKU alone, since every channel sends Zetamari's own SKUs; `channel`
-// just records where it was first seen. Learned when a person matches a
+// version of its SKU (IndieMe's ZMCi7-Joy for ZMCi07-Joy), or a channel's
+// own numbering (Artful Home's item numbers). Keyed on the SKU alone,
+// since channels send Zetamari's own SKUs and Artful Home's item numbers
+// can't collide with them; `channel` just records where it was first
+// seen. Learned when a person matches a
 // Channel Order Line by hand - see src/libs/channelOrders/matching.js.
 const ProductAlias = sequelize.define(
   'ProductAlias',

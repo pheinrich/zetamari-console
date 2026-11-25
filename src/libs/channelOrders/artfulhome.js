@@ -1,4 +1,4 @@
-import { artfulHomeItem } from './artfulhomeSkus.js'
+import { artfulHomeWholesale } from './artfulhomePrices.js'
 import { clean, dateOnly } from './text.js'
 
 // "New Artful Home Order PO #2103635-AT7859" (since 2025), or the older
@@ -17,11 +17,11 @@ export const ARTFUL_HOME_NEW_ORDER_SUBJECT = /^(?:New Artful Home Order PO #|Pur
 // implied: identical blocks collapse into one line whose quantity is how
 // many times it appears, and the order's lines are complete.
 //
-// Item numbers are looked up in ARTFUL_HOME_ITEMS (artfulhomeSkus.js):
-// a mapped line gets our SKU, so it can match its Product like any other
-// channel's, with the item number kept in the description; an unmapped
-// one keeps its item number as the line's SKU, unmatched. The table's
-// wholesale price, when present, fills in the unit price.
+// A line's SKU is the item number, as received; it matches its Product
+// through a Product Alias (seeded for every listed item by the
+// 20261124000000-artful-home-product-aliases.js migration). Its unit
+// price is Artful Home's wholesale price, from ARTFUL_HOME_WHOLESALE
+// (artfulhomePrices.js), when listed.
 export function parseArtfulHomeOrder( text, subject )
 {
   const subjectMatch = clean( subject ).match( ARTFUL_HOME_NEW_ORDER_SUBJECT )
@@ -41,18 +41,15 @@ export function parseArtfulHomeOrder( text, subject )
   const items = body.split( /^(?=Title\s*:)/m ).slice( 1 ).map( block => {
     const item = value( 'Item', block )
     const variation = value( 'Variation Title', block )
-    const known = artfulHomeItem( item )
-    const sku = known?.sku ?? null
 
     return {
-      sku: sku ?? item,
+      sku: item,
       description: [
         value( 'Title', block )?.replace( /^"(.*)"$/, '$1' ),
         value( 'Description', block ),
         variation,
-        sku && item ? `Artful Home item ${item}` : null,
       ].filter( Boolean ).join( ', ' ) || null,
-      unitPrice: known?.wholesale ?? null,
+      unitPrice: artfulHomeWholesale( item ),
     }
   } )
 
