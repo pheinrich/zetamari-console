@@ -50,6 +50,11 @@ const LiveClassAttendee = sequelize.define(
     upgradeNotes: { type: DataTypes.TEXT },
     notes: { type: DataTypes.TEXT },
     enrolledOn: { type: DataTypes.DATEONLY, allowNull: false, defaultValue: DataTypes.NOW },
+
+    // The Channel Order Line this seat was enrolled from when its Channel
+    // Order was accepted (a class bought on Squarespace) - null for seats
+    // added by hand. Unaccepting removes exactly these.
+    channelOrderLineId: { type: DataTypes.INTEGER, allowNull: true },
   },
   {
     timestamps: false,

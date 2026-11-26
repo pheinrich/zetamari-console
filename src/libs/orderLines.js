@@ -6,7 +6,7 @@ import OrderProduct from '@/db/models/OrderProduct'
 import Piece from '@/db/models/Piece'
 import Product from '@/db/models/Product'
 import sequelize from '@/db/sequelize'
-import { makesPieces } from '@/libs/channelOrders/accept'
+import { enrolledChannelOrderIds, makesPieces } from '@/libs/channelOrders/accept'
 import { PHASE_ORDER } from '@/libs/pieceScheduling'
 import { allocatedByProduct } from '@/libs/shipments'
 import Shipment from '@/db/models/Shipment'
@@ -290,7 +290,8 @@ export async function combineOrders( orderIds )
 }
 
 // Deletes Orders with their lines and Pieces. A Channel Order left with
-// no Order goes back to review ('new').
+// no Order (and no class seats enrolled from it) goes back to review
+// ('new').
 export async function deleteOrders( orderIds )
 {
   const ids = [...new Set( (orderIds ?? []).map( Number ) )]
@@ -311,7 +312,8 @@ export async function deleteOrders( orderIds )
     if( channelOrderIds.length )
     {
       const stillLinked = new Set( (await ChannelOrderOrder.findAll( {where: {channelOrderId: channelOrderIds}, transaction} )).map( l => l.channelOrderId ) )
-      const orphaned = channelOrderIds.filter( id => !stillLinked.has( id ) )
+      const enrolled = await enrolledChannelOrderIds( channelOrderIds, transaction )   // its class seats still stand
+      const orphaned = channelOrderIds.filter( id => !stillLinked.has( id ) && !enrolled.has( id ) )
 
       if( orphaned.length )
         await ChannelOrder.update( {status: 'new'}, {where: {id: orphaned, status: 'accepted'}, transaction} )

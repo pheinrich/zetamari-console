@@ -8,12 +8,13 @@ import CardContent from '@mui/material/CardContent'
 import Chip from '@mui/material/Chip'
 import Typography from '@mui/material/Typography'
 
-import { readChannelOrder, readProductOptions } from '@/db/actions/channelOrder'
+import { readChannelOrder, readLiveClassOptions, readProductOptions } from '@/db/actions/channelOrder'
 import tableStyles from '@core/styles/table.module.css'
 import InboundEmailActions from '../../inbound-emails/InboundEmailActions'
 import {
   EMAIL_KIND_LABELS, EMAIL_STATUS_COLORS, ORDER_STATUS_COLORS, buyerLabel, channelLabel, dateTime, money, shipDateText,
 } from '../channelOrderFormat'
+import LineClassPicker from '../LineClassPicker'
 import LineProductPicker from '../LineProductPicker'
 import { channelOrderShipDate } from '@/utils/shipDate'
 import ChannelOrderActions from './ChannelOrderActions'
@@ -28,11 +29,13 @@ function Field( {label, children} )
 // Channel Order entry. Lines keep the channel's SKU/description/price;
 // "Product" is the console Product the line matched (by SKU or Product
 // Alias, or by hand), with a picker to match it while the order is new,
-// and the channel's description beneath it.
+// and the channel's description beneath it. A class-seat line (a class
+// bought on Squarespace) is matched to a Live Class instead.
 export default async function ChannelOrderPage( {params} )
 {
   const {id} = await params
   const [order, products] = await Promise.all( [readChannelOrder( id ), readProductOptions()] )
+  const classes = order.Lines.some( l => l.classSeat ) ? await readLiveClassOptions( order.Lines.map( l => l.liveClassId ) ) : []
   const shipTo = addressLines( order.shipTo )
   const shipBy = channelOrderShipDate( order )
   const emailErrors = [...new Set( order.emails.map( e => e.error ).filter( Boolean ) )]
@@ -145,7 +148,9 @@ export default async function ChannelOrderPage( {params} )
                     <td>{line.sku || '—'}</td>
                     {/* The match above the channel's own description, which wraps rather than widening the row */}
                     <td className='min-is-[240px] max-is-[560px] whitespace-normal'>
-                      <LineProductPicker line={line} products={products} editable={order.status === 'new'} />
+                      {line.classSeat
+                        ? <LineClassPicker line={line} classes={classes} editable={order.status === 'new'} />
+                        : <LineProductPicker line={line} products={products} editable={order.status === 'new'} />}
                       {line.description && (
                         <Typography variant='body2' color='text.secondary' className='break-words mbs-1'>{line.description}</Typography>
                       )}

@@ -3,6 +3,8 @@ import { Op } from 'sequelize'
 import ChannelOrder, { ChannelOrderOrder } from '@/db/models/ChannelOrder'
 import ChannelOrderLine from '@/db/models/ChannelOrderLine'
 import CustomerSource from '@/db/models/CustomerSource'
+import LiveClass from '@/db/models/LiveClass'
+import LiveClassAttendee from '@/db/models/LiveClassAttendee'
 import Order from '@/db/models/Order'
 import OrderProduct from '@/db/models/OrderProduct'
 import Person from '@/db/models/Person'
@@ -12,6 +14,7 @@ import Product from '@/db/models/Product'
 import Role from '@/db/models/Role'
 import Shipment from '@/db/models/Shipment'
 import sequelize from '@/db/sequelize'
+import { classSeat } from '@/libs/channelOrders/classSeats'
 import { parseRequestedDate } from '@/utils/shipDate'
 
 // Accepting a reviewed Channel Order into an Order - see CONTEXT.md's
@@ -22,6 +25,11 @@ import { parseRequestedDate } from '@/utils/shipDate'
 // commission, ship-to - stays on the Channel Order, linked to the Order
 // through ChannelOrderOrder (many-to-many, since Orders can later be
 // split and combined).
+//
+// Class-seat lines (classSeats.js) aren't Order lines: accepting enrolls
+// their seats in the Live Class each is matched to, as LiveClassAttendees
+// linked back to the line. A Channel Order of class seats alone becomes
+// no Order at all.
 
 // How each channel appears among a customer's CustomerSources (names as
 // the existing imported rows spell them), and the Role its customers get.
@@ -95,15 +103,29 @@ async function customerCandidates( order )
   return [...found.values()]
 }
 
-// Lines as they'd be accepted, with the product each is matched to.
+// Lines as they'd be accepted, with the product or class each is matched to.
 async function linesOf( channelOrderId, transaction )
 {
   return ChannelOrderLine.findAll( {
     where: {channelOrderId},
-    include: [{model: Product, attributes: ['id', 'sku', 'name', 'type']}],
+    include: [{model: Product, attributes: ['id', 'sku', 'name', 'type']}, {model: LiveClass, attributes: ['id', 'name']}],
     order: [['position', 'ASC']],
     transaction,
   } )
+}
+
+// A line that's seats in a class, not a Product: matched to one, or
+// described like one.
+export const isClassSeatLine = line => Boolean( line.liveClassId || classSeat( line.description ) )
+
+// Channel Orders (of `ids`) that have class seats enrolled from them.
+export async function enrolledChannelOrderIds( ids, transaction )
+{
+  const lines = await ChannelOrderLine.findAll( {where: {channelOrderId: ids}, attributes: ['id', 'channelOrderId'], transaction} )
+  const seats = lines.length ? await LiveClassAttendee.findAll( {where: {channelOrderLineId: lines.map( l => l.id )}, attributes: ['channelOrderLineId'], transaction} ) : []
+  const seatLines = new Set( seats.map( a => a.channelOrderLineId ) )
+
+  return new Set( lines.filter( l => seatLines.has( l.id ) ).map( l => l.channelOrderId ) )
 }
 
 // What's stopping it, given the quantities a person entered (lineId -> quantity).
@@ -128,7 +150,14 @@ function blockers( order, lines, quantities = {} )
     const quantity = Number( quantities[line.id] ?? line.quantity )
     const what = line.sku || line.description || `Line ${line.position + 1}`
 
-    if( !line.Product )
+    if( isClassSeatLine( line ) )
+    {
+      if( !line.liveClassId )
+        problems.push( `${what}: not matched to a class` )
+      else if( !(quantity > 0) || !Number.isInteger( quantity ) )
+        problems.push( `${what}: needs a whole number of seats` )
+    }
+    else if( !line.Product )
       problems.push( `${what}: not matched to a product` )
     else if( !(quantity > 0) )
       problems.push( `${what}: needs a quantity` )
@@ -146,13 +175,22 @@ export async function previewAccept( channelOrder )
   const candidates = await customerCandidates( channelOrder )
   const channel = CHANNELS[channelOrder.channel] ?? {}
   const preselected = candidates.find( c => STRONG.has( c.reason ) ) ?? null
+  const classIds = lines.filter( isClassSeatLine ).map( l => l.liveClassId ).filter( Boolean )
+
+  // Seats in those classes already entered by hand, which accepting
+  // counts toward the seats bought rather than duplicating
+  const existing = classIds.length ? await LiveClassAttendee.findAll( {where: {liveClassId: classIds, channelOrderLineId: null, status: {[Op.ne]: 'cancelled'}}} ) : []
 
   return {
     blocking: blockers( channelOrder, lines ),
     lines: lines.map( l => ({
       id: l.id, sku: l.sku, description: l.description, quantity: l.quantity,
       product: l.Product?.toJSON() ?? null, makesPieces: makesPieces( l.Product ),
+      classSeat: isClassSeatLine( l ),
+      liveClass: l.LiveClass?.toJSON() ?? null,
+      existingSeats: existing.filter( a => a.liveClassId === l.liveClassId ).map( a => ({customerId: a.customerId, name: [a.firstName, a.lastName].filter( Boolean ).join( ' ' ), email: a.email}) ),
     }) ),
+    makesOrder: lines.some( l => !isClassSeatLine( l ) ),
     candidates,
     customerId: preselected?.id ?? null,
     newCustomer: channel.channelIsCustomer
@@ -189,10 +227,19 @@ async function createCustomer( order, transaction )
 }
 
 // Records where the customer came from (once per channel, with the buyer
-// ID when the channel has one) and gives them the channel's Role.
-async function noteCustomerChannel( person, order, transaction )
+// ID when the channel has one) and gives them the channel's Role - when
+// they bought products - and Student when they bought class seats.
+async function noteCustomerChannel( person, order, {products, seats}, transaction )
 {
   const channel = CHANNELS[order.channel]
+
+  if( seats )
+  {
+    const student = await Role.findOne( {where: {name: 'Student'}, transaction} )
+
+    if( student )
+      await person.addRole( student, {transaction} )
+  }
 
   if( !channel )
     return
@@ -205,15 +252,46 @@ async function noteCustomerChannel( person, order, transaction )
   else if( externalId && !source.externalId )
     await source.update( {externalId}, {transaction} )
 
-  const role = await Role.findOne( {where: {name: channel.role}, transaction} )
+  const role = products && await Role.findOne( {where: {name: channel.role}, transaction} )
 
   if( role )
     await person.addRole( role, {transaction} )
 }
 
+// Enrolls a class-seat line's seats: the customer's own seat (unless
+// they already have one there, entered by hand) and one seat per further
+// unit, unnamed - the guest's name comes later. -> the seats created.
+async function enrollSeats( line, quantity, customer, order, transaction )
+{
+  const own = await LiveClassAttendee.count( {where: {liveClassId: line.liveClassId, customerId: customer.id, channelOrderLineId: null, status: {[Op.ne]: 'cancelled'}}, transaction} )
+  const source = `${CHANNELS[order.channel]?.sourceName ?? order.channel} order #${order.externalOrderId}`
+  const buyer = [customer.firstName, customer.lastName].filter( Boolean ).join( ' ' ) || order.buyerName || 'the buyer'
+  const seats = []
+
+  for( let i = Math.min( own, quantity ); i < quantity; i++ )
+  {
+    const guest = i > 0
+
+    seats.push( await LiveClassAttendee.create( {
+      liveClassId: line.liveClassId,
+      customerId: guest ? null : customer.id,
+      firstName: guest ? null : customer.firstName,
+      lastName: guest ? null : customer.lastName,
+      email: guest ? null : customer.email ?? order.buyerEmail ?? null,
+      status: 'enrolled',
+      notes: guest ? `Guest of ${buyer} - ${source}` : source,
+      enrolledOn: order.orderedOn ?? undefined,
+      channelOrderLineId: line.id,
+    }, {transaction} ) )
+  }
+
+  return seats
+}
+
 // Accepts it: {customerId (a Person's id, or 'new'), promisedDate
 // (YYYY-MM-DD or blank), quantities (lineId -> quantity, for lines the
-// channel left without one)} -> the new Order's id. Throws if it can't.
+// channel left without one)} -> {orderId (null when it was all class
+// seats), customerId, liveClassIds, seatCount}. Throws if it can't.
 export async function acceptChannelOrder( channelOrderId, {customerId, promisedDate, quantities = {}} )
 {
   return sequelize.transaction( async transaction => {
@@ -235,7 +313,24 @@ export async function acceptChannelOrder( channelOrderId, {customerId, promisedD
     if( !customer )
       throw new Error( 'Choose a customer' )
 
-    await noteCustomerChannel( customer, order, transaction )
+    const seatLines = lines.filter( isClassSeatLine )
+    const productLines = lines.filter( l => !isClassSeatLine( l ) )
+
+    await noteCustomerChannel( customer, order, {products: productLines.length > 0, seats: seatLines.length > 0}, transaction )
+
+    let seatCount = 0
+
+    for( const line of seatLines )
+      seatCount += (await enrollSeats( line, Number( quantities[line.id] ?? line.quantity ), customer, order, transaction )).length
+
+    const done = {customerId: customer.id, liveClassIds: [...new Set( seatLines.map( l => l.liveClassId ) )], seatCount}
+
+    if( !productLines.length )
+    {
+      await order.update( {status: 'accepted', customerId: customer.id}, {transaction} )
+
+      return {...done, orderId: null}
+    }
 
     const created = await Order.create( {
       customerId: customer.id,
@@ -247,7 +342,7 @@ export async function acceptChannelOrder( channelOrderId, {customerId, promisedD
     // One OrderProduct per product - the Order page counts Pieces per product
     const byProduct = new Map()
 
-    for( const line of lines )
+    for( const line of productLines )
     {
       const entry = byProduct.get( line.Product.id ) ?? {product: line.Product, quantity: 0}
 
@@ -266,13 +361,14 @@ export async function acceptChannelOrder( channelOrderId, {customerId, promisedD
     await ChannelOrderOrder.create( {channelOrderId: order.id, orderId: created.id}, {transaction} )
     await order.update( {status: 'accepted', customerId: customer.id}, {transaction} )
 
-    return created.id
+    return {...done, orderId: created.id}
   } )
 }
 
 // Undoes an accept while nothing has been started - every Piece still in
-// Design, and no Shipment made: deletes the Order(s) it became (their products and Pieces) and
-// returns the Channel Order to 'new'. A customer it created is kept. Not
+// Design, no Shipment made, no class seat completed: deletes the Order(s)
+// it became (their products and Pieces) and the class seats it enrolled,
+// and returns the Channel Order to 'new'. A customer it created is kept. Not
 // once one of its Orders also carries another Channel Order (combined) -
 // that Order has to be split or changed by hand instead.
 export async function unacceptChannelOrder( channelOrderId )
@@ -284,6 +380,11 @@ export async function unacceptChannelOrder( channelOrderId )
       throw new Error( 'This order isn\'t accepted' )
 
     const orderIds = (await ChannelOrderOrder.findAll( {where: {channelOrderId}, transaction} )).map( l => l.orderId )
+    const lineIds = (await ChannelOrderLine.findAll( {where: {channelOrderId}, attributes: ['id'], transaction} )).map( l => l.id )
+    const seats = lineIds.length ? await LiveClassAttendee.findAll( {where: {channelOrderLineId: lineIds}, transaction} ) : []
+
+    if( seats.some( a => a.status === 'completed' ) )
+      throw new Error( 'A class seat from this order is already completed - change the class\'s roster instead' )
 
     if( orderIds.length )
     {
@@ -306,9 +407,12 @@ export async function unacceptChannelOrder( channelOrderId )
       await Order.destroy( {where: {id: orderIds}, transaction} )
     }
 
+    if( seats.length )
+      await LiveClassAttendee.destroy( {where: {id: seats.map( a => a.id )}, transaction} )
+
     await order.update( {status: 'new', customerId: null}, {transaction} )
 
-    return orderIds
+    return {orderIds, seatCount: seats.length}
   } )
 }
 

@@ -2,6 +2,7 @@ import { DataTypes } from 'sequelize'
 
 import sequelize from '@/db/sequelize.js'
 import ChannelOrder from '@/db/models/ChannelOrder'
+import LiveClass from '@/db/models/LiveClass'
 import Product from '@/db/models/Product'
 
 // One line of a Channel Order, exactly as the channel reported it - the
@@ -20,6 +21,10 @@ const ChannelOrderLine = sequelize.define(
     unitPrice: { type: DataTypes.DECIMAL( 10, 2 ) },
     quantity: { type: DataTypes.FLOAT },
     productId: { type: DataTypes.INTEGER, allowNull: true, references: { model: Product, key: 'id' } },
+
+    // A class-seat line's Live Class (see libs/channelOrders/classSeats.js)
+    // - set instead of productId; accepting enrolls its seats.
+    liveClassId: { type: DataTypes.INTEGER, allowNull: true, references: { model: LiveClass, key: 'id' } },
   },
   {
     timestamps: false,
@@ -30,5 +35,8 @@ ChannelOrderLine.belongsTo( ChannelOrder, {foreignKey: 'channelOrderId'} )
 
 Product.hasMany( ChannelOrderLine, {foreignKey: 'productId'} )
 ChannelOrderLine.belongsTo( Product, {foreignKey: 'productId'} )
+
+LiveClass.hasMany( ChannelOrderLine, {foreignKey: 'liveClassId'} )
+ChannelOrderLine.belongsTo( LiveClass, {foreignKey: 'liveClassId'} )
 
 export default ChannelOrderLine

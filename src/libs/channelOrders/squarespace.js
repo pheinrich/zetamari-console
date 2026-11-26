@@ -10,8 +10,9 @@ export const SQUARESPACE_NEW_ORDER_SUBJECT = /^.+ : A New Order has Arrived \((\
 // variant, quantity and price.
 //
 // Class registrations arrive the same way ("January 30-31, 2027 |
-// In-person Mosaic Mirror Class | ..."), with no shipping address. For
-// now they're staged like any other order and dismissed at review.
+// In-person Mosaic Mirror Class | ..."), with no shipping address; their
+// lines are class seats, matched to a Live Class rather than a Product
+// and enrolled on accepting (see classSeats.js).
 export function parseSquarespaceOrder( html, subject )
 {
   const subjectMatch = clean( subject ).match( SQUARESPACE_NEW_ORDER_SUBJECT )

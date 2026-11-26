@@ -8,11 +8,15 @@ import { Op, Sequelize } from 'sequelize'
 import ChannelOrder, { ChannelOrderOrder } from '@/db/models/ChannelOrder'
 import ChannelOrderLine from '@/db/models/ChannelOrderLine'
 import InboundEmail from '@/db/models/InboundEmail'
+import LiveClass from '@/db/models/LiveClass'
+import LiveClassAttendee from '@/db/models/LiveClassAttendee'
 import Person from '@/db/models/Person'
 import Product from '@/db/models/Product'
 import sequelize from '@/db/sequelize'
+import { seedDiscountIfEligible } from '@/db/actions/person'
 import { markOrdersScheduleStale } from '@/db/actions/scheduling'
-import { acceptChannelOrder as accept, previewAccept, unacceptChannelOrder as unaccept } from '@/libs/channelOrders/accept'
+import { acceptChannelOrder as accept, isClassSeatLine, previewAccept, unacceptChannelOrder as unaccept } from '@/libs/channelOrders/accept'
+import { liveClassOptions } from '@/libs/channelOrders/classSeats'
 import { etsyConnection } from '@/libs/channelOrders/etsyApi'
 import { matchOpenLinesWithSku, rememberAlias } from '@/libs/channelOrders/matching'
 import { deleteInboundEmail as deleteEmail, processInboundEmail, refreshChannelOrderFromApi, undoInboundEmail as undoProcessing } from '@/libs/channelOrders/ingest'
@@ -51,7 +55,7 @@ export async function readChannelOrders()
     attributes: [
       'channelOrderId',
       [Sequelize.fn( 'COUNT', Sequelize.col( 'id' ) ), 'lineCount'],
-      [Sequelize.fn( 'COUNT', Sequelize.col( 'productId' ) ), 'matchedCount'],
+      [Sequelize.fn( 'COUNT', Sequelize.fn( 'COALESCE', Sequelize.col( 'productId' ), Sequelize.col( 'liveClassId' ) ) ), 'matchedCount'],
     ],
     group: ['channelOrderId'],
   } )
@@ -66,20 +70,30 @@ export async function readChannelOrder( id )
   await requireSession()
 
   const order = await ChannelOrder.findByPk( id, {
-    include: [{model: ChannelOrderLine, as: 'Lines', include: [{model: Product, attributes: ['id', 'name', 'sku']}]}],
+    include: [{model: ChannelOrderLine, as: 'Lines', include: [{model: Product, attributes: ['id', 'name', 'sku']}, {model: LiveClass, attributes: ['id', 'name']}]}],
     order: [[{model: ChannelOrderLine, as: 'Lines'}, 'position', 'ASC']],
   } )
 
   if( !order )
     notFound()
 
-  const [emails, links] = await Promise.all( [
+  const lineIds = order.Lines.map( l => l.id )
+
+  const [emails, links, seats] = await Promise.all( [
     InboundEmail.findAll( {where: {channelOrderId: id}, attributes: EMAIL_LIST_ATTRIBUTES, order: [['receivedAt', 'ASC']]} ),
     ChannelOrderOrder.findAll( {where: {channelOrderId: id}, order: [['orderId', 'ASC']]} ),
+    lineIds.length ? LiveClassAttendee.findAll( {where: {channelOrderLineId: lineIds}, attributes: ['id', 'liveClassId', 'channelOrderLineId']} ) : [],
   ] )
 
-  // The Order(s) it was accepted into - several once one has been split
-  return {...order.toJSON(), emails: emails.map( e => e.toJSON() ), orderIds: links.map( l => l.orderId )}
+  // The Order(s) it was accepted into - several once one has been split -
+  // and the Live Classes its class seats were enrolled in.
+  return {
+    ...order.toJSON(),
+    Lines: order.Lines.map( l => ({...l.toJSON(), classSeat: isClassSeatLine( l ), seatCount: seats.filter( a => a.channelOrderLineId === l.id ).length}) ),
+    emails: emails.map( e => e.toJSON() ),
+    orderIds: links.map( l => l.orderId ),
+    liveClassIds: [...new Set( seats.map( a => a.liveClassId ) )],
+  }
 }
 
 // Every Product, in just enough detail to pick one as a line's match
@@ -93,19 +107,51 @@ export async function readProductOptions()
   return products.map( p => p.toJSON() )
 }
 
-// Lines still to be matched on orders under review, each with its order,
-// for the unmatched-lines queue.
+// Lines still to be matched to a Product on orders under review, each
+// with its order, for the unmatched-lines queue. Class seats aren't
+// Products - they're matched to a class on their order's page.
 export async function readUnmatchedLines()
 {
   await requireSession()
 
   const lines = await ChannelOrderLine.findAll( {
-    where: {productId: null},
+    where: {productId: null, liveClassId: null},
     include: [{model: ChannelOrder, where: {status: 'new'}, attributes: ['id', 'channel', 'externalOrderId', 'orderedOn', 'buyerCompany', 'buyerName']}],
     order: [['sku', 'ASC'], ['id', 'ASC']],
   } )
 
-  return lines.map( l => l.toJSON() )
+  return lines.filter( l => !isClassSeatLine( l ) ).map( l => l.toJSON() )
+}
+
+// Live Classes a class-seat line can be matched to: recent and upcoming
+// ones, plus any of `include` (classes lines are already matched to).
+export async function readLiveClassOptions( include = [] )
+{
+  await requireSession()
+
+  return liveClassOptions( {include: include.filter( Boolean ).map( Number )} )
+}
+
+// Matches a class-seat line to a Live Class (or unmatches it, with
+// liveClassId null), on an order still under review.
+export async function matchChannelOrderLineClass( lineId, liveClassId )
+{
+  await requireSession()
+
+  const line = await ChannelOrderLine.findByPk( lineId, {include: [{model: ChannelOrder, attributes: ['status']}]} )
+
+  if( !line )
+    notFound()
+
+  if( line.ChannelOrder.status !== 'new' )
+    return {error: `This order is ${line.ChannelOrder.status} - restore it to new first`}
+
+  if( liveClassId && !await LiveClass.count( {where: {id: liveClassId}} ) )
+    return {error: 'That class no longer exists'}
+
+  await line.update( {liveClassId: liveClassId ?? null, productId: null} )
+
+  return {success: true}
 }
 
 // Matches one Channel Order Line to a Product (or unmatches it, with
@@ -188,11 +234,16 @@ export async function acceptChannelOrder( id, choices )
 
   try
   {
-    const orderId = await accept( id, choices )
+    const result = await accept( id, choices )
 
-    await markOrdersScheduleStale( [orderId] )
+    if( result.orderId )
+      await markOrdersScheduleStale( [result.orderId] )
 
-    return {success: true, orderId}
+    // Enough classes may now earn the customer the returning-student discount
+    if( result.seatCount )
+      await seedDiscountIfEligible( result.customerId )
+
+    return {success: true, ...result}
   }
   catch( error )
   {
@@ -206,9 +257,7 @@ export async function unacceptChannelOrder( id )
 
   try
   {
-    await unaccept( id )
-
-    return {success: true}
+    return {success: true, ...await unaccept( id )}
   }
   catch( error )
   {
@@ -216,8 +265,8 @@ export async function unacceptChannelOrder( id )
   }
 }
 
-// Dismissing parks an order that won't become an Order (a class
-// registration, a test, a duplicate); restoring returns it to 'new'.
+// Dismissing parks an order that won't become an Order (a test, a
+// duplicate); restoring returns it to 'new'.
 // 'accepted' is set only by accepting it into an Order, not here.
 export async function setChannelOrderStatus( id, status )
 {

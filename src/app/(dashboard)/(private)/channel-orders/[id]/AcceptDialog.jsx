@@ -39,7 +39,9 @@ const REASONS = {'buyer ID': 'same buyer ID', email: 'same email', channel: 'the
 // confirm the customer (preselected when the channel's buyer ID or email
 // matches someone, or the channel itself is the customer), the promised
 // date, and quantities where the channel sent none. Blocked, with the
-// reasons, while lines are unmatched or missing.
+// reasons, while lines are unmatched or missing. Class-seat lines enroll
+// the customer (and a guest seat per extra unit) in their class instead;
+// an order of nothing else needs no promised date and makes no Order.
 export default function AcceptDialog( {order, open, onClose} )
 {
   const router = useRouter()
@@ -135,7 +137,9 @@ export default function AcceptDialog( {order, open, onClose} )
       if( result.error )
         return toast.error( result.error )
 
-      toast.success( `Accepted as Order #${result.orderId}` )
+      const seats = result.seatCount ? `${result.seatCount} class seat${result.seatCount === 1 ? '' : 's'} enrolled` : null
+
+      toast.success( [result.orderId && `Accepted as Order #${result.orderId}`, seats].filter( Boolean ).join( '; ' ) || 'Accepted - already enrolled' )
       onClose()
       router.refresh()
     } )
@@ -143,7 +147,7 @@ export default function AcceptDialog( {order, open, onClose} )
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth='md' fullWidth>
-      <DialogTitle>Accept into an Order</DialogTitle>
+      <DialogTitle>{preview && !preview.makesOrder ? 'Accept: enroll in class' : 'Accept into an Order'}</DialogTitle>
       <DialogContent className='flex flex-col gap-5'>
         {!preview ? <div className='flex justify-center p-6'><CircularProgress /></div> : (
           <>
@@ -177,7 +181,7 @@ export default function AcceptDialog( {order, open, onClose} )
               </Typography>
             </div>
 
-            <div className='flex flex-col gap-3'>
+            {preview.makesOrder && <div className='flex flex-col gap-3'>
               <Typography>
                 <strong>Order date:</strong> {order.orderedOn ? format( parseISO( order.orderedOn ), 'EEE, MMM d, yyyy' ) : 'not given (lead times count from today)'}
               </Typography>
@@ -233,12 +237,26 @@ export default function AcceptDialog( {order, open, onClose} )
                 slotProps={{inputLabel: {shrink: true}}}
                 boxProps={{sx: {maxInlineSize: 320}}}
               />
-            </div>
+            </div>}
 
             <table className={tableStyles.table}>
               <thead><tr><th>Product</th><th>Quantity</th><th>Pieces</th></tr></thead>
               <tbody>
-                {preview.lines.map( line => (
+                {preview.lines.map( line => line.classSeat ? (
+                  <tr key={line.id}>
+                    <td>
+                      {line.liveClass ? `Class: ${line.liveClass.name} (#${line.liveClass.id})` : <Chip size='small' variant='tonal' color='warning' label={`no class matched: ${line.description}`} />}
+                      {line.existingSeats.length > 0 && (
+                        <Typography variant='body2' color='text.secondary'>
+                          Already enrolled by hand: {line.existingSeats.map( a => a.name || a.email || 'unnamed' ).join( ', ' )}
+                          {customer && customer.id !== 'new' && line.existingSeats.some( a => a.customerId === customer.id ) && ' - the customer\'s own seat counts toward these'}
+                        </Typography>
+                      )}
+                    </td>
+                    <td>{line.quantity ?? '—'} seat{line.quantity === 1 ? '' : 's'}</td>
+                    <td><Typography variant='body2' color='text.secondary'>{line.quantity > 1 ? `the customer + ${line.quantity - 1} guest${line.quantity === 2 ? '' : 's'}` : 'the customer'}</Typography></td>
+                  </tr>
+                ) : (
                   <tr key={line.id}>
                     <td>{line.product ? `${line.product.name} (${line.product.sku})` : <Chip size='small' variant='tonal' color='warning' label={`unmatched: ${line.sku || line.description}`} />}</td>
                     <td>

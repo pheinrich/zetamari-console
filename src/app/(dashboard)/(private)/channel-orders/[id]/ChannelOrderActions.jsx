@@ -52,7 +52,8 @@ export default function ChannelOrderActions( {order} )
     } )
   }
 
-  // Back to review: deletes its Order(s), while none of their Pieces is started
+  // Back to review: deletes its Order(s), while none of their Pieces is
+  // started, and the class seats it enrolled
   function unaccept()
   {
     startTransition( async () => {
@@ -62,9 +63,12 @@ export default function ChannelOrderActions( {order} )
         toast.error( result.error )
       else
       {
-        const deleted = order.orderIds.map( id => `#${id}` ).join( ', ' )
+        const deleted = [
+          result.orderIds?.length && `Order ${result.orderIds.map( id => `#${id}` ).join( ', ' )}`,
+          result.seatCount && `${result.seatCount} class seat${result.seatCount === 1 ? '' : 's'}`,
+        ].filter( Boolean ).join( ' and ' )
 
-        toast.success( deleted ? `Order ${deleted} deleted - back to review` : 'Back to review' )
+        toast.success( deleted ? `${deleted} deleted - back to review` : 'Back to review' )
         router.refresh()
       }
     } )
@@ -101,6 +105,11 @@ export default function ChannelOrderActions( {order} )
         {order.orderIds.map( id => (
           <Button key={id} component={Link} href={`/orders/${id}`} variant='outlined' startIcon={<i className='ri-file-list-3-line' />}>
             Order #{id}
+          </Button>
+        ) )}
+        {order.liveClassIds.map( id => (
+          <Button key={`class${id}`} component={Link} href={`/live-classes/${id}`} variant='outlined' startIcon={<i className='ri-graduation-cap-line' />}>
+            Class #{id}
           </Button>
         ) )}
         <Button variant='outlined' color='secondary' disabled={isPending} onClick={unaccept} startIcon={<i className='ri-arrow-go-back-line' />}>
