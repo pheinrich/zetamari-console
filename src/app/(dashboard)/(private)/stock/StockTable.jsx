@@ -29,7 +29,7 @@ import { unitInputProps } from '@/utils/units'
 import { ProductCell, filterProducts } from '../orders/[id]/OrderLinesTable'
 
 const DEFAULT_VIEW = {
-  sorting: [{id: 'product', desc: false}],
+  sorting: [{id: 'sku', desc: false}],
   globalFilter: '',
 }
 
@@ -138,11 +138,17 @@ export default function StockTable( {stock, products} )
           />
         ),
       } ),
-      columnHelper.accessor( s => `${s.Product?.sku ?? ''} ${s.Product?.name ?? ''}`, {
+      columnHelper.accessor( s => s.Product?.sku ?? '', {
+        id: 'sku',
+        header: 'SKU',
+        sortingFn: (a, b) => a.getValue( 'sku' ).localeCompare( b.getValue( 'sku' ), undefined, {numeric: true} ),
+        cell: ({getValue}) => <Typography noWrap>{getValue()}</Typography>,
+      } ),
+      columnHelper.accessor( s => s.Product?.name ?? '', {
         id: 'product',
         header: 'Product',
-        sortingFn: (a, b) => (a.original.Product?.sku ?? '').localeCompare( b.original.Product?.sku ?? '', undefined, {numeric: true} ),
-        cell: ({row}) => <ProductCell product={row.original.Product} />,
+        sortingFn: (a, b) => a.getValue( 'product' ).localeCompare( b.getValue( 'product' ), undefined, {numeric: true, sensitivity: 'base'} ),
+        cell: ({row}) => <ProductCell product={row.original.Product} sku={false} />,
       } ),
       columnHelper.accessor( s => s.Product?.type ?? 'finished', {
         id: 'type',
@@ -337,7 +343,7 @@ function AddStockRow( {products, disabled, autoFocus, onAdd} )
   return (
     <tr>
       <td />
-      <td className='min-is-[240px]' colSpan={2}>
+      <td className='min-is-[240px]' colSpan={3}>
         <Autocomplete
           size='small'
           options={products}

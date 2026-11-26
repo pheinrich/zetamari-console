@@ -26,6 +26,7 @@ import Typography from '@mui/material/Typography'
 import { addOrderLine, removeOrderLines, setOrderLineQuantity, splitOrder } from '@/db/actions/order'
 import { useConfirm } from '@/contexts/confirmContext'
 import NumberSpinner from '@/components/NumberSpinner'
+import { SortHeader, useSort } from '@/components/sortable'
 import tableStyles from '@core/styles/table.module.css'
 import { getPhaseSequence } from '@/libs/pieceScheduling'
 import { formatUnit, unitInputProps } from '@/utils/units'
@@ -75,6 +76,7 @@ export default function OrderLinesTable( {order, products} )
   const [splitting, setSplitting] = useState( false )
 
   const lines = order.lines
+  const {sorted, sort, onSort} = useSort( lines, LINE_SORTS )
 
   // A refresh brings new lines: drop drafts and selections that no longer apply
   useEffect( () => {
@@ -204,17 +206,18 @@ export default function OrderLinesTable( {order, products} )
                   inputProps={{'aria-label': 'Select all products'}}
                 />
               </th>
-              <th>Product</th>
-              <th>Quantity</th>
-              <th>Stock</th>
+              <SortHeader id='sku' sort={sort} onSort={onSort}>SKU</SortHeader>
+              <SortHeader id='product' sort={sort} onSort={onSort}>Product</SortHeader>
+              <SortHeader id='quantity' sort={sort} onSort={onSort}>Quantity</SortHeader>
+              <SortHeader id='stock' sort={sort} onSort={onSort}>Stock</SortHeader>
               <th>Actions</th>
             </tr>
           </thead>
           <tbody>
             {!lines.length && (
-              <tr><td colSpan={5} className='text-center'>No products yet</td></tr>
+              <tr><td colSpan={6} className='text-center'>No products yet</td></tr>
             )}
-            {lines.map( line => (
+            {sorted.map( line => (
 
               // OrderProduct has no id column (see its model) - one row per product
               <tr
@@ -230,8 +233,9 @@ export default function OrderLinesTable( {order, products} )
                     inputProps={{'aria-label': 'Select product'}}
                   />
                 </td>
+                <td className='whitespace-nowrap'>{line.Product?.sku}</td>
                 <td className='min-is-[240px] max-is-[560px] whitespace-normal'>
-                  <ProductCell product={line.Product} />
+                  <ProductCell product={line.Product} sku={false} />
                 </td>
                 <td>
                   <QuantitySpinner
@@ -262,6 +266,7 @@ export default function OrderLinesTable( {order, products} )
             <AddLineRow
               key={addKey}
               products={products}
+              productColSpan={2}
               disabled={isPending}
               autoFocus={addKey > 0}
               onAdd={(product, quantity) => act(
@@ -302,6 +307,24 @@ export default function OrderLinesTable( {order, products} )
       />
     </Card>
   )
+}
+
+// How the Products table sorts each column. Stock sorts by how covered a
+// line is, short first: none there, then some, then all, then untracked
+// (it simply comes from inventory).
+const LINE_SORTS = {
+  sku: l => l.Product?.sku,
+  product: l => l.Product?.name,
+  quantity: l => Number( l.quantity ),
+  stock: l => {
+    if( l.makesPieces )
+      return Math.min( 1, (l.phaseCounts.Ready ?? 0) / Math.max( 1, Number( l.quantity ) ) )
+
+    if( !l.stock?.tracked )
+      return 2
+
+    return Math.min( 1, Math.max( 0, l.stock.onHand ) / Math.max( 1, l.stock.needed ) )
+  },
 }
 
 // A product that isn't made here, by its Stock against what's still to be
@@ -378,9 +401,10 @@ function PhasesButton( {line} )
   )
 }
 
-// Name (linked) and SKU, with the product's description beneath -
-// smaller, and wrapping rather than widening the row.
-export function ProductCell( {product} )
+// Name (linked) and SKU - unless the table has a SKU column of its own -
+// with the product's description beneath, smaller, and wrapping rather
+// than widening the row.
+export function ProductCell( {product, sku = true} )
 {
   if( !product )
     return <Typography color='text.secondary'>Unknown product</Typography>
@@ -389,7 +413,7 @@ export function ProductCell( {product} )
     <div className='flex flex-col'>
       <div className='flex flex-wrap items-baseline gap-x-2'>
         <Link href={`/products/${product.id}`} onClick={e => e.stopPropagation()}>{product.name}</Link>
-        <Typography component='span' variant='body2' color='text.secondary'>{product.sku}</Typography>
+        {sku && <Typography component='span' variant='body2' color='text.secondary'>{product.sku}</Typography>}
       </div>
       {product.description && (
         <Typography variant='body2' color='text.secondary' className='break-words'>{product.description}</Typography>
@@ -424,8 +448,9 @@ export function QuantitySpinner( {value, units, whole, onValueChange, onValueCom
 
 // Always at the foot of the table. Cleared after each add (by its parent
 // remounting it), and focused again then so several can be added in a
-// row - but not on page load.
-export function AddLineRow( {products, disabled, autoFocus, onAdd} )
+// row - but not on page load. The product picker spans `productColSpan`
+// columns (the SKU column too, where a table has one).
+export function AddLineRow( {products, disabled, autoFocus, onAdd, productColSpan = 1} )
 {
   const [product, setProduct] = useState( null )
   const [quantity, setQuantity] = useState( '1' )
@@ -434,7 +459,7 @@ export function AddLineRow( {products, disabled, autoFocus, onAdd} )
   return (
     <tr>
       <td />
-      <td className='min-is-[240px]'>
+      <td className='min-is-[240px]' colSpan={productColSpan}>
         <Autocomplete
           size='small'
           options={products}

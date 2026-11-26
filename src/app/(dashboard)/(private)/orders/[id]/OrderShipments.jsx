@@ -26,6 +26,7 @@ import {
 } from '@/db/actions/shipment'
 import { useConfirm } from '@/contexts/confirmContext'
 import NumberSpinner from '@/components/NumberSpinner'
+import { SortHeader, useSort } from '@/components/sortable'
 import tableStyles from '@core/styles/table.module.css'
 import { unitInputProps } from '@/utils/units'
 import {
@@ -38,6 +39,14 @@ const ADDRESS_FIELDS = [
 ]
 
 const when = at => at ? new Date( at ).toLocaleString( 'en-US', {month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit'} ) : null
+
+// How a Shipment's products sort, column by column
+const SHIPMENT_LINE_SORTS = {
+  sku: l => l.Product?.sku,
+  product: l => l.Product?.name,
+  quantity: l => Number( l.quantity ),
+  picked: l => Number( l.picked ),
+}
 
 const FULFILLMENT_TEXT = {
   shipped: 'Shipped',
@@ -159,6 +168,7 @@ function ShipmentPanel( {shipment, disabled, onPick, onAdvance, onRevert, onEdit
   const pickedRows = shipment.Lines.filter( l => l.picked >= l.quantity ).length
   const shipTo = addressLines( shipment.shipTo )
   const carrier = [shipment.carrier, shipment.service].filter( Boolean ).join( ' · ' )
+  const {sorted, sort, onSort} = useSort( shipment.Lines, SHIPMENT_LINE_SORTS )
 
   return (
     <div id={`shipment-${shipment.id}`} className='flex flex-col gap-3 rounded border border-solid border-divider p-4'>
@@ -210,15 +220,18 @@ function ShipmentPanel( {shipment, disabled, onPick, onAdvance, onRevert, onEdit
       <div className='overflow-x-auto'>
         <table className={tableStyles.table}>
           <thead>
-            <tr><th>Product</th><th className='text-center'>Quantity</th><th className='text-center'>Picked</th></tr>
+            <tr>
+              <SortHeader id='sku' sort={sort} onSort={onSort}>SKU</SortHeader>
+              <SortHeader id='product' sort={sort} onSort={onSort}>Product</SortHeader>
+              <SortHeader id='quantity' sort={sort} onSort={onSort} className='text-center'>Quantity</SortHeader>
+              <SortHeader id='picked' sort={sort} onSort={onSort} className='text-center'>Picked</SortHeader>
+            </tr>
           </thead>
           <tbody>
-            {shipment.Lines.map( line => (
+            {sorted.map( line => (
               <tr key={line.id}>
-                <td className='whitespace-normal'>
-                  <Typography component='span'>{line.Product?.name}</Typography>{' '}
-                  <Typography component='span' variant='body2' color='text.secondary'>{line.Product?.sku}</Typography>
-                </td>
+                <td className='whitespace-nowrap'>{line.Product?.sku}</td>
+                <td className='whitespace-normal'>{line.Product?.name}</td>
                 <td className='text-center'>{line.quantity} {line.Product?.units && line.Product.units !== 'each' ? line.Product.units : ''}</td>
                 <td className='text-center'>
                   <PickCounter line={line} disabled={disabled || !pickable} onPick={onPick} />
@@ -373,6 +386,14 @@ function ShipmentDialog( {open, order, shipment, disabled, onClose, onSave} )
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, shipment] )
 
+  const shippable = order.lines.filter( l => available[l.productId] > 0 )
+
+  const {sorted, sort, onSort} = useSort( shippable, {
+    sku: l => l.Product?.sku,
+    product: l => l.Product?.name,
+    available: l => available[l.productId],
+  } )
+
   const set = key => e => setFields( f => ({...f, [key]: e.target.value}) )
   const lines = order.lines.map( l => ({productId: l.productId, quantity: Number( quantities[l.productId] || 0 )}) )
   const anything = lines.some( l => l.quantity > 0 )
@@ -397,15 +418,18 @@ function ShipmentDialog( {open, order, shipment, disabled, onClose, onSave} )
         <div className='overflow-x-auto'>
           <table className={tableStyles.table}>
             <thead>
-              <tr><th>Product</th><th>Available</th><th>Ship</th></tr>
+              <tr>
+                <SortHeader id='sku' sort={sort} onSort={onSort}>SKU</SortHeader>
+                <SortHeader id='product' sort={sort} onSort={onSort}>Product</SortHeader>
+                <SortHeader id='available' sort={sort} onSort={onSort}>Available</SortHeader>
+                <th>Ship</th>
+              </tr>
             </thead>
             <tbody>
-              {order.lines.filter( l => available[l.productId] > 0 ).map( l => (
+              {sorted.map( l => (
                 <tr key={l.productId}>
-                  <td className='whitespace-normal'>
-                    <Typography component='span'>{l.Product?.name}</Typography>{' '}
-                    <Typography component='span' variant='body2' color='text.secondary'>{l.Product?.sku}</Typography>
-                  </td>
+                  <td className='whitespace-nowrap'>{l.Product?.sku}</td>
+                  <td className='whitespace-normal'>{l.Product?.name}</td>
                   <td>{available[l.productId]}</td>
                   <td>
                     <TextField

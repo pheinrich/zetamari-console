@@ -45,16 +45,14 @@ const DEFAULT_VIEW = {
   filters: {type: '', sellable: '', status: '', supplier: ''},
 }
 
-// The 'name' column is the only text column meaningfully searched (see
-// its cell renderer below - it already displays the SKU as a subtitle
-// under the name), so it's the one place worth special-casing: rank
-// against "name sku" together rather than just row.getValue('name'), so
-// the search box matches a SKU the person can see right there, not just
-// the name above it. Every other column keeps the default single-value
-// behavior.
+// The 'name' column displays the product's type as a subtitle under the
+// name, so it ranks against "name type" together rather than just
+// row.getValue('name') - the search box matches a type the person can see
+// right there. The SKU has a column of its own; every other column keeps
+// the default single-value behavior.
 const fuzzyFilter = (row, columnId, value, addMeta) => {
   const target = 'name' === columnId
-    ? `${row.original.name ?? ''} ${row.original.sku ?? ''}`
+    ? `${row.original.name ?? ''} ${productTypeMeta( row.original.type ).label ?? ''}`
     : row.getValue( columnId )
 
   const itemRank = rankItem( target, value )
@@ -174,24 +172,15 @@ export default function ProductListTable( {productData, supplierData=[]} )
               <Typography component={Link} href={`/products/${row.original.id}`} className='font-medium' color='text.primary'>
                 {row.original.name}
               </Typography>
-              <Typography variant='body2'>{row.original.sku}</Typography>
+              <Typography variant='body2'>{productTypeMeta( row.original.type ).label}</Typography>
             </div>
           </div>
         )
       } ),
-      columnHelper.accessor( 'type', {
-        header: 'Type',
-        cell: ({ row }) => {
-          const meta = productTypeMeta( row.original.type )
-          return (
-            <div className='flex items-center gap-4'>
-              <CustomAvatar skin='light' color={meta.color} size={30}>
-                <i className={classnames( meta.icon, 'text-lg' )} />
-              </CustomAvatar>
-              <Typography color='text.primary'>{meta.label}</Typography>
-            </div>
-          )
-        }
+      columnHelper.accessor( 'sku', {
+        header: 'SKU',
+        sortingFn: (a, b) => (a.original.sku ?? '').localeCompare( b.original.sku ?? '', undefined, {numeric: true} ),
+        cell: ({ row }) => <Typography color='text.primary' noWrap>{row.original.sku}</Typography>
       } ),
       columnHelper.accessor( 'sellable', {
         header: 'Sellable',
