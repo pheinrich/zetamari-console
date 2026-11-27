@@ -11,7 +11,7 @@ import { parseOrderEmail } from '@/libs/channelOrders'
 import { fetchEtsyReceipt, withEtsyReceipt } from '@/libs/channelOrders/etsyApi'
 import { fetchFaireOrder, withFaireApiOrder } from '@/libs/channelOrders/faireApi'
 import { readForward } from '@/libs/channelOrders/forwarded'
-import { classSeat, findLiveClass } from '@/libs/channelOrders/classSeats'
+import { classSeat, findLiveClass, liveClassIdsBySku } from '@/libs/channelOrders/classSeats'
 import { matchSkus } from '@/libs/channelOrders/matching'
 
 // Channels whose emails are completed from their own API: Faire's email
@@ -220,15 +220,18 @@ async function upsertChannelOrder( order, transaction, force = false )
 
 // A Channel Order's lines, replaced wholesale, each matched to a Product
 // by exact SKU or a Product Alias (see matching.js) - or, for a class
-// seat, to the Live Class on its date (see classSeats.js).
+// seat, to the Live Class with its SKU, else the one on its date (see
+// classSeats.js).
 async function replaceLines( channelOrderId, lines, transaction )
 {
   const productIdBySku = await matchSkus( lines.map( l => l.sku ), transaction )
+  const classIdBySku = await liveClassIdsBySku( lines.map( l => l.sku ), transaction )
   const rows = []
 
   for( const [position, line] of lines.entries() )
   {
     const seat = classSeat( line.description )
+    const classBySku = line.sku ? classIdBySku.get( line.sku.trim().toLowerCase() ) ?? null : null
 
     rows.push( {
       channelOrderId,
@@ -237,8 +240,8 @@ async function replaceLines( channelOrderId, lines, transaction )
       description: line.description?.slice( 0, 1024 ) ?? null,
       unitPrice: line.unitPrice,
       quantity: line.quantity,
-      productId: !seat && line.sku ? productIdBySku.get( line.sku.trim().toLowerCase() ) ?? null : null,
-      liveClassId: seat ? await findLiveClass( seat, transaction ) : null,
+      productId: !seat && !classBySku && line.sku ? productIdBySku.get( line.sku.trim().toLowerCase() ) ?? null : null,
+      liveClassId: classBySku ?? (seat ? await findLiveClass( seat, transaction ) : null),
     } )
   }
 

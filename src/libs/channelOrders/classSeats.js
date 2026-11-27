@@ -1,4 +1,4 @@
-import { Op } from 'sequelize'
+import { Op, Sequelize } from 'sequelize'
 
 import BasicEvent from '@/db/models/BasicEvent'
 import LiveClass from '@/db/models/LiveClass'
@@ -51,6 +51,26 @@ export function classSeat( description )
     return null
 
   return {startDate, title: parts.slice( 1, -1 ).join( ' | ' ), city: parts.at( -1 ).split( ',' )[0].trim() || null}
+}
+
+// Channel SKUs that are Live Classes' own (LiveClass.sku, e.g.
+// "CSMirror-20270227", matched ignoring case) -> Map( lowercased SKU ->
+// liveClassId ). A line with one is a seat in that class, whatever its
+// description says - surer than matching by date and city.
+export async function liveClassIdsBySku( skus, transaction )
+{
+  const wanted = [...new Set( skus.filter( Boolean ).map( s => s.trim().toLowerCase() ) )]
+
+  if( !wanted.length )
+    return new Map()
+
+  const classes = await LiveClass.findAll( {
+    where: Sequelize.where( Sequelize.fn( 'LOWER', Sequelize.col( 'sku' ) ), {[Op.in]: wanted} ),
+    attributes: ['id', 'sku'],
+    transaction,
+  } )
+
+  return new Map( classes.map( c => [c.sku.trim().toLowerCase(), c.id] ) )
 }
 
 // A UTC instant -> its 'YYYY-MM-DD' in TIME_ZONE
