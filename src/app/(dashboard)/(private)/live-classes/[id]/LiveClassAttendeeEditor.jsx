@@ -20,7 +20,7 @@ import Stack from '@mui/material/Stack'
 import TextField from '@mui/material/TextField'
 import Typography from '@mui/material/Typography'
 
-import { addLiveClassAttendee, updateLiveClassAttendee, removeLiveClassAttendee } from '@/db/actions/liveClass'
+import { addLiveClassAttendee, removeLiveClassAttendee, setLiveClassAttendeeCustomer, updateLiveClassAttendee } from '@/db/actions/liveClass'
 import { customerDisplayName } from '../../customers/customerFormat'
 import tableStyles from '@core/styles/table.module.css'
 import { useConfirm } from '@/contexts/confirmContext'
@@ -28,6 +28,9 @@ import DateField from '@/components/DateField'
 import { unitInputProps } from '@/utils/units'
 
 const STATUS_OPTIONS = ['enrolled', 'waitlisted', 'cancelled', 'completed']
+
+// The "who is this seat" dialog's first choice: make a new customer from it
+const NEW_CUSTOMER = {id: 'new', label: 'New customer from the name and email below'}
 
 // Manages a class's roster of LiveClassAttendee rows - deliberately not
 // called "students" in code (see that model's doc comment). `customer` is
@@ -57,6 +60,58 @@ export default function LiveClassAttendeeEditor( {liveClassId, attendees, custom
   const [notesAttendee, setNotesAttendee] = useState( null )
   const [notesDraft, setNotesDraft] = useState( '' )
   const [upgradeNotesDraft, setUpgradeNotesDraft] = useState( '' )
+
+  // The "who" dialog: re-link a seat to a different (or new) customer,
+  // or unlink it - and, while it isn't linked to an existing customer,
+  // edit its own name and email. A linked seat takes its customer's.
+  const [whoAttendee, setWhoAttendee] = useState( null )
+  const [whoCustomer, setWhoCustomer] = useState( null )
+  const [whoFirstName, setWhoFirstName] = useState( '' )
+  const [whoLastName, setWhoLastName] = useState( '' )
+  const [whoEmail, setWhoEmail] = useState( '' )
+  const [whoError, setWhoError] = useState( null )
+  const linkedToExisting = whoCustomer && whoCustomer.id !== 'new'
+
+  function openWhoDialog( attendee )
+  {
+    setWhoAttendee( attendee )
+    setWhoCustomer( attendee.customerId ? customerOptions.find( c => c.id === attendee.customerId ) ?? attendee.Customer ?? null : null )
+    setWhoFirstName( attendee.firstName || '' )
+    setWhoLastName( attendee.lastName || '' )
+    setWhoEmail( attendee.email || '' )
+    setWhoError( null )
+  }
+
+  function chooseWhoCustomer( value )
+  {
+    setWhoCustomer( value )
+
+    if( value && value.id !== 'new' )
+    {
+      setWhoFirstName( value.firstName || '' )
+      setWhoLastName( value.lastName || '' )
+      setWhoEmail( value.email || '' )
+    }
+  }
+
+  function handleSaveWho()
+  {
+    setWhoError( null )
+    startTransition( async () => {
+      const result = await setLiveClassAttendeeCustomer( whoAttendee.id, {
+        customerId: whoCustomer?.id ?? null,
+        firstName: whoFirstName,
+        lastName: whoLastName,
+        email: whoEmail,
+      } )
+
+      if( result?.error )
+        return setWhoError( result.error )
+
+      setWhoAttendee( null )
+      router.refresh()
+    })
+  }
 
   function handleAdd()
   {
@@ -159,6 +214,7 @@ export default function LiveClassAttendeeEditor( {liveClassId, attendees, custom
           <thead>
             <tr>
               <th>Attendee</th>
+              <th></th>
               <th>Email</th>
               <th>Status</th>
               <th>Discount %</th>
@@ -181,6 +237,11 @@ export default function LiveClassAttendeeEditor( {liveClassId, attendees, custom
                     )}
                     {!attendee.Customer && <Chip label='not linked to a customer' variant='tonal' size='small' className='is-fit' />}
                   </div>
+                </td>
+                <td>
+                  <IconButton size='small' disabled={isPending} onClick={() => openWhoDialog( attendee )} title='Change customer, name or email'>
+                    <i className='ri-user-settings-line' />
+                  </IconButton>
                 </td>
                 <td>
                   <Typography variant='body2' color='text.secondary'>{attendee.email || '—'}</Typography>
@@ -232,7 +293,7 @@ export default function LiveClassAttendeeEditor( {liveClassId, attendees, custom
               </tr>
             ) )}
             {0 === attendees.length && (
-              <tr><td colSpan={7}>No attendees added yet.</td></tr>
+              <tr><td colSpan={8}>No attendees added yet.</td></tr>
             )}
           </tbody>
         </table>
@@ -287,6 +348,47 @@ export default function LiveClassAttendeeEditor( {liveClassId, attendees, custom
         </Button>
       </div>
       {error && <Typography color='error' variant='body2'>{error}</Typography>}
+
+      <Dialog open={Boolean( whoAttendee )} onClose={() => setWhoAttendee( null )} fullWidth maxWidth='sm'>
+        <DialogTitle>Attendee</DialogTitle>
+        <DialogContent>
+          <Stack spacing={4} className='mbs-1'>
+            <Autocomplete
+              options={[NEW_CUSTOMER, ...customerOptions]}
+              value={whoCustomer}
+              onChange={(e, value) => chooseWhoCustomer( value )}
+              getOptionLabel={o => o.id === 'new' ? o.label : customerDisplayName( o )}
+              getOptionKey={o => o.id}
+              isOptionEqualToValue={(o, v) => o.id === v.id}
+              renderOption={({key, ...props}, o) => (
+                <li key={key} {...props}>
+                  {o.id === 'new'
+                    ? <span className='flex items-center gap-2 text-primary'><i className='ri-user-add-line' />{o.label}</span>
+                    : <div className='flex flex-col'><span>{customerDisplayName( o )}</span>{o.email && <small className='text-textSecondary'>{o.email}</small>}</div>}
+                </li>
+              )}
+              renderInput={params => <TextField {...params} label='Customer' placeholder='Not linked - search customers' />}
+            />
+            <Typography variant='body2' color='text.secondary'>
+              {linkedToExisting
+                ? 'The seat takes this customer\'s name and email. Clear the customer to unlink it.'
+                : whoCustomer ? 'A new customer (a Student) is made from these.' : 'Not linked to a customer.'}
+            </Typography>
+            <div className='flex flex-wrap gap-4'>
+              <TextField size='small' label='First Name' value={whoFirstName} disabled={linkedToExisting} onChange={e => setWhoFirstName( e.target.value )} />
+              <TextField size='small' label='Last Name' value={whoLastName} disabled={linkedToExisting} onChange={e => setWhoLastName( e.target.value )} />
+              <TextField size='small' label='Email' value={whoEmail} disabled={linkedToExisting} onChange={e => setWhoEmail( e.target.value )} className='min-is-[240px]' />
+            </div>
+            {whoError && <Typography color='error' variant='body2'>{whoError}</Typography>}
+          </Stack>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setWhoAttendee( null )} color='secondary'>Cancel</Button>
+          <Button variant='contained' disabled={isPending} onClick={handleSaveWho}>
+            {isPending ? 'Saving...' : 'Save'}
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       <Dialog open={Boolean( notesAttendee )} onClose={closeNotesDialog} fullWidth maxWidth='sm'>
         <DialogTitle>

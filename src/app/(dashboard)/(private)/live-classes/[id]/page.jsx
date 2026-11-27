@@ -82,10 +82,7 @@ export default async function LiveClassPage( {params} )
 
         <Grid size={{ xs: 12 }}>
           <Card>
-            <CardHeader title='Occurrences' subheader='One or more sessions, each with its own hours' />
-            <CardContent>
-              <OccurrenceEditor liveClassId={liveClass.id} occurrences={occurrences} personOptions={people} />
-            </CardContent>
+            <OccurrenceEditor liveClassId={liveClass.id} occurrences={occurrences} personOptions={people} subheader='One or more sessions, each with its own hours' />
           </Card>
         </Grid>
 

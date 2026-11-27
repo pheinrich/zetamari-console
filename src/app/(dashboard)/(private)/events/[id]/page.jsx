@@ -86,10 +86,7 @@ export default async function EventPage( {params} )
 
         <Grid size={{ xs: 12 }}>
           <Card>
-            <CardHeader title='Occurrences' subheader='One or more days, each with its own hours' />
-            <CardContent>
-              <OccurrenceEditor eventId={event.id} occurrences={occurrences} personOptions={people} />
-            </CardContent>
+            <OccurrenceEditor eventId={event.id} occurrences={occurrences} personOptions={people} subheader='One or more days, each with its own hours' />
           </Card>
         </Grid>
       </Grid>

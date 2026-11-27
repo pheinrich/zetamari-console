@@ -1,6 +1,6 @@
 'use client'
 
-import { forwardRef, useState, useTransition } from 'react'
+import { useEffect, useMemo, useRef, useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 
 import Autocomplete from '@mui/material/Autocomplete'
@@ -19,105 +19,127 @@ import Stack from '@mui/material/Stack'
 import TextField from '@mui/material/TextField'
 import Typography from '@mui/material/Typography'
 
+import { toast } from 'react-toastify'
+
 import { createBasicEvent, updateBasicEvent, deleteBasicEvent } from '@/db/actions/basicEvent'
 import { customerDisplayName } from '../customers/customerFormat'
-import AppReactDatepicker from '@/libs/styles/AppReactDatepicker'
-import tableStyles from '@core/styles/table.module.css'
 import { useConfirm } from '@/contexts/confirmContext'
+import { splitOccurrence, toDatetimes } from '@/utils/occurrences'
+import OccurrenceTable from './OccurrenceTable'
 
 const COLOR_OPTIONS = ['primary', 'secondary', 'success', 'error', 'warning', 'info']
 
-// Sequelize DATE columns round-trip as ISO strings once they've been
-// through toJSON() - react-datepicker wants a real Date instead.
-function toDate( value )
-{
-  return value ? new Date( value ) : null
-}
-
-// Same PickersComponent idiom as EventCalendar.jsx - a plain MUI
-// TextField as react-datepicker's custom input, in place of the bare
-// `type="datetime-local"` native control this replaced (no year visible
-// once the table column narrows it, and a different look/feel than the
-// Calendar page's own start/end pickers).
-const PickersComponent = forwardRef( (props, ref) => (
-  <TextField inputRef={ref} size='small' {...props} label={props.label || ''} />
-) )
-
-PickersComponent.displayName = 'PickersComponent'
+// How long typing has to pause before an edit is saved - a date or time
+// being typed parses (and changes) at almost every keystroke.
+const SAVE_DELAY_MS = 400
 
 // Manages one parent's (Event or LiveClass) BasicEvent occurrences - the
 // schedule itself, now that neither parent stores its own startDate/
 // endDate (see BasicEvent.js and docs/adr/0008). Exactly one of
-// `eventId`/`liveClassId` is passed by the caller. Same "separate
-// mini-CRUD table + add row below" idiom as LiveClassAttendeeEditor.jsx/
-// CustomerSourceEditor.jsx.
-export default function OccurrenceEditor( {eventId, liveClassId, occurrences, personOptions} )
+// `eventId`/`liveClassId` is passed by the caller. Dates, titles and
+// times are edited in place (OccurrenceTable) and saved once typing
+// pauses; the new-entry row at the foot adds one, and for a Live Class
+// the default 2- and 3-day schedules add a whole class at once.
+export default function OccurrenceEditor( {eventId, liveClassId, occurrences, personOptions, subheader} )
 {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
   const confirm = useConfirm()
-  const [title, setTitle] = useState( '' )
-  const [startDatetime, setStartDatetime] = useState( null )
-  const [endDatetime, setEndDatetime] = useState( null )
-  const [color, setColor] = useState( 'primary' )
-  const [error, setError] = useState( null )
+  const timers = useRef( {} )
 
-  // Description/Participants editing - a Dialog rather than inline
+  // Description/Participants/Color editing - a Dialog rather than inline
   // cells, same reasoning as LiveClassAttendeeEditor.jsx's Notes dialog
   // (free text) plus a multi-select that wouldn't fit a table cell.
   const [editing, setEditing] = useState( null )
   const [descriptionDraft, setDescriptionDraft] = useState( '' )
   const [participantsDraft, setParticipantsDraft] = useState( [] )
+  const [colorDraft, setColorDraft] = useState( 'primary' )
 
-  function handleAdd()
+  const sorted = useMemo( () => [...occurrences].sort( (a, b) => new Date( a.startDatetime ) - new Date( b.startDatetime ) ), [occurrences] )
+  const rows = useMemo( () => sorted.map( o => ({key: o.id, ...splitOccurrence( o )}) ), [sorted] )
+  const byId = useMemo( () => Object.fromEntries( occurrences.map( o => [o.id, o] ) ), [occurrences] )
+
+  // Pending saves still go through if the page is left
+  useEffect( () => () => Object.values( timers.current ).forEach( t => t.flush() ), [] )
+
+  function save( occurrence, changes )
   {
-    setError( null )
-    startTransition( async () => {
-      const result = await createBasicEvent( {
-        title,
-        startDatetime,
-        endDatetime,
-        color,
-        eventId,
-        liveClassId,
-      } )
-
-      if( result?.error )
-        setError( result.error )
-      else
-      {
-        setTitle( '' )
-        setStartDatetime( null )
-        setEndDatetime( null )
-        setColor( 'primary' )
-        router.refresh()
-      }
-    })
+    return updateBasicEvent( {
+      id: occurrence.id,
+      title: occurrence.title,
+      startDatetime: occurrence.startDatetime,
+      endDatetime: occurrence.endDatetime,
+      color: occurrence.color,
+      description: occurrence.description,
+      ...changes,
+    } )
   }
 
-  function handleFieldChange( occurrence, field, value )
+  // A row's date/title/times, saved SAVE_DELAY_MS after its last change -
+  // and not while it's incomplete or ends before it starts.
+  function handleRowChange( id, fields )
   {
-    if( !value )
-      return
+    clearTimeout( timers.current[id]?.timer )
 
-    startTransition( async () => {
-      await updateBasicEvent( {
-        id: occurrence.id,
-        title: occurrence.title,
-        startDatetime: occurrence.startDatetime,
-        endDatetime: occurrence.endDatetime,
-        color: occurrence.color,
-        description: occurrence.description,
-        [field]: value,
-      } )
+    const run = async () => {
+      delete timers.current[id]
+
+      const datetimes = toDatetimes( fields )
+
+      if( datetimes.error )
+        return
+
+      const result = await save( byId[id], {title: fields.title.trim(), ...datetimes} )
+
+      if( result?.error )
+        toast.error( result.error )
+      else
+        router.refresh()
+    }
+
+    timers.current[id] = {timer: setTimeout( run, SAVE_DELAY_MS ), flush: () => { clearTimeout( timers.current[id]?.timer ); run() }}
+  }
+
+  async function add( fields, color = 'primary' )
+  {
+    return createBasicEvent( {title: fields.title.trim(), ...toDatetimes( fields ), color, eventId, liveClassId} )
+  }
+
+  async function handleAdd( fields )
+  {
+    const result = await add( fields )
+
+    if( !result?.error )
       router.refresh()
-    })
+
+    return result
+  }
+
+  async function handleAddMany( drafts )
+  {
+    for( const draft of drafts )
+    {
+      const result = await add( draft )
+
+      if( result?.error )
+      {
+        router.refresh()
+
+        return result
+      }
+    }
+
+    toast.success( `Added ${drafts.length} occurrences` )
+    router.refresh()
   }
 
   async function handleRemove( id )
   {
     if( !await confirm( 'Remove this occurrence?', {confirmText: 'Remove', destructive: true} ) )
       return
+
+    clearTimeout( timers.current[id]?.timer )
+    delete timers.current[id]
 
     startTransition( async () => {
       await deleteBasicEvent( id )
@@ -130,6 +152,7 @@ export default function OccurrenceEditor( {eventId, liveClassId, occurrences, pe
     setEditing( occurrence )
     setDescriptionDraft( occurrence.description || '' )
     setParticipantsDraft( occurrence.Participants || [] )
+    setColorDraft( occurrence.color || 'primary' )
   }
 
   function closeEditDialog()
@@ -145,7 +168,7 @@ export default function OccurrenceEditor( {eventId, liveClassId, occurrences, pe
         title: editing.title,
         startDatetime: editing.startDatetime,
         endDatetime: editing.endDatetime,
-        color: editing.color,
+        color: colorDraft,
         description: descriptionDraft || null,
         participantIds: participantsDraft.map( p => p.id ),
       } )
@@ -155,133 +178,40 @@ export default function OccurrenceEditor( {eventId, liveClassId, occurrences, pe
   }
 
   return (
-    <div className='flex flex-col gap-4'>
-      <div className='overflow-x-auto'>
-        <table className={tableStyles.table}>
-          <thead>
-            <tr>
-              <th>Title</th>
-              <th>Start</th>
-              <th>End</th>
-              <th>Color</th>
-              <th>Participants</th>
-              <th>Details</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody>
-            {occurrences.map( occurrence => (
-              <tr key={occurrence.id}>
-                <td>
-                  <TextField
-                    size='small'
-                    defaultValue={occurrence.title}
-                    disabled={isPending}
-                    onBlur={e => handleFieldChange( occurrence, 'title', e.target.value )}
-                  />
-                </td>
-                <td>
-                  <AppReactDatepicker
-                    showTimeSelect
-                    dateFormat='yyyy-MM-dd hh:mm aa'
-                    selected={toDate( occurrence.startDatetime )}
-                    disabled={isPending}
-                    customInput={<PickersComponent />}
-                    onChange={date => date && handleFieldChange( occurrence, 'startDatetime', date )}
-                  />
-                </td>
-                <td>
-                  <AppReactDatepicker
-                    showTimeSelect
-                    dateFormat='yyyy-MM-dd hh:mm aa'
-                    selected={toDate( occurrence.endDatetime )}
-                    disabled={isPending}
-                    customInput={<PickersComponent />}
-                    onChange={date => date && handleFieldChange( occurrence, 'endDatetime', date )}
-                  />
-                </td>
-                <td>
-                  <FormControl size='small' className='min-is-[120px]'>
-                    <Select
-                      value={occurrence.color}
-                      disabled={isPending}
-                      onChange={e => handleFieldChange( occurrence, 'color', e.target.value )}
-                    >
-                      {COLOR_OPTIONS.map( option => (
-                        <MenuItem key={option} value={option}>{option}</MenuItem>
-                      ) )}
-                    </Select>
-                  </FormControl>
-                </td>
-                <td>
-                  <div className='flex flex-wrap gap-1'>
-                    {(occurrence.Participants || []).length === 0
-                      ? <Typography color='text.secondary'>—</Typography>
-                      : occurrence.Participants.map( p => (
-                        <Chip key={p.id} label={customerDisplayName( p )} size='small' variant='tonal' />
-                      ) )}
-                  </div>
-                </td>
-                <td>
-                  <IconButton size='small' disabled={isPending} onClick={() => openEditDialog( occurrence )}>
-                    <i className={occurrence.description ? 'ri-file-text-fill' : 'ri-file-text-line'} />
-                  </IconButton>
-                </td>
-                <td>
-                  <IconButton size='small' disabled={isPending} onClick={() => handleRemove( occurrence.id )}>
-                    <i className='ri-delete-bin-7-line' />
-                  </IconButton>
-                </td>
-              </tr>
-            ) )}
-            {0 === occurrences.length && (
-              <tr><td colSpan={7}>No occurrences added yet.</td></tr>
-            )}
-          </tbody>
-        </table>
-      </div>
+    <>
+      <OccurrenceTable
+        subheader={subheader}
+        rows={rows}
+        disabled={isPending}
+        shortcuts={Boolean( liveClassId )}
+        onRowChange={handleRowChange}
+        onRemove={handleRemove}
+        onAdd={handleAdd}
+        onAddMany={handleAddMany}
+        extraColumns={['Participants', 'Details']}
+        renderExtra={row => {
+          const occurrence = byId[row.key]
 
-      <div className='flex flex-wrap items-end gap-4'>
-        <TextField size='small' label='Title' value={title} onChange={e => setTitle( e.target.value )} />
-        <AppReactDatepicker
-          selectsStart
-          showTimeSelect
-          dateFormat='yyyy-MM-dd hh:mm aa'
-          selected={startDatetime}
-          startDate={startDatetime}
-          endDate={endDatetime}
-          customInput={<PickersComponent label='Start' />}
-          onChange={date => setStartDatetime( date )}
-        />
-        <AppReactDatepicker
-          selectsEnd
-          showTimeSelect
-          dateFormat='yyyy-MM-dd hh:mm aa'
-          selected={endDatetime}
-          startDate={startDatetime}
-          endDate={endDatetime}
-          minDate={startDatetime}
-          customInput={<PickersComponent label='End' />}
-          onChange={date => setEndDatetime( date )}
-        />
-        <FormControl size='small' className='min-is-[120px]'>
-          <InputLabel id='occurrence-color-select'>Color</InputLabel>
-          <Select
-            labelId='occurrence-color-select'
-            label='Color'
-            value={color}
-            onChange={e => setColor( e.target.value )}
-          >
-            {COLOR_OPTIONS.map( option => (
-              <MenuItem key={option} value={option}>{option}</MenuItem>
-            ) )}
-          </Select>
-        </FormControl>
-        <Button variant='outlined' disabled={isPending} onClick={handleAdd}>
-          Add
-        </Button>
-      </div>
-      {error && <Typography color='error' variant='body2'>{error}</Typography>}
+          return (
+            <>
+              <td>
+                <div className='flex flex-wrap gap-1'>
+                  {(occurrence.Participants || []).length === 0
+                    ? <Typography color='text.secondary'>—</Typography>
+                    : occurrence.Participants.map( p => (
+                      <Chip key={p.id} label={customerDisplayName( p )} size='small' variant='tonal' />
+                    ) )}
+                </div>
+              </td>
+              <td>
+                <IconButton size='small' disabled={isPending} onClick={() => openEditDialog( occurrence )}>
+                  <i className={occurrence.description ? 'ri-file-text-fill' : 'ri-file-text-line'} />
+                </IconButton>
+              </td>
+            </>
+          )
+        }}
+      />
 
       <Dialog open={Boolean( editing )} onClose={closeEditDialog} fullWidth maxWidth='sm'>
         <DialogTitle>
@@ -298,6 +228,14 @@ export default function OccurrenceEditor( {eventId, liveClassId, occurrences, pe
               value={descriptionDraft}
               onChange={e => setDescriptionDraft( e.target.value )}
             />
+            <FormControl fullWidth>
+              <InputLabel id='occurrence-color-select'>Color</InputLabel>
+              <Select labelId='occurrence-color-select' label='Color' value={colorDraft} onChange={e => setColorDraft( e.target.value )}>
+                {COLOR_OPTIONS.map( option => (
+                  <MenuItem key={option} value={option}>{option}</MenuItem>
+                ) )}
+              </Select>
+            </FormControl>
             <Autocomplete
               multiple
               options={personOptions}
@@ -317,6 +255,6 @@ export default function OccurrenceEditor( {eventId, liveClassId, occurrences, pe
           </Button>
         </DialogActions>
       </Dialog>
-    </div>
+    </>
   )
 }

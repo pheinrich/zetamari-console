@@ -6,6 +6,8 @@ import LiveClass from '@/db/models/LiveClass'
 import LiveClassAttendee from '@/db/models/LiveClassAttendee'
 import BasicEvent from '@/db/models/BasicEvent'
 import Person from '@/db/models/Person'
+import '@/db/models/PersonRole'   // wires Person.belongsToMany( Role ) - addRole()
+import Role from '@/db/models/Role'
 // Side-effect import - wires up BasicEvent.belongsToMany(Person, {as:
 // 'Participants'}), which readLiveClass()'s eager include below needs.
 import '@/db/models/BasicEventParticipant'
@@ -26,15 +28,39 @@ export async function createLiveClass( data )
   if( !data.name )
     return {error: 'Name is required'}
 
+  // Its first occurrences, from the Create form: [{title, startDatetime,
+  // endDatetime}] as JSON, the datetimes already ISO instants.
+  let occurrences = []
+
   try
   {
-    const liveClass = await LiveClass.create( {
-      name: data.name,
-      locationType: data.locationType || 'in_person',
-      locationName: data.locationName || null,
-      locationAddress: data.locationAddress || null,
-      cost: null != data.cost && '' !== data.cost ? Number( data.cost ) : null,
-      notes: data.notes || null,
+    occurrences = JSON.parse( data.occurrences || '[]' ).map( o => ({title: o.title?.trim(), startDatetime: new Date( o.startDatetime ), endDatetime: new Date( o.endDatetime )}) )
+  }
+  catch
+  {
+    return {error: 'The occurrences couldn\'t be read'}
+  }
+
+  for( const o of occurrences )
+    if( !o.title || isNaN( o.startDatetime ) || isNaN( o.endDatetime ) || o.endDatetime < o.startDatetime )
+      return {error: 'Each occurrence needs a title, and a start no later than its end'}
+
+  try
+  {
+    const liveClass = await sequelize.transaction( async transaction => {
+      const created = await LiveClass.create( {
+        name: data.name,
+        locationType: data.locationType || 'in_person',
+        locationName: data.locationName || null,
+        locationAddress: data.locationAddress || null,
+        cost: null != data.cost && '' !== data.cost ? Number( data.cost ) : null,
+        notes: data.notes || null,
+      }, {transaction} )
+
+      if( occurrences.length )
+        await BasicEvent.bulkCreate( occurrences.map( o => ({...o, color: 'primary', liveClassId: created.id}) ), {transaction} )
+
+      return created
     } )
 
     return {success: true, id: liveClass.id}
@@ -265,6 +291,72 @@ export async function updateLiveClassAttendee( id, updates )
     await seedDiscountIfEligible( attendee.customerId )
 
   return attendee.toJSON()
+}
+
+// Who a seat belongs to: `customerId` is an existing Person's id, 'new'
+// (create a Person - a Student - from firstName/lastName/email), or null
+// (not linked). A linked seat's name and email are copied from its
+// customer, as when one is added; an unlinked one keeps the name and
+// email given here.
+export async function setLiveClassAttendeeCustomer( id, {customerId, firstName, lastName, email} )
+{
+  const session = await auth()
+
+  if( !session )
+    unauthorized()
+
+  await sequelize.sync()
+  const attendee = await LiveClassAttendee.findByPk( id )
+
+  if( !attendee )
+    notFound()
+
+  const details = {firstName: firstName?.trim() || null, lastName: lastName?.trim() || null, email: email?.trim() || null}
+
+  try
+  {
+    const linkedId = await sequelize.transaction( async transaction => {
+      if( !customerId )
+      {
+        await attendee.update( {customerId: null, ...details}, {transaction} )
+
+        return null
+      }
+
+      let customer
+
+      if( customerId === 'new' )
+      {
+        if( !details.firstName && !details.lastName && !details.email )
+          throw new Error( 'A new customer needs a name or an email' )
+
+        customer = await Person.create( details, {transaction} )
+
+        const student = await Role.findOne( {where: {name: 'Student'}, transaction} )
+
+        if( student )
+          await customer.addRole( student, {transaction} )
+      }
+      else
+        customer = await Person.findByPk( customerId, {transaction} )
+
+      if( !customer )
+        throw new Error( 'That customer no longer exists' )
+
+      await attendee.update( {customerId: customer.id, firstName: customer.firstName, lastName: customer.lastName, email: customer.email}, {transaction} )
+
+      return customer.id
+    } )
+
+    if( linkedId && ['enrolled', 'completed'].includes( attendee.status ) )
+      await seedDiscountIfEligible( linkedId )
+
+    return {success: true, customerId: linkedId}
+  }
+  catch( error )
+  {
+    return {error: error.message || 'An unexpected error occurred while changing the attendee'}
+  }
 }
 
 export async function removeLiveClassAttendee( id )
