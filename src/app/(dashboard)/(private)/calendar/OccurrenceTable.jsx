@@ -37,8 +37,9 @@ const BLANK = {date: '', title: '', startTime: '', endTime: ''}
 // Renders the inside of its Card: a header (`title`, `subheader`) and
 // the table beneath. With `shortcuts`, "Default 2-day"/"Default 3-day" -
 // at the header's right - ask for a start date and hand the usual class
-// days (CLASS_TEMPLATES) to onAddMany( drafts ).
-export default function OccurrenceTable( {title = 'Occurrences', subheader, rows, onRowChange, onRemove, onAdd, onAddMany, onDraftChange, shortcuts = false, children, disabled, extraColumns = [], renderExtra} )
+// days (CLASS_TEMPLATES) to onAddMany( drafts ); `defaultStartDate`
+// ('YYYY-MM-DD', e.g. from the class's SKU) prefills that date.
+export default function OccurrenceTable( {title = 'Occurrences', subheader, rows, onRowChange, onRemove, onAdd, onAddMany, onDraftChange, shortcuts = false, defaultStartDate, children, disabled, extraColumns = [], renderExtra} )
 {
   const [addKey, setAddKey] = useState( 0 )   // bumped to reset the add row after each add
   const [error, setError] = useState( null )
@@ -68,7 +69,7 @@ export default function OccurrenceTable( {title = 'Occurrences', subheader, rows
       action={shortcuts && (
         <div className='flex flex-wrap items-center justify-end gap-3'>
           {CLASS_TEMPLATES.map( template => (
-            <TemplateButton key={template.label} template={template} disabled={disabled} onPick={async drafts => {
+            <TemplateButton key={template.label} template={template} defaultStartDate={defaultStartDate} disabled={disabled} onPick={async drafts => {
               const result = await onAddMany( drafts )
 
               setError( result?.error ?? null )
@@ -211,7 +212,7 @@ function parseTypedDate( text )
 // "Default 2-day" etc.: asks for the first day - typed, or picked from
 // the calendar beneath (shown in place, since a pop-up calendar can't
 // position itself inside a popover) - then adds a day each.
-function TemplateButton( {template, disabled, onPick} )
+function TemplateButton( {template, defaultStartDate, disabled, onPick} )
 {
   const [anchor, setAnchor] = useState( null )
   const [typed, setTyped] = useState( '' )
@@ -226,7 +227,7 @@ function TemplateButton( {template, disabled, onPick} )
   return (
     <>
       <Tooltip title={template.days.map( d => d.title ).join( ', then ' )}>
-        <Button size='small' variant='outlined' disabled={disabled} onClick={e => setAnchor( e.currentTarget )} startIcon={<i className='ri-calendar-schedule-line' />}>
+        <Button size='small' variant='outlined' disabled={disabled} onClick={e => { setTyped( defaultStartDate || '' ); setAnchor( e.currentTarget ) }} startIcon={<i className='ri-calendar-schedule-line' />}>
           {template.label}
         </Button>
       </Tooltip>

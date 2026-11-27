@@ -24,7 +24,7 @@ const SAVE_DELAY_MS = 400
 // the default 2- and 3-day schedules add a whole class at once. An
 // occurrence's color, description and participants are kept as they
 // are (the Calendar page edits those).
-export default function OccurrenceEditor( {eventId, liveClassId, occurrences, subheader} )
+export default function OccurrenceEditor( {eventId, liveClassId, occurrences, subheader, defaultStartDate} )
 {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
@@ -130,6 +130,7 @@ export default function OccurrenceEditor( {eventId, liveClassId, occurrences, su
         rows={rows}
         disabled={isPending}
         shortcuts={Boolean( liveClassId )}
+        defaultStartDate={defaultStartDate}
         onRowChange={handleRowChange}
         onRemove={handleRemove}
         onAdd={handleAdd}

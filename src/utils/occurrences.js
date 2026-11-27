@@ -55,6 +55,20 @@ export function toDatetimes( {title, date, startTime, endTime, endDays = 0} )
 
 export const isBlankDraft = d => !d.title?.trim() && !d.date && !d.startTime && !d.endTime
 
+// The start date a class SKU carries: "CSMirror-20270227" -> '2027-02-27',
+// or '' when it has none (or not a real date)
+export function skuStartDate( sku )
+{
+  const m = sku?.trim().match( /-(\d{4})(\d{2})(\d{2})$/ )
+
+  if( !m )
+    return ''
+
+  const date = `${m[1]}-${m[2]}-${m[3]}`
+
+  return isValid( parseISO( date ) ) && format( parseISO( date ), 'yyyy-MM-dd' ) === date ? date : ''
+}
+
 // The usual class schedules: one occurrence per consecutive day.
 export const CLASS_TEMPLATES = [
   {

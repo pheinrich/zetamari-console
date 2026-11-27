@@ -16,6 +16,7 @@ import LiveClassDetailActions from './LiveClassDetailActions'
 import LiveClassAttendeeEditor from './LiveClassAttendeeEditor'
 import OccurrenceEditor from '../../calendar/OccurrenceEditor'
 import { formatAddress } from '@/utils/addresses'
+import { skuStartDate } from '@/utils/occurrences'
 
 export default async function LiveClassPage( {params} )
 {
@@ -62,6 +63,10 @@ export default async function LiveClassPage( {params} )
                   <Chip label={liveClass.locationType === 'online' ? 'Online' : 'In Person'} variant='tonal' size='small' />
                 </Grid>
                 <Grid size={{ xs: 6, sm: 3 }}>
+                  <Typography variant='body2' color='text.secondary'>SKU</Typography>
+                  <Typography>{liveClass.sku || '—'}</Typography>
+                </Grid>
+                <Grid size={{ xs: 6, sm: 3 }}>
                   <Typography variant='body2' color='text.secondary'>Cost</Typography>
                   <Typography>{formatCurrency( liveClass.cost )}</Typography>
                 </Grid>
@@ -82,7 +87,7 @@ export default async function LiveClassPage( {params} )
 
         <Grid size={{ xs: 12 }}>
           <Card>
-            <OccurrenceEditor liveClassId={liveClass.id} occurrences={occurrences} subheader='One or more sessions, each with its own hours' />
+            <OccurrenceEditor liveClassId={liveClass.id} occurrences={occurrences} defaultStartDate={skuStartDate( liveClass.sku )} subheader='One or more sessions, each with its own hours' />
           </Card>
         </Grid>
 

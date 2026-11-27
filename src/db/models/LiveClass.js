@@ -20,6 +20,7 @@ const LiveClass = sequelize.define(
   {
     id: { type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
     name: { type: DataTypes.STRING, allowNull: false },
+    sku: { type: DataTypes.STRING },   // "CSMirror-20270227" - see utils/occurrences.js skuStartDate()
     locationType: { type: DataTypes.ENUM( 'in_person', 'online' ), allowNull: false, defaultValue: 'in_person' },
     locationId: { type: DataTypes.INTEGER, allowNull: true, references: { model: Location, key: 'id' } },   // see Location.js
     cost: { type: DataTypes.FLOAT },

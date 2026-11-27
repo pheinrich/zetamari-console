@@ -19,7 +19,7 @@ import Typography from '@mui/material/Typography'
 import { useFormSubmit } from '@/utils/formSubmitHook'
 import { createLiveClass, updateLiveClass } from '@/db/actions/liveClass'
 import { dollarInputProps } from '@/utils/units'
-import { isBlankDraft, toDatetimes } from '@/utils/occurrences'
+import { isBlankDraft, skuStartDate, toDatetimes } from '@/utils/occurrences'
 import LocationPicker from './LocationPicker'
 import { formatAddress } from '@/utils/addresses'
 import OccurrenceTable from '../calendar/OccurrenceTable'
@@ -36,6 +36,7 @@ const schema = z.object({
   name: z.string().min( 1 ),
   locationType: z.enum( ['in_person', 'online'] ),
   locationId: optionalString,
+  sku: optionalString,
   cost: optionalPositiveNumber,
   notes: optionalString,
   occurrences: optionalString,
@@ -69,6 +70,7 @@ export default function LiveClassForm( {initialData={}, locationOptions=[]} )
   const isEdit = Boolean( initialData?.id )
   const [location, setLocation] = useState( initialData?.Location ?? null )
   const [locationType, setLocationType] = useState( initialData?.locationType || 'in_person' )
+  const [sku, setSku] = useState( initialData?.sku || '' )   // its date prefills the default schedules'
 
   // New classes only - an existing one's occurrences are edited on its page
   const [occurrences, setOccurrences] = useState( [] )
@@ -149,14 +151,24 @@ export default function LiveClassForm( {initialData={}, locationOptions=[]} )
                     <input type='hidden' name='locationId' value={location?.id ?? ''} />
                     <input type='hidden' name='locationType' value={locationType} />
                   </div>
-                  <TextField
-                    label='Cost'
-                    name='cost'
-                    inputProps={{inputMode: 'decimal', maxLength: 8}}
-                    InputProps={dollarInputProps()}
-                    defaultValue={initialData?.cost ?? ''}
-                    sx={{inlineSize: 135, alignSelf: 'flex-start'}}
-                  />
+                  <div className='flex items-start gap-4'>
+                    <TextField
+                      label='SKU'
+                      name='sku'
+                      placeholder='CSMirror-YYYYMMDD'
+                      value={sku}
+                      onChange={e => setSku( e.target.value )}
+                      className='flex-1'
+                    />
+                    <TextField
+                      label='Cost'
+                      name='cost'
+                      inputProps={{inputMode: 'decimal', maxLength: 8}}
+                      InputProps={dollarInputProps()}
+                      defaultValue={initialData?.cost ?? ''}
+                      sx={{inlineSize: 135}}
+                    />
+                  </div>
                 </Grid>
                 <Grid size={{ xs: 12, sm: 6 }} className='flex'>
                   <TextField
@@ -182,6 +194,7 @@ export default function LiveClassForm( {initialData={}, locationOptions=[]} )
                   subheader='One or more sessions, each with its own hours - or start from a default schedule'
                   rows={occurrences}
                   shortcuts
+                  defaultStartDate={skuStartDate( sku )}
                   onRowChange={(key, fields) => setOccurrences( list => list.map( o => o.key === key ? {...fields, key} : o ) )}
                   onRemove={key => setOccurrences( list => list.filter( o => o.key !== key ) )}
                   onAdd={fields => setOccurrences( list => [...list, ...keyed( [fields] )] )}

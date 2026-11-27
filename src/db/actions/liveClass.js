@@ -58,7 +58,9 @@ export async function createLiveClass( data )
         name: data.name,
         locationType: data.locationType || 'in_person',
         locationId: data.locationId ? Number( data.locationId ) : null,
-        cost: null != data.cost && '' !== data.cost ? Number( data.cost ) : null,
+        sku: data.sku?.trim() || null,
+        sku: data.sku?.trim() || null,
+    cost: null != data.cost && '' !== data.cost ? Number( data.cost ) : null,
         notes: data.notes || null,
       }, {transaction} )
 
@@ -282,6 +284,7 @@ export async function updateLiveClass( data )
     name: data.name,
     locationType: data.locationType || 'in_person',
     locationId: data.locationId ? Number( data.locationId ) : null,
+    sku: data.sku?.trim() || null,
     cost: null != data.cost && '' !== data.cost ? Number( data.cost ) : null,
     notes: data.notes || null,
   } )
