@@ -3,6 +3,7 @@
 import { notFound, unauthorized } from 'next/navigation'
 import { Op, Sequelize } from 'sequelize'
 import bcrypt from 'bcryptjs'
+import Address from '@/db/models/Address'
 import Person from '@/db/models/Person'
 import Role from '@/db/models/Role'
 // Side-effect import - wires up Person.belongsToMany(Role) (setRoles()
@@ -17,6 +18,7 @@ import LiveClass from '@/db/models/LiveClass'
 import sequelize from '@/db/sequelize'
 import { auth } from '@/lib/auth'
 import { isDiscountEligible, DEFAULT_DISCOUNT_PERCENT } from '@/libs/customerLoyalty'
+import { deleteOwnedAddress, saveOwnedAddress } from '@/libs/addresses'
 
 // Users and Customers were merged into one People table (see
 // 20260917010000-merge-people.js and CONTEXT.md's Person entry) - what
@@ -64,6 +66,7 @@ export async function createUser( data )
       }, {transaction: t} )
 
       await setPersonRoles( created.id, data.roleIds, t )
+      await saveOwnedAddress( created, data.address, t )
 
       return created
     } )
@@ -164,7 +167,10 @@ export async function deleteUser( id )
   if( !person )
     notFound()
 
-  await person.destroy()
+  await sequelize.transaction( async t => {
+    await person.destroy( {transaction: t} )
+    await deleteOwnedAddress( person, t )
+  } )
 }
 
 // Every Person, regardless of Role or password - for pickers that
@@ -210,12 +216,6 @@ export async function createCustomer( data )
         company: data.company || null,
         email: data.email || null,
         phone: data.phone || null,
-        street1: data.street1 || null,
-        street2: data.street2 || null,
-        city: data.city || null,
-        state: data.state || null,
-        postalCode: data.postalCode || null,
-        country: data.country || null,
         notes: data.notes || null,
         website: data.website || null,
         acceptsEmailMarketing: parseEmailMarketing( data.acceptsEmailMarketing ),
@@ -277,13 +277,14 @@ export async function readCustomer( id, eager )
         {model: CustomerSource, as: 'CustomerSources', include: [Event]},
         {model: LiveClassAttendee, as: 'LiveClassAttendees', include: [LiveClass]},
         Role,
+        Address,
       ],
     } )
 
     return person?.toJSON()
   }
 
-  const person = await Person.findByPk( id, {include: [Role]} )
+  const person = await Person.findByPk( id, {include: [Role, Address]} )
 
   return person?.toJSON()
 }
@@ -329,7 +330,7 @@ export async function readCustomers()
     unauthorized()
 
   await sequelize.sync()
-  const customers = await Person.findAll( {where: {password: null}, include: [Role]} )
+  const customers = await Person.findAll( {where: {password: null}, include: [Role, Address]} )
 
   if( 0 === customers.length )
     return []
@@ -388,12 +389,6 @@ export async function updateCustomer( data )
       company: data.company || null,
       email: data.email || null,
       phone: data.phone || null,
-      street1: data.street1 || null,
-      street2: data.street2 || null,
-      city: data.city || null,
-      state: data.state || null,
-      postalCode: data.postalCode || null,
-      country: data.country || null,
       notes: data.notes || null,
       website: data.website || null,
       acceptsEmailMarketing: parseEmailMarketing( data.acceptsEmailMarketing ),
@@ -401,6 +396,7 @@ export async function updateCustomer( data )
     }, {transaction: t} )
 
     await setPersonRoles( person.id, data.roleIds, t )
+    await saveOwnedAddress( person, data.address, t )
   } )
 
   return person.toJSON()
@@ -419,7 +415,10 @@ export async function deleteCustomer( id )
   if( !person )
     notFound()
 
-  await person.destroy()
+  await sequelize.transaction( async t => {
+    await person.destroy( {transaction: t} )
+    await deleteOwnedAddress( person, t )
+  } )
 }
 
 // --- Sources -------------------------------------------------------------

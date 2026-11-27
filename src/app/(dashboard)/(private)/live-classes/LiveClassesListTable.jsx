@@ -58,7 +58,7 @@ const fuzzyFilter = (row, columnId, value, addMeta) => {
 
   const itemRank = 'name' === columnId
     ? multiFieldFuzzyFilter( [
-      c.name, c.locationName, c.locationAddress,
+      c.name, c.Location?.name, c.Location?.Address?.street1, c.Location?.Address?.city, c.Location?.Address?.state,
       'online' === c.locationType ? 'online zoom virtual' : 'in person',
       c.notes,
     ], value )
@@ -113,7 +113,7 @@ export default function LiveClassesListTable( {liveClassData} )
               <Typography component={Link} href={`/live-classes/${row.original.id}`} className='font-medium' color='text.primary'>
                 {row.original.name}
               </Typography>
-              {row.original.locationName && <Typography variant='body2'>{row.original.locationName}</Typography>}
+              {row.original.Location && <Typography variant='body2'>{row.original.Location.name}</Typography>}
             </div>
           </div>
         ),

@@ -2,6 +2,8 @@ import { Op } from 'sequelize'
 
 import BasicEvent from '@/db/models/BasicEvent'
 import LiveClass from '@/db/models/LiveClass'
+import Location from '@/db/models/Location'
+import Address from '@/db/models/Address'
 
 // Class seats sold through a sales channel. Squarespace sells Angie's
 // classes as products named
@@ -76,14 +78,14 @@ export async function findLiveClass( seat, transaction )
   if( !ids.length )
     return null
 
-  const classes = await LiveClass.findAll( {where: {id: ids}, include: [{model: BasicEvent, attributes: ['startDatetime']}], transaction} )
+  const classes = await LiveClass.findAll( {where: {id: ids}, include: [{model: BasicEvent, attributes: ['startDatetime']}, {model: Location, include: [Address]}], transaction} )
   const onDay = classes.filter( c => localDate( Math.min( ...c.BasicEvents.map( e => +new Date( e.startDatetime ) ) ) ) === seat.startDate )
 
   if( onDay.length === 1 )
     return onDay[0].id
 
   const city = seat.city?.toLowerCase()
-  const inCity = city ? onDay.filter( c => `${c.locationName ?? ''} ${c.locationAddress ?? ''}`.toLowerCase().includes( city ) ) : []
+  const inCity = city ? onDay.filter( c => `${c.Location?.name ?? ''} ${c.Location?.Address?.city ?? ''} ${c.Location?.Address?.street1 ?? ''}`.toLowerCase().includes( city ) ) : []
 
   return inCity.length === 1 ? inCity[0].id : null
 }
@@ -94,7 +96,7 @@ export async function findLiveClass( seat, transaction )
 export async function liveClassOptions( {pastDays = 60, include = []} = {} )
 {
   const since = new Date( Date.now() - pastDays * 86400000 )
-  const classes = await LiveClass.findAll( {include: [{model: BasicEvent, attributes: ['startDatetime']}]} )
+  const classes = await LiveClass.findAll( {include: [{model: BasicEvent, attributes: ['startDatetime']}, {model: Location, include: [Address]}]} )
 
   return classes
     .map( c => ({c, start: c.BasicEvents.length ? Math.min( ...c.BasicEvents.map( e => +new Date( e.startDatetime ) ) ) : null}) )
@@ -109,5 +111,5 @@ export function liveClassLabel( liveClass, start )
     ? 'no date'
     : new Date( start ).toLocaleDateString( 'en-US', {timeZone: TIME_ZONE, weekday: 'short', month: 'short', day: 'numeric', year: 'numeric'} )
 
-  return [liveClass.name, when, liveClass.locationName].filter( Boolean ).join( ' - ' )
+  return [liveClass.name, when, liveClass.Location?.name].filter( Boolean ).join( ' - ' )
 }

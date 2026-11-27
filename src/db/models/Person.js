@@ -1,6 +1,7 @@
 import { DataTypes } from 'sequelize'
 import bcrypt from 'bcryptjs'
 import sequelize from '@/db/sequelize.js'
+import Address from '@/db/models/Address'
 
 // The unified person record - what used to be split across User (staff
 // logins) and Customer (the customer/contact/student master list) until
@@ -25,12 +26,7 @@ const Person = sequelize.define(
     email: { type: DataTypes.STRING },
     password: { type: DataTypes.STRING, allowNull: true },
     phone: { type: DataTypes.STRING },
-    street1: { type: DataTypes.STRING },
-    street2: { type: DataTypes.STRING },
-    city: { type: DataTypes.STRING },
-    state: { type: DataTypes.STRING },
-    postalCode: { type: DataTypes.STRING },
-    country: { type: DataTypes.STRING },
+    addressId: { type: DataTypes.INTEGER, allowNull: true, references: { model: Address, key: 'id' } },   // see Address.js
     website: { type: DataTypes.STRING },
     notes: { type: DataTypes.TEXT },
     createdOn: { type: DataTypes.DATEONLY, allowNull: false, defaultValue: DataTypes.NOW },
@@ -51,5 +47,7 @@ Person.beforeCreate( async (person) => {
   if( person.password )
     person.password = await bcrypt.hash( person.password, 10 )
 })
+
+Person.belongsTo( Address, {foreignKey: 'addressId'} )
 
 export default Person

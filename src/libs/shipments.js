@@ -4,6 +4,7 @@ import ChannelOrder, { ChannelOrderOrder } from '@/db/models/ChannelOrder'
 import StockItem from '@/db/models/StockItem'
 import Order from '@/db/models/Order'
 import OrderProduct from '@/db/models/OrderProduct'
+import Address from '@/db/models/Address'
 import Person from '@/db/models/Person'
 import Piece from '@/db/models/Piece'
 import Product from '@/db/models/Product'
@@ -199,17 +200,18 @@ async function defaults( order, transaction )
   if( shipTo )
     return {shipTo, service: method, carrier: method?.match( CARRIER )?.[1] ?? null}
 
-  const customer = order.customerId ? await Person.findByPk( order.customerId, {transaction} ) : null
+  const customer = order.customerId ? await Person.findByPk( order.customerId, {include: [Address], transaction} ) : null
+  const home = customer?.Address
 
   const address = customer && {
     name: [customer.firstName, customer.lastName].filter( Boolean ).join( ' ' ) || null,
     company: customer.company,
-    street1: customer.street1,
-    street2: customer.street2,
-    city: customer.city,
-    state: customer.state,
-    postalCode: customer.postalCode,
-    country: customer.country,
+    street1: home?.street1 ?? null,
+    street2: home?.street2 ?? null,
+    city: home?.city ?? null,
+    state: home?.state ?? null,
+    postalCode: home?.postalCode ?? null,
+    country: home?.country ?? null,
     phone: customer.phone,
     email: customer.email,
   }

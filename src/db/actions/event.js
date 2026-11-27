@@ -2,6 +2,7 @@
 
 import { notFound, unauthorized } from 'next/navigation'
 import { Sequelize } from 'sequelize'
+import Address from '@/db/models/Address'
 import Event from '@/db/models/Event'
 import BasicEvent from '@/db/models/BasicEvent'
 import Person from '@/db/models/Person'
@@ -10,6 +11,7 @@ import Person from '@/db/models/Person'
 import '@/db/models/BasicEventParticipant'
 import sequelize from '@/db/sequelize'
 import { auth } from '@/lib/auth'
+import { deleteOwnedAddress, saveOwnedAddress } from '@/libs/addresses'
 import { occurrenceDateRange } from '@/utils/basicEventFormat'
 
 // Deliberately lightweight - art shows/conferences are being modeled now
@@ -38,14 +40,19 @@ export async function createEvent( data )
 
   try
   {
-    const event = await Event.create( {
-      type: data.type,
-      name: data.name,
-      address: data.address || null,
-      phone: data.phone || null,
-      email: data.email || null,
-      website: data.website || null,
-      boothNumber: data.boothNumber || null,
+    const event = await sequelize.transaction( async transaction => {
+      const created = await Event.create( {
+        type: data.type,
+        name: data.name,
+        phone: data.phone || null,
+        email: data.email || null,
+        website: data.website || null,
+        boothNumber: data.boothNumber || null,
+      }, {transaction} )
+
+      await saveOwnedAddress( created, data.address, transaction )
+
+      return created
     } )
 
     return {success: true, id: event.id}
@@ -71,13 +78,13 @@ export async function readEvent( id, eager )
     id,
     eager
       ? {
-        include: [{model: BasicEvent, include: [{model: Person, as: 'Participants'}]}],
+        include: [{model: BasicEvent, include: [{model: Person, as: 'Participants'}]}, Address],
 
         // Same reasoning as readLiveClass() - without this, occurrence
         // row order (and which occurrence renders first) is arbitrary.
         order: [[BasicEvent, 'startDatetime', 'ASC']],
       }
-      : undefined
+      : {include: [Address]}
   )
 
   return event?.toJSON()
@@ -114,14 +121,17 @@ export async function updateEvent( data )
   if( !event )
     notFound()
 
-  await event.update( {
-    type: data.type,
-    name: data.name,
-    address: data.address || null,
-    phone: data.phone || null,
-    email: data.email || null,
-    website: data.website || null,
-    boothNumber: data.boothNumber || null,
+  await sequelize.transaction( async transaction => {
+    await event.update( {
+      type: data.type,
+      name: data.name,
+      phone: data.phone || null,
+      email: data.email || null,
+      website: data.website || null,
+      boothNumber: data.boothNumber || null,
+    }, {transaction} )
+
+    await saveOwnedAddress( event, data.address, transaction )
   } )
 
   return event.toJSON()
@@ -140,5 +150,8 @@ export async function deleteEvent( id )
   if( !event )
     notFound()
 
-  await event.destroy()
+  await sequelize.transaction( async transaction => {
+    await event.destroy( {transaction} )
+    await deleteOwnedAddress( event, transaction )
+  } )
 }

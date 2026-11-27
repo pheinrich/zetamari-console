@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation'
 import LiveClassForm from '../../LiveClassForm'
-import { readLiveClass, readLiveClassLocations } from '@/db/actions/liveClass'
+import { readLiveClass, readLocations } from '@/db/actions/liveClass'
 
 export default async function EditLiveClassPage( {params} )
 {
@@ -8,7 +8,7 @@ export default async function EditLiveClassPage( {params} )
 
   const [liveClass, locationOptions] = await Promise.all([
     readLiveClass( id ),
-    readLiveClassLocations(),
+    readLocations(),
   ])
 
   if( !liveClass )

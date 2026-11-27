@@ -15,19 +15,16 @@ export default function LiveClassTableFilters( {liveClassData, setData, filters,
 {
   const { location = '' } = filters || {}
 
-  // Location values come straight from the data (locationName is
-  // free-text - "Deer Island Retreat", "Seattle Mosaic Arts", etc.) rather
-  // than a fixed enum, so the dropdown always reflects whatever's actually
-  // been seeded/entered instead of drifting out of sync with it.
+  // The Locations classes in the list are held at (see Location.js)
   const locationOptions = useMemo( () => {
-    const names = new Set( (liveClassData || []).map( c => c.locationName ).filter( Boolean ) )
+    const names = new Set( (liveClassData || []).map( c => c.Location?.name ).filter( Boolean ) )
 
     return [...names].sort()
   }, [liveClassData] )
 
   useEffect( () => {
     const filtered = liveClassData?.filter( liveClass => {
-      if( location && liveClass.locationName !== location ) return false
+      if( location && liveClass.Location?.name !== location ) return false
 
       return true
     })

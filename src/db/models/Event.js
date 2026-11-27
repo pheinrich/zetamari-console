@@ -1,5 +1,6 @@
 import { DataTypes } from 'sequelize'
 import sequelize from '@/db/sequelize.js'
+import Address from '@/db/models/Address'
 
 // An art show or conference Angie sells/teaches at (see the
 // 20260807010000-events.js migration for the full rationale) - one table
@@ -21,7 +22,7 @@ const Event = sequelize.define(
     id: { type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
     type: { type: DataTypes.ENUM( 'art_show', 'conference' ), allowNull: false },
     name: { type: DataTypes.STRING, allowNull: false },
-    address: { type: DataTypes.STRING },
+    addressId: { type: DataTypes.INTEGER, allowNull: true, references: { model: Address, key: 'id' } },   // see Address.js
     phone: { type: DataTypes.STRING },
     email: { type: DataTypes.STRING },
     website: { type: DataTypes.STRING },
@@ -30,5 +31,7 @@ const Event = sequelize.define(
   {
     timestamps: false,
   })
+
+Event.belongsTo( Address, {foreignKey: 'addressId'} )
 
 export default Event

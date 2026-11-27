@@ -15,6 +15,7 @@ import Role from '@/db/models/Role'
 import Shipment from '@/db/models/Shipment'
 import sequelize from '@/db/sequelize'
 import { classSeat } from '@/libs/channelOrders/classSeats'
+import { saveOwnedAddress } from '@/libs/addresses'
 import { parseRequestedDate } from '@/utils/shipDate'
 
 // Accepting a reviewed Channel Order into an Order - see CONTEXT.md's
@@ -210,20 +211,17 @@ async function createCustomer( order, transaction )
   if( channel.channelIsCustomer )
     return Person.create( {company: channel.channelIsCustomer}, {transaction} )
 
-  const a = order.shipTo ?? {}
-
-  return Person.create( {
+  const person = await Person.create( {
     ...splitName( order.buyerName ),
     company: order.buyerCompany ?? null,
     email: order.buyerEmail ?? null,
     phone: order.buyerPhone ?? null,
-    street1: a.street1 ?? null,
-    street2: a.street2 ?? null,
-    city: a.city ?? null,
-    state: a.state ?? null,
-    postalCode: a.postalCode ?? null,
-    country: a.country ?? null,
   }, {transaction} )
+
+  // The ship-to becomes their address (the same field names)
+  await saveOwnedAddress( person, order.shipTo, transaction )
+
+  return person
 }
 
 // Records where the customer came from (once per channel, with the buyer

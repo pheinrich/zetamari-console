@@ -1,9 +1,9 @@
 import LiveClassForm from '../LiveClassForm'
-import { readLiveClassLocations } from '@/db/actions/liveClass'
+import { readLocations } from '@/db/actions/liveClass'
 
 export default async function NewLiveClassPage()
 {
-  const locationOptions = await readLiveClassLocations()
+  const locationOptions = await readLocations()
 
   return <LiveClassForm locationOptions={locationOptions} />
 }

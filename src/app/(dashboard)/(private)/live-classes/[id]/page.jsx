@@ -8,22 +8,22 @@ import Chip from '@mui/material/Chip'
 import Typography from '@mui/material/Typography'
 
 import { readLiveClass } from '@/db/actions/liveClass'
-import { readCustomers, readPeople } from '@/db/actions/person'
+import { readCustomers } from '@/db/actions/person'
 import { formatCurrency } from '../../products/productFormat'
 import { formatOccurrenceRange } from '@/utils/basicEventFormat'
 import CustomAvatar from '@core/components/mui/Avatar'
 import LiveClassDetailActions from './LiveClassDetailActions'
 import LiveClassAttendeeEditor from './LiveClassAttendeeEditor'
 import OccurrenceEditor from '../../calendar/OccurrenceEditor'
+import { formatAddress } from '@/utils/addresses'
 
 export default async function LiveClassPage( {params} )
 {
   const {id} = await params
 
-  const [liveClass, customers, people] = await Promise.all([
+  const [liveClass, customers] = await Promise.all([
     readLiveClass( id, true ),
     readCustomers(),
-    readPeople(),
   ])
 
   if( !liveClass )
@@ -67,7 +67,7 @@ export default async function LiveClassPage( {params} )
                 </Grid>
                 <Grid size={{ xs: 12, sm: 6 }}>
                   <Typography variant='body2' color='text.secondary'>Location Name / Address</Typography>
-                  <Typography>{[liveClass.locationName, liveClass.locationAddress].filter( Boolean ).join( ' — ' ) || '—'}</Typography>
+                  <Typography>{[liveClass.Location?.name, formatAddress( liveClass.Location?.Address )].filter( Boolean ).join( ' — ' ) || '—'}</Typography>
                 </Grid>
                 {liveClass.notes && (
                   <Grid size={{ xs: 12 }}>
@@ -82,7 +82,7 @@ export default async function LiveClassPage( {params} )
 
         <Grid size={{ xs: 12 }}>
           <Card>
-            <OccurrenceEditor liveClassId={liveClass.id} occurrences={occurrences} personOptions={people} subheader='One or more sessions, each with its own hours' />
+            <OccurrenceEditor liveClassId={liveClass.id} occurrences={occurrences} subheader='One or more sessions, each with its own hours' />
           </Card>
         </Grid>
 

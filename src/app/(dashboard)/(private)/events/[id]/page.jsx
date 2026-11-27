@@ -8,20 +8,17 @@ import Chip from '@mui/material/Chip'
 import Typography from '@mui/material/Typography'
 
 import { readEvent } from '@/db/actions/event'
-import { readPeople } from '@/db/actions/person'
 import { formatOccurrenceRange } from '@/utils/basicEventFormat'
 import CustomAvatar from '@core/components/mui/Avatar'
 import EventDetailActions from './EventDetailActions'
 import OccurrenceEditor from '../../calendar/OccurrenceEditor'
+import { formatAddress } from '@/utils/addresses'
 
 export default async function EventPage( {params} )
 {
   const {id} = await params
 
-  const [event, people] = await Promise.all([
-    readEvent( id, true ),
-    readPeople(),
-  ])
+  const event = await readEvent( id, true )
 
   if( !event )
     return notFound()
@@ -77,7 +74,7 @@ export default async function EventPage( {params} )
                 </Grid>
                 <Grid size={{ xs: 12 }}>
                   <Typography variant='body2' color='text.secondary'>Address</Typography>
-                  <Typography>{event.address || '—'}</Typography>
+                  <Typography>{formatAddress( event.Address ) || '—'}</Typography>
                 </Grid>
               </Grid>
             </CardContent>
@@ -86,7 +83,7 @@ export default async function EventPage( {params} )
 
         <Grid size={{ xs: 12 }}>
           <Card>
-            <OccurrenceEditor eventId={event.id} occurrences={occurrences} personOptions={people} subheader='One or more days, each with its own hours' />
+            <OccurrenceEditor eventId={event.id} occurrences={occurrences} subheader='One or more days, each with its own hours' />
           </Card>
         </Grid>
       </Grid>

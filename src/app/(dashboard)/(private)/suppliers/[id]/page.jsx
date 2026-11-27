@@ -11,6 +11,7 @@ import { readSupplier } from '@/db/actions/supplier'
 import { formatCurrency } from '../../products/productFormat'
 import CustomAvatar from '@core/components/mui/Avatar'
 import SupplierDetailActions from './SupplierDetailActions'
+import { formatAddress } from '@/utils/addresses'
 
 export default async function SupplierPage( {params} )
 {
@@ -57,7 +58,7 @@ export default async function SupplierPage( {params} )
                 </Grid>
                 <Grid size={{ xs: 12, sm: 6 }}>
                   <Typography variant='body2' color='text.secondary'>Address</Typography>
-                  <Typography>{supplier.address || '—'}</Typography>
+                  <Typography>{formatAddress( supplier.Address ) || '—'}</Typography>
                 </Grid>
                 {supplier.notes && (
                   <Grid size={{ xs: 12 }}>

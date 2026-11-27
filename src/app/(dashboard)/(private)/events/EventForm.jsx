@@ -19,6 +19,7 @@ import TextField from '@mui/material/TextField'
 import Typography from '@mui/material/Typography'
 
 import { useFormSubmit } from '@/utils/formSubmitHook'
+import AddressFields, { addressSchema } from '@/components/AddressFields'
 import { createEvent, updateEvent } from '@/db/actions/event'
 
 const optionalString = z.preprocess( (val) => (val === '' ? undefined : val), z.string().optional() )
@@ -27,7 +28,7 @@ const schema = z.object({
   id: z.preprocess( (val) => (val === '' || val == null ? undefined : val), z.coerce.number().optional() ),
   type: z.enum( ['art_show', 'conference'] ),
   name: z.string().min( 1 ),
-  address: optionalString,
+  address: addressSchema,
   phone: optionalString,
   email: optionalString,
   website: optionalString,
@@ -115,9 +116,7 @@ export default function EventForm( {initialData={}} )
                 <Grid size={{ xs: 12, sm: 6 }}>
                   <TextField fullWidth label='Booth Number' name='boothNumber' defaultValue={initialData?.boothNumber || ''} />
                 </Grid>
-                <Grid size={{ xs: 12 }}>
-                  <TextField fullWidth label='Address' name='address' defaultValue={initialData?.address || ''} />
-                </Grid>
+                <AddressFields address={initialData?.Address} />
               </Grid>
             </CardContent>
           </Card>

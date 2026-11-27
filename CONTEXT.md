@@ -80,6 +80,12 @@ The Google Sheet's manual workaround column identifying a line item's primary ra
 **Person**:
 The single record for anyone the business deals with — staff, retail/wholesale customers, class students, art-show contacts — replacing the separate User (staff login) and Customer (contact/student) tables. See docs/adr/0008: a login-capable "User" and a "Customer" turned out to be the same underlying concept (a person playing a role), so `User`/`Customer` were merged into one `People` table once Role gave the app somewhere to put "which capacities does this person act in" other than a single enum column. A Person can hold any number of Roles at once (e.g. an Owner who's also an Admin and a Student), including zero. Whether a Person "is a User" is derived from whether `password` is set, not a stored flag — the same "derived, not stored" spirit as a Customer "being a student" via LiveClassAttendee.
 
+**Address**:
+A postal address — street, city, state, postal code, country — in one shared table that every addressable record points at: a Person, an Event, a Supplier, a Location. Each owner has its own (editing one contact's never moves another's) and it goes when its owner does. Replaced People's own address columns and the free-text address lines Events, Suppliers and Live Classes carried, which were split into fields best-effort when moved. A Channel Order's ship-to is not an Address: it stays the snapshot the channel sent (in the same field names), becoming a new customer's Address when one is created from it.
+
+**Location**:
+A named place classes are held — Angie's Studio, Angie's Studio (Zoom), a partner studio — with its Address. A Live Class is held at one; renaming or re-addressing it changes it for every class held there, and it can't be deleted while any class uses it. Picked, added, edited and deleted from the class form's Location field, Angie's own listed first. Replaced each class's free-text location name and address.
+
 **Role**:
 A named bundle of Permissions a Person can be assigned (Admin, User, Owner, Assistant, Retail Customer, Wholesale Customer, Student, ...), replacing the old `User.role` and `Customer.type` enum columns. Many-to-many with Person via PersonRole, and many-to-many with Permission via RolePermission.
 

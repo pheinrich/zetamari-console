@@ -2,7 +2,9 @@
 
 import { notFound, unauthorized } from 'next/navigation'
 import { Sequelize } from 'sequelize'
+import Address from '@/db/models/Address'
 import LiveClass from '@/db/models/LiveClass'
+import Location from '@/db/models/Location'
 import LiveClassAttendee from '@/db/models/LiveClassAttendee'
 import BasicEvent from '@/db/models/BasicEvent'
 import Person from '@/db/models/Person'
@@ -15,6 +17,10 @@ import sequelize from '@/db/sequelize'
 import { auth } from '@/lib/auth'
 import { seedDiscountIfEligible } from '@/db/actions/person'
 import { occurrenceDateRange } from '@/utils/basicEventFormat'
+import { addressFields, saveOwnedAddress } from '@/libs/addresses'
+
+// A class's Location with its Address, for every read that shows one
+const WITH_LOCATION = {model: Location, include: [Address]}
 
 export async function createLiveClass( data )
 {
@@ -51,8 +57,7 @@ export async function createLiveClass( data )
       const created = await LiveClass.create( {
         name: data.name,
         locationType: data.locationType || 'in_person',
-        locationName: data.locationName || null,
-        locationAddress: data.locationAddress || null,
+        locationId: data.locationId ? Number( data.locationId ) : null,
         cost: null != data.cost && '' !== data.cost ? Number( data.cost ) : null,
         notes: data.notes || null,
       }, {transaction} )
@@ -89,6 +94,7 @@ export async function readLiveClass( id, eager )
       include: [
         {model: LiveClassAttendee, include: [{model: Person, as: 'Customer'}]},
         {model: BasicEvent, include: [{model: Person, as: 'Participants'}]},
+        WITH_LOCATION,
       ],
 
       // Without this, occurrences come back in whatever order the DB
@@ -102,7 +108,7 @@ export async function readLiveClass( id, eager )
     return liveClass?.toJSON()
   }
 
-  const liveClass = await LiveClass.findByPk( id )
+  const liveClass = await LiveClass.findByPk( id, {include: [WITH_LOCATION]} )
 
   return liveClass?.toJSON()
 }
@@ -115,7 +121,7 @@ export async function readLiveClasses()
     unauthorized()
 
   await sequelize.sync()
-  const liveClasses = await LiveClass.findAll( {include: [BasicEvent]} )
+  const liveClasses = await LiveClass.findAll( {include: [BasicEvent, WITH_LOCATION]} )
 
   if( 0 === liveClasses.length )
     return []
@@ -139,15 +145,11 @@ export async function readLiveClasses()
     .sort( (a, b) => (b.startDate || '').localeCompare( a.startDate || '' ) )
 }
 
-// The distinct locations already in use across existing classes, one row
-// per locationName (first address seen for that name wins) - there's no
-// separate Location model, locationName/locationAddress are just plain
-// columns on LiveClass, so this is what LiveClassForm's location
-// Autocomplete suggests from to steer people toward reusing "Angie's
-// Studio" rather than retyping a slightly different name/address each
-// time (e.g. a stray comma or abbreviation) that then reads as a
-// different location everywhere locations get grouped or compared.
-export async function readLiveClassLocations()
+// --- Locations (see Location.js) ---------------------------------------
+
+// Every Location with its Address and how many classes are held there -
+// what the class form's location picker lists, edits and deletes.
+export async function readLocations()
 {
   const session = await auth()
 
@@ -156,16 +158,111 @@ export async function readLiveClassLocations()
 
   await sequelize.sync()
 
-  const rows = await LiveClass.findAll( {attributes: ['locationName', 'locationAddress']} )
-  const byName = new Map()
+  const [locations, counts] = await Promise.all( [
+    Location.findAll( {include: [Address], order: [['name', 'ASC']]} ),
+    LiveClass.findAll( {
+      where: {locationId: {[Sequelize.Op.ne]: null}},
+      attributes: ['locationId', [Sequelize.fn( 'COUNT', Sequelize.col( 'id' ) ), 'count']],
+      group: ['locationId'],
+    } ),
+  ] )
 
-  for( const row of rows )
-    if( row.locationName && !byName.has( row.locationName ) )
-      byName.set( row.locationName, row.locationAddress || null )
+  const countById = Object.fromEntries( counts.map( c => [c.locationId, Number( c.get( 'count' ) )] ) )
 
-  return [...byName.entries()]
-    .map( ([locationName, locationAddress]) => ({locationName, locationAddress}) )
-    .sort( (a, b) => a.locationName.localeCompare( b.locationName ) )
+  return locations.map( l => ({...l.toJSON(), classCount: countById[l.id] || 0}) )
+}
+
+// {name, address: {street1, ...}} -> {success, location} or {error}
+export async function createLocation( {name, address} )
+{
+  const session = await auth()
+
+  if( !session )
+    unauthorized()
+
+  await sequelize.sync()
+
+  if( !name?.trim() )
+    return {error: 'A location needs a name'}
+
+  if( await Location.count( {where: {name: name.trim()}} ) )
+    return {error: `There's already a location named ${name.trim()}`}
+
+  const location = await sequelize.transaction( async transaction => {
+    const created = await Location.create( {name: name.trim()}, {transaction} )
+
+    await saveOwnedAddress( created, address, transaction )
+
+    return created
+  } )
+
+  return {success: true, location: await readLocationJSON( location.id )}
+}
+
+// Renames/re-addresses a Location - for every class held there.
+export async function updateLocation( id, {name, address} )
+{
+  const session = await auth()
+
+  if( !session )
+    unauthorized()
+
+  await sequelize.sync()
+
+  const location = await Location.findByPk( id )
+
+  if( !location )
+    notFound()
+
+  if( !name?.trim() )
+    return {error: 'A location needs a name'}
+
+  if( await Location.count( {where: {name: name.trim(), id: {[Sequelize.Op.ne]: id}}} ) )
+    return {error: `There's already a location named ${name.trim()}`}
+
+  await sequelize.transaction( async transaction => {
+    await location.update( {name: name.trim()}, {transaction} )
+    await saveOwnedAddress( location, addressFields( address ), transaction )
+  } )
+
+  return {success: true, location: await readLocationJSON( id )}
+}
+
+// Refused while any class is held there.
+export async function deleteLocation( id )
+{
+  const session = await auth()
+
+  if( !session )
+    unauthorized()
+
+  await sequelize.sync()
+
+  const location = await Location.findByPk( id )
+
+  if( !location )
+    notFound()
+
+  const classes = await LiveClass.count( {where: {locationId: id}} )
+
+  if( classes )
+    return {error: `${location.name} is used by ${classes} class${classes === 1 ? '' : 'es'} - move them elsewhere first`}
+
+  await sequelize.transaction( async transaction => {
+    await location.destroy( {transaction} )
+
+    if( location.addressId )
+      await Address.destroy( {where: {id: location.addressId}, transaction} )
+  } )
+
+  return {success: true}
+}
+
+async function readLocationJSON( id )
+{
+  const location = await Location.findByPk( id, {include: [Address]} )
+
+  return {...location.toJSON(), classCount: await LiveClass.count( {where: {locationId: id}} )}
 }
 
 export async function updateLiveClass( data )
@@ -184,8 +281,7 @@ export async function updateLiveClass( data )
   await liveClass.update( {
     name: data.name,
     locationType: data.locationType || 'in_person',
-    locationName: data.locationName || null,
-    locationAddress: data.locationAddress || null,
+    locationId: data.locationId ? Number( data.locationId ) : null,
     cost: null != data.cost && '' !== data.cost ? Number( data.cost ) : null,
     notes: data.notes || null,
   } )

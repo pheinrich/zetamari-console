@@ -2,12 +2,14 @@
 
 import { notFound, unauthorized } from 'next/navigation'
 import { Sequelize } from 'sequelize'
+import Address from '@/db/models/Address'
 import BillOfMaterial from '@/db/models/BillOfMaterial'
 import Product from '@/db/models/Product'
 import Supplier from '@/db/models/Supplier'
 import SupplierProduct from '@/db/models/SupplierProduct'
 import sequelize from '@/db/sequelize'
 import { auth } from '@/lib/auth'
+import { deleteOwnedAddress, saveOwnedAddress } from '@/libs/addresses'
 import { markProductsCostStale } from '@/db/actions/productCost'
 
 // A material's price feeds the "bom" CostFactor (libs/costFactors.js's
@@ -39,14 +41,19 @@ export async function createSupplier( data )
 
   try
   {
-    const supplier = await Supplier.create({
-      name: data.name,
-      email: data.email,
-      address: data.address,
-      phone: data.phone,
-      url: data.url,
-      notes: data.notes,
-    })
+    const supplier = await sequelize.transaction( async transaction => {
+      const created = await Supplier.create( {
+        name: data.name,
+        email: data.email,
+        phone: data.phone,
+        url: data.url,
+        notes: data.notes,
+      }, {transaction} )
+
+      await saveOwnedAddress( created, data.address, transaction )
+
+      return created
+    } )
 
     return {success: true, id: supplier.id}
   }
@@ -79,13 +86,14 @@ export async function readSupplier( id, eager )
           as: 'products',
           through: {attributes: ['id', 'partNumber', 'url', 'cost', 'preferred']},
         },
+        Address,
       ],
     })
 
     return supplier?.toJSON()
   }
 
-  const supplier = await Supplier.findByPk( id )
+  const supplier = await Supplier.findByPk( id, {include: [Address]} )
   return supplier?.toJSON()
 }
 
@@ -124,14 +132,17 @@ export async function updateSupplier( data )
   if( !supplier )
     notFound()
 
-  await supplier.update({
-    name: data.name,
-    email: data.email,
-    address: data.address,
-    phone: data.phone,
-    url: data.url,
-    notes: data.notes,
-  })
+  await sequelize.transaction( async transaction => {
+    await supplier.update( {
+      name: data.name,
+      email: data.email,
+      phone: data.phone,
+      url: data.url,
+      notes: data.notes,
+    }, {transaction} )
+
+    await saveOwnedAddress( supplier, data.address, transaction )
+  } )
   return supplier.toJSON()
 }
 
@@ -153,7 +164,10 @@ export async function deleteSupplier( id )
   // handles an array of material ids as readily as one).
   const priceLinks = await SupplierProduct.findAll( {where: {supplierId: id}, attributes: ['productId']} )
 
-  await supplier.destroy()
+  await sequelize.transaction( async transaction => {
+    await supplier.destroy( {transaction} )
+    await deleteOwnedAddress( supplier, transaction )
+  } )
 
   await markProductsUsingMaterialStale( priceLinks.map( l => l.productId ) )
 }

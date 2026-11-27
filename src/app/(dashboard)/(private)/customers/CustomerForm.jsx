@@ -20,6 +20,7 @@ import Typography from '@mui/material/Typography'
 import Autocomplete from '@mui/material/Autocomplete'
 
 import { useFormSubmit } from '@/utils/formSubmitHook'
+import AddressFields, { addressSchema } from '@/components/AddressFields'
 import { createCustomer, updateCustomer } from '@/db/actions/person'
 import { unitInputProps } from '@/utils/units'
 
@@ -44,12 +45,7 @@ const schema = z.object({
   company: optionalString,
   email: optionalString,
   phone: optionalString,
-  street1: optionalString,
-  street2: optionalString,
-  city: optionalString,
-  state: optionalString,
-  postalCode: optionalString,
-  country: optionalString,
+  address: addressSchema,
   notes: optionalString,
   website: optionalString,
   acceptsEmailMarketing: emailMarketingValue,
@@ -161,24 +157,7 @@ export default function CustomerForm( {initialData={}, roleOptions=[]} )
             <CardHeader title='Address' />
             <CardContent>
               <Grid container spacing={5}>
-                <Grid size={{ xs: 12 }}>
-                  <TextField fullWidth label='Street 1' name='street1' defaultValue={initialData?.street1 || ''} />
-                </Grid>
-                <Grid size={{ xs: 12 }}>
-                  <TextField fullWidth label='Street 2' name='street2' defaultValue={initialData?.street2 || ''} />
-                </Grid>
-                <Grid size={{ xs: 12, sm: 6 }}>
-                  <TextField fullWidth label='City' name='city' defaultValue={initialData?.city || ''} />
-                </Grid>
-                <Grid size={{ xs: 12, sm: 3 }}>
-                  <TextField fullWidth label='State / Province' name='state' defaultValue={initialData?.state || ''} />
-                </Grid>
-                <Grid size={{ xs: 12, sm: 3 }}>
-                  <TextField fullWidth label='Zip / Postal Code' name='postalCode' defaultValue={initialData?.postalCode || ''} />
-                </Grid>
-                <Grid size={{ xs: 12, sm: 6 }}>
-                  <TextField fullWidth label='Country' name='country' defaultValue={initialData?.country || ''} />
-                </Grid>
+                <AddressFields address={initialData?.Address} />
               </Grid>
             </CardContent>
           </Card>

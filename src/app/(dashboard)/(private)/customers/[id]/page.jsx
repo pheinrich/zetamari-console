@@ -15,6 +15,7 @@ import { customerDisplayName, emailMarketingLabel } from '../customerFormat'
 import CustomAvatar from '@core/components/mui/Avatar'
 import CustomerDetailActions from './CustomerDetailActions'
 import CustomerSourceEditor from './CustomerSourceEditor'
+import { addressLines } from '@/utils/addresses'
 
 export default async function CustomerPage( {params} )
 {
@@ -29,8 +30,7 @@ export default async function CustomerPage( {params} )
   if( !customer )
     return notFound()
 
-  const address = [customer.street1, customer.street2].filter( Boolean ).join( ', ' )
-  const cityLine = [customer.city, customer.state, customer.postalCode].filter( Boolean ).join( ', ' )
+  const address = addressLines( customer.Address )
 
   // Only enrolled/completed seats count toward the apron/discount
   // thresholds - same definition countCustomerClasses() in
@@ -92,9 +92,7 @@ export default async function CustomerPage( {params} )
                 </Grid>
                 <Grid size={{ xs: 12, sm: 6 }}>
                   <Typography variant='body2' color='text.secondary'>Address</Typography>
-                  <Typography>{address || '—'}</Typography>
-                  {cityLine && <Typography>{cityLine}</Typography>}
-                  {customer.country && <Typography>{customer.country}</Typography>}
+                  {address.length ? address.map( (line, i) => <Typography key={i}>{line}</Typography> ) : <Typography>—</Typography>}
                 </Grid>
                 <Grid size={{ xs: 6, sm: 3 }}>
                   <Typography variant='body2' color='text.secondary'>Email Marketing</Typography>

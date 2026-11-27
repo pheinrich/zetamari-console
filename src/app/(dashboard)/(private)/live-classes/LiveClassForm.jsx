@@ -21,6 +21,7 @@ import { createLiveClass, updateLiveClass } from '@/db/actions/liveClass'
 import { dollarInputProps } from '@/utils/units'
 import { isBlankDraft, toDatetimes } from '@/utils/occurrences'
 import LocationPicker from './LocationPicker'
+import { formatAddress } from '@/utils/addresses'
 import OccurrenceTable from '../calendar/OccurrenceTable'
 
 const optionalString = z.preprocess( (val) => (val === '' ? undefined : val), z.string().optional() )
@@ -34,8 +35,7 @@ const schema = z.object({
   id: z.preprocess( (val) => (val === '' || val == null ? undefined : val), z.coerce.number().optional() ),
   name: z.string().min( 1 ),
   locationType: z.enum( ['in_person', 'online'] ),
-  locationName: optionalString,
-  locationAddress: optionalString,
+  locationId: optionalString,
   cost: optionalPositiveNumber,
   notes: optionalString,
   occurrences: optionalString,
@@ -67,7 +67,7 @@ export default function LiveClassForm( {initialData={}, locationOptions=[]} )
 {
   const router = useRouter()
   const isEdit = Boolean( initialData?.id )
-  const [location, setLocation] = useState( initialData?.locationName ? {locationName: initialData.locationName, locationAddress: initialData.locationAddress || ''} : null )
+  const [location, setLocation] = useState( initialData?.Location ?? null )
   const [locationType, setLocationType] = useState( initialData?.locationType || 'in_person' )
 
   // New classes only - an existing one's occurrences are edited on its page
@@ -144,10 +144,9 @@ export default function LiveClassForm( {initialData={}, locationOptions=[]} )
                       </ToggleButtonGroup>
                     </div>
                     <Typography variant='body2' color='text.secondary' className='pis-3'>
-                      {location?.locationAddress || (location ? 'No address' : 'Pick a location, or add a new one')}
+                      {formatAddress( location?.Address ) || (location ? 'No address' : 'Pick a location, or add a new one')}
                     </Typography>
-                    <input type='hidden' name='locationName' value={location?.locationName ?? ''} />
-                    <input type='hidden' name='locationAddress' value={location?.locationAddress ?? ''} />
+                    <input type='hidden' name='locationId' value={location?.id ?? ''} />
                     <input type='hidden' name='locationType' value={locationType} />
                   </div>
                   <TextField

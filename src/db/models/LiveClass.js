@@ -1,5 +1,6 @@
 import { DataTypes } from 'sequelize'
 import sequelize from '@/db/sequelize.js'
+import Location from '@/db/models/Location'
 
 // One of Angie's live-taught classes - in-person (her studio, a partner
 // venue) or online (Zoom) - as opposed to her self-guided online
@@ -20,13 +21,15 @@ const LiveClass = sequelize.define(
     id: { type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
     name: { type: DataTypes.STRING, allowNull: false },
     locationType: { type: DataTypes.ENUM( 'in_person', 'online' ), allowNull: false, defaultValue: 'in_person' },
-    locationName: { type: DataTypes.STRING },
-    locationAddress: { type: DataTypes.STRING },
+    locationId: { type: DataTypes.INTEGER, allowNull: true, references: { model: Location, key: 'id' } },   // see Location.js
     cost: { type: DataTypes.FLOAT },
     notes: { type: DataTypes.TEXT },
   },
   {
     timestamps: false,
   })
+
+Location.hasMany( LiveClass, {foreignKey: 'locationId'} )
+LiveClass.belongsTo( Location, {foreignKey: 'locationId'} )
 
 export default LiveClass

@@ -62,7 +62,7 @@ const fuzzyFilter = (row, columnId, value, addMeta) => {
   const itemRank = 'name' === columnId
     ? multiFieldFuzzyFilter( [
       customerDisplayName( c ), c.email, c.phone, c.company,
-      c.street1, c.street2, c.city, c.state, c.postalCode, c.country,
+      c.Address?.street1, c.Address?.street2, c.Address?.city, c.Address?.state, c.Address?.postalCode, c.Address?.country,
     ], value )
     : rankItem( row.getValue( columnId ), value )
 

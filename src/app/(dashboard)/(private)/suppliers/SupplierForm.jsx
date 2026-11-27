@@ -15,6 +15,7 @@ import TextField from '@mui/material/TextField'
 import Typography from '@mui/material/Typography'
 
 import { useFormSubmit } from '@/utils/formSubmitHook'
+import AddressFields, { addressSchema } from '@/components/AddressFields'
 import { createSupplier, updateSupplier } from '@/db/actions/supplier'
 
 const optionalString = z.preprocess( (val) => (val === '' ? undefined : val), z.string().optional() )
@@ -23,7 +24,7 @@ const schema = z.object({
   id: z.preprocess( (val) => (val === '' || val == null ? undefined : val), z.coerce.number().optional() ),
   name: z.string().min( 1 ),
   email: optionalString,
-  address: optionalString,
+  address: addressSchema,
   phone: optionalString,
   url: optionalString,
   notes: optionalString,
@@ -89,9 +90,7 @@ export default function SupplierForm( {initialData={}} )
                 <Grid size={{ xs: 12, sm: 6 }}>
                   <TextField fullWidth label='URL' name='url' defaultValue={initialData?.url || ''} />
                 </Grid>
-                <Grid size={{ xs: 12 }}>
-                  <TextField fullWidth label='Address' name='address' defaultValue={initialData?.address || ''} />
-                </Grid>
+                <AddressFields address={initialData?.Address} />
                 <Grid size={{ xs: 12 }}>
                   <TextField
                     fullWidth
