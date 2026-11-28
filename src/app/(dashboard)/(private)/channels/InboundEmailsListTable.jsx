@@ -184,7 +184,7 @@ export default function InboundEmailsListTable( {emailData} )
         header: 'Subject',
         cell: ({ row }) => (
           <div className='flex flex-col min-is-[200px] max-is-[280px] whitespace-normal break-words'>
-            <Link href={`/inbound-emails/${row.original.id}`}>{row.original.subject || '(no subject)'}</Link>
+            <Link href={`/channels/${row.original.id}`}>{row.original.subject || '(no subject)'}</Link>
             <Typography variant='body2' color='text.secondary'>{EMAIL_KIND_LABELS[row.original.kind] ?? 'Not yet processed'}</Typography>
           </div>
         )
@@ -249,7 +249,7 @@ export default function InboundEmailsListTable( {emailData} )
 
   return (
     <Card>
-      <CardHeader title='Inbound Emails' subheader='Every email received at the order intake address' className='pbe-4' />
+      <CardHeader title='Channels' subheader='Every email received at the order intake address' className='pbe-4' />
       <Divider />
       <div className='flex justify-between flex-col items-start sm:flex-row sm:items-center gap-y-4 p-5'>
         <div className='flex flex-wrap items-center gap-4'>
@@ -356,7 +356,7 @@ export default function InboundEmailsListTable( {emailData} )
                 <tr
                   key={row.id}
                   className='cursor-pointer hover:bg-actionHover'
-                  onClick={() => router.push( `/inbound-emails/${row.original.id}` )}
+                  onClick={() => router.push( `/channels/${row.original.id}` )}
                 >
                   {row.getVisibleCells().map( cell => (
                     <td key={cell.id} className={cell.column.id === 'select' ? 'is-[1%]' : undefined}>{flexRender( cell.column.columnDef.cell, cell.getContext() )}</td>

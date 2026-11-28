@@ -61,63 +61,59 @@ const VerticalMenu = ({ scrollMenu }) => {
             visualizer
           </MenuItem>
         </MenuSection>
+        <MenuSection label='production'>
+          <MenuItem href='/channel-orders' icon={<i className='ri-inbox-line' />}>
+            inbound
+          </MenuItem>
+          <MenuItem href='/production' icon={<i className='ri-layout-grid-line' />}>
+            in progress
+          </MenuItem>
+          <MenuItem href='/shipments' icon={<i className='ri-box-3-line' />}>
+            outbound
+          </MenuItem>
+        </MenuSection>
+        <MenuSection label='orders'>
+          <MenuItem href='/orders' icon={<i className='ri-shopping-bag-3-line' />}>
+            accepted
+          </MenuItem>
+          <MenuItem href='/channels' icon={<i className='ri-mail-line' />}>
+            channels
+          </MenuItem>
+        </MenuSection>
+        <MenuSection label='events'>
+          <MenuItem href='/calendar' icon={<i className='ri-calendar-check-line' />}>
+            calendar
+          </MenuItem>
+          <MenuItem href='/live-classes' icon={<i className='ri-graduation-cap-line' />}>
+            classes
+          </MenuItem>
+          <MenuItem href='/events' icon={<i className='ri-calendar-event-line' />}>
+            shows
+          </MenuItem>
+        </MenuSection>
         <MenuSection label='inventory'>
-          <MenuItem href='/contours' icon={<i className='ri-shape-2-line' />}>
-            contours
-          </MenuItem>
-          <MenuItem href='/suppliers' icon={<i className='ri-truck-line' />}>
-            suppliers
-          </MenuItem>
           <MenuItem href='/products' icon={<i className='ri-shapes-line' />}>
             products
           </MenuItem>
           <MenuItem href='/stock' icon={<i className='ri-archive-line' />}>
             stock
           </MenuItem>
+          <MenuItem href='/suppliers' icon={<i className='ri-truck-line' />}>
+            suppliers
+          </MenuItem>
           <MenuItem href='/images' icon={<i className='ri-image-line' />}>
             images
           </MenuItem>
         </MenuSection>
-        <MenuSection label='customer'>
-          <MenuItem href='/customers' icon={<i className='ri-user-line' />}>
-            contacts
-          </MenuItem>
-          <MenuItem href='/orders' icon={<i className='ri-shopping-bag-3-line' />}>
-            orders
-          </MenuItem>
-          <MenuItem href='/shipments' icon={<i className='ri-box-3-line' />}>
-            shipments
-          </MenuItem>
-          <MenuItem href='/channel-orders' icon={<i className='ri-inbox-line' />}>
-            channel orders
-          </MenuItem>
-          <MenuItem href='/inbound-emails' icon={<i className='ri-mail-line' />}>
-            inbound emails
-          </MenuItem>
-        </MenuSection>
-        <MenuSection label='scheduling'>
-          <MenuItem href='/calendar' icon={<i className='ri-calendar-check-line' />}>
-            calendar
-          </MenuItem>
-          <MenuItem href='/events' icon={<i className='ri-calendar-event-line' />}>
-            shows
-          </MenuItem>
-          <MenuItem href='/live-classes' icon={<i className='ri-graduation-cap-line' />}>
-            live classes
-          </MenuItem>
-          <MenuItem href='/production' icon={<i className='ri-layout-grid-line' />}>
-            production
-          </MenuItem>
-        </MenuSection>
         <MenuSection label='config'>
+          <MenuItem href='/customers' icon={<i className='ri-contacts-book-line' />}>
+            address book
+          </MenuItem>
           <MenuItem href='/users' icon={<i className='ri-team-line' />}>
             users
           </MenuItem>
-          <MenuItem href='/roles' icon={<i className='ri-shield-user-line' />}>
-            roles
-          </MenuItem>
-          <MenuItem href='/permissions' icon={<i className='ri-lock-2-line' />}>
-            permissions
+          <MenuItem href='/contours' icon={<i className='ri-shape-2-line' />}>
+            contours
           </MenuItem>
           <MenuItem href='/settings' icon={<i className='ri-settings-3-line' />}>
             settings

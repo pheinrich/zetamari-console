@@ -10,7 +10,7 @@ import Typography from '@mui/material/Typography'
 
 import { readChannelOrder, readLiveClassOptions, readProductOptions } from '@/db/actions/channelOrder'
 import tableStyles from '@core/styles/table.module.css'
-import InboundEmailActions from '../../inbound-emails/InboundEmailActions'
+import InboundEmailActions from '../../channels/InboundEmailActions'
 import {
   EMAIL_KIND_LABELS, EMAIL_STATUS_COLORS, ORDER_STATUS_COLORS, buyerLabel, channelLabel, dateTime, money, shipDateText,
 } from '../channelOrderFormat'
@@ -182,7 +182,7 @@ export default async function ChannelOrderPage( {params} )
                 {order.emails.map( email => (
                   <tr key={email.id}>
                     <td>{dateTime( email.receivedAt )}</td>
-                    <td><Link href={`/inbound-emails/${email.id}`}>{email.subject || '(no subject)'}</Link></td>
+                    <td><Link href={`/channels/${email.id}`}>{email.subject || '(no subject)'}</Link></td>
                     <td>{EMAIL_KIND_LABELS[email.kind] ?? '—'}</td>
                     <td><Chip size='small' variant='tonal' color={EMAIL_STATUS_COLORS[email.status]} label={email.status} /></td>
                     <td><InboundEmailActions email={email} size='small' afterUndoHref='/channel-orders' /></td>
