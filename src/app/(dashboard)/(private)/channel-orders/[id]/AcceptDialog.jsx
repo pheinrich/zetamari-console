@@ -26,6 +26,7 @@ import Typography from '@mui/material/Typography'
 import { addDays, format, parseISO } from 'date-fns'
 
 import { acceptChannelOrder, readAcceptPreview, searchCustomers } from '@/db/actions/channelOrder'
+import { announceNavCountsChanged } from '@/hooks/useNavCounts'
 import tableStyles from '@core/styles/table.module.css'
 import DateField from '@/components/DateField'
 import { defaultShipDate } from '@/utils/shipDate'
@@ -133,6 +134,8 @@ export default function AcceptDialog( {order, open, onClose} )
   {
     startTransition( async () => {
       const result = await acceptChannelOrder( order.id, {customerId: customer.id, promisedDate, quantities} )
+
+      announceNavCountsChanged()
 
       if( result.error )
         return toast.error( result.error )

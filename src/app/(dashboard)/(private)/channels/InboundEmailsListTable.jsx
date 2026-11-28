@@ -35,6 +35,7 @@ import {
 } from '@tanstack/react-table'
 
 import { deleteInboundEmails, reprocessInboundEmails, undoInboundEmails } from '@/db/actions/channelOrder'
+import { announceNavCountsChanged } from '@/hooks/useNavCounts'
 import { useConfirm } from '@/contexts/confirmContext'
 import { useTableViewState } from '@/hooks/useTableViewState'
 import tableStyles from '@core/styles/table.module.css'
@@ -92,6 +93,7 @@ export default function InboundEmailsListTable( {emailData} )
   {
     warning ? toast.warning( warning ) : toast.success( message )
     setRowSelection( {} )
+    announceNavCountsChanged()
     router.refresh()
   }
 

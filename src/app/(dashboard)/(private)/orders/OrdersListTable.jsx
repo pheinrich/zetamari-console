@@ -34,6 +34,7 @@ import {
 } from '@tanstack/react-table'
 
 import { combineOrders, deleteOrders } from '@/db/actions/order'
+import { announceNavCountsChanged } from '@/hooks/useNavCounts'
 import { useTableViewState } from '@/hooks/useTableViewState'
 import { customerDisplayName } from '../customers/customerFormat'
 import tableStyles from '@core/styles/table.module.css'
@@ -110,6 +111,7 @@ export default function OrdersListTable( {orderData} )
         return toast.error( result.error )
 
       toast.success( typeof success === 'function' ? success( result ) : success )
+      announceNavCountsChanged()
       setRowSelection( {} )
       router.refresh()
     } )

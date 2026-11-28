@@ -24,6 +24,7 @@ import Typography from '@mui/material/Typography'
 import {
   advanceShipment, createShipment, deleteShipment, revertShipment, setShipmentLinePicked, updateShipment,
 } from '@/db/actions/shipment'
+import { announceNavCountsChanged } from '@/hooks/useNavCounts'
 import { useConfirm } from '@/contexts/confirmContext'
 import NumberSpinner from '@/components/NumberSpinner'
 import { SortHeader, useSort } from '@/components/sortable'
@@ -88,6 +89,7 @@ export default function OrderShipments( {order} )
       if( success )
         toast.success( typeof success === 'function' ? success( result ) : success )
 
+      announceNavCountsChanged()
       setEditing( null )
       router.refresh()
     } )

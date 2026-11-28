@@ -1,5 +1,6 @@
 // MUI Imports
 import { useTheme } from '@mui/material/styles'
+import Chip from '@mui/material/Chip'
 
 // Third-party Imports
 import PerfectScrollbar from 'react-perfect-scrollbar'
@@ -16,6 +17,7 @@ import StyledVerticalNavExpandIcon from '@menu/styles/vertical/StyledVerticalNav
 // Style Imports
 import menuItemStyles from '@core/styles/vertical/menuItemStyles'
 import menuSectionStyles from '@core/styles/vertical/menuSectionStyles'
+import useNavCounts from '@/hooks/useNavCounts'
 
 const RenderExpandIcon = ({ open, transitionDuration }) => (
   <StyledVerticalNavExpandIcon open={open} transitionDuration={transitionDuration}>
@@ -26,6 +28,7 @@ const RenderExpandIcon = ({ open, transitionDuration }) => (
 const VerticalMenu = ({ scrollMenu }) => {
   // Hooks
   const theme = useTheme()
+  const { receivedEmails, newChannelOrders, openShipments } = useNavCounts()
   const verticalNavOptions = useVerticalNav()
 
   // Vars
@@ -62,13 +65,21 @@ const VerticalMenu = ({ scrollMenu }) => {
           </MenuItem>
         </MenuSection>
         <MenuSection label='production'>
-          <MenuItem href='/channel-orders' icon={<i className='ri-inbox-line' />}>
+          <MenuItem
+            href='/channel-orders'
+            icon={<i className='ri-inbox-line' />}
+            suffix={newChannelOrders > 0 && <Chip size='small' color='error' label={newChannelOrders} />}
+          >
             inbound
           </MenuItem>
           <MenuItem href='/production' icon={<i className='ri-layout-grid-line' />}>
             in progress
           </MenuItem>
-          <MenuItem href='/shipments' icon={<i className='ri-box-3-line' />}>
+          <MenuItem
+            href='/shipments'
+            icon={<i className='ri-box-3-line' />}
+            suffix={openShipments > 0 && <Chip size='small' color='error' label={openShipments} />}
+          >
             outbound
           </MenuItem>
         </MenuSection>
@@ -76,7 +87,11 @@ const VerticalMenu = ({ scrollMenu }) => {
           <MenuItem href='/orders' icon={<i className='ri-shopping-bag-3-line' />}>
             accepted
           </MenuItem>
-          <MenuItem href='/channels' icon={<i className='ri-mail-line' />}>
+          <MenuItem
+            href='/channels'
+            icon={<i className='ri-mail-line' />}
+            suffix={receivedEmails > 0 && <Chip size='small' color='error' label={receivedEmails} />}
+          >
             channels
           </MenuItem>
         </MenuSection>

@@ -15,6 +15,7 @@ import Tooltip from '@mui/material/Tooltip'
 import Typography from '@mui/material/Typography'
 
 import { deleteInboundEmail, reprocessInboundEmail, undoInboundEmail } from '@/db/actions/channelOrder'
+import { announceNavCountsChanged } from '@/hooks/useNavCounts'
 import { useConfirm } from '@/contexts/confirmContext'
 
 // One action as a labelled button, or (compact) an icon with a tooltip.
@@ -62,6 +63,8 @@ export default function InboundEmailActions( {email, size = 'medium', afterUndoH
     startTransition( async () => {
       const result = await reprocessInboundEmail( email.id )
 
+      announceNavCountsChanged()
+
       if( result.status === 'failed' )
         toast.error( `Parsing failed: ${result.error}` )
       else if( result.status === 'parsed' && !result.updated )
@@ -85,6 +88,8 @@ export default function InboundEmailActions( {email, size = 'medium', afterUndoH
     startTransition( async () => {
       const result = await undoInboundEmail( email.id )
 
+      announceNavCountsChanged()
+
       if( result.error )
         toast.error( `Couldn't undo: ${result.error}` )
       else
@@ -99,6 +104,8 @@ export default function InboundEmailActions( {email, size = 'medium', afterUndoH
   {
     startTransition( async () => {
       const result = await deleteInboundEmail( email.id )
+
+      announceNavCountsChanged()
 
       if( result.error )
         toast.error( `Couldn't delete: ${result.error}` )

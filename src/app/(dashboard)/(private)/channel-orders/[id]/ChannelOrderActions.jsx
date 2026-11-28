@@ -10,6 +10,7 @@ import { toast } from 'react-toastify'
 import Button from '@mui/material/Button'
 
 import { refreshChannelOrder, setChannelOrderStatus, unacceptChannelOrder } from '@/db/actions/channelOrder'
+import { announceNavCountsChanged } from '@/hooks/useNavCounts'
 
 import { channelLabel } from '../channelOrderFormat'
 import AcceptDialog from './AcceptDialog'
@@ -24,6 +25,8 @@ export default function ChannelOrderActions( {order} )
   {
     startTransition( async () => {
       const result = await setChannelOrderStatus( order.id, status )
+
+      announceNavCountsChanged()
 
       if( result.error )
         toast.error( result.error )
@@ -42,6 +45,8 @@ export default function ChannelOrderActions( {order} )
     startTransition( async () => {
       const result = await refreshChannelOrder( order.id )
 
+      announceNavCountsChanged()
+
       if( result.error )
         toast.error( `${apiChannel} API: ${result.error}` )
       else
@@ -58,6 +63,8 @@ export default function ChannelOrderActions( {order} )
   {
     startTransition( async () => {
       const result = await unacceptChannelOrder( order.id )
+
+      announceNavCountsChanged()
 
       if( result.error )
         toast.error( result.error )
